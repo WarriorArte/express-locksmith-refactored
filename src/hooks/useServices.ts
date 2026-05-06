@@ -12,6 +12,8 @@ import type {
   ServiceType,
 } from "@/types/database";
 
+export type { ServiceStatus, ServiceType } from "@/types/database";
+
 export type Service = ServiceRow & {
   customer?: Customer | null;
   service_products?: (ServiceProduct & {

@@ -98,7 +98,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
         notes: customer.notes || "",
         is_normal: (customer as any).is_normal || false,
         is_vip: customer.is_vip || false,
-        is_frequent: customer.is_frequent || false,
+        is_frequent: !!customer.is_frequent,
         has_debt: customer.has_debt || false,
         no_work_again: customer.no_work_again || false,
         no_work_reason: customer.no_work_reason || "",
