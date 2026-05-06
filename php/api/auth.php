@@ -96,7 +96,7 @@ try {
     if ($action === 'logout') {
         $token = get_bearer_token();
         if ($token) {
-            $conn->prepare('DELETE FROM auth_tokens WHERE token = ?')->execute([$token]);
+            $conn->prepare('DELETE FROM auth_tokens WHERE token = ?')->execute([hash_token($token)]);
         }
         Response::success(null, 'Sesion cerrada');
     }
