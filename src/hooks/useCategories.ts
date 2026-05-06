@@ -4,6 +4,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import type { Category, Tag } from "@/types/database";
 
+export type { Category, Tag } from "@/types/database";
+
 type CreateTagInput = {
   name: string;
   color?: string | null;
