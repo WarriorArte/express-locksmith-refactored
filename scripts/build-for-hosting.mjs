@@ -67,7 +67,7 @@ function quoteEnvValue(value) {
     .replace(/"/g, '\\"');
 }
 
-async function writePhpRuntimeEnv() {
+async function writeRuntimeEnv(targetDir, label) {
   const config = {
     DB_HOST: envValue("DB_HOST", ["PHP_DB_HOST", "MYSQL_HOST"]),
     DB_PORT: envValue("DB_PORT", ["PHP_DB_PORT", "MYSQL_PORT"]),
@@ -81,7 +81,7 @@ async function writePhpRuntimeEnv() {
   const missing = required.filter((key) => !config[key]);
 
   if (missing.length > 0) {
-    console.log(`[build] skip dist/php/.env (faltan variables: ${missing.join(", ")})`);
+    console.log(`[build] skip dist/${label}/.env (faltan variables: ${missing.join(", ")})`);
     return;
   }
 
@@ -93,9 +93,9 @@ async function writePhpRuntimeEnv() {
     "",
   ];
 
-  const targetPath = path.resolve(DIST_DIR, "php", ".env");
+  const targetPath = path.resolve(DIST_DIR, targetDir, ".env");
   await writeFile(targetPath, envLines.join("\n"), "utf8");
-  console.log("[build] dist/php/.env generado desde variables de entorno");
+  console.log(`[build] dist/${label}/.env generado desde variables de entorno`);
 }
 
 function indexTarget(base) {
@@ -133,11 +133,18 @@ async function main() {
   console.log(`[build] vite --base=${BASE_PATH}`);
   execSync(`npx vite build --base=${BASE_PATH}`, { stdio: "inherit", cwd: PROJECT_ROOT });
 
+  const backendSrc = path.resolve(PROJECT_ROOT, "backend");
+  if (existsSync(backendSrc)) {
+    await copyFiltered(backendSrc, path.resolve(DIST_DIR, "backend"));
+    console.log("[build] backend -> dist/backend");
+    await writeRuntimeEnv("backend", "backend");
+  }
+
   const phpSrc = path.resolve(PROJECT_ROOT, "php");
   if (existsSync(phpSrc)) {
     await copyFiltered(phpSrc, path.resolve(DIST_DIR, "php"));
     console.log("[build] php -> dist/php");
-    await writePhpRuntimeEnv();
+    await writeRuntimeEnv("php", "php");
   }
 
   await writeDistHtaccess();

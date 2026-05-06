@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\InstallController;
-use Illuminate\Support\Facades\Route;
-
-Route::match(['GET', 'POST'], '/install', [InstallController::class, 'handle']);
+if (is_file(base_path('install/routes.php'))) {
+	require base_path('install/routes.php');
+}
