@@ -32,5 +32,5 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
-pnpm-lock.yaml
 .claude
+pnpm-lock.yaml
