@@ -12,6 +12,74 @@ require_once __DIR__ . '/Response.php';
  * Configurable vía env CORS_ALLOWED_ORIGINS (CSV) o constante CORS_ALLOWED_ORIGINS en config.
  * Por defecto solo orígenes locales de desarrollo.
  */
+function load_dotenv_vars(): array {
+    static $cache = null;
+    if ($cache !== null) return $cache;
+
+    $paths = [
+        __DIR__ . '/../../.env',
+        __DIR__ . '/../../../.env',
+        __DIR__ . '/../../../../.env',
+    ];
+
+    $vars = [];
+    foreach ($paths as $path) {
+        if (!is_file($path) || !is_readable($path)) continue;
+        $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        if ($lines === false) continue;
+
+        foreach ($lines as $line) {
+            $trimmed = trim($line);
+            if ($trimmed === '' || str_starts_with($trimmed, '#')) continue;
+            if (str_starts_with($trimmed, 'export ')) {
+                $trimmed = trim(substr($trimmed, 7));
+            }
+            $pos = strpos($trimmed, '=');
+            if ($pos === false) continue;
+
+            $key = trim(substr($trimmed, 0, $pos));
+            $value = trim(substr($trimmed, $pos + 1));
+            if ($key === '') continue;
+
+            $len = strlen($value);
+            if ($len >= 2) {
+                $first = $value[0];
+                $last = $value[$len - 1];
+                if (($first === '"' && $last === '"') || ($first === "'" && $last === "'")) {
+                    $value = substr($value, 1, -1);
+                }
+            }
+
+            if (!array_key_exists($key, $vars)) {
+                $vars[$key] = $value;
+            }
+        }
+    }
+
+    $cache = $vars;
+    return $cache;
+}
+
+function read_env_var(string $key): ?string {
+    $value = getenv($key);
+    if ($value !== false && $value !== '') return (string)$value;
+
+    if (isset($_ENV[$key]) && $_ENV[$key] !== '') return (string)$_ENV[$key];
+    if (isset($_SERVER[$key]) && $_SERVER[$key] !== '') return (string)$_SERVER[$key];
+
+    $redirectKey = 'REDIRECT_' . $key;
+    $redirectValue = getenv($redirectKey);
+    if ($redirectValue !== false && $redirectValue !== '') return (string)$redirectValue;
+    if (isset($_ENV[$redirectKey]) && $_ENV[$redirectKey] !== '') return (string)$_ENV[$redirectKey];
+    if (isset($_SERVER[$redirectKey]) && $_SERVER[$redirectKey] !== '') return (string)$_SERVER[$redirectKey];
+
+    $dotenv = load_dotenv_vars();
+    if (isset($dotenv[$key]) && $dotenv[$key] !== '') return (string)$dotenv[$key];
+    if (isset($dotenv[$redirectKey]) && $dotenv[$redirectKey] !== '') return (string)$dotenv[$redirectKey];
+
+    return null;
+}
+
 function cors_allowed_origins(): array {
     static $cached = null;
     if ($cached !== null) return $cached;
@@ -23,7 +91,7 @@ function cors_allowed_origins(): array {
         'http://127.0.0.1:5174',
     ];
 
-    $env = getenv('CORS_ALLOWED_ORIGINS');
+    $env = read_env_var('CORS_ALLOWED_ORIGINS');
     if (!$env && defined('CORS_ALLOWED_ORIGINS')) $env = constant('CORS_ALLOWED_ORIGINS');
 
     if ($env) {
