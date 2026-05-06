@@ -86,17 +86,35 @@ class Database {
             return (string)$value;
         }
 
+        $redirectKey = 'REDIRECT_' . $key;
+        $redirectValue = getenv($redirectKey);
+        if ($redirectValue !== false && $redirectValue !== '') {
+            return (string)$redirectValue;
+        }
+
         if (isset($_ENV[$key]) && $_ENV[$key] !== '') {
             return (string)$_ENV[$key];
+        }
+
+        if (isset($_ENV[$redirectKey]) && $_ENV[$redirectKey] !== '') {
+            return (string)$_ENV[$redirectKey];
         }
 
         if (isset($_SERVER[$key]) && $_SERVER[$key] !== '') {
             return (string)$_SERVER[$key];
         }
 
+        if (isset($_SERVER[$redirectKey]) && $_SERVER[$redirectKey] !== '') {
+            return (string)$_SERVER[$redirectKey];
+        }
+
         $dotenv = self::loadDotEnv();
         if (isset($dotenv[$key]) && $dotenv[$key] !== '') {
             return (string)$dotenv[$key];
+        }
+
+        if (isset($dotenv[$redirectKey]) && $dotenv[$redirectKey] !== '') {
+            return (string)$dotenv[$redirectKey];
         }
 
         return null;
