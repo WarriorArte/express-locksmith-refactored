@@ -106,6 +106,14 @@ function get_bearer_token(): ?string {
 }
 
 /**
+ * Hashea un token Bearer para almacenarlo/buscarlo en DB.
+ * Usamos SHA-256 (rápido + 64 hex chars) — los tokens son random 256-bit, no necesitan bcrypt.
+ */
+function hash_token(string $token): string {
+    return hash('sha256', $token);
+}
+
+/**
  * Valida el token Bearer y retorna el array del usuario autenticado:
  * ['user_id', 'is_active', 'global_role']
  */
@@ -113,7 +121,8 @@ function require_auth(): array {
     $token = get_bearer_token();
     if (!$token) Response::unauthorized('Token de autorizacion requerido');
 
-    $conn = get_db_connection();
+    $conn   = get_db_connection();
+    $hashed = hash_token($token);
     $stmt = $conn->prepare('
         SELECT at.user_id,
                au.is_active,
@@ -125,7 +134,7 @@ function require_auth(): array {
           AND  at.expires_at > NOW()
         LIMIT  1
     ');
-    $stmt->execute([$token]);
+    $stmt->execute([$hashed]);
     $user = $stmt->fetch();
 
     if (!$user || !(int)$user['is_active']) {
@@ -146,6 +155,9 @@ function require_superadmin(array $user): void {
 /**
  * Verifica que el usuario tenga acceso al taller indicado.
  * Retorna el rol: 'superadmin' | 'admin' | 'employee'
+ *
+ * Si el usuario tiene varias filas en user_roles para el mismo taller (caso legacy),
+ * prioriza 'admin' sobre 'employee'.
  */
 function require_workshop_access(PDO $conn, string $user_id, ?string $workshop_id): string {
     if (!$workshop_id) Response::error('workshop_id es requerido');
@@ -156,8 +168,12 @@ function require_workshop_access(PDO $conn, string $user_id, ?string $workshop_i
     $global = $stmt->fetch();
     if ($global && $global['role'] === 'superadmin') return 'superadmin';
 
-    // Verificar rol en el taller
-    $stmt = $conn->prepare('SELECT role FROM user_roles WHERE user_id = ? AND workshop_id = ? LIMIT 1');
+    $stmt = $conn->prepare("
+        SELECT role FROM user_roles
+        WHERE  user_id = ? AND workshop_id = ?
+        ORDER  BY (role = 'admin') DESC, created_at ASC
+        LIMIT  1
+    ");
     $stmt->execute([$user_id, $workshop_id]);
     $role = $stmt->fetch();
     if (!$role) Response::unauthorized('Sin acceso al taller indicado');
