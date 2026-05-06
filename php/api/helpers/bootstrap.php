@@ -7,25 +7,47 @@ require_once __DIR__ . '/Response.php';
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
 
-function set_cors_headers(): void {
-    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-    // En producción restringe esta lista al dominio real
-    $allowed = [
+/**
+ * Devuelve la lista de orígenes permitidos.
+ * Configurable vía env CORS_ALLOWED_ORIGINS (CSV) o constante CORS_ALLOWED_ORIGINS en config.
+ * Por defecto solo orígenes locales de desarrollo.
+ */
+function cors_allowed_origins(): array {
+    static $cached = null;
+    if ($cached !== null) return $cached;
+
+    $defaults = [
         'http://localhost:5173',
         'http://localhost:5174',
         'http://127.0.0.1:5173',
         'http://127.0.0.1:5174',
     ];
-    if ($origin && (in_array($origin, $allowed, true) || str_starts_with($origin, 'http://localhost'))) {
-        header('Access-Control-Allow-Origin: ' . $origin);
+
+    $env = getenv('CORS_ALLOWED_ORIGINS');
+    if (!$env && defined('CORS_ALLOWED_ORIGINS')) $env = constant('CORS_ALLOWED_ORIGINS');
+
+    if ($env) {
+        $extra = array_filter(array_map('trim', explode(',', $env)));
+        $cached = array_values(array_unique(array_merge($defaults, $extra)));
     } else {
-        // Permite cualquier origen en entorno sin HTTPS (WAMP local)
-        header('Access-Control-Allow-Origin: ' . ($origin ?: '*'));
+        $cached = $defaults;
     }
+    return $cached;
+}
+
+function set_cors_headers(): void {
+    $origin  = $_SERVER['HTTP_ORIGIN'] ?? '';
+    $allowed = cors_allowed_origins();
+
+    if ($origin && in_array($origin, $allowed, true)) {
+        header('Access-Control-Allow-Origin: ' . $origin);
+        header('Access-Control-Allow-Credentials: true');
+    }
+    // Si el origen no está en la lista no se emite el header → el navegador bloquea.
     header('Vary: Origin');
-    header('Access-Control-Allow-Credentials: true');
     header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
     header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Workshop-Id');
+    header('Access-Control-Max-Age: 600');
 }
 
 function handle_preflight(): void {
