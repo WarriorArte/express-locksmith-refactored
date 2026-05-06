@@ -1,0 +1,15 @@
+Options -Indexes
+<IfModule mod_rewrite.c>
+	RewriteEngine On
+	RewriteBase /cerrajer-a-express/
+	# Laravel backend entrypoints (installer + legacy API under /api/*.php)
+	RewriteRule ^install/?$ /cerrajer-a-express/backend/public/index.php [L,QSA,NC]
+	RewriteRule ^api(/.*)?$ /cerrajer-a-express/backend/public/index.php [L,QSA,NC]
+	RewriteRule ^up/?$ /cerrajer-a-express/backend/public/index.php [L,QSA,NC]
+
+	RewriteRule ^index\.html$ - [L]
+	RewriteCond %{REQUEST_FILENAME} !-f
+	RewriteCond %{REQUEST_FILENAME} !-d
+	RewriteCond %{REQUEST_FILENAME} !-l
+	RewriteRule . /cerrajer-a-express/index.html [L]
+</IfModule>
