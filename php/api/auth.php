@@ -160,7 +160,7 @@ try {
         // Invalidar todos los tokens excepto el actual
         $token = get_bearer_token();
         $conn->prepare('DELETE FROM auth_tokens WHERE user_id = ? AND token != ?')
-             ->execute([$authUser['user_id'], $token]);
+             ->execute([$authUser['user_id'], hash_token($token)]);
 
         Response::success(null, 'Contrasena actualizada');
     }
