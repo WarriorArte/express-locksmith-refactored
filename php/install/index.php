@@ -150,6 +150,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // 4b. Datos de ejemplo (solo en instalación nueva, no reinstalación)
             if (!$allowReinstall) {
                 $sampleDataStatus = insertSampleData($pdo);
+
+                // 4c. Seed de módulos (productos, clientes, cotizaciones, ventas, etc.)
+                $seedFile = __DIR__ . '/../schema/seed_sample_data.sql';
+                if (file_exists($seedFile)) {
+                    try {
+                        executeSqlFile($pdo, $seedFile);
+                        $sampleDataStatus .= ' + seed de módulos cargado';
+                    } catch (Exception $e) {
+                        $sampleDataStatus .= ' (seed de módulos falló: ' . $e->getMessage() . ')';
+                    }
+                } else {
+                    $sampleDataStatus .= ' (archivo seed_sample_data.sql no encontrado)';
+                }
             } else {
                 $sampleDataStatus = 'Omitidos (reinstalación)';
             }
