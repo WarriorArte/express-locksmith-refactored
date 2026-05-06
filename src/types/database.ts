@@ -3,7 +3,9 @@ export interface BaseRow {
   workshop_id?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
-  [key: string]: unknown;
+  // Permitir cualquier otra columna del backend sin forzar typings estrictos por ahora.
+  // Las columnas críticas se tipan explícitamente en cada interfaz.
+  [key: string]: any;
 }
 
 export interface Category extends BaseRow {
@@ -99,7 +101,8 @@ export interface Quote extends BaseRow {
 }
 
 export type ServiceStatus = "pending" | "in_progress" | "completed" | "delivered" | "cancelled";
-export type ServiceType = "installation" | "repair" | "maintenance" | "emergency" | "other";
+// Coincide con la ENUM del schema MariaDB (services.service_type)
+export type ServiceType = "automotive" | "residential" | "commercial" | "industrial";
 
 export interface Service extends BaseRow {
   service_number?: string;

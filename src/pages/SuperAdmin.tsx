@@ -654,7 +654,7 @@ export default function SuperAdmin() {
                 <div className="grid gap-4 md:grid-cols-2">
                   {availableFeatures.map((feature) => {
                     const workshopFeature = workshopFeatures?.find(f => f.feature_key === feature.key);
-                    const isEnabled = workshopFeature?.is_enabled ?? true; // Default to enabled
+                    const isEnabled = workshopFeature?.is_enabled == null ? true : !!workshopFeature.is_enabled;
                     
                     return (
                       <div key={feature.key} className="flex items-center justify-between p-4 border rounded-lg">
