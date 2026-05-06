@@ -7,25 +7,47 @@ require_once __DIR__ . '/Response.php';
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
 
-function set_cors_headers(): void {
-    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-    // En producción restringe esta lista al dominio real
-    $allowed = [
+/**
+ * Devuelve la lista de orígenes permitidos.
+ * Configurable vía env CORS_ALLOWED_ORIGINS (CSV) o constante CORS_ALLOWED_ORIGINS en config.
+ * Por defecto solo orígenes locales de desarrollo.
+ */
+function cors_allowed_origins(): array {
+    static $cached = null;
+    if ($cached !== null) return $cached;
+
+    $defaults = [
         'http://localhost:5173',
         'http://localhost:5174',
         'http://127.0.0.1:5173',
         'http://127.0.0.1:5174',
     ];
-    if ($origin && (in_array($origin, $allowed, true) || str_starts_with($origin, 'http://localhost'))) {
-        header('Access-Control-Allow-Origin: ' . $origin);
+
+    $env = getenv('CORS_ALLOWED_ORIGINS');
+    if (!$env && defined('CORS_ALLOWED_ORIGINS')) $env = constant('CORS_ALLOWED_ORIGINS');
+
+    if ($env) {
+        $extra = array_filter(array_map('trim', explode(',', $env)));
+        $cached = array_values(array_unique(array_merge($defaults, $extra)));
     } else {
-        // Permite cualquier origen en entorno sin HTTPS (WAMP local)
-        header('Access-Control-Allow-Origin: ' . ($origin ?: '*'));
+        $cached = $defaults;
     }
+    return $cached;
+}
+
+function set_cors_headers(): void {
+    $origin  = $_SERVER['HTTP_ORIGIN'] ?? '';
+    $allowed = cors_allowed_origins();
+
+    if ($origin && in_array($origin, $allowed, true)) {
+        header('Access-Control-Allow-Origin: ' . $origin);
+        header('Access-Control-Allow-Credentials: true');
+    }
+    // Si el origen no está en la lista no se emite el header → el navegador bloquea.
     header('Vary: Origin');
-    header('Access-Control-Allow-Credentials: true');
     header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
     header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Workshop-Id');
+    header('Access-Control-Max-Age: 600');
 }
 
 function handle_preflight(): void {
@@ -84,6 +106,14 @@ function get_bearer_token(): ?string {
 }
 
 /**
+ * Hashea un token Bearer para almacenarlo/buscarlo en DB.
+ * Usamos SHA-256 (rápido + 64 hex chars) — los tokens son random 256-bit, no necesitan bcrypt.
+ */
+function hash_token(string $token): string {
+    return hash('sha256', $token);
+}
+
+/**
  * Valida el token Bearer y retorna el array del usuario autenticado:
  * ['user_id', 'is_active', 'global_role']
  */
@@ -91,7 +121,8 @@ function require_auth(): array {
     $token = get_bearer_token();
     if (!$token) Response::unauthorized('Token de autorizacion requerido');
 
-    $conn = get_db_connection();
+    $conn   = get_db_connection();
+    $hashed = hash_token($token);
     $stmt = $conn->prepare('
         SELECT at.user_id,
                au.is_active,
@@ -103,7 +134,7 @@ function require_auth(): array {
           AND  at.expires_at > NOW()
         LIMIT  1
     ');
-    $stmt->execute([$token]);
+    $stmt->execute([$hashed]);
     $user = $stmt->fetch();
 
     if (!$user || !(int)$user['is_active']) {
@@ -124,6 +155,9 @@ function require_superadmin(array $user): void {
 /**
  * Verifica que el usuario tenga acceso al taller indicado.
  * Retorna el rol: 'superadmin' | 'admin' | 'employee'
+ *
+ * Si el usuario tiene varias filas en user_roles para el mismo taller (caso legacy),
+ * prioriza 'admin' sobre 'employee'.
  */
 function require_workshop_access(PDO $conn, string $user_id, ?string $workshop_id): string {
     if (!$workshop_id) Response::error('workshop_id es requerido');
@@ -134,8 +168,12 @@ function require_workshop_access(PDO $conn, string $user_id, ?string $workshop_i
     $global = $stmt->fetch();
     if ($global && $global['role'] === 'superadmin') return 'superadmin';
 
-    // Verificar rol en el taller
-    $stmt = $conn->prepare('SELECT role FROM user_roles WHERE user_id = ? AND workshop_id = ? LIMIT 1');
+    $stmt = $conn->prepare("
+        SELECT role FROM user_roles
+        WHERE  user_id = ? AND workshop_id = ?
+        ORDER  BY (role = 'admin') DESC, created_at ASC
+        LIMIT  1
+    ");
     $stmt->execute([$user_id, $workshop_id]);
     $role = $stmt->fetch();
     if (!$role) Response::unauthorized('Sin acceso al taller indicado');

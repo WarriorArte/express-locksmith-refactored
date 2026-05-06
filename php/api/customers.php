@@ -31,6 +31,8 @@ try {
             $stmt->execute([$id]);
             $row = $stmt->fetch();
             if (!$row) Response::notFound('Cliente no encontrado');
+            // Validar que el usuario tenga acceso al taller del cliente (evita IDOR cross-tenant)
+            require_workshop_access($conn, $authUser['user_id'], $row['workshop_id']);
             Response::success($row);
         }
 

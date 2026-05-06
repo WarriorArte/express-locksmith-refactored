@@ -47,7 +47,7 @@ try {
             Response::success($row);
         }
 
-        // Perfil individual
+        // Perfil individual — restringido a self / superadmin / admin del taller del perfil
         if ($id) {
             $stmt = $conn->prepare('
                 SELECT p.*, au.email AS user_email, au.is_active, COALESCE(gur.role, "user") AS global_role
@@ -60,6 +60,31 @@ try {
             $stmt->execute([$id]);
             $row = $stmt->fetch();
             if (!$row) Response::notFound('Perfil no encontrado');
+
+            $isSelf       = $row['user_id'] === $authUser['user_id'];
+            $isSuperadmin = $authUser['global_role'] === 'superadmin';
+            $isAllowed    = $isSelf || $isSuperadmin;
+
+            if (!$isAllowed) {
+                // Permitir si el solicitante es admin de algún taller donde el target tenga rol
+                $chk = $conn->prepare('
+                    SELECT 1
+                    FROM   user_roles req
+                    JOIN   user_roles tgt ON tgt.workshop_id = req.workshop_id
+                    WHERE  req.user_id = ? AND req.role = "admin"
+                      AND  tgt.user_id = ?
+                    LIMIT  1
+                ');
+                $chk->execute([$authUser['user_id'], $row['user_id']]);
+                $isAllowed = (bool)$chk->fetchColumn();
+            }
+
+            if (!$isAllowed) Response::unauthorized('Sin permisos para ver este perfil');
+
+            // Si no es self/superadmin/admin global, omitir campos sensibles
+            if (!$isSelf && !$isSuperadmin) {
+                unset($row['user_email'], $row['is_active'], $row['global_role']);
+            }
             Response::success($row);
         }
 
