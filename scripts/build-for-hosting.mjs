@@ -69,12 +69,21 @@ function quoteEnvValue(value) {
 
 async function writeRuntimeEnv(targetDir, label) {
   const config = {
+    APP_NAME: envValue("APP_NAME"),
+    APP_ENV: envValue("APP_ENV"),
+    APP_KEY: envValue("APP_KEY", ["LARAVEL_APP_KEY"]),
+    APP_DEBUG: envValue("APP_DEBUG"),
+    APP_URL: envValue("APP_URL"),
     DB_HOST: envValue("DB_HOST", ["PHP_DB_HOST", "MYSQL_HOST"]),
     DB_PORT: envValue("DB_PORT", ["PHP_DB_PORT", "MYSQL_PORT"]),
     DB_NAME: envValue("DB_NAME", ["PHP_DB_NAME", "MYSQL_DATABASE"]),
     DB_USER: envValue("DB_USER", ["PHP_DB_USER", "DB_USERNAME", "MYSQL_USER"]),
     DB_PASSWORD: envValue("DB_PASSWORD", ["PHP_DB_PASSWORD", "DB_PASS", "MYSQL_PASSWORD"]),
     CORS_ALLOWED_ORIGINS: envValue("CORS_ALLOWED_ORIGINS", ["PHP_CORS_ALLOWED_ORIGINS"]),
+    CORS_ALLOWED_ORIGIN_PATTERNS: envValue("CORS_ALLOWED_ORIGIN_PATTERNS", ["PHP_CORS_ALLOWED_ORIGIN_PATTERNS"]),
+    LOG_CHANNEL: envValue("LOG_CHANNEL"),
+    LOG_LEVEL: envValue("LOG_LEVEL"),
+    SESSION_DRIVER: envValue("SESSION_DRIVER"),
   };
 
   const required = ["DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD"];

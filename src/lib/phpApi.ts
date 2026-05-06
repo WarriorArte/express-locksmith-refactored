@@ -6,7 +6,7 @@ const runtimeApiBase =
     : undefined;
 
 const envApiBase = import.meta.env.VITE_PHP_API_BASE as string | undefined;
-const API_BASE = (runtimeApiBase || envApiBase || `${import.meta.env.BASE_URL}php/api`).replace(/\/$/, "");
+const API_BASE = (runtimeApiBase || envApiBase || `${import.meta.env.BASE_URL}api`).replace(/\/$/, "");
 
 if (typeof window !== "undefined" && !(window as any).__PHP_API_BASE_LOGGED__) {
   (window as any).__PHP_API_BASE_LOGGED__ = true;

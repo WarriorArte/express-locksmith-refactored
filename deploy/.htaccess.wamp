@@ -3,8 +3,10 @@ Options -Indexes
 	RewriteEngine On
 	RewriteBase /cerrajer-a-express/
 
-	# Laravel backend entrypoints (installer + legacy API under /api/*.php)
-	RewriteRule ^install/?$ /cerrajer-a-express/backend/public/index.php [L,QSA,NC]
+	# Dedicated installer entrypoint (easy to delete after first production setup)
+	RewriteRule ^install/?$ /cerrajer-a-express/backend/install/index.php [L,QSA,NC]
+
+	# Laravel backend entrypoints (legacy API under /api/*.php)
 	RewriteRule ^api(/.*)?$ /cerrajer-a-express/backend/public/index.php [L,QSA,NC]
 	RewriteRule ^up/?$ /cerrajer-a-express/backend/public/index.php [L,QSA,NC]
 
