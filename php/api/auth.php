@@ -70,8 +70,9 @@ try {
         }
         $workshops = $wStmt->fetchAll();
 
-        // Generar token (64-char hex = 32 bytes aleatorios)
-        $tokenStr  = bin2hex(random_bytes(32));
+        // Generar token plano (devuelto al cliente UNA sola vez) y guardar SHA-256 en DB.
+        $tokenStr  = bin2hex(random_bytes(32));   // 64 hex chars
+        $tokenHash = hash_token($tokenStr);        // 64 hex chars (sha256)
         $expiresAt = date('Y-m-d H:i:s', strtotime('+30 days'));
         $tokenId   = make_uuid();
 
@@ -79,7 +80,7 @@ try {
             INSERT INTO auth_tokens (id, user_id, token, expires_at)
             VALUES (?, ?, ?, ?)
         ');
-        $tStmt->execute([$tokenId, $user['id'], $tokenStr, $expiresAt]);
+        $tStmt->execute([$tokenId, $user['id'], $tokenHash, $expiresAt]);
 
         Response::success([
             'token'       => $tokenStr,
