@@ -10,6 +10,7 @@ class Database {
     private string $password;
     private int $port;
     private ?PDO $conn = null;
+    private static ?array $dotenvCache = null;
 
     private array $defaults = [
         'host'     => 'localhost',
@@ -18,6 +19,66 @@ class Database {
         'password' => '',
         'port'     => 3306,
     ];
+
+    private static function loadDotEnv(): array {
+        if (self::$dotenvCache !== null) {
+            return self::$dotenvCache;
+        }
+
+        $paths = [
+            __DIR__ . '/../.env',
+            __DIR__ . '/../../.env',
+            __DIR__ . '/../../../.env',
+        ];
+
+        $vars = [];
+        foreach ($paths as $path) {
+            if (!is_file($path) || !is_readable($path)) {
+                continue;
+            }
+
+            $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            if ($lines === false) {
+                continue;
+            }
+
+            foreach ($lines as $line) {
+                $trimmed = trim($line);
+                if ($trimmed === '' || str_starts_with($trimmed, '#')) {
+                    continue;
+                }
+                if (str_starts_with($trimmed, 'export ')) {
+                    $trimmed = trim(substr($trimmed, 7));
+                }
+                $pos = strpos($trimmed, '=');
+                if ($pos === false) {
+                    continue;
+                }
+
+                $key = trim(substr($trimmed, 0, $pos));
+                $value = trim(substr($trimmed, $pos + 1));
+                if ($key === '') {
+                    continue;
+                }
+
+                $len = strlen($value);
+                if ($len >= 2) {
+                    $first = $value[0];
+                    $last = $value[$len - 1];
+                    if (($first === '"' && $last === '"') || ($first === "'" && $last === "'")) {
+                        $value = substr($value, 1, -1);
+                    }
+                }
+
+                if (!array_key_exists($key, $vars)) {
+                    $vars[$key] = $value;
+                }
+            }
+        }
+
+        self::$dotenvCache = $vars;
+        return self::$dotenvCache;
+    }
 
     private function readEnv(string $key): ?string {
         $value = getenv($key);
@@ -33,6 +94,21 @@ class Database {
             return (string)$_SERVER[$key];
         }
 
+        $dotenv = self::loadDotEnv();
+        if (isset($dotenv[$key]) && $dotenv[$key] !== '') {
+            return (string)$dotenv[$key];
+        }
+
+        return null;
+    }
+
+    private function readEnvAny(array $keys): ?string {
+        foreach ($keys as $key) {
+            $value = $this->readEnv($key);
+            if ($value !== null && $value !== '') {
+                return $value;
+            }
+        }
         return null;
     }
 
@@ -46,11 +122,25 @@ class Database {
             }
         }
 
-        $this->host     = $installed['host']     ?? $this->readEnv('DB_HOST')     ?? $this->defaults['host'];
-        $this->db_name  = $installed['db_name']  ?? $this->readEnv('DB_NAME')     ?? $this->defaults['db_name'];
-        $this->username = $installed['username'] ?? $this->readEnv('DB_USER')     ?? $this->defaults['username'];
-        $this->password = $installed['password'] ?? $this->readEnv('DB_PASSWORD') ?? $this->defaults['password'];
-        $this->port     = (int)($installed['port'] ?? $this->readEnv('DB_PORT')   ?? $this->defaults['port']);
+        $this->host = $installed['host'] ?? $this->readEnvAny([
+            'DB_HOST', 'MYSQL_HOST', 'MYSQLHOST'
+        ]) ?? $this->defaults['host'];
+
+        $this->db_name = $installed['db_name'] ?? $this->readEnvAny([
+            'DB_NAME', 'DATABASE_NAME', 'MYSQL_DATABASE', 'MYSQLDATABASE'
+        ]) ?? $this->defaults['db_name'];
+
+        $this->username = $installed['username'] ?? $this->readEnvAny([
+            'DB_USER', 'DB_USERNAME', 'MYSQL_USER', 'MYSQLUSER'
+        ]) ?? $this->defaults['username'];
+
+        $this->password = $installed['password'] ?? $this->readEnvAny([
+            'DB_PASSWORD', 'DB_PASS', 'MYSQL_PASSWORD', 'MYSQLPASSWORD'
+        ]) ?? $this->defaults['password'];
+
+        $this->port = (int)($installed['port'] ?? $this->readEnvAny([
+            'DB_PORT', 'MYSQL_PORT', 'MYSQLPORT'
+        ]) ?? $this->defaults['port']);
     }
 
     public function getSettings(): array {
