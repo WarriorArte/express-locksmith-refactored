@@ -7,10 +7,11 @@
 
 define('LOCK_FILE',   __DIR__ . '/../installed.lock');
 define('SCHEMA_FILE', __DIR__ . '/../schema/schema.sql');
-define('CONFIG_FILE', __DIR__ . '/../config/db_config.php');
 define('APP_NAME',    'Cerrajería Express');
 define('APP_SLUG',    getenv('WAMP_APP_DIR') ?: 'cerrajer-a-express');
 define('DEFAULT_DB',  'cerrajeria_express');
+
+require_once __DIR__ . '/../config/database.php';
 
 $allowReinstall = isset($_GET['reinstall']) && $_GET['reinstall'] === '1';
 
@@ -20,7 +21,7 @@ if (file_exists(LOCK_FILE) && !$allowReinstall) {
         <div class="card success">
             <h2>✓ Aplicación ya instalada</h2>
             <p>Instalada el <strong>' . h(file_get_contents(LOCK_FILE)) . '</strong>.</p>
-            <p>Para reconfigurar la base de datos abre:</p>
+            <p>Para reconfigurar datos iniciales/superadmin abre:</p>
             <p><a href="?reinstall=1"><code>install/?reinstall=1</code></a></p>
             <p class="warn">⚠ Por seguridad, elimina <code>php/install/</code> del servidor.</p>
         </div>
@@ -31,18 +32,12 @@ if (file_exists(LOCK_FILE) && !$allowReinstall) {
 $errors               = [];
 $step                 = 'form';
 $dbNameSafe           = '';
-$configStatus         = '';
 $installerDeleteStatus = '';
 $sampleDataStatus     = '';
 
 // ─── Procesamiento del formulario ─────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $f = [
-        'db_host'        => trim($_POST['db_host']        ?? 'localhost'),
-        'db_port'        => (int)($_POST['db_port']        ?? 3306),
-        'db_name'        => trim($_POST['db_name']         ?? DEFAULT_DB),
-        'db_user'        => trim($_POST['db_user']         ?? 'root'),
-        'db_password'    => $_POST['db_password']          ?? '',
         'admin_name'     => trim($_POST['admin_name']      ?? ''),
         'admin_email'    => strtolower(trim($_POST['admin_email'] ?? '')),
         'admin_code'     => trim($_POST['admin_code']      ?? ''),
@@ -51,11 +46,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ];
 
     // Validación
-    if (empty($f['db_host']))    $errors[] = 'El host de la base de datos es requerido.';
-    if (empty($f['db_name']))    $errors[] = 'El nombre de la base de datos es requerido.';
-    if (empty($f['db_user']))    $errors[] = 'El usuario de la base de datos es requerido.';
-    if ($f['db_port'] < 1 || $f['db_port'] > 65535)
-                                 $errors[] = 'El puerto debe ser un número entre 1 y 65535.';
     if (empty($f['admin_name'])) $errors[] = 'El nombre del administrador es requerido.';
     if (!filter_var($f['admin_email'], FILTER_VALIDATE_EMAIL))
                                  $errors[] = 'El email del administrador no es válido.';
@@ -66,16 +56,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($errors)) {
         try {
-            $dbNameSafe = $f['db_name'];
+            $databaseSettings = (new Database())->getSettings();
+            $dbNameSafe = $databaseSettings['db_name'] ?? DEFAULT_DB;
             if (!preg_match('/^[a-zA-Z0-9_-]+$/', $dbNameSafe)) {
                 throw new Exception('Nombre de BD inválido. Solo letras, números, _ y -.');
             }
 
             // 1. Conectar sin seleccionar BD
             $pdo = new PDO(
-                "mysql:host={$f['db_host']};port={$f['db_port']};charset=utf8mb4",
-                $f['db_user'],
-                $f['db_password'],
+                "mysql:host={$databaseSettings['host']};port={$databaseSettings['port']};charset=utf8mb4",
+                $databaseSettings['username'],
+                $databaseSettings['password'],
                 [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
             );
 
@@ -167,25 +158,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $sampleDataStatus = 'Omitidos (reinstalación)';
             }
 
-            // 5. Escribir php/config/db_config.php
-            $configPhp = "<?php\n// Generado por install/index.php el " . date('Y-m-d H:i:s') . "\nreturn [\n"
-                . "    'host'     => " . var_export($f['db_host'],     true) . ",\n"
-                . "    'db_name'  => " . var_export($dbNameSafe,       true) . ",\n"
-                . "    'username' => " . var_export($f['db_user'],     true) . ",\n"
-                . "    'password' => " . var_export($f['db_password'], true) . ",\n"
-                . "    'port'     => " . (int)$f['db_port']                  . ",\n"
-                . "];\n";
-
-            if (file_put_contents(CONFIG_FILE, $configPhp, LOCK_EX) === false) {
-                throw new Exception('No se pudo escribir php/config/db_config.php. Verifica permisos de escritura.');
-            }
-
-            $loadedConfig = include CONFIG_FILE;
-            if (!is_array($loadedConfig) || ($loadedConfig['db_name'] ?? '') !== $dbNameSafe) {
-                throw new Exception('db_config.php fue escrito pero su contenido no es válido.');
-            }
-            $configStatus = 'OK (db_name=' . $loadedConfig['db_name'] . ')';
-
             // 6. Archivo de bloqueo
             file_put_contents(LOCK_FILE, date('Y-m-d H:i:s'));
 
@@ -204,11 +176,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // ─── Defaults del formulario ──────────────────────────────────────────────────
 $d = array_merge([
-    'db_host'     => 'localhost',
-    'db_port'     => '3306',
-    'db_name'     => DEFAULT_DB,
-    'db_user'     => 'root',
-    'db_password' => '',
     'admin_name'  => 'Josué Ventura',
     'admin_email' => 'josuevntra@gmail.com',
     'admin_code'  => 'ADMINWARRIOR',
@@ -241,7 +208,7 @@ if ($step === 'success') {
             <table>
                 <tr><th>URL de la app</th><td><a href="' . h($appUrl) . '">Abrir Cerrajería Express</a></td></tr>
                 <tr><th>Base de datos</th><td>' . h($dbNameSafe) . '</td></tr>
-                <tr><th>db_config.php</th><td>' . h($configStatus) . '</td></tr>
+                <tr><th>Conexión DB</th><td>Variables de entorno / panel de hosting</td></tr>
                 <tr><th>install/index.php</th><td>' . h($installerDeleteStatus) . '</td></tr>
                 <tr><th>Datos de ejemplo</th><td>' . h($sampleDataStatus) . '</td></tr>
             </table>
@@ -273,34 +240,7 @@ if (!empty($errors)) {
 
 $formHtml = $errorsHtml . '
 <form method="POST">
-    <div class="section-title">Base de datos</div>
-    <div class="row">
-        <div class="field" style="flex:3">
-            <label>Host</label>
-            <input type="text" name="db_host" value="' . h($d['db_host']) . '" required>
-        </div>
-        <div class="field" style="flex:1">
-            <label>Puerto</label>
-            <input type="number" name="db_port" value="' . h($d['db_port']) . '" min="1" max="65535" required>
-        </div>
-    </div>
-    <div class="field">
-        <label>Nombre de la base de datos</label>
-        <input type="text" name="db_name" value="' . h($d['db_name']) . '" required>
-        <small>Debe existir previamente. Solo letras, números, _ y -.</small>
-    </div>
-    <div class="row">
-        <div class="field">
-            <label>Usuario MySQL</label>
-            <input type="text" name="db_user" value="' . h($d['db_user']) . '" required autocomplete="username">
-        </div>
-        <div class="field">
-            <label>Contraseña MySQL</label>
-            <input type="password" name="db_password" autocomplete="current-password">
-        </div>
-    </div>
-
-    <div class="section-title" style="margin-top:1.5rem">Cuenta superadmin</div>
+    <div class="section-title">Cuenta superadmin</div>
     <div class="field">
         <label>Nombre completo</label>
         <input type="text" name="admin_name" value="' . h($d['admin_name']) . '" required>
@@ -327,9 +267,10 @@ $formHtml = $errorsHtml . '
     </div>
 
     <div class="hint-box">
-        <strong>Antes de instalar:</strong>
-        Crea la base de datos en phpMyAdmin:<br>
-        <code>CREATE DATABASE ' . h(DEFAULT_DB) . ' CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;</code>
+        <strong>Conexión de base de datos:</strong>
+        Este instalador usa las variables de entorno del servidor
+        (<code>DB_HOST</code>, <code>DB_PORT</code>, <code>DB_NAME</code>, <code>DB_USER</code>, <code>DB_PASSWORD</code>).
+        Verifica en tu panel de hosting que estén definidas.
         <br><br>
         <strong>Datos de ejemplo:</strong> Se insertarán automáticamente 2 talleres de prueba
         (CERRAHEREGT y ELECLOPEZ) con sus usuarios.
@@ -342,7 +283,7 @@ renderPage(APP_NAME . ' — Instalador', '
     <div class="card">
         <div class="logo">' . h(APP_NAME) . '</div>
         <h2>Instalación inicial</h2>
-        <p class="subtitle">Configura la base de datos y crea el primer usuario superadmin.</p>
+        <p class="subtitle">Crea el primer usuario superadmin usando la conexión DB del entorno.</p>
         ' . $formHtml . '
     </div>
 ');

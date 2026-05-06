@@ -19,18 +19,48 @@ class Database {
         'port'     => 3306,
     ];
 
+    private function readEnv(string $key): ?string {
+        $value = getenv($key);
+        if ($value !== false && $value !== '') {
+            return (string)$value;
+        }
+
+        if (isset($_ENV[$key]) && $_ENV[$key] !== '') {
+            return (string)$_ENV[$key];
+        }
+
+        if (isset($_SERVER[$key]) && $_SERVER[$key] !== '') {
+            return (string)$_SERVER[$key];
+        }
+
+        return null;
+    }
+
     public function __construct() {
         $installed = [];
         $configFile = __DIR__ . '/db_config.php';
         if (file_exists($configFile)) {
-            $installed = include $configFile;
+            $loaded = include $configFile;
+            if (is_array($loaded)) {
+                $installed = $loaded;
+            }
         }
 
-        $this->host     = $installed['host']     ?? getenv('DB_HOST')     ?: $this->defaults['host'];
-        $this->db_name  = $installed['db_name']  ?? getenv('DB_NAME')     ?: $this->defaults['db_name'];
-        $this->username = $installed['username'] ?? getenv('DB_USER')     ?: $this->defaults['username'];
-        $this->password = $installed['password'] ?? getenv('DB_PASSWORD') ?: $this->defaults['password'];
-        $this->port     = (int)($installed['port'] ?? getenv('DB_PORT')   ?: $this->defaults['port']);
+        $this->host     = $installed['host']     ?? $this->readEnv('DB_HOST')     ?? $this->defaults['host'];
+        $this->db_name  = $installed['db_name']  ?? $this->readEnv('DB_NAME')     ?? $this->defaults['db_name'];
+        $this->username = $installed['username'] ?? $this->readEnv('DB_USER')     ?? $this->defaults['username'];
+        $this->password = $installed['password'] ?? $this->readEnv('DB_PASSWORD') ?? $this->defaults['password'];
+        $this->port     = (int)($installed['port'] ?? $this->readEnv('DB_PORT')   ?? $this->defaults['port']);
+    }
+
+    public function getSettings(): array {
+        return [
+            'host' => $this->host,
+            'db_name' => $this->db_name,
+            'username' => $this->username,
+            'password' => $this->password,
+            'port' => $this->port,
+        ];
     }
 
     public function getConnection(): PDO {

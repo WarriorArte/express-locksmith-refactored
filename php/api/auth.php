@@ -10,11 +10,11 @@ require_once __DIR__ . '/helpers/bootstrap.php';
 handle_preflight();
 set_cors_headers();
 
-$conn   = get_db_connection();
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? 'check';
 
 try {
+    $conn = get_db_connection();
 
     // ── LOGIN ─────────────────────────────────────────────────────────────────
     if ($action === 'login') {
@@ -167,6 +167,6 @@ try {
 
     Response::error('Accion no reconocida', 400);
 
-} catch (Exception $e) {
+} catch (Throwable $e) {
     Response::serverError($e->getMessage());
 }
