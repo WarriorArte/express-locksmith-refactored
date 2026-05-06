@@ -102,8 +102,8 @@ export default function Configuracion() {
         currency_symbol: settings.currency_symbol || "$",
         phone_country_code: settings.phone_country_code || "+52",
         printer_model: settings.printer_model || "80mm",
-        print_logo: settings.print_logo ?? true,
-        auto_cut: settings.auto_cut ?? true,
+        print_logo: settings.print_logo == null ? true : !!settings.print_logo,
+        auto_cut: settings.auto_cut == null ? true : !!settings.auto_cut,
       });
     }
   }, [settings]);
