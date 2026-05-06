@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS user_roles (
   workshop_id CHAR(36) NULL,
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   PRIMARY KEY (id),
-  UNIQUE KEY uq_user_roles_user_role_workshop (user_id, role, workshop_id),
+  UNIQUE KEY uq_user_roles_user_workshop (user_id, workshop_id),
   KEY idx_user_roles_workshop (workshop_id),
   KEY idx_user_roles_user_workshop (user_id, workshop_id),
   CONSTRAINT fk_user_roles_user_id
@@ -161,7 +161,7 @@ CREATE TABLE IF NOT EXISTS categories (
   color VARCHAR(20) NOT NULL DEFAULT '#2563eb',
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   PRIMARY KEY (id),
-  UNIQUE KEY uq_categories_name (name),
+  UNIQUE KEY uq_categories_workshop_name (workshop_id, name),
   KEY idx_categories_workshop (workshop_id),
   CONSTRAINT fk_categories_workshop_id
     FOREIGN KEY (workshop_id) REFERENCES workshops(id)
@@ -175,7 +175,7 @@ CREATE TABLE IF NOT EXISTS tags (
   color VARCHAR(20) NOT NULL DEFAULT '#6366f1',
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   PRIMARY KEY (id),
-  UNIQUE KEY uq_tags_name (name),
+  UNIQUE KEY uq_tags_workshop_name (workshop_id, name),
   KEY idx_tags_workshop (workshop_id),
   CONSTRAINT fk_tags_workshop_id
     FOREIGN KEY (workshop_id) REFERENCES workshops(id)
@@ -298,7 +298,7 @@ CREATE TABLE IF NOT EXISTS quotes (
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (id),
-  UNIQUE KEY uq_quotes_number (quote_number),
+  UNIQUE KEY uq_quotes_workshop_number (workshop_id, quote_number),
   KEY idx_quotes_workshop (workshop_id),
   KEY idx_quotes_customer (customer_id),
   KEY idx_quotes_created_by (created_by),
@@ -366,7 +366,7 @@ CREATE TABLE IF NOT EXISTS services (
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (id),
-  UNIQUE KEY uq_services_number (service_number),
+  UNIQUE KEY uq_services_workshop_number (workshop_id, service_number),
   KEY idx_services_workshop (workshop_id),
   KEY idx_services_customer (customer_id),
   KEY idx_services_quote (quote_id),
@@ -440,7 +440,7 @@ CREATE TABLE IF NOT EXISTS sales (
   created_by CHAR(36) NULL,
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   PRIMARY KEY (id),
-  UNIQUE KEY uq_sales_number (sale_number),
+  UNIQUE KEY uq_sales_workshop_number (workshop_id, sale_number),
   KEY idx_sales_workshop (workshop_id),
   KEY idx_sales_customer (customer_id),
   KEY idx_sales_created_by (created_by),
