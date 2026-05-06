@@ -1,0 +1,30 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  # Archivo agnostico: funciona en raiz o subcarpeta sin ruta hardcodeada
+
+  # Redirigir siempre a HTTPS (opcional para produccion)
+  # RewriteCond %{HTTPS} off
+  # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  # Si el archivo o carpeta existe fisicamente, usalo directamente
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME} !-l
+
+  # Si no existe, envia todo al index.html para SPA
+  RewriteRule . index.html [L]
+</IfModule>
+
+<IfModule mod_mime.c>
+  AddType application/manifest+json .webmanifest
+</IfModule>
+
+<IfModule mod_headers.c>
+  <Files "manifest.webmanifest">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+  </Files>
+  <Files "service-worker.js">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+  </Files>
+</IfModule>

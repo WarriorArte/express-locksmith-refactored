@@ -1,0 +1,626 @@
+import { useState } from "react";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { motion } from "framer-motion";
+import { 
+  Plus, 
+  Wrench, 
+  Calendar,
+  User,
+  MoreVertical,
+  Edit,
+  Trash2,
+  Eye,
+  Car,
+  Home,
+  Building2,
+  Factory,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Package,
+  Truck,
+  Filter,
+  MapPin,
+  Loader2,
+  ImagePlus,
+  Printer,
+  Share2,
+} from "lucide-react";
+import { ServiceFormDialog } from "@/components/services/ServiceFormDialog";
+import { ServiceDetailSheet } from "@/components/services/ServiceDetailSheet";
+import { ServiceImagesDialog } from "@/components/services/ServiceImagesDialog";
+import { ServicePrintPreview } from "@/components/services/ServicePrintPreview";
+import { useServicePrint } from "@/hooks/useServicePrint";
+import { DetailViewDialog } from "@/components/shared/DetailViewDialog";
+import { UnifiedSearchInput } from "@/components/shared/UnifiedSearchInput";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
+import { useServices, useDeleteService, useUpdateService, type Service, type ServiceStatus, type ServiceType } from "@/hooks/useServices";
+import { useAuth } from "@/hooks/useAuth";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { useToast } from "@/hooks/use-toast";
+import { format, parseISO } from "date-fns";
+import { es } from "date-fns/locale";
+
+const statusConfig: Record<ServiceStatus, { label: string; color: string; icon: typeof Clock }> = {
+  pending: { label: "Pendiente", color: "bg-warning text-warning-foreground", icon: Clock },
+  in_progress: { label: "En Curso", color: "bg-info text-info-foreground", icon: Wrench },
+  completed: { label: "Finalizado", color: "bg-success text-success-foreground", icon: CheckCircle },
+  delivered: { label: "Entregado", color: "bg-primary text-primary-foreground", icon: Truck },
+  cancelled: { label: "Cancelado", color: "bg-destructive text-destructive-foreground", icon: XCircle },
+};
+
+const typeConfig: Record<ServiceType, { label: string; icon: typeof Car; color: string }> = {
+  automotive: { label: "Automotriz", icon: Car, color: "text-info" },
+  residential: { label: "Residencial", icon: Home, color: "text-success" },
+  commercial: { label: "Comercial", icon: Building2, color: "text-secondary" },
+  industrial: { label: "Industrial", icon: Factory, color: "text-primary" },
+};
+
+export default function Servicios() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | ServiceStatus>("all");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [formDialogOpen, setFormDialogOpen] = useState(false);
+  const [editingService, setEditingService] = useState<Service | null>(null);
+  const [imagesDialogOpen, setImagesDialogOpen] = useState(false);
+  const [imagesService, setImagesService] = useState<Service | null>(null);
+  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+  const [pdfPreviewService, setPdfPreviewService] = useState<Service | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [viewingService, setViewingService] = useState<Service | null>(null);
+  const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
+  const [mobileDetailService, setMobileDetailService] = useState<Service | null>(null);
+  
+  const { isAdmin } = useAuth();
+  const { toast } = useToast();
+  const { data: services, isLoading } = useServices();
+  const { data: settings } = useBusinessSettings();
+  const deleteService = useDeleteService();
+  const updateService = useUpdateService();
+  const { printService } = useServicePrint();
+
+  const currencySymbol = settings?.currency_symbol || "$";
+
+  const filteredServices = services?.filter((service) => {
+    const matchesSearch =
+      service.service_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      service.customer?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      service.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === "all" || service.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  }) || [];
+
+  const stats = {
+    pending: services?.filter(s => s.status === "pending").length || 0,
+    inProgress: services?.filter(s => s.status === "in_progress").length || 0,
+    completed: services?.filter(s => s.status === "completed").length || 0,
+    delivered: services?.filter(s => s.status === "delivered").length || 0,
+  };
+
+  const handleDelete = (service: Service) => {
+    setSelectedService(service);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (selectedService) {
+      await deleteService.mutateAsync(selectedService.id);
+      setDeleteDialogOpen(false);
+      setSelectedService(null);
+    }
+  };
+
+  const handleStatusChange = async (service: Service, newStatus: ServiceStatus) => {
+    const updates: Partial<Service> & { id: string } = {
+      id: service.id,
+      status: newStatus,
+    };
+    
+    if (newStatus === "in_progress" && !service.started_at) {
+      updates.started_at = new Date().toISOString();
+    } else if (newStatus === "completed" && !service.completed_at) {
+      updates.completed_at = new Date().toISOString();
+    } else if (newStatus === "delivered" && !service.delivered_at) {
+      updates.delivered_at = new Date().toISOString();
+    }
+    
+    await updateService.mutateAsync(updates);
+  };
+
+  const handlePrint = (service: Service) => {
+    printService(service);
+  };
+
+  const handlePreview = (service: Service) => {
+    setPdfPreviewService(service);
+    setPdfPreviewOpen(true);
+  };
+
+  const handleViewDetail = (service: Service) => {
+    setViewingService(service);
+    setDetailDialogOpen(true);
+  };
+
+  const handleShare = (service: Service) => {
+    const phone = service.customer?.phone;
+    const businessName = settings?.name || "Mi Negocio";
+    const statusLabel = statusConfig[service.status].label;
+    const typeLabel = typeConfig[service.service_type].label;
+    
+    const message = `*${businessName}*\n\n` +
+      `🔧 *Orden de Servicio ${service.service_number}*\n` +
+      `📅 ${format(parseISO(service.created_at), "dd/MM/yyyy", { locale: es })}\n\n` +
+      `*Tipo:* ${typeLabel}\n` +
+      `*Estado:* ${statusLabel}\n\n` +
+      `*Descripción:*\n${service.description}\n\n` +
+      (service.problem ? `*Problema:*\n${service.problem}\n\n` : "") +
+      (service.address ? `📍 ${service.address}\n\n` : "") +
+      `*Presupuesto: ${currencySymbol}${Number(service.estimated_price).toLocaleString()}*\n` +
+      (service.final_price ? `*Precio Final: ${currencySymbol}${Number(service.final_price).toLocaleString()}*\n` : "") +
+      `\n¡Gracias por su confianza!`;
+    
+    const encodedMessage = encodeURIComponent(message);
+    const phoneNumber = phone ? phone.replace(/\D/g, "") : "";
+    
+    if (phoneNumber) {
+      window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, "_blank");
+    } else {
+      navigator.clipboard.writeText(message);
+      toast({
+        title: "Mensaje copiado",
+        description: "El mensaje ha sido copiado al portapapeles.",
+      });
+    }
+  };
+
+  const getPdfData = (service: Service) => {
+    const productsSubtotal = service.service_products?.reduce((acc, p) => acc + Number(p.subtotal), 0) || 0;
+    return {
+      service_number: service.service_number,
+      created_at: service.created_at,
+      customer_name: service.customer?.name,
+      customer_phone: service.customer?.phone,
+      customer_address: service.address || service.customer?.address,
+      description: service.description,
+      problem: service.problem,
+      location: service.location || service.address,
+      items: service.service_products?.map(item => ({
+        id: item.id,
+        product_name: item.product_name,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        subtotal: item.subtotal,
+      })) || [],
+      subtotal: productsSubtotal + Number(service.labor_cost || 0),
+      discount: service.discount,
+      total: service.final_price || service.estimated_price,
+      notes: service.internal_notes,
+      status: statusConfig[service.status].label,
+      service_type: typeConfig[service.service_type].label,
+      labor_cost: service.labor_cost,
+      estimated_price: service.estimated_price,
+      final_price: service.final_price,
+    };
+  };
+
+  const getPrintData = (service: Service) => {
+    const productsSubtotal = service.service_products?.reduce((acc, p) => acc + Number(p.subtotal), 0) || 0;
+    return {
+      type: "service" as const,
+      number: service.service_number,
+      date: service.created_at,
+      customer_name: service.customer?.name,
+      customer_phone: service.customer?.phone,
+      customer_address: service.address || service.customer?.address,
+      description: service.description,
+      items: service.service_products?.map(item => ({
+        id: item.id,
+        product_name: item.product_name,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        subtotal: item.subtotal,
+      })) || [],
+      subtotal: productsSubtotal + Number(service.labor_cost || 0),
+      discount: service.discount,
+      total: service.final_price || service.estimated_price,
+      notes: service.internal_notes,
+      status: statusConfig[service.status].label,
+    };
+  };
+
+  const getDetailData = (service: Service) => {
+    const productsSubtotal = service.service_products?.reduce((acc, p) => acc + Number(p.subtotal), 0) || 0;
+    return {
+      type: "service" as const,
+      number: service.service_number,
+      date: service.created_at,
+      status: service.status,
+      customer_name: service.customer?.name,
+      customer_phone: service.customer?.phone,
+      customer_email: service.customer?.email,
+      customer_address: service.address || service.customer?.address,
+      description: service.description,
+      problem: service.problem,
+      items: service.service_products?.map(item => ({
+        id: item.id,
+        product_name: item.product_name,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        subtotal: item.subtotal,
+      })) || [],
+      subtotal: productsSubtotal,
+      discount: service.discount,
+      total: service.final_price || service.estimated_price,
+      notes: service.internal_notes,
+      estimated_price: service.estimated_price,
+      final_price: service.final_price,
+      labor_cost: service.labor_cost,
+      images: service.service_images,
+    };
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const filterChips: { key: "all" | ServiceStatus; label: string }[] = [
+    { key: "all", label: "Todos" },
+    { key: "pending", label: "Pendientes" },
+    { key: "in_progress", label: "En Curso" },
+    { key: "completed", label: "Finalizados" },
+    { key: "delivered", label: "Entregados" },
+    { key: "cancelled", label: "Cancelados" },
+  ];
+
+  const openMobileDetail = (service: Service) => {
+    setMobileDetailService(service);
+    setMobileDetailOpen(true);
+  };
+
+  return (
+    <div className="space-y-5">
+      {/* Sticky: Header + Chips + Search */}
+      <div className="sticky top-0 z-10 bg-background -mx-5 lg:-mx-6 px-5 lg:px-6 pb-4 relative">
+        <div className="absolute inset-x-0 -top-10 lg:-top-2 h-10 lg:h-2 bg-background" />
+        <PageHeader
+          title="Servicios"
+          subtitle={
+            <>
+              <span className="text-primary font-bold">{stats.inProgress}</span> en curso ·{" "}
+              <span className="text-warning font-bold">{stats.pending}</span> pendientes
+            </>
+          }
+          mobileAction={
+            <button
+              type="button"
+              aria-label="Nuevo servicio"
+              onClick={() => { setEditingService(null); setFormDialogOpen(true); }}
+              className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-[0_0_16px_hsl(var(--primary)/0.40)] active:scale-95 transition-transform"
+            >
+              <Plus className="w-5 h-5" strokeWidth={2.5} />
+            </button>
+          }
+          action={
+            <Button
+              size="sm"
+              className="bg-primary text-primary-foreground hover:bg-primary-hover"
+              onClick={() => { setEditingService(null); setFormDialogOpen(true); }}
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Nuevo
+            </Button>
+          }
+        />
+
+        <UnifiedSearchInput
+          placeholder="Buscar folio, cliente..."
+          value={searchQuery}
+          onChange={setSearchQuery}
+        />
+
+        {/* Filter chips */}
+        <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 mt-3">
+          {filterChips.map((c) => {
+            const active = statusFilter === c.key;
+            return (
+              <button
+                key={c.key}
+                type="button"
+                onClick={() => setStatusFilter(c.key)}
+                className={cn(
+                  "chip whitespace-nowrap",
+                  active ? "chip-active" : "chip-default",
+                )}
+              >
+                {c.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {filteredServices.length === 0 ? (
+        <div className="card-elevated p-8 text-center">
+          <Wrench className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+          <h3 className="font-semibold text-lg mb-2">No hay servicios</h3>
+          <p className="text-muted-foreground">
+            {searchQuery ? "No se encontraron resultados" : "Registra tu primer servicio"}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredServices.map((service, index) => {
+            const status = statusConfig[service.status];
+            const type = typeConfig[service.service_type];
+            const StatusIcon = status.icon;
+            const TypeIcon = type.icon;
+            const price = service.final_price ?? service.estimated_price ?? 0;
+            const imgs = service.service_images ?? [];
+
+            return (
+              <motion.div
+                key={service.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 + index * 0.05 }}
+                className="card-elevated overflow-hidden cursor-pointer active:scale-[0.99] transition-transform"
+                onClick={() => openMobileDetail(service)}
+              >
+                <div className="p-4">
+                  {/* Header: icono + número + badges | precio + menú */}
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={cn(
+                        "p-2.5 rounded-xl flex-shrink-0",
+                        service.status === "in_progress" ? "bg-info-light" : "bg-muted"
+                      )}>
+                        <TypeIcon className={cn("w-5 h-5", type.color)} />
+                      </div>
+                      <div>
+                        <p className="font-mono text-sm text-primary font-semibold leading-tight">{service.service_number}</p>
+                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                          <Badge className={cn("text-xs", status.color)}>
+                            <StatusIcon className="w-3 h-3 mr-1" />
+                            {status.label}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">{type.label}</Badge>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-1 flex-shrink-0">
+                      <div className="text-right">
+                        <p className="text-[11px] text-muted-foreground uppercase tracking-wide leading-tight">
+                          {service.final_price ? "Final" : "Estimado"}
+                        </p>
+                        <p className={cn("text-xl font-bold", service.final_price ? "text-success" : "text-foreground")}>
+                          {currencySymbol}{Number(price).toLocaleString()}
+                        </p>
+                      </div>
+                      <div onClick={(e) => e.stopPropagation()} className="hidden md:block">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 -mt-1">
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleViewDetail(service)}>
+                              <Eye className="w-4 h-4 mr-2" /> Ver detalle
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handlePrint(service)}>
+                              <Printer className="w-4 h-4 mr-2" /> Imprimir Ticket
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handlePreview(service)}>
+                              <Eye className="w-4 h-4 mr-2" /> Vista previa
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleShare(service)}>
+                              <Share2 className="w-4 h-4 mr-2" /> Compartir WhatsApp
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => { setImagesService(service); setImagesDialogOpen(true); }}>
+                              <ImagePlus className="w-4 h-4 mr-2" /> Agregar imágenes
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => { setEditingService(service); setFormDialogOpen(true); }}>
+                              <Edit className="w-4 h-4 mr-2" /> Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            {service.status === "pending" && (
+                              <DropdownMenuItem className="text-info" onClick={() => handleStatusChange(service, "in_progress")}>
+                                <Wrench className="w-4 h-4 mr-2" /> Iniciar servicio
+                              </DropdownMenuItem>
+                            )}
+                            {service.status === "in_progress" && (
+                              <DropdownMenuItem className="text-success" onClick={() => handleStatusChange(service, "completed")}>
+                                <CheckCircle className="w-4 h-4 mr-2" /> Marcar completado
+                              </DropdownMenuItem>
+                            )}
+                            {service.status === "completed" && (
+                              <DropdownMenuItem className="text-primary" onClick={() => handleStatusChange(service, "delivered")}>
+                                <Truck className="w-4 h-4 mr-2" /> Marcar entregado
+                              </DropdownMenuItem>
+                            )}
+                            {(service.status === "pending" || service.status === "in_progress") && (
+                              <DropdownMenuItem className="text-warning" onClick={() => handleStatusChange(service, "cancelled")}>
+                                <XCircle className="w-4 h-4 mr-2" /> Cancelar servicio
+                              </DropdownMenuItem>
+                            )}
+                            {isAdmin && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(service)}>
+                                  <Trash2 className="w-4 h-4 mr-2" /> Eliminar
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Descripción */}
+                  <p className="text-sm font-medium text-foreground truncate mb-1">{service.description}</p>
+                  {service.problem && (
+                    <p className="text-xs text-muted-foreground line-clamp-1 mb-2">{service.problem}</p>
+                  )}
+
+                  {/* Cliente + fecha */}
+                  <div className="flex items-center justify-between gap-2 text-sm">
+                    <span className="flex items-center gap-1.5 min-w-0">
+                      <User className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                      <span className="truncate text-foreground font-medium">
+                        {service.customer?.name || "Sin cliente"}
+                      </span>
+                    </span>
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
+                      <Calendar className="w-3 h-3" />
+                      {format(parseISO(service.created_at), "dd MMM · HH:mm", { locale: es })}
+                    </span>
+                  </div>
+
+                  {/* Dirección */}
+                  {service.address && (
+                    <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
+                      <MapPin className="w-3 h-3 flex-shrink-0" />
+                      <span className="truncate">{service.address}</span>
+                    </div>
+                  )}
+
+                  {/* Imágenes */}
+                  {imgs.length > 0 && (
+                    <div className="flex gap-1.5 mt-3 pt-3 border-t">
+                      {imgs.slice(0, 4).map((img: any) => (
+                        <div key={img.id} className="w-11 h-11 rounded-xl overflow-hidden bg-muted flex-shrink-0 flex items-center justify-center">
+                          {img.image_url ? (
+                            <img src={img.image_url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <Package className="w-4 h-4 text-muted-foreground" />
+                          )}
+                        </div>
+                      ))}
+                      {imgs.length > 4 && (
+                        <div className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground flex-shrink-0">
+                          +{imgs.length - 4}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Delete Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar servicio?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Se eliminará permanentemente el servicio {selectedService?.service_number}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground">
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Form Dialog */}
+      <ServiceFormDialog
+        open={formDialogOpen}
+        onOpenChange={setFormDialogOpen}
+        service={editingService}
+      />
+
+      {/* Images Dialog */}
+      <ServiceImagesDialog
+        open={imagesDialogOpen}
+        onOpenChange={setImagesDialogOpen}
+        service={imagesService}
+      />
+
+      {/* Detail Dialog */}
+      <DetailViewDialog
+        open={detailDialogOpen}
+        onOpenChange={setDetailDialogOpen}
+        data={viewingService ? getDetailData(viewingService) : null}
+        onEdit={() => {
+          setDetailDialogOpen(false);
+          setEditingService(viewingService);
+          setFormDialogOpen(true);
+        }}
+        onPrint={() => viewingService && handlePrint(viewingService)}
+        overflowActions={[
+          { icon: Eye, label: "PDF", onClick: () => { viewingService && handlePreview(viewingService); } },
+          { icon: Share2, label: "WhatsApp", onClick: () => { viewingService && handleShare(viewingService); } },
+          { icon: ImagePlus, label: "Agregar imágenes", onClick: () => { viewingService && setImagesService(viewingService); setImagesDialogOpen(true); } },
+          ...(viewingService?.status === "pending" ? [
+            { icon: Wrench, label: "Iniciar servicio", onClick: () => { viewingService && handleStatusChange(viewingService, "in_progress"); }, className: "text-info", separator: true },
+          ] : []),
+          ...(viewingService?.status === "in_progress" ? [
+            { icon: CheckCircle, label: "Marcar completado", onClick: () => { viewingService && handleStatusChange(viewingService, "completed"); }, className: "text-success", separator: true },
+          ] : []),
+          ...(viewingService?.status === "completed" ? [
+            { icon: Truck, label: "Marcar entregado", onClick: () => { viewingService && handleStatusChange(viewingService, "delivered"); }, className: "text-primary", separator: true },
+          ] : []),
+          ...((viewingService?.status === "pending" || viewingService?.status === "in_progress") ? [
+            { icon: XCircle, label: "Cancelar servicio", onClick: () => { viewingService && handleStatusChange(viewingService, "cancelled"); }, className: "text-warning" },
+          ] : []),
+        ]}
+        onDelete={isAdmin ? () => { viewingService && handleDelete(viewingService); } : undefined}
+      />
+
+      {/* PDF Preview Dialog */}
+      <ServicePrintPreview
+        open={pdfPreviewOpen}
+        onOpenChange={setPdfPreviewOpen}
+        service={pdfPreviewService ? getPdfData(pdfPreviewService) : null}
+      />
+
+      {/* Mobile detail sheet (Redesign v2) */}
+      <ServiceDetailSheet
+        service={mobileDetailService}
+        open={mobileDetailOpen}
+        onOpenChange={setMobileDetailOpen}
+        currencySymbol={currencySymbol}
+        onEdit={(s) => { setMobileDetailOpen(false); setEditingService(s); setFormDialogOpen(true); }}
+        onStatusChange={(s, next) => handleStatusChange(s, next)}
+        onPrint={(s) => handlePrint(s)}
+        onPreview={(s) => handlePreview(s)}
+        onShare={(s) => handleShare(s)}
+        onAddImages={(s) => { setMobileDetailOpen(false); setImagesService(s); setImagesDialogOpen(true); }}
+        onCancel={(s) => { handleStatusChange(s, "cancelled"); setMobileDetailOpen(false); }}
+        onDelete={isAdmin ? (s) => { setMobileDetailOpen(false); handleDelete(s); } : undefined}
+      />
+    </div>
+  );
+}
