@@ -2,6 +2,12 @@ Options -Indexes
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase __BASE_PATH__
+
+  # Laravel backend entrypoints (installer + legacy API under /api/*.php)
+  RewriteRule ^install/?$ backend/public/index.php [L,QSA,NC]
+  RewriteRule ^api(/.*)?$ backend/public/index.php [L,QSA,NC]
+  RewriteRule ^up/?$ backend/public/index.php [L,QSA,NC]
+
   RewriteRule ^index\.html$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d

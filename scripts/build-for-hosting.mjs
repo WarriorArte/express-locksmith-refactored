@@ -105,11 +105,11 @@ function indexTarget(base) {
 
 async function writeDistHtaccess() {
   const modeToFile = {
-    hosting: "php/.htaccess.hosting.example",
-    wamp: "php/.htaccess",
+    hosting: "deploy/.htaccess.hosting.example",
+    wamp: "deploy/.htaccess.wamp",
   };
 
-  const sourceRel = modeToFile[HTACCESS_MODE] || "php/.htaccess.hosting.example";
+  const sourceRel = modeToFile[HTACCESS_MODE] || "deploy/.htaccess.hosting.example";
   const src = path.resolve(PROJECT_ROOT, sourceRel);
   const dst = path.resolve(DIST_DIR, ".htaccess");
 
@@ -138,13 +138,6 @@ async function main() {
     await copyFiltered(backendSrc, path.resolve(DIST_DIR, "backend"));
     console.log("[build] backend -> dist/backend");
     await writeRuntimeEnv("backend", "backend");
-  }
-
-  const phpSrc = path.resolve(PROJECT_ROOT, "php");
-  if (existsSync(phpSrc)) {
-    await copyFiltered(phpSrc, path.resolve(DIST_DIR, "php"));
-    console.log("[build] php -> dist/php");
-    await writeRuntimeEnv("php", "php");
   }
 
   await writeDistHtaccess();

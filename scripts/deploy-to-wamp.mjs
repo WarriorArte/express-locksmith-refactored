@@ -19,12 +19,16 @@ const EXCLUDE_PATTERNS = [
   /(^|\\|\/)\.git(\\|\/)/,
   /db_config\.php$/,
   /installed\.lock$/,
+  /(^|\\|\/)\.env$/,
 ];
 
 const PERSISTENT_PATHS = [
-  "php/config/db_config.php",
-  "php/installed.lock",
-  "php/uploads",
+  "backend/.env",
+  "backend/storage/app/installed.lock",
+  "backend/storage/logs",
+  "backend/storage/framework/cache",
+  "backend/storage/framework/sessions",
+  "backend/storage/framework/views",
 ];
 
 function shouldExclude(filePath) {
@@ -77,11 +81,11 @@ function indexTarget(base) {
 
 async function writeDistHtaccess() {
   const modeToFile = {
-    hosting: "php/.htaccess.hosting.example",
-    wamp: "php/.htaccess",
+    hosting: "deploy/.htaccess.hosting.example",
+    wamp: "deploy/.htaccess.wamp",
   };
 
-  const sourceRel = modeToFile[HTACCESS_MODE] || "php/.htaccess";
+  const sourceRel = modeToFile[HTACCESS_MODE] || "deploy/.htaccess.wamp";
   const src = path.resolve(PROJECT_ROOT, sourceRel);
   const dst = path.resolve(DIST_DIR, ".htaccess");
 
@@ -125,10 +129,10 @@ async function main() {
   console.log(`[deploy] vite --base=${BASE_PATH}`);
   execSync(`npx vite build --base=${BASE_PATH}`, { stdio: "inherit", cwd: PROJECT_ROOT });
 
-  const phpSrc = path.resolve(PROJECT_ROOT, "php");
-  if (existsSync(phpSrc)) {
-    await copyFiltered(phpSrc, path.resolve(DIST_DIR, "php"));
-    console.log("[deploy] php -> dist/php");
+  const backendSrc = path.resolve(PROJECT_ROOT, "backend");
+  if (existsSync(backendSrc)) {
+    await copyFiltered(backendSrc, path.resolve(DIST_DIR, "backend"));
+    console.log("[deploy] backend -> dist/backend");
   }
 
   await writeDistHtaccess();
