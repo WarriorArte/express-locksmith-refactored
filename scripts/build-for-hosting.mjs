@@ -16,6 +16,7 @@ const EXCLUDE_PATTERNS = [
   /(^|\\|\/)\.git(\\|\/)/,
   /db_config\.php$/,
   /installed\.lock$/,
+  /(^|\\|\/)\.env$/,
 ];
 
 function shouldExclude(filePath) {
@@ -45,6 +46,56 @@ function normalizeBase(base) {
   if (!out.startsWith("/")) out = `/${out}`;
   if (!out.endsWith("/")) out = `${out}/`;
   return out;
+}
+
+function envValue(key, fallbackKeys = []) {
+  const keys = [key, ...fallbackKeys];
+  for (const k of keys) {
+    const value = process.env[k];
+    if (value !== undefined && value !== null && String(value).trim() !== "") {
+      return String(value).trim();
+    }
+  }
+  return "";
+}
+
+function quoteEnvValue(value) {
+  return value
+    .replace(/\\/g, "\\\\")
+    .replace(/\n/g, "\\n")
+    .replace(/\r/g, "")
+    .replace(/"/g, '\\"');
+}
+
+async function writePhpRuntimeEnv() {
+  const config = {
+    DB_HOST: envValue("DB_HOST", ["PHP_DB_HOST", "MYSQL_HOST"]),
+    DB_PORT: envValue("DB_PORT", ["PHP_DB_PORT", "MYSQL_PORT"]),
+    DB_NAME: envValue("DB_NAME", ["PHP_DB_NAME", "MYSQL_DATABASE"]),
+    DB_USER: envValue("DB_USER", ["PHP_DB_USER", "DB_USERNAME", "MYSQL_USER"]),
+    DB_PASSWORD: envValue("DB_PASSWORD", ["PHP_DB_PASSWORD", "DB_PASS", "MYSQL_PASSWORD"]),
+    CORS_ALLOWED_ORIGINS: envValue("CORS_ALLOWED_ORIGINS", ["PHP_CORS_ALLOWED_ORIGINS"]),
+  };
+
+  const required = ["DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD"];
+  const missing = required.filter((key) => !config[key]);
+
+  if (missing.length > 0) {
+    console.log(`[build] skip dist/php/.env (faltan variables: ${missing.join(", ")})`);
+    return;
+  }
+
+  const envLines = [
+    "# Auto-generated at build time",
+    ...Object.entries(config)
+      .filter(([, value]) => value)
+      .map(([key, value]) => `${key}="${quoteEnvValue(value)}"`),
+    "",
+  ];
+
+  const targetPath = path.resolve(DIST_DIR, "php", ".env");
+  await writeFile(targetPath, envLines.join("\n"), "utf8");
+  console.log("[build] dist/php/.env generado desde variables de entorno");
 }
 
 function indexTarget(base) {
@@ -86,6 +137,7 @@ async function main() {
   if (existsSync(phpSrc)) {
     await copyFiltered(phpSrc, path.resolve(DIST_DIR, "php"));
     console.log("[build] php -> dist/php");
+    await writePhpRuntimeEnv();
   }
 
   await writeDistHtaccess();
