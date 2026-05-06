@@ -2,7 +2,8 @@ import { motion } from "framer-motion";
 import { Package, FileText, Users, Wrench, ShoppingCart, Clock, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
-import { phpApiRequest } from "@/lib/phpApi";
+import { getPhpAuthToken, phpApiRequest } from "@/lib/phpApi";
+import { useAuth } from "@/hooks/useAuth";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
@@ -26,11 +27,12 @@ const typeConfig = {
 
 export function RecentActivity() {
   const { currentWorkshop } = useWorkshop();
+  const { user, loading: authLoading } = useAuth();
 
   const { data: activities, isLoading } = useQuery({
-    queryKey: ["recent-activity", currentWorkshop?.id],
+    queryKey: ["recent-activity", user?.id, currentWorkshop?.id],
     queryFn: async () => {
-      if (!currentWorkshop?.id) return [];
+      if (!user || !currentWorkshop?.id || !getPhpAuthToken()) return [];
 
       const results: Activity[] = [];
 
@@ -124,8 +126,9 @@ export function RecentActivity() {
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         .slice(0, 8);
     },
-    enabled: !!currentWorkshop?.id,
+    enabled: !authLoading && !!user && !!currentWorkshop?.id && !!getPhpAuthToken(),
     refetchInterval: 30000, // Refresh every 30 seconds
+    retry: false,
   });
 
   if (isLoading) {

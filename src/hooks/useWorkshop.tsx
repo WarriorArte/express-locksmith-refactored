@@ -168,13 +168,8 @@ export function WorkshopProvider({ children }: { children: ReactNode }) {
 
         // 3. Determinar taller actual
         if (superAdmin) {
-          // SuperAdmin: usar preferencia guardada o null
-          if (profile?.current_workshop_id) {
-            const saved = availableWorkshops.find((w) => w.id === profile.current_workshop_id);
-            setCurrentWorkshopState(saved || null);
-          } else {
-            setCurrentWorkshopState(null);
-          }
+          // SuperAdmin: arrancar en contexto global. Puede seleccionar un taller manualmente.
+          setCurrentWorkshopState(null);
         } else {
           // Usuario normal: debe tener taller
           if (profile?.current_workshop_id) {

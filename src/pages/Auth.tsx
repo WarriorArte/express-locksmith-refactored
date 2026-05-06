@@ -90,9 +90,17 @@ export default function Auth() {
       const activeWorkshops = (workshops || []).filter((w) => !!w.is_active);
 
       // 3. Buscar el taller por código; si es superadmin y no coincide, usar el primero disponible
-      const selectedWorkshop =
-        activeWorkshops.find((w) => w.code?.toUpperCase() === normalizedCode) ??
-        (isSuperAdmin ? activeWorkshops[0] : undefined);
+      if (isSuperAdmin) {
+        toast({
+          title: "Bienvenido",
+          description: "Has iniciado sesion como SuperAdmin",
+        });
+
+        navigate("/superadmin", { replace: true });
+        return;
+      }
+
+      const selectedWorkshop = activeWorkshops.find((w) => w.code?.toUpperCase() === normalizedCode);
 
       if (!selectedWorkshop) {
         await signOut();

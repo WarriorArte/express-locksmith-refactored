@@ -39,8 +39,8 @@ type WorkshopFeatureRow = {
 type UserRoleRow = {
   id: string;
   user_id: string;
-  workshop_id: string;
-  role: "admin" | "employee";
+  workshop_id: string | null;
+  role: "admin" | "employee" | null;
   globalRole: string | null;
   profile: {
     id: string;
@@ -124,39 +124,31 @@ export default function SuperAdmin() {
   const { data: userRoles, isLoading: usersLoading } = useQuery({
     queryKey: ["superadmin-user-roles", workshops?.length || 0],
     queryFn: async () => {
-      if (!workshops?.length) return [] as UserRoleRow[];
+      const rows = await phpApiRequest<Array<{
+        id: string;
+        user_id: string;
+        workshop_id: string | null;
+        workshop_role: "admin" | "employee" | null;
+        full_name: string | null;
+        email: string | null;
+        global_role?: string | null;
+      }>>("/profiles.php?action=system-roles");
 
-      const usersByWorkshop = await Promise.all(
-        workshops.map(async (workshop) => {
-          const rows = await phpApiRequest<Array<{
-            id: string;
-            user_id: string;
-            workshop_id: string;
-            workshop_role: "admin" | "employee";
-            full_name: string | null;
-            email: string | null;
-            global_role?: string | null;
-          }>>(`/profiles.php?workshop_id=${encodeURIComponent(workshop.id)}`);
-
-          return rows.map((row) => ({
-            id: `${row.user_id}:${row.workshop_id}`,
-            user_id: row.user_id,
-            workshop_id: row.workshop_id,
-            role: row.workshop_role,
-            globalRole: row.global_role || null,
-            profile: {
-              id: row.id,
-              user_id: row.user_id,
-              full_name: row.full_name,
-              email: row.email,
-            },
-          }));
-        })
-      );
-
-      return usersByWorkshop.flat();
+      return (rows || []).map((row) => ({
+        id: `${row.user_id}:${row.workshop_id || "global"}`,
+        user_id: row.user_id,
+        workshop_id: row.workshop_id,
+        role: row.workshop_role,
+        globalRole: row.global_role || null,
+        profile: {
+          id: row.id,
+          user_id: row.user_id,
+          full_name: row.full_name,
+          email: row.email,
+        },
+      }));
     },
-    enabled: isSuperAdmin && !!workshops,
+    enabled: isSuperAdmin,
   });
 
   // Fetch workshop features

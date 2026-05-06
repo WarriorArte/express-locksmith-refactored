@@ -68,7 +68,7 @@ export function Sidebar({
 }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentWorkshop, isSuperAdmin, isLoading } = useWorkshop();
+  const { currentWorkshop, isSuperAdmin, isLoading, setCurrentWorkshop } = useWorkshop();
   const { isFeatureEnabled } = useWorkshopFeatures();
   const { signOut } = useAuth();
 
@@ -198,6 +198,7 @@ export function Sidebar({
               if (location.pathname === "/superadmin") {
                 e.preventDefault();
               }
+              void setCurrentWorkshop(null);
             }}
             className={cn(
               "sidebar-nav-item group mt-4 border-t border-sidebar-border pt-4",
