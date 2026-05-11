@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
-import { cp, mkdir, readFile, writeFile } from "node:fs/promises";
+import { access, cp, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 
@@ -11,6 +12,59 @@ const BASE_PATH     = process.env.BUILD_BASE || "/";
 const BACKEND_PATH  = (process.env.BACKEND_PATH || "").trim();
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+async function pathExists(p) {
+  try { await access(p); return true; } catch { return false; }
+}
+
+async function isLaravelBackend(p) {
+  return pathExists(path.join(p, "artisan"));
+}
+
+async function findBackendPath() {
+  // 1. BACKEND_PATH definido manualmente → verificar y usar
+  if (BACKEND_PATH) {
+    if (await isLaravelBackend(BACKEND_PATH)) return BACKEND_PATH;
+    console.warn(`[build] BACKEND_PATH="${BACKEND_PATH}" no contiene artisan, buscando automáticamente...`);
+  }
+
+  // 2. Subir desde PROJECT_ROOT hasta encontrar public_html/, buscar backend/ al lado
+  let current = PROJECT_ROOT;
+  for (let i = 0; i < 12; i++) {
+    if (path.basename(current) === "public_html") {
+      const candidate = path.join(path.dirname(current), "backend");
+      if (await isLaravelBackend(candidate)) {
+        console.log(`[build] backend encontrado en: ${candidate}`);
+        return candidate;
+      }
+    }
+    const parent = path.dirname(current);
+    if (parent === current) break;
+    current = parent;
+  }
+
+  // 3. Buscar en ~/domains/*/backend/
+  const domainsDir = path.join(os.homedir(), "domains");
+  if (await pathExists(domainsDir)) {
+    const domains = await readdir(domainsDir);
+    for (const domain of domains) {
+      const candidate = path.join(domainsDir, domain, "backend");
+      if (await isLaravelBackend(candidate)) {
+        console.log(`[build] backend encontrado en: ${candidate}`);
+        return candidate;
+      }
+    }
+  }
+
+  // 4. Buscar en ~/backend/
+  const homeBackend = path.join(os.homedir(), "backend");
+  if (await isLaravelBackend(homeBackend)) {
+    console.log(`[build] backend encontrado en: ${homeBackend}`);
+    return homeBackend;
+  }
+
+  return null;
+}
 
 function normalizeBase(base) {
   let out = base.trim();
@@ -45,31 +99,26 @@ async function writeDistHtaccess() {
 // Si BACKEND_PATH está definido → redirige al Laravel real fuera de public_html.
 // Si no está definido → devuelve JSON de error (nunca HTML, para no romper el SW).
 
-async function createBackendBridge() {
+async function createBackendBridge(backendPath) {
   const dir = path.resolve(DIST_DIR, "backend/public");
   await mkdir(dir, { recursive: true });
 
   let content;
-  if (BACKEND_PATH) {
+  if (backendPath) {
     content = `<?php
-$backend = '${BACKEND_PATH}';
-if (!is_dir($backend)) {
-    http_response_code(503);
-    header('Content-Type: application/json');
-    die(json_encode(['error' => 'Backend no encontrado en: ' . $backend]));
-}
+$backend = '${backendPath}';
 chdir($backend . '/public');
 $_SERVER['SCRIPT_FILENAME'] = $backend . '/public/index.php';
 require $backend . '/public/index.php';
 `;
-    console.log(`[build] bridge API → ${BACKEND_PATH}/public/index.php`);
+    console.log(`[build] bridge API → ${backendPath}/public/index.php`);
   } else {
     content = `<?php
 header('Content-Type: application/json');
 http_response_code(503);
-echo json_encode(['error' => 'BACKEND_PATH no configurado en el entorno de build.']);
+echo json_encode(['error' => 'Backend no encontrado. Define BACKEND_PATH en el entorno de build.']);
 `;
-    console.log("[build] bridge API → placeholder JSON (BACKEND_PATH no definido)");
+    console.log("[build] bridge API → placeholder JSON (backend no encontrado)");
   }
 
   await writeFile(path.resolve(dir, "index.php"), content, "utf8");
@@ -80,14 +129,14 @@ echo json_encode(['error' => 'BACKEND_PATH no configurado en el entorno de build
 // Si BACKEND_PATH está definido → sirve archivos desde el backend externo.
 // Si no → devuelve JSON de error.
 
-async function createUploadServer() {
+async function createUploadServer(backendPath) {
   const dir = path.resolve(DIST_DIR, "backend/public");
   await mkdir(dir, { recursive: true });
 
   let content;
-  if (BACKEND_PATH) {
+  if (backendPath) {
     content = `<?php
-$backend = '${BACKEND_PATH}';
+$backend = '${backendPath}';
 $file    = $_GET['f'] ?? '';
 
 $file = str_replace(['..', '\\\\'], '', $file);
@@ -109,7 +158,7 @@ header('Content-Length: ' . filesize($full));
 header('Cache-Control: public, max-age=31536000');
 readfile($full);
 `;
-    console.log(`[build] serve-upload → ${BACKEND_PATH}/public/uploads/`);
+    console.log(`[build] serve-upload → ${backendPath}/public/uploads/`);
   } else {
     content = `<?php
 header('Content-Type: application/json');
@@ -125,9 +174,12 @@ echo json_encode(['error' => 'BACKEND_PATH no configurado en el entorno de build
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
-  console.log("[build:env] BACKEND_PATH  =", BACKEND_PATH  || "(no definido)");
+  console.log("[build:env] BACKEND_PATH  =", BACKEND_PATH || "(no definido, se buscará automáticamente)");
   console.log("[build:env] BASE_PATH     =", BASE_PATH);
   console.log("[build:env] HTACCESS_MODE =", HTACCESS_MODE);
+
+  const resolvedBackend = await findBackendPath();
+  console.log("[build:env] backend resuelto =", resolvedBackend ?? "(no encontrado)");
 
   const base = normalizeBase(BASE_PATH);
   console.log(`[build] vite --base=${base}`);
@@ -138,12 +190,12 @@ async function main() {
   );
 
   await writeDistHtaccess();
-  await createBackendBridge();
-  await createUploadServer();
+  await createBackendBridge(resolvedBackend);
+  await createUploadServer(resolvedBackend);
 
   console.log("[build] listo. dist/ → public_html/");
-  if (!BACKEND_PATH) {
-    console.log("[build] AVISO: define BACKEND_PATH en Hostinger para conectar al backend real.");
+  if (!resolvedBackend) {
+    console.log("[build] AVISO: backend no encontrado. Los bridges PHP devolverán 503.");
   }
 }
 
