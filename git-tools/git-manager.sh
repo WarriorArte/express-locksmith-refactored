@@ -67,7 +67,9 @@ main_menu() {
     echo "10) 🔄 Sincronizar con GitHub"
     echo "11) 📜 Ver historial de commits"
     echo "12) 🗑️  Limpiar referencias antiguas (reflog)"
-    echo "13) 🚪 Salir"
+    echo "13) 💾 Commit + Push"
+    echo "14) 🔀 Cambiar de rama (con stash automático)"
+    echo "15) 🚪 Salir"
     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
     read -p "👉 Selecciona opción: " OPTION
@@ -454,6 +456,13 @@ keep_last_n() {
 
     echo ""
     echo -e "${GREEN}✅ Historial reducido a $LOCAL_COUNT commits (LOCAL)${NC}"
+
+    # Limpiar reflog y garbage collect para eliminar commits huérfanos
+    echo ""
+    echo -e "${BLUE}🧹 Limpiando reflog y commits huérfanos...${NC}"
+    git reflog expire --expire=now --all
+    git gc --prune=now --quiet
+    echo -e "${GREEN}✅ Limpieza completa — git log --all ahora mostrará solo los commits activos${NC}"
     
     read -p "¿Subir cambios a GitHub en rama '$CURRENT_BRANCH'? (s/n): " PUSH
     if [[ "$PUSH" == "s" ]]; then
@@ -548,6 +557,13 @@ keep_last_one() {
 
     echo ""
     echo -e "${GREEN}✅ Solo se mantiene el último commit (LOCAL)${NC}"
+
+    # Limpiar reflog y garbage collect para eliminar commits huérfanos
+    echo ""
+    echo -e "${BLUE}🧹 Limpiando reflog y commits huérfanos...${NC}"
+    git reflog expire --expire=now --all
+    git gc --prune=now --quiet
+    echo -e "${GREEN}✅ Limpieza completa — git log --all ahora mostrará solo los commits activos${NC}"
     
     read -p "¿Subir cambios a GitHub en rama '$CURRENT_BRANCH'? (s/n): " PUSH
     if [[ "$PUSH" == "s" ]]; then
@@ -794,6 +810,258 @@ cleanup_reflog() {
     esac
 }
 
+
+
+# Opción 13: Commit + Push
+commit_and_push() {
+    show_header
+    echo -e "${BLUE}💾 COMMIT + PUSH${NC}"
+    echo ""
+
+    CURRENT_BRANCH=$(git branch --show-current)
+    echo -e "${GREEN}📌 Rama actual:${NC} $CURRENT_BRANCH"
+    echo ""
+
+    # Ver estado actual
+    echo -e "${CYAN}Estado del repositorio:${NC}"
+    git status --short
+
+    # Verificar si hay algo para commitear
+    if git diff --quiet && git diff --cached --quiet; then
+        # Revisar si hay archivos sin trackear
+        UNTRACKED=$(git ls-files --others --exclude-standard)
+        if [ -z "$UNTRACKED" ]; then
+            echo ""
+            echo -e "${YELLOW}⚠️  No hay cambios para commitear${NC}"
+            sleep 2
+            return
+        fi
+    fi
+
+    echo ""
+    echo -e "${CYAN}¿Qué archivos incluir?${NC}"
+    echo "1) Todos los cambios (git add -A)"
+    echo "2) Solo archivos ya trackeados (git add -u)"
+    echo "3) Elegir archivos manualmente"
+    echo ""
+    read -p "Opción: " ADD_OPT
+
+    case $ADD_OPT in
+        1)
+            git add -A
+            echo -e "${GREEN}✅ Todos los archivos agregados${NC}"
+            ;;
+        2)
+            git add -u
+            echo -e "${GREEN}✅ Archivos trackeados agregados${NC}"
+            ;;
+        3)
+            echo ""
+            echo -e "${CYAN}Archivos disponibles:${NC}"
+            git status --short
+            echo ""
+            echo "Escribe los archivos separados por espacio"
+            echo "Ejemplo: src/app.js config/.env README.md"
+            echo ""
+            read -p "Archivos: " FILES_TO_ADD
+            if [ -z "$FILES_TO_ADD" ]; then
+                echo -e "${RED}❌ Sin archivos especificados${NC}"
+                sleep 2
+                return
+            fi
+            git add $FILES_TO_ADD
+            echo -e "${GREEN}✅ Archivos agregados${NC}"
+            ;;
+        *)
+            echo -e "${RED}❌ Opción inválida${NC}"
+            sleep 2
+            return
+            ;;
+    esac
+
+    # Mostrar lo que se va a commitear
+    echo ""
+    echo -e "${CYAN}Archivos en el commit:${NC}"
+    git diff --cached --name-status
+
+    echo ""
+    read -p "Mensaje del commit: " COMMIT_MSG
+
+    if [ -z "$COMMIT_MSG" ]; then
+        echo -e "${RED}❌ El mensaje no puede estar vacío${NC}"
+        git reset HEAD 2>/dev/null
+        sleep 2
+        return
+    fi
+
+    git commit -m "$COMMIT_MSG"
+
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}❌ Error al hacer commit${NC}"
+        sleep 2
+        return
+    fi
+
+    echo -e "${GREEN}✅ Commit creado: $(git log -1 --oneline)${NC}"
+
+    # Push
+    echo ""
+    read -p "¿Subir a GitHub ahora? (s/n): " DO_PUSH
+    if [[ "$DO_PUSH" == "s" ]]; then
+        echo ""
+        echo -e "${BLUE}📤 Subiendo a GitHub rama '$CURRENT_BRANCH'...${NC}"
+        if git push origin "$CURRENT_BRANCH" 2>&1; then
+            echo -e "${GREEN}✅ Push completado${NC}"
+        else
+            echo -e "${YELLOW}⚠️  Push normal falló. ¿Intentar con fuerza? (s/n): ${NC}"
+            read FORCE_OPT
+            if [[ "$FORCE_OPT" == "s" ]]; then
+                git push -f origin "$CURRENT_BRANCH"
+                echo -e "${GREEN}✅ Push forzado completado${NC}"
+            fi
+        fi
+    fi
+
+    # Cambiar de rama después del commit
+    echo ""
+    read -p "¿Cambiar de rama ahora? (s/n): " DO_SWITCH
+    if [[ "$DO_SWITCH" == "s" ]]; then
+        switch_branch
+        return
+    fi
+
+    sleep 2
+}
+
+# Opción 14: Cambiar de rama con stash automático
+switch_branch() {
+    show_header
+    echo -e "${BLUE}🔀 CAMBIAR DE RAMA${NC}"
+    echo ""
+
+    CURRENT_BRANCH=$(git branch --show-current)
+    echo -e "${GREEN}📌 Rama actual:${NC} $CURRENT_BRANCH"
+    echo ""
+
+    # Mostrar ramas disponibles (local + remota)
+    echo -e "${CYAN}Ramas locales:${NC}"
+    git branch
+    echo ""
+    echo -e "${CYAN}Ramas remotas (GitHub):${NC}"
+    git branch -r | grep -v "HEAD"
+    echo ""
+
+    read -p "Rama destino: " TARGET_BRANCH
+
+    if [ -z "$TARGET_BRANCH" ]; then
+        echo -e "${RED}❌ Nombre inválido${NC}"
+        sleep 2
+        return
+    fi
+
+    # Limpiar prefijo origin/ si el usuario lo escribió
+    TARGET_BRANCH="${TARGET_BRANCH#origin/}"
+
+    if [ "$TARGET_BRANCH" == "$CURRENT_BRANCH" ]; then
+        echo -e "${YELLOW}⚠️  Ya estás en la rama '$TARGET_BRANCH'${NC}"
+        sleep 2
+        return
+    fi
+
+    # Verificar si la rama existe localmente; si no, crearla desde origin
+    BRANCH_EXISTS_LOCAL=$(git branch --list "$TARGET_BRANCH")
+    BRANCH_EXISTS_REMOTE=$(git branch -r | grep -w "origin/$TARGET_BRANCH")
+
+    if [ -z "$BRANCH_EXISTS_LOCAL" ] && [ -z "$BRANCH_EXISTS_REMOTE" ]; then
+        echo -e "${RED}❌ La rama '$TARGET_BRANCH' no existe local ni en GitHub${NC}"
+        sleep 2
+        return
+    fi
+
+    # Detectar cambios sin commit
+    STASHED=0
+    STASH_NAME="switch-to-${TARGET_BRANCH}-$$"
+
+    if ! git diff --quiet || ! git diff --cached --quiet; then
+        echo ""
+        echo -e "${YELLOW}⚠️  Tienes cambios sin commit en '$CURRENT_BRANCH'${NC}"
+        git status --short
+        echo ""
+        echo -e "${CYAN}¿Qué hacer con esos cambios?${NC}"
+        echo "1) Guardar provisionalmente (stash) y cambiar de rama"
+        echo "2) Cambiar de rama descartando los cambios (⚠️  irreversible)"
+        echo "3) Cancelar"
+        echo ""
+        read -p "Opción: " STASH_OPT
+
+        case $STASH_OPT in
+            1)
+                git stash push -m "$STASH_NAME"
+                STASHED=1
+                echo -e "${GREEN}✅ Cambios guardados en stash: '$STASH_NAME'${NC}"
+                ;;
+            2)
+                echo -e "${YELLOW}⚠️  Descartando cambios...${NC}"
+                git checkout -- .
+                git clean -fd -q
+                ;;
+            *)
+                echo "Cancelado."
+                sleep 2
+                return
+                ;;
+        esac
+    fi
+
+    echo ""
+    echo -e "${BLUE}🔄 Cambiando a rama '$TARGET_BRANCH'...${NC}"
+
+    # Si la rama solo existe en remoto, crear tracking local
+    if [ -z "$BRANCH_EXISTS_LOCAL" ] && [ -n "$BRANCH_EXISTS_REMOTE" ]; then
+        git checkout -b "$TARGET_BRANCH" "origin/$TARGET_BRANCH"
+    else
+        git checkout "$TARGET_BRANCH"
+    fi
+
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✅ Ahora estás en rama '$(git branch --show-current)'${NC}"
+
+        # Preguntar si restaurar stash en la nueva rama
+        if [ "$STASHED" -eq 1 ]; then
+            echo ""
+            echo -e "${CYAN}Tienes cambios guardados de '$CURRENT_BRANCH'.${NC}"
+            read -p "¿Restaurar esos cambios aquí en '$TARGET_BRANCH'? (s/n): " RESTORE
+            if [[ "$RESTORE" == "s" ]]; then
+                if git stash pop; then
+                    echo -e "${GREEN}✅ Cambios restaurados en '$TARGET_BRANCH'${NC}"
+                else
+                    echo -e "${YELLOW}⚠️  Conflicto al restaurar. Usa 'git stash list' para ver el stash guardado.${NC}"
+                fi
+            else
+                echo -e "${YELLOW}💡 Cambios guardados. Usa opción 12 → ver reflog, o ejecuta: git stash list${NC}"
+            fi
+        fi
+
+        # Hacer pull para sincronizar con GitHub
+        echo ""
+        read -p "¿Sincronizar con GitHub (pull)? (s/n): " DO_PULL
+        if [[ "$DO_PULL" == "s" ]]; then
+            echo -e "${BLUE}📥 Bajando cambios de GitHub...${NC}"
+            git pull origin "$TARGET_BRANCH" 2>&1
+            echo -e "${GREEN}✅ Sincronizado${NC}"
+        fi
+    else
+        echo -e "${RED}❌ Error al cambiar de rama${NC}"
+        # Restaurar stash si falló el checkout
+        if [ "$STASHED" -eq 1 ]; then
+            git stash pop
+            echo -e "${YELLOW}💡 Cambios restaurados en '$CURRENT_BRANCH'${NC}"
+        fi
+    fi
+
+    sleep 2
+}
+
 # Bucle principal
 check_git_repo
 
@@ -813,7 +1081,9 @@ while true; do
         10) sync_github ;;
         11) view_history ;;
         12) cleanup_reflog ;;
-        13) 
+        13) commit_and_push ;;
+        14) switch_branch ;;
+        15) 
             echo "👋 ¡Hasta luego!"
             exit 0
             ;;
