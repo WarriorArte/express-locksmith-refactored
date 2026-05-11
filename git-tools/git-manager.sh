@@ -114,7 +114,7 @@ count_commits_all() {
     echo ""
     echo -e "${CYAN}Remote (GitHub):${NC}"
     while IFS= read -r branch; do
-        # Contar commits en la rama remota
+        branch=$(echo "$branch" | xargs)  # eliminar espacios al inicio/fin
         branch_name=$(echo "$branch" | sed 's|origin/||')
         count=$(git rev-list --count "$branch" 2>/dev/null)
         printf "  %-40s %s commits\n" "$branch_name" "$count"
@@ -398,27 +398,53 @@ keep_last_n() {
     echo -e "${GREEN}✅ Referencia guardada: $BACKUP_REF${NC}"
     echo -e "${YELLOW}💡 Si algo sale mal, ejecuta: git reset --hard $BACKUP_REF${NC}"
 
+    # Guardar cambios sin stage si los hay
+    STASHED=0
+    if ! git diff --quiet || ! git diff --cached --quiet; then
+        echo -e "${YELLOW}⚠️  Cambios sin commit detectados. Guardando con stash...${NC}"
+        git stash push -m "git-manager-backup-$$"
+        STASHED=1
+        echo -e "${GREEN}✅ Cambios guardados en stash${NC}"
+    fi
+
     TOTAL=$(git rev-list --count HEAD)
     if [ "$NUM" -ge "$TOTAL" ]; then
         echo -e "${YELLOW}⚠️  Ya tienes solo $TOTAL commits, nada que eliminar.${NC}"
+        [ "$STASHED" -eq 1 ] && git stash pop
         sleep 2
         return
     fi
 
-    # Commit más antiguo a conservar (el N-ésimo desde HEAD)
-    OLDEST=$(git rev-list HEAD | sed -n "${NUM}p")
-    echo -e "${YELLOW}Commit más antiguo a conservar:${NC} $OLDEST"
+    echo -e "${BLUE}🔨 Reconstruyendo historial conservando los últimos $NUM commits...${NC}"
     echo ""
 
-    # Crear nuevo commit raíz huérfano con el mismo árbol que OLDEST
-    echo -e "${BLUE}🔨 Creando nuevo commit raíz sin historial anterior...${NC}"
-    TREE=$(git rev-parse "${OLDEST}^{tree}")
-    MSG=$(git log -1 --format=%B "$OLDEST")
-    NEW_ROOT=$(git commit-tree "$TREE" -m "$MSG")
+    # Obtener los últimos N commits en orden cronológico (más antiguo primero)
+    mapfile -t COMMITS < <(git rev-list --reverse HEAD | tail -n "$NUM")
 
-    # Rebasear los commits más recientes encima del nuevo raíz
-    echo -e "${BLUE}🔄 Rebaseando commits recientes...${NC}"
-    git rebase --onto "$NEW_ROOT" "$OLDEST" HEAD
+    echo -e "${YELLOW}Commits a conservar (${#COMMITS[@]}):${NC}"
+    for c in "${COMMITS[@]}"; do
+        echo "  $(git log -1 --oneline "$c")"
+    done
+    echo ""
+
+    # Crear commit raíz huérfano con el árbol del commit más antiguo
+    OLDEST="${COMMITS[0]}"
+    NEW_COMMIT=$(git commit-tree "${OLDEST}^{tree}" -m "$(git log -1 --format=%B "$OLDEST")")
+
+    # Encadenar el resto: mismo árbol y mensaje, nuevo padre
+    for i in $(seq 1 $(( ${#COMMITS[@]} - 1 ))); do
+        ORIG="${COMMITS[$i]}"
+        NEW_COMMIT=$(git commit-tree "${ORIG}^{tree}" -p "$NEW_COMMIT" -m "$(git log -1 --format=%B "$ORIG")")
+    done
+
+    # Mover la rama al nuevo HEAD reconstruido
+    git reset --hard "$NEW_COMMIT"
+
+    # Restaurar cambios guardados en stash si los había
+    if [ "$STASHED" -eq 1 ]; then
+        echo -e "${BLUE}♻️  Restaurando cambios guardados en stash...${NC}"
+        git stash pop
+    fi
 
     echo ""
     echo -e "${BLUE}📊 Commits locales después de limpiar:${NC}"
