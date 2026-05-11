@@ -1,0 +1,186 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { phpApiRequest } from "@/lib/phpApi";
+import { useToast } from "@/hooks/use-toast";
+import { useWorkshop } from "@/hooks/useWorkshop";
+import type { Product as ProductRow, Category, Tag } from "@/types/database";
+
+export type Product = ProductRow & {
+  category?: Category | null;
+  product_tags?: { tag_id: string; tags: Tag }[];
+};
+
+type ProductMutationData = {
+  category_id?: string | null;
+  name?: string;
+  description?: string | null;
+  instructions?: string | null;
+  notes?: string | null;
+  image_url?: string | null;
+  stock_store?: number;
+  stock_warehouse?: number;
+  min_stock?: number;
+  purchase_price_imported?: number | null;
+  purchase_price_local?: number;
+  sale_price_min?: number;
+  sale_price_max?: number;
+  is_active?: boolean | number;
+  tag_ids?: string[];
+};
+
+function normalizeProduct(raw: any): Product {
+  const normalizedCategory = raw.category
+    ? raw.category
+    : raw.category_id && (raw.category_name || raw.category_color)
+      ? { id: raw.category_id, name: raw.category_name, color: raw.category_color }
+      : null;
+
+  const normalizedTags = Array.isArray(raw.product_tags)
+    ? raw.product_tags.map((t: any) => ({
+        tag_id: t.tag_id,
+        tags: { id: t.tag_id || t.id, name: t.tag_name || t.name || t.tags?.name, color: t.tag_color || t.color || t.tags?.color },
+      }))
+    : [];
+
+  return { ...raw, category: normalizedCategory, product_tags: normalizedTags } as Product;
+}
+
+export function useProducts() {
+  const { currentWorkshop } = useWorkshop();
+
+  return useQuery({
+    queryKey: ["products", currentWorkshop?.id],
+    queryFn: async () => {
+      if (!currentWorkshop?.id) return [];
+      const data = await phpApiRequest<any[]>(`/products?workshop_id=${encodeURIComponent(currentWorkshop.id)}`);
+      return (data || []).map(normalizeProduct);
+    },
+    enabled: !!currentWorkshop?.id,
+  });
+}
+
+export function useCreateProduct() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const { currentWorkshop } = useWorkshop();
+
+  return useMutation({
+    mutationFn: async (product: ProductMutationData & { name: string }) => {
+      if (!currentWorkshop?.id) throw new Error("No hay taller seleccionado");
+      const data = await phpApiRequest<any>("/products", {
+        method: "POST",
+        body: JSON.stringify({ ...product, workshop_id: currentWorkshop.id }),
+      });
+      return normalizeProduct(data);
+    },
+    onMutate: async (newProduct) => {
+      const key = ["products", currentWorkshop?.id];
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<Product[]>(key);
+
+      queryClient.setQueryData<Product[]>(key, (old) => {
+        const temp: Product = {
+          id: `temp-${Date.now()}`,
+          workshop_id: currentWorkshop?.id,
+          name: newProduct.name,
+          category_id: newProduct.category_id ?? null,
+          is_active: newProduct.is_active !== false,
+          stock_store: newProduct.stock_store ?? 0,
+          stock_warehouse: newProduct.stock_warehouse ?? 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          category: null,
+          product_tags: [],
+        } as Product;
+        return [temp, ...(old ?? [])];
+      });
+
+      return { previous };
+    },
+    onError: (error, _vars, context) => {
+      if (context?.previous !== undefined) {
+        queryClient.setQueryData(["products", currentWorkshop?.id], context.previous);
+      }
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+    onSuccess: () => {
+      toast({ title: "Producto creado", description: "El producto ha sido agregado exitosamente" });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["products", currentWorkshop?.id] });
+    },
+  });
+}
+
+export function useUpdateProduct() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const { currentWorkshop } = useWorkshop();
+
+  return useMutation({
+    mutationFn: async ({ id, ...product }: ProductMutationData & { id: string }) => {
+      const data = await phpApiRequest<any>(`/products/${encodeURIComponent(id)}`, {
+        method: "PUT",
+        body: JSON.stringify(product),
+      });
+      return normalizeProduct(data);
+    },
+    onMutate: async ({ id, ...updates }) => {
+      const key = ["products", currentWorkshop?.id];
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<Product[]>(key);
+
+      queryClient.setQueryData<Product[]>(key, (old) =>
+        (old ?? []).map((p) => (p.id === id ? { ...p, ...updates } : p))
+      );
+
+      return { previous };
+    },
+    onError: (error, _vars, context) => {
+      if (context?.previous !== undefined) {
+        queryClient.setQueryData(["products", currentWorkshop?.id], context.previous);
+      }
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+    onSuccess: () => {
+      toast({ title: "Producto actualizado", description: "Los cambios han sido guardados" });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["products", currentWorkshop?.id] });
+    },
+  });
+}
+
+export function useDeleteProduct() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const { currentWorkshop } = useWorkshop();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await phpApiRequest<null>(`/products/${encodeURIComponent(id)}`, { method: "DELETE" });
+    },
+    onMutate: async (id) => {
+      const key = ["products", currentWorkshop?.id];
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<Product[]>(key);
+
+      queryClient.setQueryData<Product[]>(key, (old) =>
+        (old ?? []).filter((p) => p.id !== id)
+      );
+
+      return { previous };
+    },
+    onError: (error, _id, context) => {
+      if (context?.previous !== undefined) {
+        queryClient.setQueryData(["products", currentWorkshop?.id], context.previous);
+      }
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+    onSuccess: () => {
+      toast({ title: "Producto eliminado", description: "El producto ha sido eliminado" });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["products", currentWorkshop?.id] });
+    },
+  });
+}

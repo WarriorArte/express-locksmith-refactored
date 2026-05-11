@@ -1,0 +1,24 @@
+Options -Indexes
+<IfModule mod_rewrite.c>
+	RewriteEngine On
+	RewriteBase /cerrajer-a-express/
+
+	# Dedicated installer entrypoint (easy to delete after first production setup)
+	RewriteRule ^install/?$ /cerrajer-a-express/backend/public/index.php [L,QSA,NC]
+
+	# Uploaded files are written by Laravel under backend/public/uploads.
+	# If public_html/uploads exists, Apache serves it before this rule via REQUEST_FILENAME.
+	RewriteCond %{REQUEST_FILENAME} !-f
+	RewriteCond %{REQUEST_FILENAME} !-d
+	RewriteRule ^uploads/(.*)$ /cerrajer-a-express/backend/public/uploads/$1 [L,NC]
+
+	# Laravel backend entrypoints (legacy API under /api/*.php)
+	RewriteRule ^api(/.*)?$ /cerrajer-a-express/backend/public/index.php [L,QSA,NC]
+	RewriteRule ^up/?$ /cerrajer-a-express/backend/public/index.php [L,QSA,NC]
+
+	RewriteRule ^index\.html$ - [L]
+	RewriteCond %{REQUEST_FILENAME} !-f
+	RewriteCond %{REQUEST_FILENAME} !-d
+	RewriteCond %{REQUEST_FILENAME} !-l
+	RewriteRule . /cerrajer-a-express/index.html [L]
+</IfModule>

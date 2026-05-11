@@ -1,0 +1,25 @@
+Options -Indexes
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase __BASE_PATH__
+
+  # Archivos del Service Worker: siempre estáticos, nunca interceptados
+  RewriteRule ^sw\.js$ - [L]
+  RewriteRule ^workbox-.+\.js$ - [L]
+
+  # Dedicated installer entrypoint (delete after first production setup)
+  RewriteRule ^install/?$ backend/public/index.php [L,QSA,NC]
+
+  # Uploads: servidos via PHP bridge desde backend externo
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^uploads/(.*)$ backend/public/serve-upload.php?f=$1 [L,QSA,NC]
+
+  # Laravel API entrypoints → bridge PHP al backend externo
+  RewriteRule ^api(/.*)?$ backend/public/index.php [L,QSA,NC]
+  RewriteRule ^up/?$ backend/public/index.php [L,QSA,NC]
+
+  # SPA fallback
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>
