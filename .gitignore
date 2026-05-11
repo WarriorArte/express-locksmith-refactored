@@ -34,3 +34,4 @@ Thumbs.db
 *.sw?
 .claude
 backend/public/uploads/
+git-tools/
