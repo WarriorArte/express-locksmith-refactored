@@ -24,12 +24,12 @@ async function pathExists(p) {
   try { await access(p); return true; } catch { return false; }
 }
 
-// Muestra rutas candidatas para que el usuario sepa cuál poner en BACKEND_PATH
-async function debugPaths() {
-  console.log("[build:paths] PROJECT_ROOT =", PROJECT_ROOT);
-  console.log("[build:paths] HOME         =", os.homedir());
-
+// Encuentra el backend automáticamente. BACKEND_PATH tiene prioridad si está definido.
+async function resolveBackendPath() {
   const candidates = [];
+
+  // BACKEND_PATH manual tiene prioridad
+  if (BACKEND_PATH) candidates.push(BACKEND_PATH);
 
   // Subir desde PROJECT_ROOT buscando public_html/ y su hermano backend/
   let current = PROJECT_ROOT;
@@ -42,20 +42,19 @@ async function debugPaths() {
     current = parent;
   }
 
-  // ~/backend/ y ~/domains/*/backend/
-  candidates.push(path.join(os.homedir(), "backend"));
+  // ~/domains/*/backend/ y ~/backend/
   const domainsDir = path.join(os.homedir(), "domains");
   if (await pathExists(domainsDir)) {
     const domains = await readdir(domainsDir);
-    for (const d of domains) {
-      candidates.push(path.join(domainsDir, d, "backend"));
-    }
+    for (const d of domains) candidates.push(path.join(domainsDir, d, "backend"));
   }
+  candidates.push(path.join(os.homedir(), "backend"));
 
   for (const c of candidates) {
-    const hasArtisan = await pathExists(path.join(c, "artisan"));
-    console.log(`[build:paths] ${hasArtisan ? "✓" : "✗"} ${c}`);
+    if (await pathExists(path.join(c, "artisan"))) return c;
   }
+
+  return null;
 }
 
 // ─── .htaccess ────────────────────────────────────────────────────────────────
@@ -81,24 +80,19 @@ async function writeDistHtaccess() {
 
 // ─── Bridge API ───────────────────────────────────────────────────────────────
 
-async function createBackendBridge() {
+async function createBackendBridge(backendPath) {
   const dir = path.resolve(DIST_DIR, "backend/public");
   await mkdir(dir, { recursive: true });
 
   let content;
-  if (BACKEND_PATH) {
+  if (backendPath) {
     content = `<?php
-$backend = '${BACKEND_PATH}';
-if (!is_dir($backend)) {
-    http_response_code(503);
-    header('Content-Type: application/json');
-    die(json_encode(['error' => 'Backend no encontrado en: ' . $backend]));
-}
+$backend = '${backendPath}';
 chdir($backend . '/public');
 $_SERVER['SCRIPT_FILENAME'] = $backend . '/public/index.php';
 require $backend . '/public/index.php';
 `;
-    console.log(`[build] bridge API → ${BACKEND_PATH}/public/index.php`);
+    console.log(`[build] bridge API → ${backendPath}/public/index.php`);
   } else {
     content = `<?php
 header('Content-Type: application/json');
@@ -113,14 +107,14 @@ echo json_encode(['error' => 'Backend no encontrado. Define BACKEND_PATH en el e
 
 // ─── Serve-upload ─────────────────────────────────────────────────────────────
 
-async function createUploadServer() {
+async function createUploadServer(backendPath) {
   const dir = path.resolve(DIST_DIR, "backend/public");
   await mkdir(dir, { recursive: true });
 
   let content;
-  if (BACKEND_PATH) {
+  if (backendPath) {
     content = `<?php
-$backend = '${BACKEND_PATH}';
+$backend = '${backendPath}';
 $file    = $_GET['f'] ?? '';
 
 $file = str_replace(['..', '\\\\'], '', $file);
@@ -142,7 +136,7 @@ header('Content-Length: ' . filesize($full));
 header('Cache-Control: public, max-age=31536000');
 readfile($full);
 `;
-    console.log(`[build] serve-upload → ${BACKEND_PATH}/public/uploads/`);
+    console.log(`[build] serve-upload → ${backendPath}/public/uploads/`);
   } else {
     content = `<?php
 header('Content-Type: application/json');
@@ -158,11 +152,12 @@ echo json_encode(['error' => 'Backend no encontrado. Define BACKEND_PATH en el e
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
-  console.log("[build:env] BACKEND_PATH  =", BACKEND_PATH  || "(no definido)");
+  console.log("[build:env] BACKEND_PATH  =", BACKEND_PATH || "(auto-detect)");
   console.log("[build:env] BASE_PATH     =", BASE_PATH);
   console.log("[build:env] HTACCESS_MODE =", HTACCESS_MODE);
 
-  await debugPaths();
+  const resolvedBackend = await resolveBackendPath();
+  console.log("[build:env] backend usado =", resolvedBackend ?? "(no encontrado)");
 
   const base = normalizeBase(BASE_PATH);
   console.log(`[build] vite --base=${base}`);
@@ -173,8 +168,8 @@ async function main() {
   );
 
   await writeDistHtaccess();
-  await createBackendBridge();
-  await createUploadServer();
+  await createBackendBridge(resolvedBackend);
+  await createUploadServer(resolvedBackend);
 
   console.log("[build] listo. dist/ → public_html/");
 }
