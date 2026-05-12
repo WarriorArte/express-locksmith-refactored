@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AppUser;
 use App\Models\Profile;
 use App\Support\ApiResponse;
+use App\Support\Uploads\UploadedFileCleanupService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -12,6 +13,10 @@ use Illuminate\Support\Str;
 
 final class ProfileController
 {
+    public function __construct(private readonly UploadedFileCleanupService $uploadedFileCleanup)
+    {
+    }
+
     public function handle(Request $request): JsonResponse
     {
         return match ($request->method()) {
@@ -163,7 +168,13 @@ final class ProfileController
             return ApiResponse::error('No hay campos para actualizar');
         }
 
+        $previousAvatarUrl = $profile->avatar_url;
+
         $profile->fill($updates)->save();
+
+        if (array_key_exists('avatar_url', $updates) && $previousAvatarUrl !== $profile->avatar_url) {
+            $this->uploadedFileCleanup->deleteIfUnused($previousAvatarUrl);
+        }
 
         return ApiResponse::success($profile->refresh(), 'Perfil actualizado');
     }

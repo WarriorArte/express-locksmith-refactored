@@ -12,7 +12,7 @@ import {
   Eye,
   Car,
   Home,
-  Building2,
+  BriefcaseBusiness,
   Factory,
   Clock,
   CheckCircle,
@@ -43,6 +43,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -53,10 +59,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+import { clearActiveElementFocus } from "@/lib/focus";
 import { useServices, useDeleteService, useUpdateService, type Service, type ServiceStatus, type ServiceType } from "@/hooks/useServices";
 import { useAuth } from "@/hooks/useAuth";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useToast } from "@/hooks/use-toast";
+import { useBatchInventoryUpdate } from "@/hooks/useInventoryMovements";
+import { useProducts } from "@/hooks/useProducts";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -68,18 +77,31 @@ const statusConfig: Record<ServiceStatus, { label: string; color: string; icon: 
   cancelled: { label: "Cancelado", color: "bg-destructive text-destructive-foreground", icon: XCircle },
 };
 
-const typeConfig: Record<ServiceType, { label: string; icon: typeof Car; color: string }> = {
-  automotive: { label: "Automotriz", icon: Car, color: "text-info" },
-  residential: { label: "Residencial", icon: Home, color: "text-success" },
-  commercial: { label: "Comercial", icon: Building2, color: "text-secondary" },
-  industrial: { label: "Industrial", icon: Factory, color: "text-primary" },
+const typeConfig: Record<ServiceType, { label: string; icon: typeof Car; iconColor: string; bgColor: string }> = {
+  automotive: { label: "Automotriz", icon: Car, iconColor: "text-info", bgColor: "bg-info/15" },
+  residential: { label: "Residencial", icon: Home, iconColor: "text-success", bgColor: "bg-success/15" },
+  commercial: { label: "Comercial", icon: BriefcaseBusiness, iconColor: "text-warning", bgColor: "bg-warning/15" },
+  industrial: { label: "Industrial", icon: Factory, iconColor: "text-accent", bgColor: "bg-accent/15" },
 };
 
 export default function Servicios() {
+  // Helper to get current datetime in MySQL format (local time, not UTC)
+  const getCurrentDateTime = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  };
+
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | ServiceStatus>("all");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [deleteErrorDialogOpen, setDeleteErrorDialogOpen] = useState(false);
   const [formDialogOpen, setFormDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [imagesDialogOpen, setImagesDialogOpen] = useState(false);
@@ -95,11 +117,37 @@ export default function Servicios() {
   const { toast } = useToast();
   const { data: services, isLoading } = useServices();
   const { data: settings } = useBusinessSettings();
+  const { data: products } = useProducts();
   const deleteService = useDeleteService();
   const updateService = useUpdateService();
   const { printService } = useServicePrint();
+  const { updateForService } = useBatchInventoryUpdate();
 
   const currencySymbol = settings?.currency_symbol || "$";
+
+  const getServiceDisplayDate = (service: Service) => {
+    if (service.status === "pending" && service.scheduled_start_at) {
+      return service.scheduled_start_at;
+    }
+
+    if (service.started_at) {
+      return service.started_at;
+    }
+
+    return service.created_at;
+  };
+
+  const getServiceDisplayStatus = (service: Service) => {
+    if (service.status === "pending" && service.scheduled_start_at) {
+      return {
+        label: "Programado",
+        color: "bg-accent text-accent-foreground",
+        icon: Clock,
+      };
+    }
+
+    return statusConfig[service.status];
+  };
 
   const filteredServices = services?.filter((service) => {
     const matchesSearch =
@@ -108,6 +156,15 @@ export default function Servicios() {
       service.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === "all" || service.status === statusFilter;
     return matchesSearch && matchesStatus;
+  })?.sort((a, b) => {
+    // Servicios programados primero, ordenados por scheduled_start_at más próximo
+    if (a.scheduled_start_at && !b.scheduled_start_at) return -1;
+    if (!a.scheduled_start_at && b.scheduled_start_at) return 1;
+    if (a.scheduled_start_at && b.scheduled_start_at) {
+      return new Date(a.scheduled_start_at).getTime() - new Date(b.scheduled_start_at).getTime();
+    }
+    // Servicios sin programar, ordenados por created_at descendente (más recientes primero)
+    return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
   }) || [];
 
   const stats = {
@@ -118,13 +175,36 @@ export default function Servicios() {
   };
 
   const handleDelete = (service: Service) => {
+    clearActiveElementFocus();
+    if (service.status !== "cancelled" && service.status !== "delivered") {
+      setSelectedService(service);
+      setDeleteErrorDialogOpen(true);
+      return;
+    }
     setSelectedService(service);
     setDeleteDialogOpen(true);
   };
 
   const confirmDelete = async () => {
-    if (selectedService) {
+    if (!selectedService) {
+      setDeleteDialogOpen(false);
+      return;
+    }
+    
+    try {
       await deleteService.mutateAsync(selectedService.id);
+      toast({
+        title: "Servicio eliminado",
+        description: `Servicio ${selectedService.service_number} eliminado exitosamente.`,
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "Error al eliminar",
+        description: "No se pudo eliminar el servicio. Intenta de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
       setDeleteDialogOpen(false);
       setSelectedService(null);
     }
@@ -137,14 +217,62 @@ export default function Servicios() {
     };
     
     if (newStatus === "in_progress" && !service.started_at) {
-      updates.started_at = new Date().toISOString();
+      updates.started_at = getCurrentDateTime();
+      updates.scheduled_start_at = null;
     } else if (newStatus === "completed" && !service.completed_at) {
-      updates.completed_at = new Date().toISOString();
+      updates.completed_at = getCurrentDateTime();
+      
+      // Consumir del inventario cuando se marca como completado
+      if (service.service_products && products && products.length > 0) {
+        const outOfStockProducts: string[] = [];
+        
+        for (const item of service.service_products) {
+          if (item.product_id) {
+            const product = products.find(p => p.id === item.product_id);
+            const availableStock = product?.stock_store || 0;
+            
+            if (availableStock < (item.quantity || 0)) {
+              outOfStockProducts.push(`${item.product_name} (disponible: ${availableStock}, requerido: ${item.quantity})`);
+            }
+          }
+        }
+        
+        // Mostrar alerta si hay productos sin stock, pero permitir continuar
+        if (outOfStockProducts.length > 0) {
+          toast({
+            title: "⚠️ Stock insuficiente",
+            description: `${outOfStockProducts.join(", ")} no tienen suficiente stock en tienda. El servicio se completará igual, pero el stock no será deducido.`,
+            variant: "destructive",
+          });
+        }
+        
+        // Descontar del inventario solo los productos que tienen stock disponible
+        try {
+          await updateForService(
+            service.service_products.filter(item => {
+              const product = products.find(p => p.id === item.product_id);
+              const availableStock = product?.stock_store || 0;
+              return availableStock > 0 && item.quantity && item.quantity <= availableStock;
+            }),
+            service.id
+          );
+        } catch (error) {
+          toast({
+            title: "Error",
+            description: "No se pudo descontar el inventario, pero el servicio se marcó como completado.",
+            variant: "destructive",
+          });
+        }
+      }
     } else if (newStatus === "delivered" && !service.delivered_at) {
-      updates.delivered_at = new Date().toISOString();
+      updates.delivered_at = getCurrentDateTime();
     }
     
-    await updateService.mutateAsync(updates);
+    const updatedService = await updateService.mutateAsync(updates);
+    
+    // Actualizar en ambos modales (desktop y mobile)
+    setViewingService((prev) => prev ? { ...prev, status: newStatus, started_at: updates.started_at, scheduled_start_at: updates.scheduled_start_at, completed_at: updates.completed_at } : null);
+    setMobileDetailService((prev) => prev ? (updatedService || { ...prev, status: newStatus, started_at: updates.started_at, scheduled_start_at: updates.scheduled_start_at, completed_at: updates.completed_at }) : null);
   };
 
   const handlePrint = (service: Service) => {
@@ -169,7 +297,7 @@ export default function Servicios() {
     
     const message = `*${businessName}*\n\n` +
       `🔧 *Orden de Servicio ${service.service_number}*\n` +
-      `📅 ${format(parseISO(service.created_at), "dd/MM/yyyy", { locale: es })}\n\n` +
+      `📅 ${format(parseISO(getServiceDisplayDate(service)), "dd/MM/yyyy", { locale: es })}\n\n` +
       `*Tipo:* ${typeLabel}\n` +
       `*Estado:* ${statusLabel}\n\n` +
       `*Descripción:*\n${service.description}\n\n` +
@@ -197,7 +325,7 @@ export default function Servicios() {
     const productsSubtotal = service.service_products?.reduce((acc, p) => acc + Number(p.subtotal), 0) || 0;
     return {
       service_number: service.service_number,
-      created_at: service.created_at,
+      created_at: getServiceDisplayDate(service),
       customer_name: service.customer?.name,
       customer_phone: service.customer?.phone,
       customer_address: service.address || service.customer?.address,
@@ -228,7 +356,7 @@ export default function Servicios() {
     return {
       type: "service" as const,
       number: service.service_number,
-      date: service.created_at,
+      date: getServiceDisplayDate(service),
       customer_name: service.customer?.name,
       customer_phone: service.customer?.phone,
       customer_address: service.address || service.customer?.address,
@@ -253,7 +381,7 @@ export default function Servicios() {
     return {
       type: "service" as const,
       number: service.service_number,
-      date: service.created_at,
+      date: getServiceDisplayDate(service),
       status: service.status,
       customer_name: service.customer?.name,
       customer_phone: service.customer?.phone,
@@ -287,7 +415,7 @@ export default function Servicios() {
     );
   }
 
-  const filterChips: { key: "all" | ServiceStatus; label: string }[] = [
+  const statusOptions: { key: "all" | ServiceStatus; label: string }[] = [
     { key: "all", label: "Todos" },
     { key: "pending", label: "Pendientes" },
     { key: "in_progress", label: "En Curso" },
@@ -303,7 +431,7 @@ export default function Servicios() {
 
   return (
     <div className="space-y-5">
-      {/* Sticky: Header + Chips + Search */}
+      {/* Sticky: Header + Search + Filter */}
       <div className="sticky top-0 z-10 bg-background -mx-5 lg:-mx-6 px-5 lg:px-6 pb-4 relative">
         <div className="absolute inset-x-0 -top-10 lg:-top-2 h-10 lg:h-2 bg-background" />
         <PageHeader
@@ -336,30 +464,24 @@ export default function Servicios() {
           }
         />
 
-        <UnifiedSearchInput
-          placeholder="Buscar folio, cliente..."
-          value={searchQuery}
-          onChange={setSearchQuery}
-        />
-
-        {/* Filter chips */}
-        <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 mt-3">
-          {filterChips.map((c) => {
-            const active = statusFilter === c.key;
-            return (
-              <button
-                key={c.key}
-                type="button"
-                onClick={() => setStatusFilter(c.key)}
-                className={cn(
-                  "chip whitespace-nowrap",
-                  active ? "chip-active" : "chip-default",
-                )}
-              >
-                {c.label}
-              </button>
-            );
-          })}
+        <div className="flex items-center gap-2">
+          <UnifiedSearchInput
+            className="flex-1"
+            placeholder="Buscar folio, cliente..."
+            value={searchQuery}
+            onChange={setSearchQuery}
+          />
+          <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as "all" | ServiceStatus)}>
+            <SelectTrigger className="h-10 w-10 sm:w-auto sm:max-w-[130px] rounded-xl shrink-0 px-0 justify-center sm:px-3 sm:gap-1.5" aria-label="Filtrar por estado">
+              <Filter className="w-4 h-4" />
+              <span className="sr-only sm:hidden">Filtrar por estado</span>
+            </SelectTrigger>
+            <SelectContent>
+              {statusOptions.map((option) => (
+                <SelectItem key={option.key} value={option.key}>{option.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -374,7 +496,7 @@ export default function Servicios() {
       ) : (
         <div className="space-y-3">
           {filteredServices.map((service, index) => {
-            const status = statusConfig[service.status];
+            const status = getServiceDisplayStatus(service);
             const type = typeConfig[service.service_type];
             const StatusIcon = status.icon;
             const TypeIcon = type.icon;
@@ -394,11 +516,8 @@ export default function Servicios() {
                   {/* Header: icono + número + badges | precio + menú */}
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className={cn(
-                        "p-2.5 rounded-xl flex-shrink-0",
-                        service.status === "in_progress" ? "bg-info-light" : "bg-muted"
-                      )}>
-                        <TypeIcon className={cn("w-5 h-5", type.color)} />
+                      <div className={cn("p-2.5 rounded-xl flex-shrink-0", type.bgColor)}>
+                        <TypeIcon className={cn("w-5 h-5", type.iconColor)} />
                       </div>
                       <div>
                         <p className="font-mono text-sm text-primary font-semibold leading-tight">{service.service_number}</p>
@@ -497,7 +616,7 @@ export default function Servicios() {
                     </span>
                     <span className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
                       <Calendar className="w-3 h-3" />
-                      {format(parseISO(service.created_at), "dd MMM · HH:mm", { locale: es })}
+                      {format(parseISO(getServiceDisplayDate(service)), "dd MMM · HH:mm", { locale: es })}
                     </span>
                   </div>
 
@@ -549,6 +668,30 @@ export default function Servicios() {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground">
               Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Error Dialog */}
+      <AlertDialog open={deleteErrorDialogOpen} onOpenChange={setDeleteErrorDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>No se puede eliminar este servicio</AlertDialogTitle>
+            <AlertDialogDescription>
+              Solo se pueden eliminar servicios que estén <strong>Cancelados</strong> o <strong>Entregados</strong>.
+              {selectedService && (
+                <>
+                  <br />
+                  <br />
+                  El servicio {selectedService.service_number} se encuentra en estado <strong>{statusConfig[selectedService.status]?.label}</strong>.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setDeleteErrorDialogOpen(false)}>
+              Entendido
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -3,6 +3,7 @@ import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import { Check, ChevronRight, Circle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { clearActiveElementFocus } from "@/lib/focus";
 
 const DropdownMenu = DropdownMenuPrimitive.Root;
 
@@ -75,7 +76,7 @@ const DropdownMenuItem = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Item> & {
     inset?: boolean;
   }
->(({ className, inset, ...props }, ref) => (
+>(({ className, inset, onClick, onSelect, ...props }, ref) => (
   <DropdownMenuPrimitive.Item
     ref={ref}
     className={cn(
@@ -83,6 +84,14 @@ const DropdownMenuItem = React.forwardRef<
       inset && "pl-8",
       className,
     )}
+    onClick={(event) => {
+      clearActiveElementFocus();
+      onClick?.(event);
+    }}
+    onSelect={(event) => {
+      clearActiveElementFocus();
+      onSelect?.(event);
+    }}
     {...props}
   />
 ));

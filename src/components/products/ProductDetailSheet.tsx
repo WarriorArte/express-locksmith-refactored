@@ -59,6 +59,18 @@ export function ProductDetailSheet({
 }: Props) {
   if (!product) return null;
 
+  const isService = (product.item_type ?? "product") === "service";
+
+  const getServiceTypeLabel = (serviceType: string | null) => {
+    const labels: Record<string, string> = {
+      automotive: "Automotriz",
+      residential: "Residencial",
+      commercial: "Comercial",
+      industrial: "Industrial",
+    };
+    return labels[serviceType || ""] || serviceType || "Servicio";
+  };
+
   const totalStock = product.stock_store + product.stock_warehouse;
   const isLow = totalStock < product.min_stock;
   const stockBadge = isLow
@@ -99,14 +111,16 @@ export function ProductDetailSheet({
 
           {/* Badges */}
           <div className="flex gap-1.5 flex-wrap">
-            <span className={cn("inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold", stockBadge.cls)}>
-              {stockBadge.label}
-            </span>
+            {!isService && (
+              <span className={cn("inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold", stockBadge.cls)}>
+                {stockBadge.label}
+              </span>
+            )}
             <span
               className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold"
               style={{ backgroundColor: `${categoryColor}22`, color: categoryColor }}
             >
-              {categoryName}
+              {isService ? getServiceTypeLabel(product.service_type) : categoryName}
             </span>
           </div>
 
@@ -114,43 +128,88 @@ export function ProductDetailSheet({
             <p className="text-[13px] text-muted-foreground leading-relaxed">{product.description}</p>
           )}
 
-          {/* Prices */}
+          {/* Prices/Labor */}
           <div className="bg-[hsl(var(--surface-2))] rounded-2xl p-3.5">
-            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Precios</div>
-            <Row label="Costo local" value={`${currencySymbol}${Number(product.purchase_price_local || 0).toLocaleString()}`} />
-            {product.purchase_price_imported ? (
-              <Row label="Costo importado" value={`${currencySymbol}${Number(product.purchase_price_imported).toLocaleString()}`} />
-            ) : null}
-            <Row
-              label="Precio con descuento"
-              value={`${currencySymbol}${Number(product.sale_price_min || 0).toLocaleString()}`}
-              accent="text-warning"
-            />
-            <div className="flex justify-between items-center pt-2 mt-2 border-t border-border">
-              <span className="text-[13px] font-bold text-foreground">Precio sugerido</span>
-              <span className="text-base font-extrabold text-primary">
-                {currencySymbol}{Number(product.sale_price_max || 0).toLocaleString()}
-              </span>
+            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
+              {isService ? "Detalles de servicio" : "Precios"}
             </div>
+            {isService ? (
+              <>
+                <Row label="Mano de obra" value={`${currencySymbol}${Number(product.labor_cost || 0).toLocaleString()}`} />
+                {Number(product.discount || 0) > 0 && (
+                  <Row label="Descuento" value={`${currencySymbol}${Number(product.discount).toLocaleString()}`} accent="text-warning" />
+                )}
+                <div className="flex justify-between items-center pt-2 mt-2 border-t border-border">
+                  <span className="text-[13px] font-bold text-foreground">Total</span>
+                  <span className="text-base font-extrabold text-primary">
+                    {currencySymbol}{Number((Number(product.labor_cost || 0) - Number(product.discount || 0)).toFixed(2)).toLocaleString()}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <>
+                <Row label="Costo local" value={`${currencySymbol}${Number(product.purchase_price_local || 0).toLocaleString()}`} />
+                {product.purchase_price_imported ? (
+                  <Row label="Costo importado" value={`${currencySymbol}${Number(product.purchase_price_imported).toLocaleString()}`} />
+                ) : null}
+                <Row
+                  label="Precio con descuento"
+                  value={`${currencySymbol}${Number(product.sale_price_min || 0).toLocaleString()}`}
+                  accent="text-warning"
+                />
+                <div className="flex justify-between items-center pt-2 mt-2 border-t border-border">
+                  <span className="text-[13px] font-bold text-foreground">Precio sugerido</span>
+                  <span className="text-base font-extrabold text-primary">
+                    {currencySymbol}{Number(product.sale_price_max || 0).toLocaleString()}
+                  </span>
+                </div>
+              </>
+            )}
           </div>
 
-          {/* Stock boxes */}
-          <div className="grid grid-cols-3 gap-2">
-            {stockBoxes.map(({ l, v, i: Icon, alert }) => (
-              <div key={l} className="bg-[hsl(var(--surface-2))] rounded-xl px-2 py-2.5 text-center">
-                <Icon
-                  className={cn(
-                    "w-4 h-4 mx-auto mb-1",
-                    alert && v >= product.min_stock ? "text-warning" : "text-primary",
-                  )}
-                />
-                <div className={cn("text-[18px] font-extrabold", isLow ? "text-warning" : "text-foreground")}>
-                  {v}
+          {/* Stock boxes - only for products */}
+          {!isService && (
+            <div className="grid grid-cols-3 gap-2">
+              {stockBoxes.map(({ l, v, i: Icon, alert }) => (
+                <div key={l} className="bg-[hsl(var(--surface-2))] rounded-xl px-2 py-2.5 text-center">
+                  <Icon
+                    className={cn(
+                      "w-4 h-4 mx-auto mb-1",
+                      alert && v >= product.min_stock ? "text-warning" : "text-primary",
+                    )}
+                  />
+                  <div className={cn("text-[18px] font-extrabold", isLow ? "text-warning" : "text-foreground")}>
+                    {v}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">{l}</div>
                 </div>
-                <div className="text-[10px] text-muted-foreground">{l}</div>
+              ))}
+            </div>
+          )}
+
+          {/* Instructions / Requirements */}
+          {product.instructions && (
+            <div className="bg-[hsl(var(--surface-2))] rounded-2xl p-3.5 space-y-1">
+              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                {isService ? "Requisitos" : "Instrucciones de uso"}
               </div>
-            ))}
-          </div>
+              <p className="text-[13px] text-foreground leading-relaxed whitespace-pre-wrap">
+                {product.instructions}
+              </p>
+            </div>
+          )}
+
+          {/* Internal Notes */}
+          {product.notes && (
+            <div className="bg-[hsl(var(--surface-2))] rounded-2xl p-3.5 space-y-1">
+              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                Notas internas
+              </div>
+              <p className="text-[13px] text-foreground leading-relaxed whitespace-pre-wrap">
+                {product.notes}
+              </p>
+            </div>
+          )}
 
         </div>
 
@@ -185,12 +244,16 @@ export function ProductDetailSheet({
                     <ZoomIn className="w-4 h-4 mr-2" /> Ver Imagen
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem onClick={() => onMovement(product)}>
-                  <Move className="w-4 h-4 mr-2" /> Movimiento de Inventario
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onHistory(product)}>
-                  <History className="w-4 h-4 mr-2" /> Historial de movimientos
-                </DropdownMenuItem>
+                {!isService && (
+                  <>
+                    <DropdownMenuItem onClick={() => onMovement(product)}>
+                      <Move className="w-4 h-4 mr-2" /> Movimiento de Inventario
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onHistory(product)}>
+                      <History className="w-4 h-4 mr-2" /> Historial de movimientos
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

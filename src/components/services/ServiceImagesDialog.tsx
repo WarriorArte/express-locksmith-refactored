@@ -35,6 +35,8 @@ interface ServiceImagesDialogProps {
   service: Service | null;
 }
 
+const MAX_SERVICE_IMAGES = 2;
+
 export function ServiceImagesDialog({ open, onOpenChange, service: initialService }: ServiceImagesDialogProps) {
   const [newImageUrl, setNewImageUrl] = useState("");
   const [newImageDescription, setNewImageDescription] = useState("");
@@ -68,8 +70,19 @@ export function ServiceImagesDialog({ open, onOpenChange, service: initialServic
       description: image.description || undefined,
     }));
 
+  const currentImagesCount = service?.service_images?.length || 0;
+  const canAddMoreImages = currentImagesCount < MAX_SERVICE_IMAGES;
+
   const handleAddImage = async () => {
     if (!service || !newImageUrl.trim()) return;
+    if (!canAddMoreImages) {
+      toast({
+        title: "Límite alcanzado",
+        description: `Solo se permiten ${MAX_SERVICE_IMAGES} imágenes por servicio.`,
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsAdding(true);
     try {
@@ -99,6 +112,14 @@ export function ServiceImagesDialog({ open, onOpenChange, service: initialServic
 
   const handleFileUpload = async (file: File) => {
     if (!service || !file) return;
+    if (!canAddMoreImages) {
+      toast({
+        title: "Límite alcanzado",
+        description: `Solo se permiten ${MAX_SERVICE_IMAGES} imágenes por servicio.`,
+        variant: "destructive",
+      });
+      return;
+    }
     
     const result = await uploadFile(file);
     if (result.success && result.url) {
@@ -167,13 +188,14 @@ export function ServiceImagesDialog({ open, onOpenChange, service: initialServic
           {/* Add new image */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label>Agregar Nueva Imagen</Label>
+              <Label>Agregar Nueva Imagen ({currentImagesCount}/{MAX_SERVICE_IMAGES})</Label>
               <div className="flex gap-1 p-1 bg-muted rounded-lg">
                 <Button
                   type="button"
                   variant={inputMode === 'upload' ? 'default' : 'ghost'}
                   size="sm"
                   className="h-7 text-xs"
+                  disabled={!canAddMoreImages}
                   onClick={() => setInputMode('upload')}
                 >
                   <Upload className="w-3 h-3 mr-1" />
@@ -184,6 +206,7 @@ export function ServiceImagesDialog({ open, onOpenChange, service: initialServic
                   variant={inputMode === 'url' ? 'default' : 'ghost'}
                   size="sm"
                   className="h-7 text-xs"
+                  disabled={!canAddMoreImages}
                   onClick={() => setInputMode('url')}
                 >
                   <Link className="w-3 h-3 mr-1" />
@@ -224,7 +247,7 @@ export function ServiceImagesDialog({ open, onOpenChange, service: initialServic
                     type="button"
                     variant="outline"
                     className="flex-1 gap-2"
-                    disabled={isAdding || isUploading || !storageConfigured}
+                    disabled={isAdding || isUploading || !storageConfigured || !canAddMoreImages}
                     onClick={() => document.getElementById('service-file-upload')?.click()}
                   >
                     <Upload className="w-4 h-4" />
@@ -234,7 +257,7 @@ export function ServiceImagesDialog({ open, onOpenChange, service: initialServic
                     type="button"
                     variant="outline"
                     className="gap-2"
-                    disabled={isAdding || isUploading || !storageConfigured}
+                    disabled={isAdding || isUploading || !storageConfigured || !canAddMoreImages}
                     onClick={() => document.getElementById('service-camera-upload')?.click()}
                   >
                     <Camera className="w-4 h-4" />
@@ -272,7 +295,7 @@ export function ServiceImagesDialog({ open, onOpenChange, service: initialServic
                 />
                 <Button 
                   onClick={handleAddImage} 
-                  disabled={isAdding || !newImageUrl.trim()}
+                  disabled={isAdding || !newImageUrl.trim() || !canAddMoreImages}
                 >
                   {isAdding ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -287,7 +310,13 @@ export function ServiceImagesDialog({ open, onOpenChange, service: initialServic
               value={newImageDescription}
               onChange={(e) => setNewImageDescription(e.target.value)}
               placeholder="Descripción de la imagen (opcional)"
+              disabled={!canAddMoreImages}
             />
+            {!canAddMoreImages && (
+              <p className="text-xs text-muted-foreground">
+                Ya alcanzaste el máximo de {MAX_SERVICE_IMAGES} imágenes. Elimina una para agregar otra.
+              </p>
+            )}
           </div>
 
           {/* Current images */}

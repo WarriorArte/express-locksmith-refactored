@@ -13,6 +13,7 @@ final class Product extends Model
 
     protected $fillable = [
         'workshop_id',
+        'item_type',
         'category_id',
         'name',
         'description',
@@ -27,9 +28,15 @@ final class Product extends Model
         'sale_price_min',
         'sale_price_max',
         'is_active',
+        // Service-specific fields
+        'service_type',
+        'labor_cost',
+        'discount',
+        'service_products',
     ];
 
     protected $casts = [
+        'item_type' => 'string',
         'stock_store' => 'integer',
         'stock_warehouse' => 'integer',
         'min_stock' => 'integer',
@@ -38,6 +45,11 @@ final class Product extends Model
         'sale_price_min' => 'decimal:2',
         'sale_price_max' => 'decimal:2',
         'is_active' => 'boolean',
+        // Service fields
+        'service_type' => 'string',
+        'labor_cost' => 'decimal:2',
+        'discount' => 'decimal:2',
+        'service_products' => 'json',
     ];
 
     public function workshop(): BelongsTo

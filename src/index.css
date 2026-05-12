@@ -234,18 +234,6 @@
     @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-sm text-[11px] font-bold;
   }
 
-  /* Filter chip */
-  .chip {
-    @apply px-3.5 py-1.5 rounded-sm text-xs font-semibold whitespace-nowrap transition-all;
-  }
-  .chip-default {
-    @apply bg-card text-muted-foreground border border-border;
-  }
-  .chip-active {
-    @apply bg-primary text-primary-foreground;
-    box-shadow: 0 0 16px hsl(var(--primary) / 0.3);
-  }
-
   /* Sidebar nav item — kept for legacy use in Sidebar.tsx */
   .sidebar-nav-item {
     @apply flex items-center gap-3 px-4 py-3 rounded-sm text-sidebar-foreground/80 transition-all duration-200;

@@ -22,18 +22,31 @@ interface ProductSelectProps {
   value: string | null;
   onValueChange: (productId: string | null, product: Product | null) => void;
   excludeIds?: string[];
+  excludeServiceItems?: boolean;
 }
 
-export function ProductSelect({ value, onValueChange, excludeIds = [] }: ProductSelectProps) {
+export function ProductSelect({ value, onValueChange, excludeIds = [], excludeServiceItems = false }: ProductSelectProps) {
   const [open, setOpen] = useState(false);
   const { data: products, isLoading } = useProducts();
   const { data: settings } = useBusinessSettings();
   
   const currencySymbol = settings?.currency_symbol || "$";
 
-  const availableProducts = products?.filter(p => 
-    p.is_active && !excludeIds.includes(p.id)
-  );
+  const availableProducts = products?.filter((p) => {
+    const isActive = Boolean(p.is_active);
+    const isExcluded = excludeIds.includes(p.id);
+    const isServiceItem = (p.item_type ?? "product") === "service";
+
+    if (!isActive || isExcluded) {
+      return false;
+    }
+
+    if (excludeServiceItems && isServiceItem) {
+      return false;
+    }
+
+    return true;
+  });
   const selectedProduct = products?.find(p => p.id === value);
 
   return (

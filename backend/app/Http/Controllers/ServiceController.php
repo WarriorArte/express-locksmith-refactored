@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Support\ApiResponse;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,9 +15,11 @@ final class ServiceController
         'customer_id', 'quote_id', 'service_type', 'status', 'description',
         'problem', 'location', 'address', 'estimated_price', 'final_price',
         'labor_cost', 'discount', 'internal_notes', 'policies',
-        'assigned_to', 'started_at', 'completed_at', 'delivered_at',
+        'assigned_to', 'started_at', 'completed_at', 'delivered_at', 'scheduled_start_at',
         'has_warranty', 'warranty_days',
     ];
+
+    private const DATETIME_FIELDS = ['started_at', 'completed_at', 'delivered_at', 'scheduled_start_at'];
 
     /** Punto de entrada legacy — mantiene compatibilidad con el frontend actual */
     public function handle(Request $request): JsonResponse
@@ -114,8 +117,19 @@ final class ServiceController
             return ApiResponse::error('description es requerido');
         }
 
+        try {
+            $dateUpdates = $this->normalizeDateTimeValues([
+                'started_at' => $data['started_at'] ?? null,
+                'completed_at' => $data['completed_at'] ?? null,
+                'delivered_at' => $data['delivered_at'] ?? null,
+                'scheduled_start_at' => $data['scheduled_start_at'] ?? null,
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 422);
+        }
+
         $id = (string) Str::uuid();
-        DB::transaction(function () use ($id, $workshopId, $data, $user): void {
+        DB::transaction(function () use ($id, $workshopId, $data, $user, $dateUpdates): void {
             DB::table('services')->insert([
                 'id' => $id,
                 'workshop_id' => $workshopId,
@@ -137,9 +151,10 @@ final class ServiceController
                 'custom_fields' => json_encode($data['custom_fields'] ?? []),
                 'assigned_to' => $data['assigned_to'] ?? null,
                 'created_by' => $user->id,
-                'started_at' => $data['started_at'] ?? null,
-                'completed_at' => $data['completed_at'] ?? null,
-                'delivered_at' => $data['delivered_at'] ?? null,
+                'started_at' => $dateUpdates['started_at'],
+                'completed_at' => $dateUpdates['completed_at'],
+                'delivered_at' => $dateUpdates['delivered_at'],
+                'scheduled_start_at' => $dateUpdates['scheduled_start_at'],
                 'has_warranty' => (int) ($data['has_warranty'] ?? 0),
                 'warranty_days' => $data['warranty_days'] ?? null,
             ]);
@@ -180,6 +195,12 @@ final class ServiceController
             $updates['custom_fields'] = json_encode($data['custom_fields']);
         }
 
+        try {
+            $updates = $this->normalizeDateTimeValues($updates);
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 422);
+        }
+
         DB::transaction(function () use ($id, $updates, $data): void {
             if ($updates !== []) {
                 DB::table('services')->where('id', $id)->update($updates);
@@ -190,6 +211,34 @@ final class ServiceController
         });
 
         return ApiResponse::success($this->fetchFull($id), 'Servicio actualizado');
+    }
+
+    private function normalizeDateTimeValues(array $payload): array
+    {
+        foreach (self::DATETIME_FIELDS as $field) {
+            if (!array_key_exists($field, $payload)) {
+                continue;
+            }
+
+            $value = $payload[$field];
+            if ($value === null || $value === '') {
+                $payload[$field] = null;
+
+                continue;
+            }
+
+            if (!is_string($value)) {
+                throw new \InvalidArgumentException("{$field} debe ser una fecha en formato valido");
+            }
+
+            try {
+                $payload[$field] = Carbon::parse($value)->format('Y-m-d H:i:s');
+            } catch (\Throwable $e) {
+                throw new \InvalidArgumentException("{$field} debe ser una fecha en formato valido");
+            }
+        }
+
+        return $payload;
     }
 
     /** DELETE — compartido entre legacy y REST */

@@ -7,6 +7,7 @@ use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Models\Product;
 use App\Support\ApiResponse;
+use App\Support\Uploads\UploadedFileCleanupService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +16,10 @@ use Illuminate\Support\Str;
 final class ProductController
 {
     use AuthorizesWorkshop;
+
+    public function __construct(private readonly UploadedFileCleanupService $uploadedFileCleanup)
+    {
+    }
 
     /** Punto de entrada legacy — mantiene compatibilidad con el frontend actual */
     public function handle(Request $request): JsonResponse
@@ -77,9 +82,15 @@ final class ProductController
 
         if ($err = $this->requireAdmin($request, $workshopId)) return $err;
 
-        $product = DB::transaction(function () use ($request, $workshopId): Product {
+        $itemType = (string) $request->input('item_type', 'product');
+        $normalizedServiceProducts = $itemType === 'service'
+            ? $this->normalizeServiceProducts($workshopId, $request->input('service_products', []))
+            : null;
+
+        $product = DB::transaction(function () use ($request, $workshopId, $itemType, $normalizedServiceProducts): Product {
             $product = Product::create([
                 'workshop_id' => $workshopId,
+                'item_type' => $itemType,
                 'category_id' => $request->input('category_id'),
                 'name' => $request->input('name'),
                 'description' => $request->input('description'),
@@ -94,6 +105,11 @@ final class ProductController
                 'sale_price_min' => $request->input('sale_price_min', 0),
                 'sale_price_max' => $request->input('sale_price_max', 0),
                 'is_active' => $request->boolean('is_active', true),
+                // Service-specific fields
+                'service_type' => $request->input('service_type'),
+                'labor_cost' => $request->input('labor_cost'),
+                'discount' => $request->input('discount', 0),
+                'service_products' => $normalizedServiceProducts,
             ]);
 
             if ($request->has('tag_ids')) {
@@ -117,18 +133,39 @@ final class ProductController
 
         if ($err = $this->requireAdmin($request, $product->workshop_id)) return $err;
 
+        $previousImageUrl = $product->image_url;
+
         DB::transaction(function () use ($request, $product): void {
-            $product->fill($request->only([
-                'category_id', 'name', 'description', 'instructions', 'notes',
+            $payload = $request->only([
+                'item_type', 'category_id', 'name', 'description', 'instructions', 'notes',
                 'image_url', 'stock_store', 'stock_warehouse', 'min_stock',
                 'purchase_price_imported', 'purchase_price_local',
                 'sale_price_min', 'sale_price_max', 'is_active',
-            ]))->save();
+                // Service-specific fields
+                'service_type', 'labor_cost', 'discount', 'service_products',
+            ]);
+
+            $targetItemType = (string) ($payload['item_type'] ?? $product->item_type ?? 'product');
+            if ($targetItemType === 'service' && array_key_exists('service_products', $payload)) {
+                $payload['service_products'] = $this->normalizeServiceProducts($product->workshop_id, $payload['service_products']);
+            }
+            if ($targetItemType !== 'service') {
+                $payload['service_type'] = null;
+                $payload['labor_cost'] = null;
+                $payload['discount'] = 0;
+                $payload['service_products'] = null;
+            }
+
+            $product->fill($payload)->save();
 
             if ($request->has('tag_ids')) {
                 $this->syncTags($product, (array) $request->input('tag_ids', []));
             }
         });
+
+        if ($request->has('image_url') && $previousImageUrl !== $product->image_url) {
+            $this->uploadedFileCleanup->deleteIfUnused($previousImageUrl);
+        }
 
         return ApiResponse::success($this->formatProduct($product->load(['category', 'tags'])), 'Producto actualizado');
     }
@@ -144,7 +181,14 @@ final class ProductController
 
         if ($err = $this->requireAdmin($request, $product->workshop_id)) return $err;
 
-        $product->update(['is_active' => false]);
+        $previousImageUrl = $product->image_url;
+
+        $product->update([
+            'is_active' => false,
+            'image_url' => null,
+        ]);
+
+        $this->uploadedFileCleanup->deleteIfUnused($previousImageUrl);
 
         return ApiResponse::success(null, 'Producto desactivado');
     }
@@ -197,5 +241,103 @@ final class ProductController
         foreach (array_unique(array_filter($tagIds)) as $tagId) {
             $product->tags()->attach($tagId, ['id' => (string) Str::uuid()]);
         }
+    }
+
+    private function normalizeServiceProducts(string $workshopId, mixed $items): array
+    {
+        if (!is_array($items) || $items === []) {
+            return [];
+        }
+
+        $productIds = [];
+        $productNames = [];
+
+        foreach ($items as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $productId = trim((string) ($item['product_id'] ?? ''));
+            if ($productId !== '') {
+                $productIds[] = $productId;
+            }
+
+            $productName = trim((string) ($item['product_name'] ?? ''));
+            if ($productName !== '') {
+                $productNames[] = $productName;
+            }
+        }
+
+        $products = collect();
+        $productIds = array_values(array_unique($productIds));
+        $productNames = array_values(array_unique($productNames));
+
+        if ($productIds !== [] || $productNames !== []) {
+            $products = DB::table('products')
+                ->where('workshop_id', $workshopId)
+                ->where('item_type', '!=', 'service')
+                ->where(function ($query) use ($productIds, $productNames): void {
+                    if ($productIds !== []) {
+                        $query->whereIn('id', $productIds);
+                    }
+                    if ($productNames !== []) {
+                        if ($productIds !== []) {
+                            $query->orWhereIn('name', $productNames);
+                        } else {
+                            $query->whereIn('name', $productNames);
+                        }
+                    }
+                })
+                ->get(['id', 'name', 'sale_price_min']);
+        }
+
+        $productsById = [];
+        $productsByName = [];
+
+        foreach ($products as $product) {
+            $productsById[$product->id] = $product;
+            $productsByName[strtolower($product->name)] = $product;
+        }
+
+        $normalized = [];
+        foreach ($items as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $quantity = max((int) ($item['quantity'] ?? 1), 1);
+            $inputProductId = trim((string) ($item['product_id'] ?? ''));
+            $inputProductName = trim((string) ($item['product_name'] ?? ''));
+
+            $resolvedProduct = null;
+            if ($inputProductId !== '' && isset($productsById[$inputProductId])) {
+                $resolvedProduct = $productsById[$inputProductId];
+            } elseif ($inputProductName !== '') {
+                $resolvedProduct = $productsByName[strtolower($inputProductName)] ?? null;
+            }
+
+            $resolvedProductId = $resolvedProduct?->id ?? ($inputProductId !== '' ? $inputProductId : null);
+            $resolvedProductName = $resolvedProduct?->name ?? $inputProductName;
+            if ($resolvedProductId === null && $resolvedProductName === '') {
+                continue;
+            }
+
+            $unitPrice = isset($item['unit_price'])
+                ? (float) $item['unit_price']
+                : (float) ($resolvedProduct?->sale_price_min ?? 0);
+            $subtotal = isset($item['subtotal'])
+                ? (float) $item['subtotal']
+                : ($quantity * $unitPrice);
+
+            $normalized[] = [
+                'product_id' => $resolvedProductId,
+                'product_name' => $resolvedProductName,
+                'quantity' => $quantity,
+                'unit_price' => round($unitPrice, 2),
+                'subtotal' => round($subtotal, 2),
+            ];
+        }
+
+        return $normalized;
     }
 }

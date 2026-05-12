@@ -26,6 +26,7 @@ interface ImageUploaderProps {
   className?: string;
   showPreview?: boolean;
   disabled?: boolean;
+  preserveObjectUrls?: boolean;
 }
 
 export function ImageUploader({
@@ -38,6 +39,7 @@ export function ImageUploader({
   className,
   showPreview = true,
   disabled = false,
+  preserveObjectUrls = false,
 }: ImageUploaderProps) {
   const [mode, setMode] = useState<'upload' | 'url' | 'gallery'>('upload');
   const [urlInput, setUrlInput] = useState(value || '');
@@ -53,9 +55,9 @@ export function ImageUploader({
   // Revoke blob URL on unmount
   useEffect(() => {
     return () => {
-      if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+      if (!preserveObjectUrls && blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
     };
-  }, []);
+  }, [preserveObjectUrls]);
 
   useEffect(() => {
     setUrlInput(value || '');
@@ -67,7 +69,7 @@ export function ImageUploader({
     try {
       const converted = await compressImageForHosting(file);
       // Revoke previous blob URL
-      if (blobUrlRef.current) {
+      if (!preserveObjectUrls && blobUrlRef.current) {
         URL.revokeObjectURL(blobUrlRef.current);
       }
       const blobUrl = URL.createObjectURL(converted);
@@ -84,7 +86,7 @@ export function ImageUploader({
   const handleUrlSubmit = () => {
     if (urlInput.trim()) {
       // Clear any pending file since user is using a direct URL
-      if (blobUrlRef.current) {
+      if (!preserveObjectUrls && blobUrlRef.current) {
         URL.revokeObjectURL(blobUrlRef.current);
         blobUrlRef.current = null;
       }
@@ -95,7 +97,7 @@ export function ImageUploader({
   };
 
   const handleClear = () => {
-    if (blobUrlRef.current) {
+    if (!preserveObjectUrls && blobUrlRef.current) {
       URL.revokeObjectURL(blobUrlRef.current);
       blobUrlRef.current = null;
     }
@@ -108,7 +110,7 @@ export function ImageUploader({
   };
 
   const handleGallerySelect = (url: string) => {
-    if (blobUrlRef.current) {
+    if (!preserveObjectUrls && blobUrlRef.current) {
       URL.revokeObjectURL(blobUrlRef.current);
       blobUrlRef.current = null;
     }
@@ -196,7 +198,25 @@ export function ImageUploader({
                   className="w-full max-h-52 object-cover rounded-2xl border border-border"
                   onError={() => { if (previewUrl) setPreviewUrl(null); }}
                 />
-                <div className="absolute inset-0 rounded-2xl bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                <div className="absolute inset-x-0 bottom-0 p-3 sm:hidden flex items-center justify-center gap-2 bg-gradient-to-t from-black/65 to-transparent rounded-b-2xl">
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/20 backdrop-blur-sm text-white text-xs font-semibold border border-white/30"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    Cambiar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); handleClear(); }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/85 backdrop-blur-sm text-white text-xs font-semibold"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    Quitar
+                  </button>
+                </div>
+                <div className="absolute inset-0 rounded-2xl bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity items-center justify-center gap-3 hidden sm:flex">
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}

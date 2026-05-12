@@ -6,7 +6,7 @@ const runtimeApiBase =
     : undefined;
 
 const envApiBase = import.meta.env.VITE_PHP_API_BASE as string | undefined;
-const API_BASE = (runtimeApiBase || envApiBase || `${import.meta.env.BASE_URL}api`).replace(/\/$/, "");
+const API_BASE = (runtimeApiBase || envApiBase || (() => { throw new Error("[phpApi] VITE_PHP_API_BASE no está definida en .env"); })()).replace(/\/$/, "");
 
 if (typeof window !== "undefined" && !(window as any).__PHP_API_BASE_LOGGED__) {
   (window as any).__PHP_API_BASE_LOGGED__ = true;
@@ -14,6 +14,18 @@ if (typeof window !== "undefined" && !(window as any).__PHP_API_BASE_LOGGED__) {
 }
 
 const AUTH_TOKEN_KEY = "ce_php_auth_token";
+
+export class PhpApiError extends Error {
+  status: number;
+  payload: unknown;
+
+  constructor(message: string, status: number, payload: unknown) {
+    super(message);
+    this.name = "PhpApiError";
+    this.status = status;
+    this.payload = payload;
+  }
+}
 
 type ApiSuccess<T> = {
   success: true;
@@ -83,14 +95,16 @@ export async function phpApiRequest<T>(path: string, init?: RequestInit): Promis
   const payload = await parseJson(response);
 
   if (!response.ok) {
+    const message = (payload as ApiError | null)?.message || "Error de solicitud";
+
     if (response.status === 401) {
       clearPhpAuthToken();
       if (typeof window !== "undefined" && !window.location.pathname.startsWith("/auth")) {
         window.location.href = "/auth";
       }
     }
-    const message = (payload as ApiError | null)?.message || "Error de solicitud";
-    throw new Error(message);
+
+    throw new PhpApiError(message, response.status, payload);
   }
 
   if (payload && typeof payload === "object" && "success" in payload) {

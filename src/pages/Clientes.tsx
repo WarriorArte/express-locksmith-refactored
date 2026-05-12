@@ -36,19 +36,10 @@ import { cn } from "@/lib/utils";
 import { useCustomers, useDeleteCustomer, type Customer } from "@/hooks/useCustomers";
 import { CustomerFormDialog } from "@/components/customers/CustomerFormDialog";
 import { CustomerServicesDialog } from "@/components/customers/CustomerServicesDialog";
+import { CustomerAvatar } from "@/components/customers/CustomerAvatar";
 import { UnifiedSearchInput } from "@/components/shared/UnifiedSearchInput";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useToast } from "@/hooks/use-toast";
-
-function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
-}
 
 export default function Clientes() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -163,12 +154,12 @@ export default function Clientes() {
               {/* Header: avatar + nombre + badges | compras + menú */}
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className={cn(
-                    "w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-bold",
-                    client.customer_type === "company" ? "bg-primary-light text-primary" : "bg-secondary-light text-secondary"
-                  )}>
-                    {getInitials(client.name)}
-                  </div>
+                  <CustomerAvatar
+                    name={client.name}
+                    customerType={client.customer_type}
+                    noWorkAgain={!!client.no_work_again}
+                    className="flex-shrink-0"
+                  />
                   <div className="min-w-0">
                     <p className="font-semibold text-foreground leading-tight truncate">{client.name}</p>
                     <div className="flex items-center gap-1.5 flex-wrap mt-1">

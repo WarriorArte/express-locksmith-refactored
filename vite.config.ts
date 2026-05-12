@@ -9,6 +9,16 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    watch: {
+      ignored: [
+        "**/backend/vendor/**",
+        "**/backend/storage/**",
+        "**/backend/bootstrap/cache/**",
+        "**/backend/public/uploads/**",
+        "**/dist/**",
+        "**/.git/**",
+      ],
+    },
   },
   // Remove console logs and debugger statements in production builds
   esbuild: {
@@ -17,7 +27,7 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(), 
     mode === "development" && componentTagger(),
-    VitePWA({
+    mode === "production" && VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico'],
       manifest: {

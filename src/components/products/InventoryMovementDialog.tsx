@@ -116,6 +116,7 @@ export function InventoryMovementDialog({
                   value={quantity}
                   onValueChange={setQuantity}
                   placeholder="Ingrese cantidad"
+                  allowManualInput
                 />
               </div>
               <div className="space-y-2">
@@ -144,6 +145,7 @@ export function InventoryMovementDialog({
                   value={quantity}
                   onValueChange={setQuantity}
                   placeholder="Ingrese cantidad"
+                  allowManualInput
                 />
               </div>
               <div className="space-y-2">
@@ -173,6 +175,7 @@ export function InventoryMovementDialog({
                   value={quantity}
                   onValueChange={setQuantity}
                   placeholder="Ingrese cantidad"
+                  allowManualInput
                 />
                 <p className="text-xs text-muted-foreground">
                   Disponible en tienda: {product?.stock_store || 0}
@@ -205,6 +208,7 @@ export function InventoryMovementDialog({
                   value={quantity}
                   onValueChange={setQuantity}
                   placeholder="Ingrese cantidad"
+                  allowManualInput
                 />
                 <p className="text-xs text-muted-foreground">
                   Disponible en bodega: {product?.stock_warehouse || 0}

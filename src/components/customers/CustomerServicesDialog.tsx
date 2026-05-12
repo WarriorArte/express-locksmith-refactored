@@ -1,9 +1,10 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/responsive-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,9 +16,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Wrench, Eye, Loader2, Edit, Trash2, Phone, Mail, MapPin, AlertCircle, MoreHorizontal } from "lucide-react";
-import { useServices } from "@/hooks/useServices";
+import { useServices, type Service } from "@/hooks/useServices";
 import type { Customer } from "@/hooks/useCustomers";
-import { DetailViewDialog } from "@/components/shared/DetailViewDialog";
+import { ServiceDetailSheet } from "@/components/services/ServiceDetailSheet";
+import { CustomerAvatar } from "@/components/customers/CustomerAvatar";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -38,15 +40,25 @@ const statusConfig = {
   cancelled: { label: "Cancelado", color: "bg-destructive text-destructive-foreground" },
 };
 
-function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
-}
+const getServiceDisplayStatus = (service: Service) => {
+  if (service.status === "pending" && service.scheduled_start_at) {
+    return { label: "Programado", color: "bg-accent text-accent-foreground" };
+  }
+
+  return statusConfig[service.status as keyof typeof statusConfig];
+};
+
+const getServiceDisplayDate = (service: Service) => {
+  if (service.status === "pending" && service.scheduled_start_at) {
+    return service.scheduled_start_at;
+  }
+
+  if (service.started_at) {
+    return service.started_at;
+  }
+
+  return service.created_at;
+};
 
 export function CustomerServicesDialog({
   open,
@@ -57,41 +69,16 @@ export function CustomerServicesDialog({
 }: CustomerServicesDialogProps) {
   const { data: allServices, isLoading } = useServices();
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
-  const [selectedService, setSelectedService] = useState<any>(null);
-  const servicesListRef = useRef<HTMLDivElement | null>(null);
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
 
   const customerServices = allServices?.filter(s => s.customer_id === customer?.id) || [];
 
-  const handleViewDetail = (service: any) => {
-    const productsSubtotal = service.service_products?.reduce((acc: number, p: any) => acc + Number(p.subtotal), 0) || 0;
-    setSelectedService({
-      type: "service" as const,
-      number: service.service_number,
-      date: service.created_at,
-      status: service.status,
-      customer_name: service.customer?.name,
-      customer_phone: service.customer?.phone,
-      customer_email: service.customer?.email,
-      customer_address: service.address || service.customer?.address,
-      description: service.description,
-      problem: service.problem,
-      items: service.service_products?.map((item: any) => ({
-        id: item.id,
-        product_name: item.product_name,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        subtotal: item.subtotal,
-      })) || [],
-      subtotal: productsSubtotal,
-      discount: service.discount,
-      total: service.final_price || service.estimated_price,
-      notes: service.internal_notes,
-      estimated_price: service.estimated_price,
-      final_price: service.final_price,
-      labor_cost: service.labor_cost,
-      images: service.service_images,
-    });
-    setDetailDialogOpen(true);
+  const handleViewDetail = (service: Service) => {
+    setSelectedService(service);
+    onOpenChange(false);
+    window.setTimeout(() => {
+      setDetailDialogOpen(true);
+    }, 0);
   };
 
   if (!customer) return null;
@@ -99,22 +86,20 @@ export function CustomerServicesDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent fixedHeight className="max-w-[95vw] sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
-              <div className={cn(
-                "w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-bold",
-                customer.customer_type === "company" ? "bg-primary-light text-primary" : "bg-secondary-light text-secondary"
-              )}>
-                {getInitials(customer.name)}
-              </div>
+              <CustomerAvatar
+                name={customer.name}
+                customerType={customer.customer_type}
+                noWorkAgain={!!customer.no_work_again}
+                className="h-9 w-9 flex-shrink-0"
+              />
               <span className="truncate">{customer.name}</span>
             </DialogTitle>
-          </DialogHeader>
 
-          {/* Client info */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-1.5 flex-wrap">
+            {/* Badges */}
+            <div className="flex items-center gap-1.5 flex-wrap pt-1">
               <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                 {customer.customer_type === "company" ? "Empresa" : "Persona"}
               </Badge>
@@ -135,6 +120,7 @@ export function CustomerServicesDialog({
               )}
             </div>
 
+            {/* Contacto */}
             {(customer.phone || customer.email || customer.address) && (
               <div className="space-y-1 text-sm text-muted-foreground">
                 {customer.phone && (
@@ -157,14 +143,18 @@ export function CustomerServicesDialog({
                 )}
               </div>
             )}
-          </div>
+
+            {/* Título historial */}
+            <div className="border-t pt-3 flex items-center gap-2">
+              <Wrench className="w-4 h-4" />
+              <span className="font-semibold text-sm">
+                Historial de Servicios ({customerServices.length})
+              </span>
+            </div>
+          </DialogHeader>
 
           {/* Services list */}
-          <div ref={servicesListRef} className="border-t pt-4">
-            <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
-              <Wrench className="w-4 h-4" />
-              Historial de Servicios ({customerServices.length})
-            </h4>
+          <div>
 
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
@@ -178,7 +168,7 @@ export function CustomerServicesDialog({
             ) : (
               <div className="space-y-2">
                 {customerServices.map((service) => {
-                  const status = statusConfig[service.status as keyof typeof statusConfig];
+                  const status = getServiceDisplayStatus(service);
                   return (
                     <div
                       key={service.id}
@@ -191,7 +181,7 @@ export function CustomerServicesDialog({
                             <span className="font-mono text-sm text-primary font-medium">{service.service_number}</span>
                             <Badge className={cn("text-xs", status.color)}>{status.label}</Badge>
                             <span className="text-xs text-muted-foreground">
-                              {format(parseISO(service.created_at), "dd MMM yyyy", { locale: es })}
+                              {format(parseISO(getServiceDisplayDate(service)), "dd MMM yyyy", { locale: es })}
                             </span>
                           </div>
                           <p className="text-sm truncate text-muted-foreground">{service.description}</p>
@@ -207,7 +197,7 @@ export function CustomerServicesDialog({
 
           {/* Footer: Eliminar + Editar + ⋮ */}
           {(onEdit || onDelete) && (
-            <div className="pt-4 border-t mt-2">
+            <DialogFooter>
               <div className="flex items-center gap-2 w-full">
                 {onDelete && (
                   <button
@@ -234,11 +224,6 @@ export function CustomerServicesDialog({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" side="top">
-                    <DropdownMenuItem
-                      onClick={() => servicesListRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                    >
-                      <Wrench className="w-4 h-4 mr-2" /> Ver historial
-                    </DropdownMenuItem>
                     {onEdit && (
                       <DropdownMenuItem onClick={onEdit}>
                         <Edit className="w-4 h-4 mr-2" /> Editar
@@ -255,15 +240,20 @@ export function CustomerServicesDialog({
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-            </div>
+            </DialogFooter>
           )}
         </DialogContent>
       </Dialog>
 
-      <DetailViewDialog
+      <ServiceDetailSheet
         open={detailDialogOpen}
-        onOpenChange={setDetailDialogOpen}
-        data={selectedService}
+        onOpenChange={(nextOpen) => {
+          setDetailDialogOpen(nextOpen);
+          if (!nextOpen) {
+            setSelectedService(null);
+          }
+        }}
+        service={selectedService}
       />
     </>
   );

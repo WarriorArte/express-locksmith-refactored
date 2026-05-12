@@ -13,10 +13,15 @@ final class StoreProductRequest extends FormRequest
 
     public function rules(): array
     {
+        $itemType = $this->input('item_type', 'product');
+        
         return [
             'workshop_id' => ['required', 'string', 'uuid'],
+            'item_type' => ['sometimes', 'string', 'in:product,service'],
             'name' => ['required', 'string', 'max:255'],
-            'category_id' => ['nullable', 'string', 'uuid'],
+            'category_id' => $itemType === 'product' 
+                ? ['required', 'string', 'uuid'] 
+                : ['nullable', 'string', 'uuid'],
             'description' => ['nullable', 'string'],
             'instructions' => ['nullable', 'string'],
             'notes' => ['nullable', 'string'],
@@ -30,6 +35,16 @@ final class StoreProductRequest extends FormRequest
             'sale_price_max' => ['numeric', 'min:0'],
             'tag_ids' => ['array'],
             'tag_ids.*' => ['string', 'uuid'],
+            // Service-specific fields
+            'service_type' => ['nullable', 'string', 'in:automotive,residential,commercial,industrial'],
+            'labor_cost' => ['nullable', 'numeric', 'min:0'],
+            'discount' => ['nullable', 'numeric', 'min:0'],
+            'service_products' => ['nullable', 'array'],
+            'service_products.*.product_id' => ['sometimes', 'nullable', 'string', 'uuid'],
+            'service_products.*.product_name' => ['sometimes', 'required', 'string', 'max:255'],
+            'service_products.*.quantity' => ['sometimes', 'required', 'integer', 'min:1'],
+            'service_products.*.unit_price' => ['sometimes', 'required', 'numeric', 'min:0'],
+            'service_products.*.subtotal' => ['sometimes', 'nullable', 'numeric', 'min:0'],
         ];
     }
 

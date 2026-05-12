@@ -13,9 +13,14 @@ final class UpdateProductRequest extends FormRequest
 
     public function rules(): array
     {
+        $itemType = $this->input('item_type') ?? 'product'; // Default to product if not specified
+        
         return [
+            'item_type' => ['sometimes', 'string', 'in:product,service'],
             'name' => ['sometimes', 'string', 'max:255'],
-            'category_id' => ['sometimes', 'nullable', 'string', 'uuid'],
+            'category_id' => $itemType === 'product'
+                ? ['sometimes', 'required', 'string', 'uuid']
+                : ['sometimes', 'nullable', 'string', 'uuid'],
             'description' => ['sometimes', 'nullable', 'string'],
             'instructions' => ['sometimes', 'nullable', 'string'],
             'notes' => ['sometimes', 'nullable', 'string'],
@@ -30,6 +35,16 @@ final class UpdateProductRequest extends FormRequest
             'is_active' => ['sometimes', 'boolean'],
             'tag_ids' => ['sometimes', 'array'],
             'tag_ids.*' => ['string', 'uuid'],
+            // Service-specific fields
+            'service_type' => ['sometimes', 'nullable', 'string', 'in:automotive,residential,commercial,industrial'],
+            'labor_cost' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'discount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'service_products' => ['sometimes', 'nullable', 'array'],
+            'service_products.*.product_id' => ['sometimes', 'nullable', 'string', 'uuid'],
+            'service_products.*.product_name' => ['sometimes', 'required', 'string', 'max:255'],
+            'service_products.*.quantity' => ['sometimes', 'required', 'integer', 'min:1'],
+            'service_products.*.unit_price' => ['sometimes', 'required', 'numeric', 'min:0'],
+            'service_products.*.subtotal' => ['sometimes', 'nullable', 'numeric', 'min:0'],
         ];
     }
 

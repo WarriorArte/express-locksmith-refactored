@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Support\ApiResponse;
+use App\Support\Uploads\UploadedFileCleanupService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -10,6 +11,12 @@ use Illuminate\Support\Str;
 
 final class ServiceImageController
 {
+    private const MAX_IMAGES_PER_SERVICE = 2;
+
+    public function __construct(private readonly UploadedFileCleanupService $uploadedFileCleanup)
+    {
+    }
+
     public function handle(Request $request): JsonResponse
     {
         return match ($request->method()) {
@@ -50,6 +57,11 @@ final class ServiceImageController
             return ApiResponse::error('Sin acceso al taller indicado', 403);
         }
 
+        $currentImagesCount = DB::table('service_images')->where('service_id', $serviceId)->count();
+        if ($currentImagesCount >= self::MAX_IMAGES_PER_SERVICE) {
+            return ApiResponse::error('Solo se permiten 2 imagenes por servicio', 422);
+        }
+
         $id = (string) Str::uuid();
         DB::table('service_images')->insert([
             'id' => $id,
@@ -70,7 +82,7 @@ final class ServiceImageController
         $row = DB::table('service_images as si')
             ->join('services as s', 's.id', '=', 'si.service_id')
             ->where('si.id', $id)
-            ->first(['si.service_id', 's.workshop_id']);
+            ->first(['si.service_id', 'si.image_url', 's.workshop_id']);
 
         if (!$row) return ApiResponse::error('Imagen no encontrada', 404);
         if (!$user->canAccessWorkshop($row->workshop_id)) {
@@ -78,6 +90,8 @@ final class ServiceImageController
         }
 
         DB::table('service_images')->where('id', $id)->delete();
+
+        $this->uploadedFileCleanup->deleteIfUnused($row->image_url);
 
         return ApiResponse::success(null, 'Imagen eliminada');
     }

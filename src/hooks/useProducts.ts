@@ -10,6 +10,7 @@ export type Product = ProductRow & {
 };
 
 type ProductMutationData = {
+  item_type?: "product" | "service";
   category_id?: string | null;
   name?: string;
   description?: string | null;
@@ -82,6 +83,7 @@ export function useCreateProduct() {
           id: `temp-${Date.now()}`,
           workshop_id: currentWorkshop?.id,
           name: newProduct.name,
+          item_type: newProduct.item_type ?? "product",
           category_id: newProduct.category_id ?? null,
           is_active: newProduct.is_active !== false,
           stock_store: newProduct.stock_store ?? 0,

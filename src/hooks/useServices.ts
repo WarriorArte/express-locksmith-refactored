@@ -43,6 +43,7 @@ type ServiceMutationData = {
   started_at?: string | null;
   completed_at?: string | null;
   delivered_at?: string | null;
+  scheduled_start_at?: string | null;
   has_warranty?: boolean | number;
   warranty_days?: number | null;
   service_products?: Array<{

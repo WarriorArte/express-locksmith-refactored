@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
-import { clearPhpAuthToken, getPhpAuthToken, phpApiRequest, setPhpAuthToken } from "@/lib/phpApi";
+import { clearPhpAuthToken, getPhpAuthToken, PhpApiError, phpApiRequest, setPhpAuthToken } from "@/lib/phpApi";
 
 // ============================================================
 // SISTEMA DE AUTENTICACIÓN - VERSIÓN 2.1 (OPTIMIZADO)
@@ -200,11 +200,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         applyCheckedSession(token, data);
       } catch (err) {
         console.error("[Auth] Error restaurando sesión:", err);
-        clearPhpAuthToken();
-        setUser(null);
-        setSession(null);
-        setProfile(null);
-        setIsAdmin(false);
+        if (err instanceof PhpApiError && (err.status === 401 || err.status === 403)) {
+          clearPhpAuthToken();
+          setUser(null);
+          setSession(null);
+          setProfile(null);
+          setIsAdmin(false);
+        }
       } finally {
         if (isMounted) {
           setLoading(false);

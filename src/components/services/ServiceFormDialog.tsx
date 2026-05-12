@@ -31,12 +31,12 @@ import { useCreateService, useUpdateService, generateServiceNumber, type Service
 import { useCreateServiceImage, useDeleteServiceImage } from "@/hooks/useServices";
 import { useBatchInventoryUpdate } from "@/hooks/useInventoryMovements";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
-import { useCreateWarranty, generateWarrantyCode, calculateWarrantyEndDate } from "@/hooks/useWarranties";
+import { useCreateWarranty, generateWarrantyCode, calculateWarrantyEndDate, type Warranty } from "@/hooks/useWarranties";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import { phpApiUpload } from "@/lib/phpApi";
 import { WarrantyPrintTicket } from "@/components/warranties/WarrantyPrintTicket";
 import type { Customer } from "@/hooks/useCustomers";
-import type { Product } from "@/hooks/useProducts";
+import { useProducts, type Product } from "@/hooks/useProducts";
 
 interface ServiceItem {
   tempId: string;
@@ -54,10 +54,13 @@ interface ServiceImage {
   id?: string;
 }
 
+const MAX_SERVICE_IMAGES = 2;
+
 interface ServiceFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   service?: Service | null;
+  templateServiceId?: string | null;
 }
 
 const serviceTypes: { value: ServiceType; label: string }[] = [
@@ -67,7 +70,8 @@ const serviceTypes: { value: ServiceType; label: string }[] = [
   { value: "industrial", label: "Industrial" },
 ];
 
-export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDialogProps) {
+export function ServiceFormDialog({ open, onOpenChange, service, templateServiceId }: ServiceFormDialogProps) {
+  const MANUAL_TEMPLATE = "__manual";
   const isEditing = !!service;
   const createService = useCreateService();
   const updateService = useUpdateService();
@@ -76,14 +80,16 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
   const createWarranty = useCreateWarranty();
   const { updateForService } = useBatchInventoryUpdate();
   const { data: settings } = useBusinessSettings();
+  const { data: inventoryItems } = useProducts();
   const { currentWorkshop } = useWorkshop();
   
   const currencySymbol = settings?.currency_symbol || "$";
   
   const [activeTab, setActiveTab] = useState("servicio");
   const [warrantyPrintOpen, setWarrantyPrintOpen] = useState(false);
-  const [createdWarranty, setCreatedWarranty] = useState<any>(null);
+  const [createdWarranty, setCreatedWarranty] = useState<Warranty | null>(null);
   const [customerFormOpen, setCustomerFormOpen] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState(MANUAL_TEMPLATE);
 
   const [form, setForm] = useState({
     service_number: "",
@@ -99,6 +105,7 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
     labor_cost: 0,
     discount: 0,
     internal_notes: "",
+    scheduled_start_at: null as string | null,
     has_warranty: false,
     warranty_days: 30,
     warranty_value: 30,
@@ -107,13 +114,21 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
 
   const [items, setItems] = useState<ServiceItem[]>([]);
   const [images, setImages] = useState<ServiceImage[]>([]);
+  const [imageUploaderKey, setImageUploaderKey] = useState(0);
   const pendingFilesRef = useRef(new Map<string, File>());
   const tabsOrder = ["servicio", "productos", "imagenes", "cliente", "costos"];
+  const serviceTemplates = (inventoryItems || []).filter(
+    (item) => (item.item_type ?? "product") === "service" && item.is_active !== false && item.is_active !== 0,
+  );
+  const inventoryProducts = (inventoryItems || []).filter(
+    (item) => (item.item_type ?? "product") !== "service" && item.is_active !== false && item.is_active !== 0,
+  );
 
   useEffect(() => {
     if (open) {
       setActiveTab("servicio");
       pendingFilesRef.current.clear();
+      setImageUploaderKey(0);
       if (service) {
         const days = service.warranty_days || 30;
         let unit: "days" | "weeks" | "months" = "days";
@@ -159,6 +174,7 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
           id: i.id,
           description: i.description || "",
         })) || []);
+        setSelectedTemplateId(MANUAL_TEMPLATE);
       } else {
         if (currentWorkshop?.id) {
           generateServiceNumber(currentWorkshop.id).then(num => {
@@ -186,9 +202,71 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
         }));
         setItems([]);
         setImages([]);
+        if (templateServiceId) {
+          handleTemplateImport(templateServiceId);
+        } else {
+          setSelectedTemplateId(MANUAL_TEMPLATE);
+        }
       }
     }
-  }, [open, service, currentWorkshop?.id]);
+  }, [open, service, currentWorkshop?.id, templateServiceId]);
+
+  const handleTemplateImport = (templateId: string) => {
+    if (templateId === MANUAL_TEMPLATE) {
+      setSelectedTemplateId(MANUAL_TEMPLATE);
+      setForm((prev) => ({ ...prev, description: "" }));
+      setItems([]);
+
+      return;
+    }
+
+    setSelectedTemplateId(templateId);
+    const template = serviceTemplates.find((item) => item.id === templateId);
+    if (!template) return;
+
+    const productById = new Map(inventoryProducts.map((product) => [product.id, product]));
+    const productByName = new Map(
+      inventoryProducts.map((product) => [product.name.trim().toLowerCase(), product]),
+    );
+
+    const templateItems: ServiceItem[] = (template.service_products || []).map((item) => {
+      const fromId = item.product_id ? productById.get(item.product_id) : undefined;
+      const fromName = !fromId && item.product_name
+        ? productByName.get(item.product_name.trim().toLowerCase())
+        : undefined;
+      const resolvedProduct = fromId || fromName;
+      const quantity = 1;
+      const unitPrice = Number(item.unit_price ?? resolvedProduct?.sale_price_min ?? 0);
+      const subtotal = Number(quantity * unitPrice);
+
+      return {
+        tempId: crypto.randomUUID(),
+        product_id: resolvedProduct?.id || item.product_id || null,
+        product_name: resolvedProduct?.name || item.product_name || "",
+        quantity,
+        unit_price: unitPrice,
+        subtotal,
+      };
+    });
+
+    setForm((prev) => ({
+      ...prev,
+      service_type: (template.service_type as ServiceType) || prev.service_type,
+      description: template.name || prev.description,
+      labor_cost: Number(template.labor_cost || 0),
+    }));
+    setItems(templateItems);
+  };
+
+  useEffect(() => {
+    if (!open || isEditing || !templateServiceId) return;
+    if (selectedTemplateId === templateServiceId) return;
+
+    const exists = serviceTemplates.some((item) => item.id === templateServiceId);
+    if (!exists) return;
+
+    handleTemplateImport(templateServiceId);
+  }, [open, isEditing, templateServiceId, selectedTemplateId, serviceTemplates]);
 
   const handleCustomerChange = (customerId: string | null, customer: Customer | null) => {
     setForm(prev => ({
@@ -211,10 +289,10 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
     }]);
   };
 
-  const updateItem = (tempId: string, field: keyof ServiceItem, value: any) => {
+  const updateItem = <K extends keyof ServiceItem>(tempId: string, field: K, value: ServiceItem[K]) => {
     setItems(prev => prev.map(item => {
       if (item.tempId !== tempId) return item;
-      const updated = { ...item, [field]: value };
+      const updated: ServiceItem = { ...item, [field]: value };
       if (field === "quantity" || field === "unit_price") {
         updated.subtotal = updated.quantity * updated.unit_price;
       }
@@ -240,13 +318,16 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
   };
 
   const addImage = (url: string) => {
-    if (url.trim()) {
-      setImages(prev => [...prev, {
-        tempId: crypto.randomUUID(),
-        image_url: url.trim(),
-        description: "",
-      }]);
-    }
+    if (!url.trim()) return;
+    if (images.length >= MAX_SERVICE_IMAGES) return;
+
+    setImages(prev => [...prev, {
+      tempId: crypto.randomUUID(),
+      image_url: url.trim(),
+      description: "",
+    }]);
+    // Limpia el bloque superior para permitir agregar la siguiente imagen.
+    setImageUploaderKey(prev => prev + 1);
   };
 
   const removeImage = (tempId: string) => {
@@ -293,6 +374,7 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
       labor_cost: form.labor_cost,
       discount: form.discount,
       internal_notes: form.internal_notes || null,
+      scheduled_start_at: form.scheduled_start_at || null,
       has_warranty: form.has_warranty,
       warranty_days: form.has_warranty ? form.warranty_days : null,
       service_products: normalizedItems,
@@ -527,6 +609,40 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
 
           {/* Tab: Servicio */}
           <TabsContent value="servicio" className="space-y-4 mt-4">
+            {!isEditing && (
+              <div className="space-y-2">
+                <Label>Plantilla de inventario (opcional)</Label>
+                <Select value={selectedTemplateId} onValueChange={handleTemplateImport}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Crear servicio desde cero" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={MANUAL_TEMPLATE}>Crear desde cero (sin plantilla)</SelectItem>
+                    {serviceTemplates.length === 0 ? (
+                      <SelectItem value="__none" disabled>
+                        No hay servicios preconfigurados
+                      </SelectItem>
+                    ) : (
+                      serviceTemplates.map((template) => (
+                        <SelectItem key={template.id} value={template.id}>
+                          {template.name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label>Nombre del servicio *</Label>
+              <Input
+                value={form.description}
+                onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Ej: Reparación switch Honda 2001-2011"
+              />
+            </div>
+
             <div className="space-y-2">
               <Label>Tipo de Servicio</Label>
               <Select
@@ -547,21 +663,11 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
             </div>
 
             <div className="space-y-2">
-              <Label>Problema reportado *</Label>
-              <Textarea
-                value={form.description}
-                onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Descripción del problema..."
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Solución del servicio</Label>
+              <Label>Problema reportado</Label>
               <Textarea
                 value={form.problem}
                 onChange={(e) => setForm(prev => ({ ...prev, problem: e.target.value }))}
-                placeholder="Descripción de la solución..."
+                placeholder="Describe lo que reporta el cliente..."
                 rows={3}
               />
             </div>
@@ -601,6 +707,7 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
                     <ProductSelect
                       value={item.product_id}
                       onValueChange={(id, product) => handleProductSelect(item.tempId, id, product)}
+                      excludeServiceItems
                     />
                     <div className="grid grid-cols-3 gap-2">
                       <div>
@@ -691,6 +798,59 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
               </div>
             </div>
 
+            {/* Schedule Service Option */}
+            <div className="p-4 bg-accent/5 rounded-lg border border-accent/20 space-y-4">
+              <div className="flex items-center space-x-3">
+                <Checkbox
+                  id="schedule_service"
+                  checked={!!form.scheduled_start_at}
+                  onCheckedChange={(checked) =>
+                    setForm((prev) => ({ ...prev, scheduled_start_at: checked ? new Date().toISOString() : null }))
+                  }
+                />
+                <div className="flex-1">
+                  <Label
+                    htmlFor="schedule_service"
+                    className="text-sm font-medium flex items-center gap-2 cursor-pointer"
+                  >
+                    📅 Programar servicio
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-1">Establece una fecha y hora para iniciar este servicio</p>
+                </div>
+              </div>
+
+              {form.scheduled_start_at && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="scheduled_date">Fecha programada</Label>
+                    <Input
+                      id="scheduled_date"
+                      type="date"
+                      value={form.scheduled_start_at?.split('T')[0] || ''}
+                      onChange={(e) => {
+                        const date = e.target.value;
+                        const time = form.scheduled_start_at?.split('T')[1]?.split('.')[0] || '09:00:00';
+                        setForm(prev => ({ ...prev, scheduled_start_at: `${date}T${time}.000Z` }));
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="scheduled_time">Hora programada</Label>
+                    <Input
+                      id="scheduled_time"
+                      type="time"
+                      value={form.scheduled_start_at?.split('T')[1]?.split('.')[0] || '09:00'}
+                      onChange={(e) => {
+                        const time = e.target.value;
+                        const date = form.scheduled_start_at?.split('T')[0] || new Date().toISOString().split('T')[0];
+                        setForm(prev => ({ ...prev, scheduled_start_at: `${date}T${time}:00.000Z` }));
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Warranty Option */}
             <div className="p-4 bg-primary/5 rounded-lg border border-primary/20 space-y-4">
               <div className="flex items-center space-x-3">
@@ -741,8 +901,9 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
           {/* Tab: Imágenes */}
           <TabsContent value="imagenes" className="space-y-4 mt-4">
             <div className="space-y-2">
-              <Label>Agregar imagen</Label>
+              <Label>Agregar imagen ({images.length}/{MAX_SERVICE_IMAGES})</Label>
               <ImageUploader
+                key={imageUploaderKey}
                 value=""
                 onChange={(url) => addImage(url)}
                 onPendingFile={(file, blobUrl) => {
@@ -751,7 +912,19 @@ export function ServiceFormDialog({ open, onOpenChange, service }: ServiceFormDi
                 folder="services"
                 workshopCode={currentWorkshop?.code}
                 placeholder="URL de la imagen o subir archivo"
+                disabled={images.length >= MAX_SERVICE_IMAGES}
+                preserveObjectUrls
               />
+              {images.length < MAX_SERVICE_IMAGES && (
+                <p className="text-xs text-muted-foreground">
+                  Puedes agregar hasta {MAX_SERVICE_IMAGES} imágenes.
+                </p>
+              )}
+              {images.length >= MAX_SERVICE_IMAGES && (
+                <p className="text-xs text-muted-foreground">
+                  Máximo de {MAX_SERVICE_IMAGES} imágenes por servicio.
+                </p>
+              )}
             </div>
 
             {images.length > 0 && (

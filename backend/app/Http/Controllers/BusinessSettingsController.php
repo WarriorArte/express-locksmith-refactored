@@ -4,11 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\BusinessSetting;
 use App\Support\ApiResponse;
+use App\Support\Uploads\UploadedFileCleanupService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 final class BusinessSettingsController
 {
+    public function __construct(private readonly UploadedFileCleanupService $uploadedFileCleanup)
+    {
+    }
+
     private const FIELDS = [
         'name',
         'phone',
@@ -104,6 +109,8 @@ final class BusinessSettingsController
             ['name' => $data['name'] ?? 'Mi Cerrajeria']
         );
 
+        $previousLogoUrl = $settings->logo_url;
+
         $updates = array_intersect_key($data, array_flip(self::FIELDS));
 
         if ($updates === []) {
@@ -111,6 +118,10 @@ final class BusinessSettingsController
         }
 
         $settings->fill($updates)->save();
+
+        if (array_key_exists('logo_url', $updates) && $previousLogoUrl !== $settings->logo_url) {
+            $this->uploadedFileCleanup->deleteIfUnused($previousLogoUrl);
+        }
 
         return ApiResponse::success($settings->refresh(), 'Configuracion actualizada');
     }

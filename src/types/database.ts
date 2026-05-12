@@ -58,9 +58,24 @@ export interface UserRole extends BaseRow {
 
 export interface Product extends BaseRow {
   name: string;
+  item_type?: "product" | "service";
   category_id?: string | null;
   stock_store?: number;
   stock_warehouse?: number;
+  description?: string | null;
+  image_url?: string | null;
+  purchase_price_local?: number | null;
+  purchase_price_imported?: number | null;
+  sale_price_min?: number | null;
+  sale_price_max?: number | null;
+  min_stock?: number | null;
+  instructions?: string | null;
+  notes?: string | null;
+  // Service specific fields
+  service_type?: ServiceType | null;
+  labor_cost?: number | null;
+  discount?: number | null;
+  service_products?: ServiceProduct[];
 }
 
 export interface SaleItem extends BaseRow {
@@ -111,6 +126,18 @@ export interface Service extends BaseRow {
   service_type?: ServiceType;
   status?: ServiceStatus;
   description?: string;
+  problem?: string | null;
+  address?: string | null;
+  location?: string | null;
+  estimated_price?: number | null;
+  final_price?: number | null;
+  labor_cost?: number | null;
+  discount?: number | null;
+  internal_notes?: string | null;
+  started_at?: string | null;
+  completed_at?: string | null;
+  delivered_at?: string | null;
+  scheduled_start_at?: string | null;
 }
 
 export interface ServiceProduct extends BaseRow {

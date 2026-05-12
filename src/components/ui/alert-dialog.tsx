@@ -4,6 +4,7 @@ import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { clearActiveElementFocus } from "@/lib/focus";
 
 type CloseActionContextValue = {
   registerCloseAction: (closeAction: () => void) => () => void;
@@ -27,6 +28,9 @@ const AlertDialog = ({
   const closeActionRef = React.useRef<(() => void) | null>(null);
 
   const handleOpenChange = React.useCallback((nextOpen: boolean) => {
+    if (nextOpen) {
+      clearActiveElementFocus();
+    }
     if (!isControlled) {
       setUncontrolledOpen(nextOpen);
     }
@@ -41,6 +45,12 @@ const AlertDialog = ({
       }
     };
   }, []);
+
+  React.useInsertionEffect(() => {
+    if (open) {
+      clearActiveElementFocus();
+    }
+  }, [open]);
 
   const requestCloseWithAnimation = React.useCallback(() => {
     if (closeActionRef.current) {

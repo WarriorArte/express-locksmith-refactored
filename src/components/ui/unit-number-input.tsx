@@ -34,6 +34,8 @@ export function UnitNumberInput({
   ...props
 }: UnitNumberInputProps) {
   const numericValue = Number(value);
+  const isIntegerStep = Number.isInteger(step);
+  const manualInputMode = props.inputMode ?? (isIntegerStep ? "numeric" : "decimal");
 
   const nudge = (direction: 1 | -1) => {
     const base = Number.isFinite(numericValue) ? numericValue : (typeof min === "number" ? min : 0);
@@ -51,7 +53,7 @@ export function UnitNumberInput({
         max={max}
         step={step}
         readOnly={!allowManualInput}
-        inputMode={allowManualInput ? props.inputMode : "none"}
+        inputMode={allowManualInput ? manualInputMode : "none"}
         onPointerDown={(event) => {
           if (!allowManualInput) {
             event.preventDefault();
@@ -70,7 +72,10 @@ export function UnitNumberInput({
             onValueChange(clamp(parsed, min, max));
           }
         }}
-        className={cn("flex-1", className)}
+        className={cn(
+          "flex-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
+          className,
+        )}
       />
       <div className="w-9 grid grid-rows-2 gap-1">
         <button
