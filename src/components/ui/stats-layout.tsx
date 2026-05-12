@@ -24,7 +24,7 @@ export function StatsLayout({ mainStat, secondaryStats, className }: StatsLayout
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.1 }}
+      transition={{ duration: 0.08 }}
       className={cn("grid grid-cols-[1fr_1.2fr] sm:grid-cols-[1fr_2fr] lg:grid-cols-[1fr_2.5fr] gap-3", className)}
     >
       {/* Principal (Izquierda) */}

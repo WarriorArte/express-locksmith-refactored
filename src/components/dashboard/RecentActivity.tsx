@@ -136,7 +136,7 @@ export function RecentActivity() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
+        transition={{ duration: 0.08 }}
         className="card-elevated p-5"
       >
         <div className="flex items-center justify-center h-40">
@@ -150,7 +150,7 @@ export function RecentActivity() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.4 }}
+      transition={{ duration: 0.08 }}
       className="card-elevated p-5"
     >
       <div className="flex items-center justify-between mb-4">
@@ -172,7 +172,7 @@ export function RecentActivity() {
                 key={activity.id}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5 + index * 0.05 }}
+                transition={{ duration: 0.08 }}
                 className="flex items-start gap-3 group cursor-pointer"
               >
                 <div className={cn(

@@ -35,7 +35,7 @@ export function StatCard({
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.35 }}
+      transition={{ duration: 0.08 }}
       className={cn(
         "relative overflow-hidden rounded-sm p-4",
         isHero

@@ -144,7 +144,7 @@ export default function Configuracion() {
 
 
   return (
-    <div className="space-y-6">
+    <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain pb-24 md:pb-6 space-y-6">
       {/* Header */}
       <PageHeader
         title="Configuración"
@@ -189,7 +189,7 @@ export default function Configuracion() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
+        transition={{ duration: 0.08 }}
         className="hidden lg:block"
       >
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

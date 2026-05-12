@@ -1,5 +1,0 @@
-backend/.env
-backend/vendor/
-backend/storage/logs/
-backend/bootstrap/cache/*.php
-backend/public/uploads/

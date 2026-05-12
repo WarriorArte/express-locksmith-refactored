@@ -93,10 +93,9 @@ export default function Clientes() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Sticky: Header + Search */}
-      <div className="sticky top-0 z-10 bg-background -mx-5 lg:-mx-6 px-5 lg:px-6 pb-4 relative">
-        <div className="absolute inset-x-0 -top-10 lg:-top-2 h-10 lg:h-2 bg-background" />
+    <div className="flex-1 min-h-0 flex flex-col">
+      {/* Header bar - ya NO es sticky */}
+      <div className="bg-background -mx-5 lg:-mx-6 px-5 lg:px-6 pb-4">
         <PageHeader
           title="Clientes"
           subtitle={`${customers?.length || 0} clientes registrados`}
@@ -124,6 +123,7 @@ export default function Clientes() {
         />
       </div>
 
+      <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain pb-24 md:pb-6">
       {/* Empty State */}
       {filteredClients.length === 0 && (
         <div className="card-elevated p-12 text-center">
@@ -146,7 +146,7 @@ export default function Clientes() {
             key={client.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 + index * 0.05 }}
+            transition={{ duration: 0.08 }}
             className="card-elevated overflow-hidden cursor-pointer active:scale-[0.99] transition-transform"
             onClick={() => handleViewServices(client)}
           >
@@ -243,6 +243,7 @@ export default function Clientes() {
 
           </motion.div>
         ))}
+      </div>
       </div>
 
       {/* Customer Form Dialog */}

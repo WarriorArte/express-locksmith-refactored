@@ -11,8 +11,6 @@ use Illuminate\Support\Str;
 
 final class ServiceImageController
 {
-    private const MAX_IMAGES_PER_SERVICE = 2;
-
     public function __construct(private readonly UploadedFileCleanupService $uploadedFileCleanup)
     {
     }
@@ -55,11 +53,6 @@ final class ServiceImageController
         if (!$workshopId) return ApiResponse::error('Servicio no encontrado', 404);
         if (!$user->canAccessWorkshop($workshopId)) {
             return ApiResponse::error('Sin acceso al taller indicado', 403);
-        }
-
-        $currentImagesCount = DB::table('service_images')->where('service_id', $serviceId)->count();
-        if ($currentImagesCount >= self::MAX_IMAGES_PER_SERVICE) {
-            return ApiResponse::error('Solo se permiten 2 imagenes por servicio', 422);
         }
 
         $id = (string) Str::uuid();

@@ -31,7 +31,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain pb-24 md:pb-6 space-y-6">
       {/* Header */}
       <PageHeader
         title="Panel Principal"
