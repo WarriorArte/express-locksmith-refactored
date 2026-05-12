@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { resolveStorageUrl } from "@/lib/phpApi";
 import {
   Dialog,
   DialogContent,
@@ -102,7 +103,7 @@ export function SalePrintPreview({ open, onOpenChange, sale }: SalePrintPreviewP
 
   const processTemplate = (html: string) => {
     const logoHtml = settings?.logo_url 
-      ? `<img src="${settings.logo_url}" alt="Logo" style="max-width: 80px;" />`
+      ? `<img src="${resolveStorageUrl(settings.logo_url)}" alt="Logo" style="max-width: 80px;" />`
       : "";
 
     const replacements: Record<string, string> = {

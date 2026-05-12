@@ -33,7 +33,7 @@ import { useBatchInventoryUpdate } from "@/hooks/useInventoryMovements";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useCreateWarranty, generateWarrantyCode, calculateWarrantyEndDate, type Warranty } from "@/hooks/useWarranties";
 import { useWorkshop } from "@/hooks/useWorkshop";
-import { phpApiUpload } from "@/lib/phpApi";
+import { phpApiUpload, resolveStorageUrl } from "@/lib/phpApi";
 import { WarrantyPrintTicket } from "@/components/warranties/WarrantyPrintTicket";
 import type { Customer } from "@/hooks/useCustomers";
 import { useProducts, type Product } from "@/hooks/useProducts";
@@ -932,7 +932,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
                 {images.map((img) => (
                   <div key={img.tempId} className="relative group">
                     <img
-                      src={img.image_url}
+                      src={resolveStorageUrl(img.image_url) ?? undefined}
                       alt="Service"
                       className="w-full h-24 object-cover rounded-lg border"
                     />

@@ -1,20 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { compressImageForHosting, isStorageConfigured, type UploadFolder } from "@/hooks/useFileUpload";
+import { resolveStorageUrl, getStorableUrl } from "@/lib/phpApi";
 import { Camera, Upload, X, Loader2, Image as ImageIcon, Link, FolderOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ImageGalleryDialog } from "./ImageGalleryDialog";
-
-function getStorableUrl(url: string): string {
-  if (!url) return '';
-  try {
-    const urlObj = new URL(url);
-    urlObj.searchParams.delete('token');
-    return urlObj.toString();
-  } catch {
-    return url;
-  }
-}
 
 interface ImageUploaderProps {
   value?: string;
@@ -127,7 +117,7 @@ export function ImageUploader({
     if (file && file.type.startsWith('image/')) handleFileSelect(file);
   }, []);
 
-  const effectivePreviewUrl = previewUrl || value;
+  const effectivePreviewUrl = resolveStorageUrl(previewUrl || value) ?? undefined;
 
   const tabs = [
     { id: 'upload' as const, icon: Upload, label: 'Subir' },

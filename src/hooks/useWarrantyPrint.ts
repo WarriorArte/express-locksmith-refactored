@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { resolveStorageUrl } from "@/lib/phpApi";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useTemplate, defaultTemplates } from "@/hooks/useTemplates";
 import { format, parseISO } from "date-fns";
@@ -28,7 +29,7 @@ export function useWarrantyPrint() {
     </div>`;
 
     const logoHtml = settings?.logo_url && settings.print_logo
-      ? `<img src="${settings.logo_url}" alt="Logo" style="max-width: 60px; margin: 0 auto; display: block;" />`
+      ? `<img src="${resolveStorageUrl(settings.logo_url)}" alt="Logo" style="max-width: 60px; margin: 0 auto; display: block;" />`
       : "";
 
     const replacements: Record<string, string> = {

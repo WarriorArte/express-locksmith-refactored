@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/responsive-d
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
+import { resolveStorageUrl } from "@/lib/phpApi";
 
 interface ImageViewDialogProps {
   open: boolean;
@@ -193,7 +194,7 @@ export function ImageViewDialog({
             onDoubleClick={onDoubleClickImage}
           >
             <img
-              src={currentImage.url}
+              src={resolveStorageUrl(currentImage.url) ?? undefined}
               alt={currentImage.description || "Imagen"}
               className="max-w-full max-h-[80vh] object-contain"
               draggable={false}

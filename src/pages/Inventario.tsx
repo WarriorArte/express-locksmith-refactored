@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { resolveStorageUrl } from "@/lib/phpApi";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { motion } from "framer-motion";
 import { 
@@ -400,7 +401,7 @@ export default function Inventario() {
                 >
                   <div className="relative aspect-square bg-[hsl(var(--surface-2))] flex items-center justify-center">
                     {product.image_url ? (
-                      <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                      <img src={resolveStorageUrl(product.image_url) ?? undefined} alt={product.name} className="w-full h-full object-cover" />
                     ) : (
                       <Package className="w-9 h-9 text-muted-foreground" />
                     )}
@@ -496,7 +497,7 @@ export default function Inventario() {
                 >
                   <div className="w-10 h-10 rounded-xl bg-[hsl(var(--surface-2))] flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {product.image_url ? (
-                      <img src={product.image_url} alt="" className="w-full h-full object-cover" />
+                      <img src={resolveStorageUrl(product.image_url) ?? undefined} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <Package className="w-4 h-4 text-primary" />
                     )}
@@ -579,7 +580,7 @@ export default function Inventario() {
                 {/* Product Image */}
                 <div className="relative aspect-square bg-muted/50 flex items-center justify-center cursor-pointer" onClick={() => { setDetailProduct(product); setDetailOpen(true); }}>
                   {product.image_url ? (
-                    <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                    <img src={resolveStorageUrl(product.image_url) ?? undefined} alt={product.name} className="w-full h-full object-cover" />
                   ) : (
                     <Package className="w-16 h-16 text-muted-foreground" />
                   )}
@@ -748,7 +749,7 @@ export default function Inventario() {
                         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded bg-muted flex-shrink-0 flex items-center justify-center">
                             {product.image_url ? (
-                              <img src={product.image_url} alt="" className="w-full h-full object-cover rounded" />
+                              <img src={resolveStorageUrl(product.image_url) ?? undefined} alt="" className="w-full h-full object-cover rounded" />
                             ) : (
                               <Package className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
                             )}

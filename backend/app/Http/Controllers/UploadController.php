@@ -74,7 +74,7 @@ final class UploadController
                 'size' => $file->getSize(),
                 'mimeType' => mime_content_type($file->getPathname()) ?: 'application/octet-stream',
                 'created_at' => date('c', $file->getMTime()),
-                'secure_url' => url("uploads/{$workshopCode}/{$folder}/".rawurlencode($file->getFilename())),
+                'secure_url' => "/uploads/{$workshopCode}/{$folder}/".rawurlencode($file->getFilename()),
             ];
         }
 
@@ -114,7 +114,7 @@ final class UploadController
         $file->move($dir, $name);
 
         return ApiResponse::success([
-            'url' => url("uploads/{$workshopCode}/{$folder}/".rawurlencode($name)),
+            'url' => "/uploads/{$workshopCode}/{$folder}/".rawurlencode($name),
             'name' => $name,
             'mime' => $mime,
             'size' => $size,

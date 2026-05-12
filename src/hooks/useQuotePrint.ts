@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { resolveStorageUrl } from "@/lib/phpApi";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useTemplate, defaultTemplates } from "@/hooks/useTemplates";
 import { format, parseISO } from "date-fns";
@@ -30,7 +31,7 @@ export function useQuotePrint() {
     ).join("");
 
     const logoHtml = settings?.logo_url
-      ? `<img src="${settings.logo_url}" alt="Logo" style="max-width: 150px;" />`
+      ? `<img src="${resolveStorageUrl(settings.logo_url)}" alt="Logo" style="max-width: 150px;" />`
       : settings?.name || "Mi Negocio";
 
     const replacements: Record<string, string> = {

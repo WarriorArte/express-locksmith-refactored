@@ -4,6 +4,7 @@
  * meta grid, costs breakdown, images, and grouped action buttons.
  */
 import { useMemo, useState } from "react";
+import { resolveStorageUrl } from "@/lib/phpApi";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import {
@@ -300,7 +301,7 @@ export function ServiceDetailSheet({
                     }}
                   >
                     {img.image_url ? (
-                      <img src={img.image_url} alt="Imagen del servicio" className="w-full h-full object-cover" />
+                      <img src={resolveStorageUrl(img.image_url) ?? undefined} alt="Imagen del servicio" className="w-full h-full object-cover" />
                     ) : (
                       <ImageIcon className="w-5 h-5 text-muted-foreground" />
                     )}

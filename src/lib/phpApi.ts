@@ -13,6 +13,31 @@ if (typeof window !== "undefined" && !(window as any).__PHP_API_BASE_LOGGED__) {
   console.info("[phpApi] BASE =", API_BASE);
 }
 
+const STORAGE_BASE = API_BASE.replace(/\/api(\/.*)?$/, "");
+
+export function resolveStorageUrl(path: string | null | undefined): string | null {
+  if (!path) return null;
+  if (path.startsWith("/")) return `${STORAGE_BASE}${path}`;
+  if (path.startsWith("blob:") || path.startsWith("data:")) return path;
+  try {
+    const parsed = new URL(path);
+    return `${STORAGE_BASE}${parsed.pathname}`;
+  } catch {
+    return path;
+  }
+}
+
+export function getStorableUrl(url: string): string {
+  if (!url) return "";
+  try {
+    const parsed = new URL(url);
+    parsed.searchParams.delete("token");
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
 const AUTH_TOKEN_KEY = "ce_php_auth_token";
 
 export class PhpApiError extends Error {

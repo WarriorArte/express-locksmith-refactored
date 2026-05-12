@@ -22,7 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { phpApiRequest } from "@/lib/phpApi";
+import { phpApiRequest, resolveStorageUrl } from "@/lib/phpApi";
 
 interface GalleryFile {
   filename: string;
@@ -211,7 +211,7 @@ export function ImageGalleryDialog({
                     >
                       <img
                         key={`img-${file.filename}-${file.cacheBuster}`}
-                        src={file.previewUrl}
+                        src={resolveStorageUrl(file.previewUrl) ?? undefined}
                         alt={file.filename}
                         className="w-full h-full object-cover"
                         loading="lazy"

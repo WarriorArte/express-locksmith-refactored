@@ -24,7 +24,7 @@ final class UpdateProductRequest extends FormRequest
             'description' => ['sometimes', 'nullable', 'string'],
             'instructions' => ['sometimes', 'nullable', 'string'],
             'notes' => ['sometimes', 'nullable', 'string'],
-            'image_url' => ['sometimes', 'nullable', 'string', 'url'],
+            'image_url' => ['sometimes', 'nullable', 'string'],
             'stock_store' => ['sometimes', 'integer', 'min:0'],
             'stock_warehouse' => ['sometimes', 'integer', 'min:0'],
             'min_stock' => ['sometimes', 'integer', 'min:0'],

@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/responsive-dialog";
 import { Button } from "@/components/ui/button";
+import { resolveStorageUrl } from "@/lib/phpApi";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -98,7 +99,7 @@ export function ProductDetailSheet({
             className="w-full h-40 rounded-2xl bg-[hsl(var(--surface-2))] flex items-center justify-center overflow-hidden relative"
           >
             {product.image_url ? (
-              <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+              <img src={resolveStorageUrl(product.image_url) ?? undefined} alt={product.name} className="w-full h-full object-cover" />
             ) : (
               <Package className="w-12 h-12 text-muted-foreground" />
             )}

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { resolveStorageUrl } from "@/lib/phpApi";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { motion } from "framer-motion";
 import { 
@@ -634,7 +635,7 @@ export default function Servicios() {
                       {imgs.slice(0, 4).map((img: any) => (
                         <div key={img.id} className="w-11 h-11 rounded-xl overflow-hidden bg-muted flex-shrink-0 flex items-center justify-center">
                           {img.image_url ? (
-                            <img src={img.image_url} alt="" className="w-full h-full object-cover" />
+                            <img src={resolveStorageUrl(img.image_url) ?? undefined} alt="" className="w-full h-full object-cover" />
                           ) : (
                             <Package className="w-4 h-4 text-muted-foreground" />
                           )}

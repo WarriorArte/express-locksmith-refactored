@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { resolveStorageUrl } from "@/lib/phpApi";
 import {
   Dialog,
   DialogContent,
@@ -86,7 +87,7 @@ export function QuotePrintPreview({ open, onOpenChange, quote }: QuotePrintPrevi
   // Replace placeholders with actual data
   const processTemplate = (html: string) => {
     const logoHtml = settings?.logo_url 
-      ? `<img src="${settings.logo_url}" alt="Logo" style="max-width: 150px;" />`
+      ? `<img src="${resolveStorageUrl(settings.logo_url)}" alt="Logo" style="max-width: 150px;" />`
       : settings?.name || "Mi Negocio";
 
     const replacements: Record<string, string> = {

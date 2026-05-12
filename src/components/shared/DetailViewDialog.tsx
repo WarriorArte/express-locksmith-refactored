@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { resolveStorageUrl } from "@/lib/phpApi";
 import {
   Dialog,
   DialogContent,
@@ -324,7 +325,7 @@ export function DetailViewDialog({
                         >
                           <div className="aspect-square">
                             <img
-                              src={image.image_url}
+                              src={resolveStorageUrl(image.image_url) ?? undefined}
                               alt={image.description || "Imagen del servicio"}
                               className="w-full h-full object-cover"
                               onError={(e) => {

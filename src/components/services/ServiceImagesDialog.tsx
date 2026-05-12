@@ -14,20 +14,8 @@ import { useCreateServiceImage, useDeleteServiceImage, useService, type Service 
 import { useToast } from "@/hooks/use-toast";
 import { useFileUpload, isStorageConfigured } from "@/hooks/useFileUpload";
 import { useWorkshop } from "@/hooks/useWorkshop";
-import { phpApiDeleteFile } from "@/lib/phpApi";
+import { phpApiDeleteFile, resolveStorageUrl, getStorableUrl } from "@/lib/phpApi";
 import { ImageViewDialog } from "@/components/shared/ImageViewDialog";
-
-// Obtener URL sin token para guardar en BD
-function getStorableUrl(url: string): string {
-  if (!url) return '';
-  try {
-    const urlObj = new URL(url);
-    urlObj.searchParams.delete('token');
-    return urlObj.toString();
-  } catch {
-    return url;
-  }
-}
 
 interface ServiceImagesDialogProps {
   open: boolean;
@@ -332,7 +320,7 @@ export function ServiceImagesDialog({ open, onOpenChange, service: initialServic
                 {service.service_images.map((image, index) => (
                   <div key={image.id} className="relative group">
                     <img
-                      src={image.image_url}
+                      src={resolveStorageUrl(image.image_url) ?? undefined}
                       alt={image.description || "Imagen del servicio"}
                       className="w-full h-32 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition-opacity"
                       onClick={() => setViewImageIndex(index)}

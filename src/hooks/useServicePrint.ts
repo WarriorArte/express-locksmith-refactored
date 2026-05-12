@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { resolveStorageUrl } from "@/lib/phpApi";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useTemplate, defaultTemplates } from "@/hooks/useTemplates";
 import { format, parseISO } from "date-fns";
@@ -51,7 +52,7 @@ export function useServicePrint() {
       `<div class="item"><div>${item.quantity}x ${item.product_name}</div><div>${currencySymbol}${formatNumber(item.subtotal)}</div></div>`
     ).join("");
 
-    const logoHtml = settings?.logo_url ? `<img src="${settings.logo_url}" alt="Logo" style="max-width: 80px;" />` : "";
+    const logoHtml = settings?.logo_url ? `<img src="${resolveStorageUrl(settings.logo_url)}" alt="Logo" style="max-width: 80px;" />` : "";
     const replacements: Record<string, string> = {
       "[logo]": logoHtml,
       "[nombre_negocio]": settings?.name || "Mi Negocio",

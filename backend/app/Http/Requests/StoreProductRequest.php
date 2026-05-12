@@ -25,7 +25,7 @@ final class StoreProductRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'instructions' => ['nullable', 'string'],
             'notes' => ['nullable', 'string'],
-            'image_url' => ['nullable', 'string', 'url'],
+            'image_url' => ['nullable', 'string'],
             'stock_store' => ['integer', 'min:0'],
             'stock_warehouse' => ['integer', 'min:0'],
             'min_stock' => ['integer', 'min:0'],

@@ -1,4 +1,5 @@
 import { useRef, useMemo } from "react";
+import { resolveStorageUrl } from "@/lib/phpApi";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/responsive-dialog";
 import { Button } from "@/components/ui/button";
 import { Printer, X } from "lucide-react";
@@ -43,7 +44,7 @@ export function WarrantyPrintTicket({ open, onOpenChange, warranty }: WarrantyPr
 
     // Logo
     if (settings?.logo_url && settings.print_logo) {
-      html = html.replace(/\[logo\]/g, `<img src="${settings.logo_url}" alt="Logo" style="max-width: 60px; margin: 0 auto; display: block;" />`);
+      html = html.replace(/\[logo\]/g, `<img src="${resolveStorageUrl(settings.logo_url)}" alt="Logo" style="max-width: 60px; margin: 0 auto; display: block;" />`);
     } else {
       html = html.replace(/\[logo\]/g, "");
     }
