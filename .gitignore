@@ -1,3 +1,4 @@
+# ── Frontend ──────────────────────────────────────────────
 # Logs
 logs
 *.log
@@ -22,6 +23,7 @@ build/
 .env
 .env.local
 
+# Editors / OS
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -32,6 +34,45 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Misc
 .claude
-backend/public/uploads/
 git-tools/
+
+# ── Backend (Laravel) ──────────────────────────────────────
+backend/node_modules
+backend/vendor/
+backend/.env
+backend/.phpunit.cache
+backend/.phpunit.result.cache
+backend/laravel-dev.*.log
+backend/public/hot
+backend/public/storage
+backend/public/uploads/
+backend/storage/*.key
+backend/storage/framework.zip
+backend/storage/app/*
+!backend/storage/app/.gitignore
+backend/storage/framework/*
+!backend/storage/framework/.gitignore
+!backend/storage/framework/views
+backend/storage/framework/views/*
+!backend/storage/framework/views/.gitkeep
+!backend/storage/framework/sessions
+backend/storage/framework/sessions/*
+!backend/storage/framework/sessions/.gitkeep
+!backend/storage/framework/cache
+backend/storage/framework/cache/*
+!backend/storage/framework/cache/.gitkeep
+!backend/storage/framework/cache/data
+backend/storage/framework/cache/data/*
+!backend/storage/framework/cache/data/.gitkeep
+!backend/storage/framework/testing
+backend/storage/framework/testing/*
+!backend/storage/framework/testing/.gitkeep
+backend/storage/logs/*
+!backend/storage/logs/.gitignore
+!backend/storage/logs/.gitkeep
+backend/bootstrap/cache/*
+!backend/bootstrap/cache/.gitignore
+!backend/bootstrap/cache/.gitkeep
