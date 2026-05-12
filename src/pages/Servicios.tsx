@@ -431,10 +431,9 @@ export default function Servicios() {
   };
 
   return (
-    <div className="space-y-5">
-      {/* Sticky: Header + Search + Filter */}
-      <div className="sticky top-0 z-10 bg-background -mx-5 lg:-mx-6 px-5 lg:px-6 pb-4 relative">
-        <div className="absolute inset-x-0 -top-10 lg:-top-2 h-10 lg:h-2 bg-background" />
+    <div className="flex-1 min-h-0 flex flex-col">
+      {/* Header bar */}
+      <div className="bg-background -mx-5 lg:-mx-6 px-5 lg:px-6 pb-4">
         <PageHeader
           title="Servicios"
           subtitle={
@@ -486,6 +485,7 @@ export default function Servicios() {
         </div>
       </div>
 
+      <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain pb-24 md:pb-6">
       {filteredServices.length === 0 ? (
         <div className="card-elevated p-8 text-center">
           <Wrench className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
@@ -509,7 +509,7 @@ export default function Servicios() {
                 key={service.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 + index * 0.05 }}
+                transition={{ duration: 0.08 }}
                 className="card-elevated overflow-hidden cursor-pointer active:scale-[0.99] transition-transform"
                 onClick={() => openMobileDetail(service)}
               >
@@ -655,6 +655,7 @@ export default function Servicios() {
           })}
         </div>
       )}
+      </div>
 
       {/* Delete Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

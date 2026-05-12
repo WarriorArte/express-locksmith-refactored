@@ -22,7 +22,7 @@ export function UpcomingQuotes({ quotes }: UpcomingQuotesProps) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.5 }}
+      transition={{ duration: 0.08 }}
       className="card-elevated p-5"
     >
       <div className="flex items-center justify-between mb-4">
@@ -49,7 +49,7 @@ export function UpcomingQuotes({ quotes }: UpcomingQuotesProps) {
                 key={quote.id}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.6 + index * 0.1 }}
+                transition={{ duration: 0.08 }}
                 className={cn(
                   "p-4 rounded-sm border-l-4 cursor-pointer hover:shadow-md transition-shadow",
                   statusStyles[status]

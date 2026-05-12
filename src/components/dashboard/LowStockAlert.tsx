@@ -22,7 +22,7 @@ export function LowStockAlert({ products }: LowStockAlertProps) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.45 }}
+      transition={{ duration: 0.08 }}
       className="card-elevated p-4 sm:p-5"
     >
       <div className="flex items-center justify-between mb-5">
@@ -57,7 +57,7 @@ export function LowStockAlert({ products }: LowStockAlertProps) {
               key={product.id}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.5 + index * 0.1 }}
+              transition={{ duration: 0.08 }}
               className="flex items-center justify-between p-3 rounded-sm hover:bg-muted/50 transition-colors border border-transparent hover:border-border/50 group cursor-pointer"
               onClick={() => navigate("/inventario?filter=low-stock")}
             >

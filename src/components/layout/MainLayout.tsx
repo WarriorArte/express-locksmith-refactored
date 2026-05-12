@@ -33,7 +33,7 @@ export function MainLayout() {
     "U";
 
   return (
-    <div className="h-screen flex w-full overflow-hidden">
+    <div className="h-dvh flex w-full overflow-hidden">
       <Sidebar
         collapsed={sidebarCollapsed}
         setCollapsed={setSidebarCollapsed}
@@ -103,7 +103,7 @@ export function MainLayout() {
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 min-h-0 px-5 lg:px-6 pt-10 lg:pt-2 pb-24 md:pb-6 overflow-auto">
+        <main className="flex-1 min-h-0 px-5 lg:px-6 pt-10 lg:pt-2 overflow-hidden flex flex-col">
           <Outlet />
         </main>
       </div>

@@ -24,7 +24,7 @@ export function ServiceStatus({ stats }: ServiceStatusProps) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.35 }}
+      transition={{ duration: 0.08 }}
       className="card-elevated p-5"
     >
       <h3 className="text-lg font-semibold mb-4">Estado de Servicios</h3>
@@ -38,7 +38,7 @@ export function ServiceStatus({ stats }: ServiceStatusProps) {
               key={status.label}
               initial={{ width: 0 }}
               animate={{ width: `${width}%` }}
-              transition={{ delay: 0.5 + index * 0.1, duration: 0.5 }}
+              transition={{ duration: 0.08 }}
               className={cn("h-full", status.color)}
             />
           );

@@ -192,10 +192,9 @@ export default function Garantias() {
   };
 
   return (
-    <div>
-      {/* Sticky: Header + Search */}
-      <div className="sticky top-0 z-10 bg-background -mx-5 lg:-mx-6 px-5 lg:px-6 pb-4 relative">
-        <div className="absolute inset-x-0 -top-10 lg:-top-2 h-10 lg:h-2 bg-background" />
+    <div className="flex-1 min-h-0 flex flex-col">
+      {/* Header bar - ya NO es sticky */}
+      <div className="bg-background -mx-5 lg:-mx-6 px-5 lg:px-6 pb-4">
         <PageHeader
           title="Garantías"
           subtitle={`${warranties?.length || 0} garantías registradas`}
@@ -225,6 +224,7 @@ export default function Garantias() {
         />
       </div>
 
+      <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain pb-24 md:pb-6">
       <div ref={statsRef}>
         <StatsLayout
           mainStat={{
@@ -286,7 +286,7 @@ export default function Garantias() {
                 key={warranty.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 + index * 0.05 }}
+                transition={{ duration: 0.08 }}
                 className="card-elevated overflow-hidden cursor-pointer active:scale-[0.99] transition-transform"
                 onClick={() => handleViewDetail(warranty)}
               >
@@ -396,6 +396,7 @@ export default function Garantias() {
             );
           })
         )}
+      </div>
       </div>
 
       {/* Void Dialog */}
