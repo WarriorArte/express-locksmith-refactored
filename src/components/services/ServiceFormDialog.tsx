@@ -31,10 +31,8 @@ import { useCreateService, useUpdateService, generateServiceNumber, type Service
 import { useCreateServiceImage, useDeleteServiceImage } from "@/hooks/useServices";
 import { useBatchInventoryUpdate } from "@/hooks/useInventoryMovements";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
-import { useCreateWarranty, generateWarrantyCode, calculateWarrantyEndDate, type Warranty } from "@/hooks/useWarranties";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import { phpApiUpload, resolveStorageUrl } from "@/lib/phpApi";
-import { WarrantyPrintTicket } from "@/components/warranties/WarrantyPrintTicket";
 import type { Customer } from "@/hooks/useCustomers";
 import { useProducts, type Product } from "@/hooks/useProducts";
 
@@ -77,7 +75,6 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
   const updateService = useUpdateService();
   const createServiceImage = useCreateServiceImage();
   const deleteServiceImage = useDeleteServiceImage();
-  const createWarranty = useCreateWarranty();
   const { updateForService } = useBatchInventoryUpdate();
   const { data: settings } = useBusinessSettings();
   const { data: inventoryItems } = useProducts();
@@ -86,8 +83,6 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
   const currencySymbol = settings?.currency_symbol || "$";
   
   const [activeTab, setActiveTab] = useState("servicio");
-  const [warrantyPrintOpen, setWarrantyPrintOpen] = useState(false);
-  const [createdWarranty, setCreatedWarranty] = useState<Warranty | null>(null);
   const [customerFormOpen, setCustomerFormOpen] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState(MANUAL_TEMPLATE);
 
@@ -109,7 +104,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
     has_warranty: false,
     warranty_days: 30,
     warranty_value: 30,
-    warranty_unit: "days" as "days" | "weeks" | "months",
+    warranty_unit: "days" as "days" | "weeks" | "months" | "years",
   });
 
   const [items, setItems] = useState<ServiceItem[]>([]);
@@ -131,9 +126,12 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
       setImageUploaderKey(0);
       if (service) {
         const days = service.warranty_days || 30;
-        let unit: "days" | "weeks" | "months" = "days";
+        let unit: "days" | "weeks" | "months" | "years" = "days";
         let value = days;
-        if (days % 30 === 0 && days >= 30) {
+        if (days % 365 === 0 && days >= 365) {
+          unit = "years";
+          value = days / 365;
+        } else if (days % 30 === 0 && days >= 30) {
           unit = "months";
           value = days / 30;
         } else if (days % 7 === 0 && days >= 7) {
@@ -340,14 +338,16 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
   const handleWarrantyValueChange = (value: number) => {
     let days = value;
     if (form.warranty_unit === "weeks") days = value * 7;
-    if (form.warranty_unit === "months") days = value * 30;
+    if (form.warranty_unit === "months") days = Math.round((value * 365) / 12);
+    if (form.warranty_unit === "years") days = value * 365;
     setForm(prev => ({ ...prev, warranty_value: value, warranty_days: days }));
   };
 
-  const handleWarrantyUnitChange = (unit: "days" | "weeks" | "months") => {
+  const handleWarrantyUnitChange = (unit: "days" | "weeks" | "months" | "years") => {
     let days = form.warranty_value;
     if (unit === "weeks") days = form.warranty_value * 7;
-    if (unit === "months") days = form.warranty_value * 30;
+    if (unit === "months") days = Math.round((form.warranty_value * 365) / 12);
+    if (unit === "years") days = form.warranty_value * 365;
     setForm(prev => ({ ...prev, warranty_unit: unit, warranty_days: days }));
   };
 
@@ -377,6 +377,9 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
       scheduled_start_at: form.scheduled_start_at || null,
       has_warranty: form.has_warranty,
       warranty_days: form.has_warranty ? form.warranty_days : null,
+      custom_fields: form.has_warranty
+        ? { warranty_duration_unit: form.warranty_unit, warranty_duration_value: form.warranty_value }
+        : {},
       service_products: normalizedItems,
     };
 
@@ -467,34 +470,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
     }
 
     if (form.has_warranty && createdServiceId && currentWorkshop?.id && !isEditing) {
-      const warrantyCode = await generateWarrantyCode(currentWorkshop.id);
-      const startDate = new Date();
-      const endDate = calculateWarrantyEndDate(startDate, form.warranty_days);
-      
-      const customerName = form.customer_name || "Cliente";
-      
-      const warrantyData = await createWarranty.mutateAsync({
-        warranty_code: warrantyCode,
-        sale_id: null,
-        service_id: createdServiceId,
-        customer_id: form.customer_id,
-        customer_name: customerName,
-        product_name: null,
-        service_description: form.description,
-        warranty_type: "service",
-        warranty_days: form.warranty_days,
-        start_date: startDate.toISOString(),
-        end_date: endDate.toISOString(),
-        notes: null,
-        is_voided: false,
-        voided_at: null,
-        voided_reason: null,
-        workshop_id: currentWorkshop.id,
-        created_by: null,
-      });
-      
-      setCreatedWarranty(warrantyData);
-      setWarrantyPrintOpen(true);
+      // La garantía se crea automáticamente en el backend cuando el servicio se marca como entregado
     }
 
     onOpenChange(false);
@@ -891,6 +867,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
                       <SelectItem value="days">días</SelectItem>
                       <SelectItem value="weeks">semanas</SelectItem>
                       <SelectItem value="months">meses</SelectItem>
+                      <SelectItem value="years">años</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -992,13 +969,6 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
         onOpenChange={setCustomerFormOpen}
       />
 
-      {createdWarranty && (
-        <WarrantyPrintTicket
-          warranty={createdWarranty}
-          open={warrantyPrintOpen}
-          onOpenChange={setWarrantyPrintOpen}
-        />
-      )}
     </Dialog>
   );
 }

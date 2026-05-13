@@ -29,6 +29,7 @@ interface CheckAuthResponse {
   user: {
     id: string;
     global_role: GlobalRole;
+    is_admin?: boolean;
   };
 }
 
@@ -67,7 +68,7 @@ export function WorkshopProvider({ children }: { children: ReactNode }) {
 
   const checkGlobalRole = useCallback(async (): Promise<boolean> => {
     try {
-      const data = await phpApiRequest<CheckAuthResponse>("/auth.php?action=check", {
+      const data = await phpApiRequest<CheckAuthResponse>("/auth/me", {
         method: "GET",
       });
 

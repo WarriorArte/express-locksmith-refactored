@@ -433,7 +433,7 @@ export default function Servicios() {
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* Header bar */}
-      <div className="bg-background -mx-5 lg:-mx-6 px-5 lg:px-6 pb-4">
+      <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-2 pb-4">
         <PageHeader
           title="Servicios"
           subtitle={
@@ -485,7 +485,7 @@ export default function Servicios() {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain pb-24 md:pb-6">
+      <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain px-5 lg:px-6 pb-24 md:pb-6 no-scrollbar">
       {filteredServices.length === 0 ? (
         <div className="card-elevated p-8 text-center">
           <Wrench className="w-12 h-12 mx-auto text-muted-foreground mb-4" />

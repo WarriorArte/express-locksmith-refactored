@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { MainLayout } from "@/components/layout/MainLayout";
 import Auth from "./pages/Auth";
+import SuperAdminAuth from "./pages/SuperAdminAuth";
 import Index from "./pages/Index";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import Inventario from "./pages/Inventario";
@@ -51,6 +52,8 @@ const App = () => (
       <BrowserRouter basename={routerBase === "/" ? undefined : routerBase}>
         <Routes>
           <Route path="/auth" element={<Auth />} />
+          <Route path="/auth_su" element={<SuperAdminAuth />} />
+          <Route path="/:superAdminLoginPath" element={<SuperAdminAuth />} />
           <Route
             element={
               <ProtectedRoute>

@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { phpApiRequest } from "@/lib/phpApi";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import { useToast } from "@/hooks/use-toast";
-import { addDays, format } from "date-fns";
+import { addDays, addYears, format } from "date-fns";
 
 export interface Warranty {
   id: string;
@@ -361,5 +361,8 @@ export async function generateWarrantyCode(workshopId?: string): Promise<string>
 
 // Calculate warranty end date
 export function calculateWarrantyEndDate(startDate: Date, days: number): Date {
+  if (days % 365 === 0 && days >= 365) {
+    return addYears(startDate, days / 365);
+  }
   return addDays(startDate, days);
 }

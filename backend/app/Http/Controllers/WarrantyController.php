@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Support\ApiResponse;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -10,6 +11,8 @@ use Illuminate\Support\Str;
 
 final class WarrantyController
 {
+    private const DATETIME_FIELDS = ['start_date', 'end_date'];
+
     /** Punto de entrada legacy — mantiene compatibilidad con el frontend actual */
     public function handle(Request $request): JsonResponse
     {
@@ -81,6 +84,15 @@ final class WarrantyController
             }
         }
 
+        try {
+            $dateUpdates = $this->normalizeDateTimeValues([
+                'start_date' => $data['start_date'] ?? null,
+                'end_date' => $data['end_date'] ?? null,
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 422);
+        }
+
         $id = (string) Str::uuid();
         DB::table('warranties')->insert([
             'id' => $id,
@@ -93,8 +105,8 @@ final class WarrantyController
             'service_description' => $data['service_description'] ?? null,
             'warranty_type' => $data['warranty_type'],
             'warranty_days' => (int) $data['warranty_days'],
-            'start_date' => $data['start_date'] ?? now()->format('Y-m-d H:i:s'),
-            'end_date' => $data['end_date'],
+            'start_date' => $dateUpdates['start_date'] ?? now()->format('Y-m-d H:i:s'),
+            'end_date' => $dateUpdates['end_date'],
             'notes' => $data['notes'] ?? null,
             'is_voided' => 0,
             'workshop_id' => $workshopId,
@@ -132,9 +144,15 @@ final class WarrantyController
             return ApiResponse::success($this->fetchFull($id), 'Garantia anulada');
         }
 
-        $updates = array_intersect_key($data, array_flip(['customer_name', 'product_name', 'service_description', 'warranty_days', 'end_date', 'notes']));
+        $updates = array_intersect_key($data, array_flip(['customer_name', 'product_name', 'service_description', 'warranty_days', 'start_date', 'end_date', 'notes']));
         if ($updates === []) {
             return ApiResponse::error('No hay campos para actualizar');
+        }
+
+        try {
+            $updates = $this->normalizeDateTimeValues($updates);
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 422);
         }
 
         DB::table('warranties')->where('id', $id)->update($updates);
@@ -166,6 +184,29 @@ final class WarrantyController
     }
 
     /** Lista legacy con cap de seguridad */
+    private function normalizeDateTimeValues(array $payload): array
+    {
+        foreach (self::DATETIME_FIELDS as $field) {
+            if (!array_key_exists($field, $payload)) {
+                continue;
+            }
+            $value = $payload[$field];
+            if ($value === null || $value === '') {
+                $payload[$field] = null;
+                continue;
+            }
+            if (!is_string($value)) {
+                throw new \InvalidArgumentException("{$field} debe ser una fecha en formato valido");
+            }
+            try {
+                $payload[$field] = Carbon::parse($value)->format('Y-m-d H:i:s');
+            } catch (\Throwable $e) {
+                throw new \InvalidArgumentException("{$field} debe ser una fecha en formato valido");
+            }
+        }
+        return $payload;
+    }
+
     private function legacyList(Request $request): JsonResponse
     {
         $user = $request->user();

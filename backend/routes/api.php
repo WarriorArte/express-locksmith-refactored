@@ -14,6 +14,7 @@ use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServiceImageController;
+use App\Http\Controllers\SuperAdminAccessController;
 use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\TemplateSelectionController;
 use App\Http\Controllers\WarrantyController;
@@ -31,6 +32,10 @@ Route::options('/{path}', fn () => response('', 204))->where('path', '.*');
 
 // Setup (sin auth)
 Route::any('/install', [InstallController::class, 'handle']);
+
+// Login SuperAdmin aislado (sin auth para config publica y login)
+Route::get('/superadmin-auth/config', [SuperAdminAccessController::class, 'publicConfig']);
+Route::post('/superadmin-auth/login', [SuperAdminAccessController::class, 'login']);
 
 // ──────────────────────────────────────────
 //  RUTAS REST (paginadas, limpias)
@@ -118,6 +123,7 @@ Route::middleware('legacy.auth')->group(function (): void {
     Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/templates.php', [TemplateController::class, 'handle']);
     Route::match(['GET', 'POST', 'DELETE'], '/template-selections.php', [TemplateSelectionController::class, 'handle']);
     Route::match(['GET', 'PUT'], '/appadmin-settings.php', [AppAdminSettingsController::class, 'handle']);
+    Route::match(['GET', 'PUT'], '/superadmin-access.php', [SuperAdminAccessController::class, 'handle']);
     Route::match(['GET', 'PUT'], '/workshop-features.php', [WorkshopFeatureController::class, 'handle']);
     Route::get('/dashboard-stats.php', [DashboardStatsController::class, 'handle']);
     Route::get('/env-diagnostic.php', [EnvDiagnosticController::class, 'handle']);

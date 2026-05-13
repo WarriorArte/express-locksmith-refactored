@@ -181,7 +181,7 @@ final class ServiceController
             return ApiResponse::error('ID requerido');
         }
 
-        $row = DB::table('services')->where('id', $id)->first(['workshop_id']);
+        $row = DB::table('services')->where('id', $id)->first(['workshop_id', 'status', 'has_warranty', 'warranty_days', 'custom_fields', 'customer_id', 'description']);
         if (!$row) {
             return ApiResponse::error('Servicio no encontrado', 404);
         }
@@ -209,6 +209,48 @@ final class ServiceController
                 $this->replaceProducts($id, is_array($data['service_products']) ? $data['service_products'] : []);
             }
         });
+
+        // Crear garantía automáticamente al marcar como entregado
+        $newStatus = $data['status'] ?? null;
+        $oldStatus = $row->status ?? null;
+        $hasWarranty = isset($data['has_warranty']) ? (int) $data['has_warranty'] : (int) ($row->has_warranty ?? 0);
+
+        if ($newStatus === 'delivered' && $oldStatus !== 'delivered' && $hasWarranty === 1) {
+            $alreadyExists = DB::table('warranties')->where('service_id', $id)->exists();
+            if (!$alreadyExists) {
+                $customFields = $this->decodeJson(
+                    isset($data['custom_fields']) ? json_encode($data['custom_fields']) : ($row->custom_fields ?? '')
+                );
+                $unit  = $customFields['warranty_duration_unit']  ?? 'days';
+                $value = (int) ($customFields['warranty_duration_value'] ?? ($row->warranty_days ?? 30));
+                $warrantyDays = isset($data['warranty_days']) ? (int) $data['warranty_days'] : (int) ($row->warranty_days ?? 30);
+
+                $startDate = Carbon::now();
+                $endDate   = $this->calculateWarrantyEndDateFromDuration($startDate, $unit, $value);
+
+                $service = $this->fetchFull($id);
+                $workshopId = $row->workshop_id;
+
+                DB::table('warranties')->insert([
+                    'id'                  => (string) Str::uuid(),
+                    'warranty_code'       => $this->nextWarrantyCode($workshopId),
+                    'sale_id'             => null,
+                    'service_id'          => $id,
+                    'customer_id'         => $row->customer_id,
+                    'customer_name'       => $service['customer']['name'] ?? null,
+                    'product_name'        => null,
+                    'service_description' => $row->description,
+                    'warranty_type'       => 'service',
+                    'warranty_days'       => $warrantyDays,
+                    'start_date'          => $startDate->format('Y-m-d H:i:s'),
+                    'end_date'            => $endDate->format('Y-m-d H:i:s'),
+                    'notes'               => null,
+                    'is_voided'           => 0,
+                    'workshop_id'         => $workshopId,
+                    'created_by'          => null,
+                ]);
+            }
+        }
 
         return ApiResponse::success($this->fetchFull($id), 'Servicio actualizado');
     }
@@ -398,6 +440,26 @@ final class ServiceController
                 'subtotal' => (float) ($item['subtotal'] ?? 0),
             ]);
         }
+    }
+
+    private function nextWarrantyCode(string $workshopId): string
+    {
+        $prefix = 'G-' . now()->format('dmy') . '-';
+        $count  = DB::table('warranties')
+            ->where('workshop_id', $workshopId)
+            ->where('warranty_code', 'like', $prefix . '%')
+            ->count();
+        return $prefix . str_pad((string) ($count + 1), 3, '0', STR_PAD_LEFT);
+    }
+
+    private function calculateWarrantyEndDateFromDuration(Carbon $startDate, string $unit, int $value): Carbon
+    {
+        return match ($unit) {
+            'years'  => (clone $startDate)->addYears($value),
+            'months' => (clone $startDate)->addMonths($value),
+            'weeks'  => (clone $startDate)->addWeeks($value),
+            default  => (clone $startDate)->addDays($value),
+        };
     }
 
     private function decodeJson(mixed $value): array

@@ -4,7 +4,7 @@ import { Wrench, Construction } from "lucide-react";
 
 export default function Herramientas() {
   return (
-    <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain pb-24 md:pb-6 space-y-6">
+    <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain pt-10 lg:pt-2 px-5 lg:px-6 pb-24 md:pb-6 space-y-6 no-scrollbar">
       {/* Header */}
       <PageHeader
         title="Herramientas"

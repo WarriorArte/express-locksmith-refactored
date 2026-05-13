@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Building2, Users, Settings, HardDrive, CheckCircle2, AlertCircle, Save, ImageIcon, UserPlus, Trash2, Loader2, Download, ToggleLeft, Pencil, Key, Eye, EyeOff, Search, Wrench } from "lucide-react";
+import { Plus, Building2, Users, Settings, HardDrive, CheckCircle2, AlertCircle, Save, ImageIcon, UserPlus, Trash2, Loader2, Download, ToggleLeft, Pencil, Key, Eye, EyeOff, Search, Wrench, Shield } from "lucide-react";
 import { Navigate } from "react-router-dom";
 import { isStorageConfigured, useFileUpload } from "@/hooks/useFileUpload";
 import { useAppAdminSettings, useUpdateAppAdminSettings } from "@/hooks/useAppAdminSettings";
@@ -48,6 +48,15 @@ type UserRoleRow = {
     full_name: string | null;
     email: string | null;
   } | null;
+};
+
+type SuperAdminAccessSettings = {
+  id: string;
+  workshop_code: string;
+  email: string;
+  login_path: string;
+  created_at?: string | null;
+  updated_at?: string | null;
 };
 
 export default function SuperAdmin() {
@@ -104,6 +113,57 @@ export default function SuperAdmin() {
   const [cleanupResult, setCleanupResult] = useState<{ deleted: number; kept: number } | null>(null);
   const { uploadFile, isUploading, progress } = useFileUpload({ folder: 'general', workshopCode: 'system' });
   const storageConfigured = isStorageConfigured();
+
+  const [superAdminAccessForm, setSuperAdminAccessForm] = useState({
+    workshopCode: "",
+    email: "",
+    loginPath: "/auth_su",
+    password: "",
+  });
+  const [showSuperAdminPassword, setShowSuperAdminPassword] = useState(false);
+
+  const { data: superAdminAccessSettings, isLoading: loadingSuperAdminAccess } = useQuery({
+    queryKey: ["superadmin-access-settings"],
+    queryFn: async () => phpApiRequest<SuperAdminAccessSettings | null>("/superadmin-access.php", {
+      method: "GET",
+    }),
+    enabled: isSuperAdmin,
+  });
+
+  useEffect(() => {
+    if (superAdminAccessSettings) {
+      setSuperAdminAccessForm((current) => ({
+        workshopCode: superAdminAccessSettings.workshop_code || "",
+        email: superAdminAccessSettings.email || "",
+        loginPath: superAdminAccessSettings.login_path || "/auth_su",
+        password: current.password,
+      }));
+    }
+  }, [superAdminAccessSettings]);
+
+  const updateSuperAdminAccess = useMutation({
+    mutationFn: async () => phpApiRequest<SuperAdminAccessSettings>("/superadmin-access.php", {
+      method: "PUT",
+      body: JSON.stringify({
+        workshop_code: superAdminAccessForm.workshopCode.trim().toUpperCase(),
+        email: superAdminAccessForm.email.trim().toLowerCase(),
+        login_path: superAdminAccessForm.loginPath.trim(),
+        password: superAdminAccessForm.password,
+      }),
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["superadmin-access-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["superadmin-user-roles"] });
+      setSuperAdminAccessForm((current) => ({ ...current, password: "" }));
+      toast({
+        title: "Acceso SuperAdmin actualizado",
+        description: "La ruta y credenciales aisladas ya estan activas",
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
 
   // Load storage settings when appAdminSettings changes
   useEffect(() => {
@@ -445,6 +505,10 @@ export default function SuperAdmin() {
           <TabsTrigger value="users" className="gap-2">
             <Users className="h-4 w-4" />
             Usuarios
+          </TabsTrigger>
+          <TabsTrigger value="su-access" className="gap-2">
+            <Shield className="h-4 w-4" />
+            Acceso SU
           </TabsTrigger>
           <TabsTrigger value="storage" className="gap-2">
             <HardDrive className="h-4 w-4" />
@@ -1203,6 +1267,116 @@ export default function SuperAdmin() {
                   ) : null}
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="su-access">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Acceso aislado SuperAdmin
+              </CardTitle>
+              <CardDescription>Configura la ruta privada y credenciales del login global</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Ruta del login SuperAdmin</Label>
+                  <Input
+                    value={superAdminAccessForm.loginPath}
+                    onChange={(event) => setSuperAdminAccessForm({
+                      ...superAdminAccessForm,
+                      loginPath: event.target.value.startsWith("/") ? event.target.value : `/${event.target.value}`,
+                    })}
+                    placeholder="/auth_su"
+                    disabled={loadingSuperAdminAccess}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    URL actual: {window.location.origin}{superAdminAccessForm.loginPath || "/auth_su"}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Codigo SuperAdmin</Label>
+                  <Input
+                    value={superAdminAccessForm.workshopCode}
+                    onChange={(event) => setSuperAdminAccessForm({
+                      ...superAdminAccessForm,
+                      workshopCode: event.target.value.toUpperCase(),
+                    })}
+                    placeholder="ADMINWARRIOR"
+                    className="uppercase"
+                    disabled={loadingSuperAdminAccess}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Correo SuperAdmin</Label>
+                  <Input
+                    type="email"
+                    value={superAdminAccessForm.email}
+                    onChange={(event) => setSuperAdminAccessForm({
+                      ...superAdminAccessForm,
+                      email: event.target.value,
+                    })}
+                    placeholder="superadmin@dominio.com"
+                    disabled={loadingSuperAdminAccess}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Nueva contrasena</Label>
+                  <div className="relative">
+                    <Input
+                      type={showSuperAdminPassword ? "text" : "password"}
+                      value={superAdminAccessForm.password}
+                      onChange={(event) => setSuperAdminAccessForm({
+                        ...superAdminAccessForm,
+                        password: event.target.value,
+                      })}
+                      placeholder="Dejar vacio para conservarla"
+                      disabled={loadingSuperAdminAccess}
+                      className="pr-11"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full px-3"
+                      onClick={() => setShowSuperAdminPassword(!showSuperAdminPassword)}
+                    >
+                      {showSuperAdminPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-lg border bg-muted/40 p-4 text-sm text-muted-foreground">
+                Solo puede existir una configuracion de acceso SuperAdmin. Al guardar, ese correo queda sincronizado como el unico rol global <code className="px-1 py-0.5 rounded bg-background">superadmin</code>.
+              </div>
+
+              <div className="flex justify-end">
+                <Button
+                  className="gap-2"
+                  onClick={() => updateSuperAdminAccess.mutate()}
+                  disabled={
+                    updateSuperAdminAccess.isPending
+                    || loadingSuperAdminAccess
+                    || !superAdminAccessForm.workshopCode.trim()
+                    || !superAdminAccessForm.email.trim()
+                    || !superAdminAccessForm.loginPath.trim()
+                  }
+                >
+                  {updateSuperAdminAccess.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                  Guardar acceso
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

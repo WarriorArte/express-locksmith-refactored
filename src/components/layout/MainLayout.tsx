@@ -103,7 +103,7 @@ export function MainLayout() {
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 min-h-0 px-5 lg:px-6 pt-10 lg:pt-2 overflow-hidden flex flex-col">
+        <main className="flex-1 min-h-0 overflow-hidden flex flex-col">
           <Outlet />
         </main>
       </div>

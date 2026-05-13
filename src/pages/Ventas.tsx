@@ -269,7 +269,7 @@ export default function Ventas() {
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* Header bar - ya NO es sticky */}
-      <div className="bg-background -mx-5 lg:-mx-6 px-5 lg:px-6 pb-4">
+      <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-2 pb-4">
         <PageHeader
           title="Ventas"
           subtitle={`${sales?.length || 0} ventas registradas`}
@@ -299,7 +299,7 @@ export default function Ventas() {
         />
       </div>
 
-      <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain pb-24 md:pb-6">
+      <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain px-5 lg:px-6 pb-24 md:pb-6 no-scrollbar">
       <div ref={statsRef}>
         <StatsLayout
           mainStat={{

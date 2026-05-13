@@ -51,7 +51,11 @@ final class AppUser extends Authenticatable
 
     public function getGlobalRoleAttribute(): string
     {
-        return $this->globalRole?->role ?? 'user';
+        if ($this->relationLoaded('globalRole')) {
+            return $this->getRelation('globalRole')?->role ?? 'user';
+        }
+
+        return $this->globalRole()->value('role') ?? 'user';
     }
 
     public function isSuperadmin(): bool

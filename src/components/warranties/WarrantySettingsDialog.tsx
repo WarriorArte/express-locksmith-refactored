@@ -27,18 +27,21 @@ interface WarrantySettingsDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-type DurationUnit = "days" | "weeks" | "months";
+type DurationUnit = "days" | "weeks" | "months" | "years";
 
 function convertToDays(value: number, unit: DurationUnit): number {
   switch (unit) {
     case "weeks": return value * 7;
-    case "months": return value * 30;
+    case "months": return Math.round((value * 365) / 12);
+    case "years": return value * 365;
     default: return value;
   }
 }
 
 function convertFromDays(days: number): { value: number; unit: DurationUnit } {
-  if (days % 30 === 0 && days >= 30) return { value: days / 30, unit: "months" };
+  if (days % 365 === 0 && days >= 365) return { value: days / 365, unit: "years" };
+  const approxMonths = Math.round(days / (365 / 12));
+  if (approxMonths >= 1 && Math.round((approxMonths * 365) / 12) === days) return { value: approxMonths, unit: "months" };
   if (days % 7 === 0 && days >= 7) return { value: days / 7, unit: "weeks" };
   return { value: days, unit: "days" };
 }
@@ -132,6 +135,7 @@ export function WarrantySettingsDialog({ open, onOpenChange }: WarrantySettingsD
             <SelectItem value="days">días</SelectItem>
             <SelectItem value="weeks">semanas</SelectItem>
             <SelectItem value="months">meses</SelectItem>
+            <SelectItem value="years">años</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -219,6 +223,7 @@ export function WarrantySettingsDialog({ open, onOpenChange }: WarrantySettingsD
                           <SelectItem value="days">días</SelectItem>
                           <SelectItem value="weeks">semanas</SelectItem>
                           <SelectItem value="months">meses</SelectItem>
+                          <SelectItem value="years">años</SelectItem>
                         </SelectContent>
                       </Select>
 
