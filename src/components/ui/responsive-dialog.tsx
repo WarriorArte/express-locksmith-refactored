@@ -771,7 +771,8 @@ const DialogContent = React.forwardRef<
           <>
             {/* Extract header */}
             {React.Children.map(children, (child) =>
-              React.isValidElement(child) && child.type?.displayName === "DialogHeader"
+              React.isValidElement(child) &&
+              (child.type as { displayName?: string })?.displayName === "DialogHeader"
                 ? <div className="shrink-0 px-6 pt-6 pb-3">{child}</div>
                 : null
             )}
@@ -779,8 +780,8 @@ const DialogContent = React.forwardRef<
             <div className="flex-1 overflow-y-auto px-6 py-2" style={{ WebkitOverflowScrolling: "touch" }}>
               {React.Children.map(children, (child) =>
                 React.isValidElement(child) &&
-                child.type?.displayName !== "DialogHeader" &&
-                child.type?.displayName !== "DialogFooter"
+                (child.type as { displayName?: string })?.displayName !== "DialogHeader" &&
+                (child.type as { displayName?: string })?.displayName !== "DialogFooter"
                   ? child
                   : null
               )}
@@ -788,7 +789,8 @@ const DialogContent = React.forwardRef<
             {/* Extract footer */}
             <div className="shrink-0 px-6 pt-3 pb-6 border-t">
               {React.Children.map(children, (child) =>
-                React.isValidElement(child) && child.type?.displayName === "DialogFooter" ? child : null
+                React.isValidElement(child) &&
+                (child.type as { displayName?: string })?.displayName === "DialogFooter" ? child : null
               )}
             </div>
           </>
