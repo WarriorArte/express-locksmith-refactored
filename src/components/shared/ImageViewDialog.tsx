@@ -254,23 +254,23 @@ export function ImageViewDialog({
       role="dialog"
       aria-modal="true"
       aria-label={currentImage.description || "Vista de imagen"}
-      onClick={() => setChromeVisible((v) => !v)}
     >
-      {/* Image surface */}
+      {/* Image surface — owns all gestures and chrome toggling */}
       <div
         className="absolute inset-0 flex items-center justify-center"
+        style={{ touchAction: "none" }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
+        onPointerLeave={onPointerUp}
         onWheel={onWheel}
-        onClick={(e) => e.stopPropagation()}
       >
         <img
           src={resolveStorageUrl(currentImage.url) ?? undefined}
           alt={currentImage.description || "Imagen"}
           draggable={false}
-          className="max-w-full max-h-full object-contain will-change-transform"
+          className="max-w-full max-h-full object-contain will-change-transform pointer-events-none"
           style={{
             transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
             transformOrigin: "center center",
@@ -280,14 +280,24 @@ export function ImageViewDialog({
         />
       </div>
 
-      {/* Top chrome */}
+      {/* Always-on close button (escape hatch even if chrome is hidden) */}
+      <button
+        type="button"
+        aria-label="Cerrar"
+        onClick={() => onOpenChange(false)}
+        className="absolute right-3 w-11 h-11 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur z-10"
+        style={{ top: "calc(env(safe-area-inset-top) + 0.75rem)" }}
+      >
+        <X className="w-5 h-5" />
+      </button>
+
+      {/* Top chrome (counter + zoom buttons) */}
       <div
         className={cn(
-          "absolute top-0 left-0 right-0 flex items-center justify-between p-3 bg-gradient-to-b from-black/70 to-transparent transition-opacity duration-200",
+          "absolute top-0 left-0 right-16 flex items-center justify-between p-3 bg-gradient-to-b from-black/70 to-transparent transition-opacity duration-200",
           chromeVisible ? "opacity-100" : "opacity-0 pointer-events-none",
         )}
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.5rem)" }}
-        onClick={(e) => e.stopPropagation()}
       >
         <div className="text-white/90 text-sm font-medium px-2">
           {images.length > 1 ? `${currentIndex + 1} / ${images.length}` : ""}
@@ -308,14 +318,6 @@ export function ImageViewDialog({
             className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur"
           >
             <ZoomIn className="w-5 h-5" />
-          </button>
-          <button
-            type="button"
-            aria-label="Cerrar"
-            onClick={() => onOpenChange(false)}
-            className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur"
-          >
-            <X className="w-5 h-5" />
           </button>
         </div>
       </div>
