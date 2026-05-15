@@ -1,8 +1,17 @@
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/responsive-dialog";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useEffect, useRef, useState } from "react";
+/**
+ * ImageViewDialog — Fullscreen lightbox image viewer.
+ *
+ * Used everywhere in the app to preview images (products, services, etc).
+ * Renders as a fullscreen overlay (NOT a modal Dialog) so it uses the entire
+ * viewport on mobile, with pinch/double-tap zoom and pan.
+ *
+ * Public API kept compatible with previous version: { open, onOpenChange, images, initialIndex }.
+ */
+import { ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { resolveStorageUrl } from "@/lib/phpApi";
+import { cn } from "@/lib/utils";
 
 interface ImageViewDialogProps {
   open: boolean;
@@ -11,25 +20,32 @@ interface ImageViewDialogProps {
   initialIndex?: number;
 }
 
-export function ImageViewDialog({ 
-  open, 
-  onOpenChange, 
+const MIN_SCALE = 1;
+const MAX_SCALE = 5;
+
+export function ImageViewDialog({
+  open,
+  onOpenChange,
   images,
-  initialIndex = 0
+  initialIndex = 0,
 }: ImageViewDialogProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [chromeVisible, setChromeVisible] = useState(true);
+
   const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
   const pinchStartDistanceRef = useRef<number | null>(null);
   const pinchStartScaleRef = useRef(1);
   const pinchStartCenterRef = useRef<{ x: number; y: number } | null>(null);
   const panStartOffsetRef = useRef({ x: 0, y: 0 });
   const panLastPointRef = useRef<{ x: number; y: number } | null>(null);
+  const swipeStartRef = useRef<{ x: number; y: number; t: number } | null>(null);
+  const lastTapRef = useRef<number>(0);
 
-  const clampScale = (value: number) => Math.max(1, Math.min(4, value));
+  const clampScale = (v: number) => Math.max(MIN_SCALE, Math.min(MAX_SCALE, v));
 
-  const resetView = () => {
+  const resetView = useCallback(() => {
     pointersRef.current.clear();
     pinchStartDistanceRef.current = null;
     pinchStartScaleRef.current = 1;
@@ -38,73 +54,110 @@ export function ImageViewDialog({
     panLastPointRef.current = null;
     setScale(1);
     setOffset({ x: 0, y: 0 });
-  };
+  }, []);
 
+  // Sync index + reset view when opened
   useEffect(() => {
     if (!open) return;
     setCurrentIndex(initialIndex);
+    setChromeVisible(true);
     resetView();
-  }, [open, initialIndex]);
+  }, [open, initialIndex, resetView]);
 
   useEffect(() => {
     resetView();
-  }, [currentIndex]);
+  }, [currentIndex, resetView]);
 
-  const handlePrev = () => {
-    setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
-  };
+  // Lock background scroll while open
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
 
-  const handleNext = () => {
-    setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
-  };
+  // Keyboard nav
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onOpenChange(false);
+      else if (e.key === "ArrowLeft") handlePrev();
+      else if (e.key === "ArrowRight") handleNext();
+      else if (e.key === "+" || e.key === "=") setScale((s) => clampScale(s + 0.5));
+      else if (e.key === "-") setScale((s) => clampScale(s - 0.5));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  const handlePrev = useCallback(() => {
+    setCurrentIndex((p) => (p === 0 ? images.length - 1 : p - 1));
+  }, [images.length]);
+
+  const handleNext = useCallback(() => {
+    setCurrentIndex((p) => (p === images.length - 1 ? 0 : p + 1));
+  }, [images.length]);
 
   const currentImage = images[currentIndex];
 
-  const getDistance = (a: { x: number; y: number }, b: { x: number; y: number }) => {
-    const dx = b.x - a.x;
-    const dy = b.y - a.y;
-    return Math.sqrt(dx * dx + dy * dy);
-  };
-
+  const getDistance = (a: { x: number; y: number }, b: { x: number; y: number }) =>
+    Math.hypot(b.x - a.x, b.y - a.y);
   const getCenter = (a: { x: number; y: number }, b: { x: number; y: number }) => ({
     x: (a.x + b.x) / 2,
     y: (a.y + b.y) / 2,
   });
 
-  const onPointerDownImage = (e: React.PointerEvent<HTMLDivElement>) => {
-    e.stopPropagation();
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
     if (pointersRef.current.size === 1) {
       panLastPointRef.current = { x: e.clientX, y: e.clientY };
       panStartOffsetRef.current = offset;
+      swipeStartRef.current = { x: e.clientX, y: e.clientY, t: Date.now() };
+
+      // Double-tap to zoom
+      const now = Date.now();
+      if (now - lastTapRef.current < 280) {
+        if (scale > 1) {
+          setScale(1);
+          setOffset({ x: 0, y: 0 });
+        } else {
+          setScale(2.5);
+        }
+        lastTapRef.current = 0;
+      } else {
+        lastTapRef.current = now;
+      }
     }
     if (pointersRef.current.size === 2) {
-      const points = Array.from(pointersRef.current.values());
-      pinchStartDistanceRef.current = getDistance(points[0], points[1]);
+      const pts = Array.from(pointersRef.current.values());
+      pinchStartDistanceRef.current = getDistance(pts[0], pts[1]);
       pinchStartScaleRef.current = scale;
-      pinchStartCenterRef.current = getCenter(points[0], points[1]);
+      pinchStartCenterRef.current = getCenter(pts[0], pts[1]);
       panStartOffsetRef.current = offset;
+      swipeStartRef.current = null;
     }
     e.currentTarget.setPointerCapture?.(e.pointerId);
   };
 
-  const onPointerMoveImage = (e: React.PointerEvent<HTMLDivElement>) => {
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!pointersRef.current.has(e.pointerId)) return;
-    e.stopPropagation();
     pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
     if (pointersRef.current.size >= 2) {
-      const points = Array.from(pointersRef.current.values());
-      const distance = getDistance(points[0], points[1]);
-      const center = getCenter(points[0], points[1]);
+      const pts = Array.from(pointersRef.current.values());
+      const dist = getDistance(pts[0], pts[1]);
+      const center = getCenter(pts[0], pts[1]);
       if (pinchStartDistanceRef.current == null) {
-        pinchStartDistanceRef.current = distance;
+        pinchStartDistanceRef.current = dist;
         pinchStartScaleRef.current = scale;
         pinchStartCenterRef.current = center;
         return;
       }
-      const nextScale = clampScale((distance / pinchStartDistanceRef.current) * pinchStartScaleRef.current);
-      setScale(nextScale);
+      setScale(clampScale((dist / pinchStartDistanceRef.current) * pinchStartScaleRef.current));
       if (pinchStartCenterRef.current) {
         setOffset({
           x: panStartOffsetRef.current.x + (center.x - pinchStartCenterRef.current.x),
@@ -115,23 +168,40 @@ export function ImageViewDialog({
     }
 
     if (pointersRef.current.size === 1 && scale > 1 && panLastPointRef.current) {
-      const deltaX = e.clientX - panLastPointRef.current.x;
-      const deltaY = e.clientY - panLastPointRef.current.y;
+      const dx = e.clientX - panLastPointRef.current.x;
+      const dy = e.clientY - panLastPointRef.current.y;
       panLastPointRef.current = { x: e.clientX, y: e.clientY };
-      setOffset((prev) => ({ x: prev.x + deltaX, y: prev.y + deltaY }));
+      setOffset((p) => ({ x: p.x + dx, y: p.y + dy }));
     }
   };
 
-  const onPointerUpImage = (e: React.PointerEvent<HTMLDivElement>) => {
-    e.stopPropagation();
+  const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     pointersRef.current.delete(e.pointerId);
+
+    // Swipe nav (only when not zoomed and single touch finished)
+    if (
+      scale === 1 &&
+      pointersRef.current.size === 0 &&
+      swipeStartRef.current &&
+      images.length > 1
+    ) {
+      const dx = e.clientX - swipeStartRef.current.x;
+      const dy = e.clientY - swipeStartRef.current.y;
+      const dt = Date.now() - swipeStartRef.current.t;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5 && dt < 600) {
+        if (dx < 0) handleNext();
+        else handlePrev();
+      }
+    }
+    swipeStartRef.current = null;
+
     if (pointersRef.current.size < 2) {
       pinchStartDistanceRef.current = null;
       pinchStartCenterRef.current = null;
     }
     if (pointersRef.current.size === 1) {
-      const [point] = Array.from(pointersRef.current.values());
-      panLastPointRef.current = point;
+      const [pt] = Array.from(pointersRef.current.values());
+      panLastPointRef.current = pt;
       panStartOffsetRef.current = offset;
     }
     if (pointersRef.current.size === 0) {
@@ -143,94 +213,139 @@ export function ImageViewDialog({
     }
   };
 
-  const onDoubleClickImage = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.stopPropagation();
-    if (scale > 1) {
-      setScale(1);
-      setOffset({ x: 0, y: 0 });
-      return;
-    }
-    setScale(2);
+  const onWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (!e.ctrlKey && !e.metaKey && Math.abs(e.deltaY) < 30) return;
+    e.preventDefault();
+    setScale((s) => clampScale(s - e.deltaY * 0.005));
   };
 
-  if (!currentImage) return null;
+  if (!open || !currentImage) return null;
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent disableSwipeToClose className="max-w-4xl p-0 bg-white border border-border">
-        <DialogTitle className="sr-only">
-          {currentImage.description || "Vista de imagen"}
-        </DialogTitle>
-        <div className="relative flex items-center justify-center min-h-[60vh] bg-white">
-          {/* Close button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-2 right-2 z-10 text-foreground hover:bg-muted"
+  const lightbox = (
+    <div
+      className="fixed inset-0 z-[200] bg-black overflow-hidden touch-none select-none"
+      style={{
+        paddingTop: "env(safe-area-inset-top)",
+        paddingBottom: "env(safe-area-inset-bottom)",
+      }}
+      role="dialog"
+      aria-modal="true"
+      aria-label={currentImage.description || "Vista de imagen"}
+      onClick={() => setChromeVisible((v) => !v)}
+    >
+      {/* Image surface */}
+      <div
+        className="absolute inset-0 flex items-center justify-center"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        onWheel={onWheel}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <img
+          src={resolveStorageUrl(currentImage.url) ?? undefined}
+          alt={currentImage.description || "Imagen"}
+          draggable={false}
+          className="max-w-full max-h-full object-contain will-change-transform"
+          style={{
+            transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
+            transformOrigin: "center center",
+            transition:
+              pointersRef.current.size > 0 ? "none" : "transform 180ms ease-out",
+          }}
+        />
+      </div>
+
+      {/* Top chrome */}
+      <div
+        className={cn(
+          "absolute top-0 left-0 right-0 flex items-center justify-between p-3 bg-gradient-to-b from-black/70 to-transparent transition-opacity duration-200",
+          chromeVisible ? "opacity-100" : "opacity-0 pointer-events-none",
+        )}
+        style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.5rem)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="text-white/90 text-sm font-medium px-2">
+          {images.length > 1 ? `${currentIndex + 1} / ${images.length}` : ""}
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            aria-label="Alejar"
+            onClick={() => setScale((s) => clampScale(s - 0.5))}
+            className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur"
+          >
+            <ZoomOut className="w-5 h-5" />
+          </button>
+          <button
+            type="button"
+            aria-label="Acercar"
+            onClick={() => setScale((s) => clampScale(s + 0.5))}
+            className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur"
+          >
+            <ZoomIn className="w-5 h-5" />
+          </button>
+          <button
+            type="button"
+            aria-label="Cerrar"
             onClick={() => onOpenChange(false)}
+            className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur"
           >
             <X className="w-5 h-5" />
-          </Button>
-
-          {/* Navigation - Previous */}
-          {images.length > 1 && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute left-2 z-10 text-foreground hover:bg-muted"
-              onClick={handlePrev}
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </Button>
-          )}
-
-          {/* Image */}
-          <div
-            className="max-w-full max-h-[80vh] overflow-hidden touch-none select-none"
-            onPointerDown={onPointerDownImage}
-            onPointerMove={onPointerMoveImage}
-            onPointerUp={onPointerUpImage}
-            onPointerCancel={onPointerUpImage}
-            onDoubleClick={onDoubleClickImage}
-          >
-            <img
-              src={resolveStorageUrl(currentImage.url) ?? undefined}
-              alt={currentImage.description || "Imagen"}
-              className="max-w-full max-h-[80vh] object-contain"
-              draggable={false}
-              style={{
-                transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
-                transformOrigin: "center center",
-                transition: pointersRef.current.size > 0 ? "none" : "transform 160ms ease-out",
-              }}
-            />
-          </div>
-
-          {/* Navigation - Next */}
-          {images.length > 1 && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-2 z-10 text-foreground hover:bg-muted"
-              onClick={handleNext}
-            >
-              <ChevronRight className="w-6 h-6" />
-            </Button>
-          )}
-
-          {/* Image info */}
-          <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white/95 to-white/0">
-            {currentImage.description && (
-              <p className="text-foreground text-center mb-2">{currentImage.description}</p>
-            )}
-            {images.length > 1 && (
-              <p className="text-muted-foreground text-center text-sm">
-                {currentIndex + 1} / {images.length}
-              </p>
-            )}
-          </div>
+          </button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+
+      {/* Side nav (desktop / tablet) */}
+      {images.length > 1 && (
+        <>
+          <button
+            type="button"
+            aria-label="Anterior"
+            onClick={(e) => {
+              e.stopPropagation();
+              handlePrev();
+            }}
+            className={cn(
+              "hidden sm:flex absolute left-3 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white items-center justify-center backdrop-blur transition-opacity",
+              chromeVisible ? "opacity-100" : "opacity-0 pointer-events-none",
+            )}
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+          <button
+            type="button"
+            aria-label="Siguiente"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleNext();
+            }}
+            className={cn(
+              "hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white items-center justify-center backdrop-blur transition-opacity",
+              chromeVisible ? "opacity-100" : "opacity-0 pointer-events-none",
+            )}
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
+        </>
+      )}
+
+      {/* Bottom caption */}
+      {currentImage.description && (
+        <div
+          className={cn(
+            "absolute bottom-0 left-0 right-0 px-4 pt-6 pb-3 bg-gradient-to-t from-black/70 to-transparent text-white text-center text-sm transition-opacity duration-200",
+            chromeVisible ? "opacity-100" : "opacity-0 pointer-events-none",
+          )}
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {currentImage.description}
+        </div>
+      )}
+    </div>
   );
+
+  return createPortal(lightbox, document.body);
 }
