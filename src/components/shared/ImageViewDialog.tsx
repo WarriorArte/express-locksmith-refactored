@@ -134,6 +134,135 @@ export function ImageViewDialog({
     y: (a.y + b.y) / 2,
   });
 
+  const getTouchPoint = (touch: React.Touch) => ({ x: touch.clientX, y: touch.clientY });
+
+  const onTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    gestureMovedRef.current = false;
+
+    if (e.touches.length === 1) {
+      const point = getTouchPoint(e.touches[0]);
+      panLastPointRef.current = point;
+      panStartOffsetRef.current = offsetRef.current;
+      swipeStartRef.current = { ...point, t: Date.now() };
+      didPinchRef.current = false;
+
+      const now = Date.now();
+      if (now - lastTapRef.current < 280) {
+        gestureMovedRef.current = true;
+        if (scaleRef.current > 1) {
+          applyScale(1);
+          applyOffset({ x: 0, y: 0 });
+        } else {
+          applyScale(2.5);
+        }
+        lastTapRef.current = 0;
+      } else {
+        lastTapRef.current = now;
+      }
+      return;
+    }
+
+    if (e.touches.length >= 2) {
+      const first = getTouchPoint(e.touches[0]);
+      const second = getTouchPoint(e.touches[1]);
+      pinchStartDistanceRef.current = getDistance(first, second);
+      pinchStartScaleRef.current = scaleRef.current;
+      pinchStartCenterRef.current = getCenter(first, second);
+      panStartOffsetRef.current = offsetRef.current;
+      swipeStartRef.current = null;
+      didPinchRef.current = true;
+    }
+  };
+
+  const onTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    gestureMovedRef.current = true;
+
+    if (e.touches.length >= 2) {
+      didPinchRef.current = true;
+      const first = getTouchPoint(e.touches[0]);
+      const second = getTouchPoint(e.touches[1]);
+      const dist = getDistance(first, second);
+      const center = getCenter(first, second);
+
+      if (pinchStartDistanceRef.current == null) {
+        pinchStartDistanceRef.current = dist;
+        pinchStartScaleRef.current = scaleRef.current;
+        pinchStartCenterRef.current = center;
+        return;
+      }
+
+      applyScale((dist / pinchStartDistanceRef.current) * pinchStartScaleRef.current);
+      if (pinchStartCenterRef.current) {
+        applyOffset({
+          x: panStartOffsetRef.current.x + (center.x - pinchStartCenterRef.current.x),
+          y: panStartOffsetRef.current.y + (center.y - pinchStartCenterRef.current.y),
+        });
+      }
+      return;
+    }
+
+    if (e.touches.length === 1 && scaleRef.current > 1 && panLastPointRef.current) {
+      const point = getTouchPoint(e.touches[0]);
+      const dx = point.x - panLastPointRef.current.x;
+      const dy = point.y - panLastPointRef.current.y;
+      panLastPointRef.current = point;
+      applyOffset((p) => ({ x: p.x + dx, y: p.y + dy }));
+    }
+  };
+
+  const onTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const changed = e.changedTouches[0] ? getTouchPoint(e.changedTouches[0]) : null;
+
+    if (
+      scaleRef.current === 1 &&
+      e.touches.length === 0 &&
+      !didPinchRef.current &&
+      swipeStartRef.current &&
+      changed &&
+      images.length > 1
+    ) {
+      const dx = changed.x - swipeStartRef.current.x;
+      const dy = changed.y - swipeStartRef.current.y;
+      const dt = Date.now() - swipeStartRef.current.t;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5 && dt < 600) {
+        if (dx < 0) handleNext();
+        else handlePrev();
+      }
+    }
+
+    if (
+      e.touches.length === 0 &&
+      !gestureMovedRef.current &&
+      !didPinchRef.current &&
+      Date.now() - (swipeStartRef.current?.t ?? 0) < 300
+    ) {
+      setChromeVisible((v) => !v);
+    }
+
+    swipeStartRef.current = null;
+
+    if (e.touches.length < 2) {
+      pinchStartDistanceRef.current = null;
+      pinchStartCenterRef.current = null;
+    }
+    if (e.touches.length === 1) {
+      panLastPointRef.current = getTouchPoint(e.touches[0]);
+      panStartOffsetRef.current = offsetRef.current;
+    }
+    if (e.touches.length === 0) {
+      panLastPointRef.current = null;
+      didPinchRef.current = false;
+      gestureMovedRef.current = false;
+      if (scaleRef.current <= 1) {
+        applyScale(1);
+        applyOffset({ x: 0, y: 0 });
+      }
+    }
+  };
+
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.pointerType === "touch") return;
     // Only track touch / pen / mouse-primary for gestures
