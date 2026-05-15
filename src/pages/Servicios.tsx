@@ -250,11 +250,14 @@ export default function Servicios() {
         // Descontar del inventario solo los productos que tienen stock disponible
         try {
           await updateForService(
-            service.service_products.filter(item => {
-              const product = products.find(p => p.id === item.product_id);
-              const availableStock = product?.stock_store || 0;
-              return availableStock > 0 && item.quantity && item.quantity <= availableStock;
-            }),
+            service.service_products
+              .filter(item => {
+                if (!item.product_id) return false;
+                const product = products.find(p => p.id === item.product_id);
+                const availableStock = product?.stock_store || 0;
+                return availableStock > 0 && item.quantity && item.quantity <= availableStock;
+              })
+              .map(item => ({ product_id: item.product_id as string, quantity: item.quantity as number })),
             service.id
           );
         } catch (error) {
