@@ -1,12 +1,4 @@
-/**
- * ImageViewDialog — Fullscreen lightbox image viewer.
- *
- * Used everywhere in the app to preview images (products, services, etc).
- * Renders as a fullscreen overlay (NOT a modal Dialog) so it uses the entire
- * viewport on mobile, with pinch/double-tap zoom and pan.
- *
- * Public API kept compatible with previous version: { open, onOpenChange, images, initialIndex }.
- */
+import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -20,8 +12,14 @@ interface ImageViewDialogProps {
   initialIndex?: number;
 }
 
-const MIN_SCALE = 1;
-const MAX_SCALE = 5;
+// Distancia en píxeles que el dedo debe recorrer para cambiar de foto (swipe)
+const SWIPE_DISTANCE_THRESHOLD = 50;
+
+const slideVariants = {
+  enter: (dir: number) => ({ x: dir > 0 ? 1000 : -1000, opacity: 0 }),
+  center: { x: 0, opacity: 1, zIndex: 1 },
+  exit: (dir: number) => ({ x: dir < 0 ? 1000 : -1000, opacity: 0, zIndex: 0 }),
+};
 
 export function ImageViewDialog({
   open,
@@ -29,258 +27,245 @@ export function ImageViewDialog({
   images,
   initialIndex = 0,
 }: ImageViewDialogProps) {
-  const [currentIndex, setCurrentIndex] = useState(initialIndex);
+  const [[page, direction], setPage] = useState<[number, number]>([initialIndex, 0]);
+  
+  // Estados simplificados para la manipulación directa
   const [scale, setScale] = useState(1);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [chromeVisible, setChromeVisible] = useState(true);
+  const [pan, setPan] = useState({ x: 0, y: 0 }); 
 
-  const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
-  const pinchStartDistanceRef = useRef<number | null>(null);
-  const pinchStartScaleRef = useRef(1);
-  const pinchStartCenterRef = useRef<{ x: number; y: number } | null>(null);
-  const panStartOffsetRef = useRef({ x: 0, y: 0 });
-  const panLastPointRef = useRef<{ x: number; y: number } | null>(null);
-  const swipeStartRef = useRef<{ x: number; y: number; t: number } | null>(null);
-  const lastTapRef = useRef<number>(0);
-  const gestureMovedRef = useRef(false);
-  const didPinchRef = useRef(false);
+  const imageIndex = Math.abs(page % images.length);
 
-  const clampScale = (v: number) => Math.max(MIN_SCALE, Math.min(MAX_SCALE, v));
-
-  const resetView = useCallback(() => {
-    pointersRef.current.clear();
-    pinchStartDistanceRef.current = null;
-    pinchStartScaleRef.current = 1;
-    pinchStartCenterRef.current = null;
-    panStartOffsetRef.current = { x: 0, y: 0 };
-    panLastPointRef.current = null;
+  const paginate = useCallback((newDirection: number) => {
+    setPage(([p]) => [p + newDirection, newDirection]);
     setScale(1);
-    setOffset({ x: 0, y: 0 });
+    setPan({ x: 0, y: 0 });
   }, []);
 
-  // Sync index + reset view when opened
+  const handleDoubleClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setScale((s) => {
+        if (s > 1) {
+          setPan({ x: 0, y: 0 });
+          return 1;
+        }
+        return 2.5;
+      });
+    },
+    [],
+  );
+
   useEffect(() => {
     if (!open) return;
-    setCurrentIndex(initialIndex);
-    setChromeVisible(true);
-    resetView();
-  }, [open, initialIndex, resetView]);
+    setPage([initialIndex, 0]);
+    setScale(1);
+    setPan({ x: 0, y: 0 });
+  }, [open, initialIndex]);
 
-  useEffect(() => {
-    resetView();
-  }, [currentIndex, resetView]);
-
-  // Lock background scroll while open
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
+    return () => { document.body.style.overflow = prev; };
   }, [open]);
 
-  // Keyboard nav
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
+      if (["Escape", "ArrowLeft", "ArrowRight", "+", "=", "-"].includes(e.key)) {
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+
       if (e.key === "Escape") onOpenChange(false);
-      else if (e.key === "ArrowLeft") handlePrev();
-      else if (e.key === "ArrowRight") handleNext();
-      else if (e.key === "+" || e.key === "=") setScale((s) => clampScale(s + 0.5));
-      else if (e.key === "-") setScale((s) => clampScale(s - 0.5));
+      else if (e.key === "ArrowLeft") paginate(-1);
+      else if (e.key === "ArrowRight") paginate(1);
+      else if (e.key === "+" || e.key === "=") setScale((s) => Math.min(5, s + 0.5));
+      else if (e.key === "-") setScale((s) => {
+        const n = Math.max(1, s - 0.5);
+        if (n === 1) setPan({ x: 0, y: 0 });
+        return n;
+      });
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+    window.addEventListener("keydown", onKey, { capture: true });
+    return () => window.removeEventListener("keydown", onKey, { capture: true });
+  }, [open, paginate, onOpenChange]);
 
-  const handlePrev = useCallback(() => {
-    setCurrentIndex((p) => (p === 0 ? images.length - 1 : p - 1));
-  }, [images.length]);
-
-  const handleNext = useCallback(() => {
-    setCurrentIndex((p) => (p === images.length - 1 ? 0 : p + 1));
-  }, [images.length]);
-
-  const currentImage = images[currentIndex];
-
-  const getDistance = (a: { x: number; y: number }, b: { x: number; y: number }) =>
-    Math.hypot(b.x - a.x, b.y - a.y);
-  const getCenter = (a: { x: number; y: number }, b: { x: number; y: number }) => ({
-    x: (a.x + b.x) / 2,
-    y: (a.y + b.y) / 2,
+  // --- MOTOR DE GESTOS UNIFICADO ---
+  const touchState = useRef({
+    startX: 0,
+    startY: 0,
+    startCenterX: 0,
+    startCenterY: 0,
+    isDragging: false,
+    isPinching: false,
+    initialDist: 0,
+    initialScale: 1,
+    lastPan: { x: 0, y: 0 }
   });
 
-  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    // Only track touch / pen / mouse-primary for gestures
-    pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    gestureMovedRef.current = false;
-
-    if (pointersRef.current.size === 1) {
-      panLastPointRef.current = { x: e.clientX, y: e.clientY };
-      panStartOffsetRef.current = offset;
-      swipeStartRef.current = { x: e.clientX, y: e.clientY, t: Date.now() };
-      didPinchRef.current = false;
-
-      // Double-tap to zoom
-      const now = Date.now();
-      if (now - lastTapRef.current < 280) {
-        if (scale > 1) {
-          setScale(1);
-          setOffset({ x: 0, y: 0 });
-        } else {
-          setScale(2.5);
-        }
-        lastTapRef.current = 0;
-      } else {
-        lastTapRef.current = now;
-      }
-    }
-    if (pointersRef.current.size === 2) {
-      const pts = Array.from(pointersRef.current.values());
-      pinchStartDistanceRef.current = getDistance(pts[0], pts[1]);
-      pinchStartScaleRef.current = scale;
-      pinchStartCenterRef.current = getCenter(pts[0], pts[1]);
-      panStartOffsetRef.current = offset;
-      swipeStartRef.current = null;
-      didPinchRef.current = true;
-    }
-    // NOTE: intentionally do NOT call setPointerCapture — it breaks multi-touch
-    // pinch on some mobile browsers (the second touch never reaches the element).
-  };
-
-  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!pointersRef.current.has(e.pointerId)) return;
-    pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    gestureMovedRef.current = true;
-
-    if (pointersRef.current.size >= 2) {
-      didPinchRef.current = true;
-      const pts = Array.from(pointersRef.current.values());
-      const dist = getDistance(pts[0], pts[1]);
-      const center = getCenter(pts[0], pts[1]);
-      if (pinchStartDistanceRef.current == null) {
-        pinchStartDistanceRef.current = dist;
-        pinchStartScaleRef.current = scale;
-        pinchStartCenterRef.current = center;
-        return;
-      }
-      setScale(clampScale((dist / pinchStartDistanceRef.current) * pinchStartScaleRef.current));
-      if (pinchStartCenterRef.current) {
-        setOffset({
-          x: panStartOffsetRef.current.x + (center.x - pinchStartCenterRef.current.x),
-          y: panStartOffsetRef.current.y + (center.y - pinchStartCenterRef.current.y),
-        });
-      }
-      return;
-    }
-
-    if (pointersRef.current.size === 1 && scale > 1 && panLastPointRef.current) {
-      const dx = e.clientX - panLastPointRef.current.x;
-      const dy = e.clientY - panLastPointRef.current.y;
-      panLastPointRef.current = { x: e.clientX, y: e.clientY };
-      setOffset((p) => ({ x: p.x + dx, y: p.y + dy }));
+  const handleTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation(); 
+    
+    if (e.touches.length === 1) {
+      touchState.current = {
+        ...touchState.current,
+        isDragging: true,
+        isPinching: false,
+        startX: e.touches[0].clientX,
+        startY: e.touches[0].clientY,
+        lastPan: { ...pan }
+      };
+    } else if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      
+      touchState.current = {
+        ...touchState.current,
+        isDragging: false,
+        isPinching: true,
+        initialDist: dist,
+        initialScale: scale,
+        startCenterX: centerX,
+        startCenterY: centerY,
+        lastPan: { ...pan }
+      };
     }
   };
 
-  const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    pointersRef.current.delete(e.pointerId);
+  const handleTouchMove = (e: React.TouchEvent) => {
+    e.stopPropagation(); 
+    
+    if (e.touches.length === 1 && touchState.current.isDragging) {
+      const deltaX = e.touches[0].clientX - touchState.current.startX;
+      const deltaY = e.touches[0].clientY - touchState.current.startY;
 
-    // Swipe nav (only when not zoomed and single touch finished)
-    if (
-      scale === 1 &&
-      pointersRef.current.size === 0 &&
-      !didPinchRef.current &&
-      swipeStartRef.current &&
-      images.length > 1
-    ) {
-      const dx = e.clientX - swipeStartRef.current.x;
-      const dy = e.clientY - swipeStartRef.current.y;
-      const dt = Date.now() - swipeStartRef.current.t;
-      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5 && dt < 600) {
-        if (dx < 0) handleNext();
-        else handlePrev();
-      }
-    }
+      setPan({
+        x: touchState.current.lastPan.x + deltaX,
+        y: scale > 1 ? touchState.current.lastPan.y + deltaY : 0 // Bloquear eje Y si no hay zoom
+      });
+      
+    } else if (e.touches.length === 2 && touchState.current.isPinching) {
+      // 1. Manejar Zoom
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const deltaScale = dist / touchState.current.initialDist;
+      setScale(Math.min(Math.max(1, touchState.current.initialScale * deltaScale), 5));
 
-    // Tap (no movement, no pinch) toggles chrome
-    if (
-      pointersRef.current.size === 0 &&
-      !gestureMovedRef.current &&
-      !didPinchRef.current &&
-      Date.now() - (swipeStartRef.current?.t ?? 0) < 300
-    ) {
-      setChromeVisible((v) => !v);
-    }
+      // 2. Manejar Paneo Simultáneo (Mover con dos dedos)
+      const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      const deltaX = centerX - touchState.current.startCenterX;
+      const deltaY = centerY - touchState.current.startCenterY;
 
-    swipeStartRef.current = null;
+      setPan({
+        x: touchState.current.lastPan.x + deltaX,
+        y: touchState.current.lastPan.y + deltaY
+      });
+    }
+  };
 
-    if (pointersRef.current.size < 2) {
-      pinchStartDistanceRef.current = null;
-      pinchStartCenterRef.current = null;
-    }
-    if (pointersRef.current.size === 1) {
-      const [pt] = Array.from(pointersRef.current.values());
-      panLastPointRef.current = pt;
-      panStartOffsetRef.current = offset;
-    }
-    if (pointersRef.current.size === 0) {
-      panLastPointRef.current = null;
-      didPinchRef.current = false;
-      gestureMovedRef.current = false;
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    e.stopPropagation(); 
+    
+    // Si soltamos todos los dedos y estábamos arrastrando
+    if (touchState.current.isDragging && e.touches.length === 0) {
+      touchState.current.isDragging = false;
+      
       if (scale <= 1) {
+        // Lógica de Swipe para cambiar foto
+        if (pan.x > SWIPE_DISTANCE_THRESHOLD && images.length > 1) {
+          paginate(-1);
+        } else if (pan.x < -SWIPE_DISTANCE_THRESHOLD && images.length > 1) {
+          paginate(1);
+        } else {
+          setPan({ x: 0, y: 0 }); // No alcanzó el umbral, vuelve al centro
+        }
+      }
+    }
+    
+    // Si estábamos pellizcando y soltamos al menos un dedo
+    if (touchState.current.isPinching && e.touches.length < 2) {
+      touchState.current.isPinching = false;
+      
+      if (scale < 1.05) {
         setScale(1);
-        setOffset({ x: 0, y: 0 });
+        setPan({ x: 0, y: 0 });
+      } else if (e.touches.length === 1) {
+        // Transición fluida: si dejas un dedo puesto, sigues moviendo la imagen
+        touchState.current = {
+          ...touchState.current,
+          isDragging: true,
+          startX: e.touches[0].clientX,
+          startY: e.touches[0].clientY,
+          lastPan: { ...pan }
+        };
       }
     }
   };
+  // -----------------------------------
 
-  const onWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    if (!e.ctrlKey && !e.metaKey && Math.abs(e.deltaY) < 30) return;
-    e.preventDefault();
-    setScale((s) => clampScale(s - e.deltaY * 0.005));
-  };
-
-  if (!open || !currentImage) return null;
+  if (!open || images.length === 0) return null;
+  const currentImage = images[imageIndex];
+  if (!currentImage) return null;
 
   const lightbox = (
     <div
-      className="fixed inset-0 z-[200] bg-black overflow-hidden touch-none select-none"
-      style={{
-        paddingTop: "env(safe-area-inset-top)",
-        paddingBottom: "env(safe-area-inset-bottom)",
-      }}
+      className="fixed inset-0 z-[200] bg-black/95 overflow-hidden select-none"
+      style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
       role="dialog"
       aria-modal="true"
-      aria-label={currentImage.description || "Vista de imagen"}
+      onClick={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
     >
-      {/* Image surface — owns all gestures and chrome toggling */}
-      <div
-        className="absolute inset-0 flex items-center justify-center"
-        style={{ touchAction: "none" }}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-        onPointerLeave={onPointerUp}
-        onWheel={onWheel}
+      <div 
+        className="relative w-full h-full flex items-center justify-center overflow-hidden touch-none"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
+        onDoubleClick={handleDoubleClick}
       >
-        <img
-          src={resolveStorageUrl(currentImage.url) ?? undefined}
-          alt={currentImage.description || "Imagen"}
-          draggable={false}
-          className="max-w-full max-h-full object-contain will-change-transform pointer-events-none"
-          style={{
-            transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
-            transformOrigin: "center center",
-            transition:
-              pointersRef.current.size > 0 ? "none" : "transform 180ms ease-out",
-          }}
-        />
+        <AnimatePresence initial={false} custom={direction}>
+          <motion.div
+            key={page}
+            custom={direction}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{
+              x: { type: "spring", stiffness: 300, damping: 30 },
+              opacity: { duration: 0.2 },
+            }}
+            className="absolute inset-0 flex items-center justify-center touch-none pointer-events-none"
+          >
+            <motion.img
+              src={resolveStorageUrl(currentImage.url) ?? undefined}
+              alt={currentImage.description || "Imagen"}
+              draggable={false}
+              className="max-w-full max-h-full object-contain px-4 select-none touch-none pointer-events-auto"
+              style={{ WebkitTouchCallout: "none" }} // Prevenir menú de iOS al mantener presionado
+              
+              animate={{
+                scale: scale,
+                x: pan.x,
+                y: pan.y,
+              }}
+              // Física muy ajustada: Responde instantáneamente al dedo, pero suaviza la detención
+              transition={{ type: "spring", stiffness: 600, damping: 50, mass: 0.5 }}
+            />
+          </motion.div>
+        </AnimatePresence>
       </div>
 
-      {/* Always-on close button (escape hatch even if chrome is hidden) */}
+      {/* Cerrar — siempre visible */}
       <button
         type="button"
         aria-label="Cerrar"
@@ -291,22 +276,26 @@ export function ImageViewDialog({
         <X className="w-5 h-5" />
       </button>
 
-      {/* Top chrome (counter + zoom buttons) */}
+      {/* Chrome superior: contador + zoom */}
       <div
-        className={cn(
-          "absolute top-0 left-0 right-16 flex items-center justify-between p-3 bg-gradient-to-b from-black/70 to-transparent transition-opacity duration-200",
-          chromeVisible ? "opacity-100" : "opacity-0 pointer-events-none",
-        )}
+        className="absolute top-0 left-0 right-16 flex items-center justify-between p-3 bg-gradient-to-b from-black/70 to-transparent pointer-events-none"
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.5rem)" }}
       >
-        <div className="text-white/90 text-sm font-medium px-2">
-          {images.length > 1 ? `${currentIndex + 1} / ${images.length}` : ""}
-        </div>
-        <div className="flex items-center gap-1">
+        <span className="text-white/90 text-sm font-medium px-2">
+          {images.length > 1 ? `${imageIndex + 1} / ${images.length}` : ""}
+        </span>
+        <div className="flex items-center gap-1 pointer-events-auto">
           <button
             type="button"
             aria-label="Alejar"
-            onClick={() => setScale((s) => clampScale(s - 0.5))}
+            onClick={(e) => {
+              e.stopPropagation();
+              setScale((s) => {
+                const n = Math.max(1, s - 0.5);
+                if (n === 1) setPan({ x: 0, y: 0 });
+                return n;
+              });
+            }}
             className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur"
           >
             <ZoomOut className="w-5 h-5" />
@@ -314,7 +303,7 @@ export function ImageViewDialog({
           <button
             type="button"
             aria-label="Acercar"
-            onClick={() => setScale((s) => clampScale(s + 0.5))}
+            onClick={(e) => { e.stopPropagation(); setScale((s) => Math.min(5, s + 0.5)); }}
             className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur"
           >
             <ZoomIn className="w-5 h-5" />
@@ -322,51 +311,55 @@ export function ImageViewDialog({
         </div>
       </div>
 
-      {/* Side nav (desktop / tablet) */}
+      {/* Nav lateral — solo desktop */}
       {images.length > 1 && (
-        <>
+        <div className="absolute inset-y-0 w-full flex items-center justify-between px-4 pointer-events-none">
           <button
             type="button"
             aria-label="Anterior"
-            onClick={(e) => {
-              e.stopPropagation();
-              handlePrev();
-            }}
-            className={cn(
-              "hidden sm:flex absolute left-3 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white items-center justify-center backdrop-blur transition-opacity",
-              chromeVisible ? "opacity-100" : "opacity-0 pointer-events-none",
-            )}
+            onClick={(e) => { e.stopPropagation(); paginate(-1); }}
+            className="hidden sm:flex p-3 rounded-full bg-black/50 text-white/70 hover:text-white hover:bg-black/80 backdrop-blur-md transition-all pointer-events-auto"
           >
-            <ChevronLeft className="w-6 h-6" />
+            <ChevronLeft className="w-8 h-8" />
           </button>
           <button
             type="button"
             aria-label="Siguiente"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleNext();
-            }}
-            className={cn(
-              "hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white items-center justify-center backdrop-blur transition-opacity",
-              chromeVisible ? "opacity-100" : "opacity-0 pointer-events-none",
-            )}
+            onClick={(e) => { e.stopPropagation(); paginate(1); }}
+            className="hidden sm:flex p-3 rounded-full bg-black/50 text-white/70 hover:text-white hover:bg-black/80 backdrop-blur-md transition-all pointer-events-auto"
           >
-            <ChevronRight className="w-6 h-6" />
+            <ChevronRight className="w-8 h-8" />
           </button>
-        </>
+        </div>
       )}
 
-      {/* Bottom caption */}
-      {currentImage.description && (
+      {/* Chrome inferior: dots + caption */}
+      {(images.length > 1 || currentImage.description) && (
         <div
-          className={cn(
-            "absolute bottom-0 left-0 right-0 px-4 pt-6 pb-3 bg-gradient-to-t from-black/70 to-transparent text-white text-center text-sm transition-opacity duration-200",
-            chromeVisible ? "opacity-100" : "opacity-0 pointer-events-none",
-          )}
-          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}
-          onClick={(e) => e.stopPropagation()}
+          className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent pointer-events-none"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)" }}
         >
-          {currentImage.description}
+          {images.length > 1 && (
+            <div className="flex justify-center gap-2 pt-5 pb-2 pointer-events-auto">
+              {images.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  aria-label={`Imagen ${i + 1}`}
+                  onClick={(e) => { e.stopPropagation(); paginate(i - imageIndex); }}
+                  className={cn(
+                    "rounded-full transition-all duration-200",
+                    i === imageIndex ? "w-5 h-2 bg-white" : "w-2 h-2 bg-white/40 hover:bg-white/70",
+                  )}
+                />
+              ))}
+            </div>
+          )}
+          {currentImage.description && (
+            <p className="px-6 pt-1 text-white/90 text-center text-sm leading-snug pointer-events-auto">
+              {currentImage.description}
+            </p>
+          )}
         </div>
       )}
     </div>
