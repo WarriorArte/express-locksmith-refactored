@@ -42,6 +42,8 @@ export function ImageViewDialog({
   const panLastPointRef = useRef<{ x: number; y: number } | null>(null);
   const swipeStartRef = useRef<{ x: number; y: number; t: number } | null>(null);
   const lastTapRef = useRef<number>(0);
+  const gestureMovedRef = useRef(false);
+  const didPinchRef = useRef(false);
 
   const clampScale = (v: number) => Math.max(MIN_SCALE, Math.min(MAX_SCALE, v));
 
