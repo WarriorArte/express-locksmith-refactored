@@ -134,7 +134,10 @@ export function ImageViewDialog({
     y: (a.y + b.y) / 2,
   });
 
-  const getTouchPoint = (touch: Touch) => ({ x: touch.clientX, y: touch.clientY });
+  const getTouchPoint = (touch: { clientX: number; clientY: number }) => ({
+    x: touch.clientX,
+    y: touch.clientY,
+  });
 
   const onTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     e.preventDefault();
