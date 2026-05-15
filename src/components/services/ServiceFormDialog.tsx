@@ -33,6 +33,7 @@ import { useBatchInventoryUpdate } from "@/hooks/useInventoryMovements";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import { phpApiUpload, resolveStorageUrl } from "@/lib/phpApi";
+import { cn } from "@/lib/utils";
 import type { Customer } from "@/hooks/useCustomers";
 import { useProducts, type Product } from "@/hooks/useProducts";
 
@@ -68,6 +69,8 @@ const serviceTypes: { value: ServiceType; label: string }[] = [
   { value: "industrial", label: "Industrial" },
 ];
 
+type ServiceFormTab = "servicio" | "productos" | "imagenes" | "cliente" | "costos";
+
 export function ServiceFormDialog({ open, onOpenChange, service, templateServiceId }: ServiceFormDialogProps) {
   const MANUAL_TEMPLATE = "__manual";
   const isEditing = !!service;
@@ -82,7 +85,9 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
   
   const currencySymbol = settings?.currency_symbol || "$";
   
-  const [activeTab, setActiveTab] = useState("servicio");
+  const [activeTab, setActiveTab] = useState<ServiceFormTab>("servicio");
+  const [maxUnlockedTabIndex, setMaxUnlockedTabIndex] = useState(0);
+  const [attemptedTabs, setAttemptedTabs] = useState<Set<ServiceFormTab>>(new Set());
   const [customerFormOpen, setCustomerFormOpen] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState(MANUAL_TEMPLATE);
 
@@ -91,7 +96,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
     customer_id: null as string | null,
     customer_name: "",
     customer_phone: "",
-    service_type: "residential" as ServiceType,
+    service_type: "" as ServiceType | "",
     description: "",
     problem: "",
     address: "",
@@ -108,10 +113,11 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
   });
 
   const [items, setItems] = useState<ServiceItem[]>([]);
+  const [noProductsConsumed, setNoProductsConsumed] = useState(false);
   const [images, setImages] = useState<ServiceImage[]>([]);
   const [imageUploaderKey, setImageUploaderKey] = useState(0);
   const pendingFilesRef = useRef(new Map<string, File>());
-  const tabsOrder = ["servicio", "productos", "imagenes", "cliente", "costos"];
+  const tabsOrder: ServiceFormTab[] = ["servicio", "productos", "imagenes", "cliente", "costos"];
   const serviceTemplates = (inventoryItems || []).filter(
     (item) => (item.item_type ?? "product") === "service" && item.is_active !== false && item.is_active !== 0,
   );
@@ -122,6 +128,8 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
   useEffect(() => {
     if (open) {
       setActiveTab("servicio");
+      setMaxUnlockedTabIndex(service ? tabsOrder.length - 1 : 0);
+      setAttemptedTabs(new Set());
       pendingFilesRef.current.clear();
       setImageUploaderKey(0);
       if (service) {
@@ -153,6 +161,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
           labor_cost: Number(service.labor_cost) || 0,
           discount: Number(service.discount) || 0,
           internal_notes: service.internal_notes || "",
+          scheduled_start_at: service.scheduled_start_at || null,
           has_warranty: service.has_warranty || false,
           warranty_days: days,
           warranty_value: value,
@@ -166,6 +175,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
           unit_price: Number(p.unit_price),
           subtotal: Number(p.subtotal),
         })) || []);
+        setNoProductsConsumed(!service.service_products?.length);
         setImages(service.service_images?.map(i => ({
           tempId: i.id,
           image_url: i.image_url,
@@ -184,7 +194,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
           customer_id: null,
           customer_name: "",
           customer_phone: "",
-          service_type: "residential",
+          service_type: "",
           description: "",
           problem: "",
           address: "",
@@ -193,12 +203,14 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
           labor_cost: 0,
           discount: 0,
           internal_notes: "",
+          scheduled_start_at: null,
           has_warranty: false,
           warranty_days: 30,
           warranty_value: 30,
           warranty_unit: "days",
         }));
         setItems([]);
+        setNoProductsConsumed(false);
         setImages([]);
         if (templateServiceId) {
           handleTemplateImport(templateServiceId);
@@ -214,6 +226,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
       setSelectedTemplateId(MANUAL_TEMPLATE);
       setForm((prev) => ({ ...prev, description: "" }));
       setItems([]);
+      setNoProductsConsumed(false);
 
       return;
     }
@@ -254,6 +267,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
       labor_cost: Number(template.labor_cost || 0),
     }));
     setItems(templateItems);
+    setNoProductsConsumed(templateItems.length === 0);
   };
 
   useEffect(() => {
@@ -277,6 +291,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
   };
 
   const addItem = () => {
+    setNoProductsConsumed(false);
     setItems(prev => [...prev, {
       tempId: crypto.randomUUID(),
       product_id: null,
@@ -315,6 +330,13 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
     setItems(prev => prev.filter(item => item.tempId !== tempId));
   };
 
+  const handleNoProductsConsumedChange = (checked: boolean) => {
+    setNoProductsConsumed(checked);
+    if (checked) {
+      setItems([]);
+    }
+  };
+
   const addImage = (url: string) => {
     if (!url.trim()) return;
     if (images.length >= MAX_SERVICE_IMAGES) return;
@@ -334,6 +356,57 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
 
   const productsTotal = items.reduce((sum, item) => sum + item.subtotal, 0);
   const totalEstimated = productsTotal + form.labor_cost - form.discount;
+  const invalidFieldClass = "border-destructive placeholder:text-destructive focus-visible:border-destructive";
+  const isValidServiceNumber = form.service_number.trim().length > 0;
+  const isValidDescription = form.description.trim().length > 0;
+  const isValidServiceType = form.service_type.trim().length > 0;
+  const isValidCustomer = !!form.customer_id;
+  const isValidAddress = form.address.trim().length > 0;
+  const invalidProductIds = new Set(
+    items
+      .filter((item) => !item.product_id && !item.product_name.trim())
+      .map((item) => item.tempId),
+  );
+  const invalidQuantityIds = new Set(
+    items
+      .filter((item) => !Number.isFinite(item.quantity) || item.quantity < 1)
+      .map((item) => item.tempId),
+  );
+  const isCostsValid =
+    form.labor_cost > 0 &&
+    form.discount >= 0 &&
+    (!form.has_warranty || form.warranty_value >= 1) &&
+    (!form.scheduled_start_at || !Number.isNaN(Date.parse(form.scheduled_start_at)));
+  const tabValidity: Record<ServiceFormTab, boolean> = {
+    servicio: isValidServiceNumber && isValidDescription && isValidServiceType,
+    productos:
+      noProductsConsumed ||
+      (items.length > 0 && invalidProductIds.size === 0 && invalidQuantityIds.size === 0),
+    imagenes: true,
+    cliente: isValidCustomer && isValidAddress,
+    costos: isCostsValid,
+  };
+  const maxAccessibleTabIndex = isEditing ? tabsOrder.length - 1 : maxUnlockedTabIndex;
+  const activeTabIsValid = tabValidity[activeTab];
+  const allTabsValid = tabsOrder.every((tab) => tabValidity[tab]);
+  const shouldShowInvalid = (tab: ServiceFormTab) => attemptedTabs.has(tab);
+  const showServicioInvalid = shouldShowInvalid("servicio");
+  const showProductosInvalid = shouldShowInvalid("productos");
+  const showClienteInvalid = shouldShowInvalid("cliente");
+  const showCostosInvalid = shouldShowInvalid("costos");
+
+  const handleTabChange = (nextTab: string) => {
+    const typedNextTab = nextTab as ServiceFormTab;
+    if (isEditing) {
+      setActiveTab(typedNextTab);
+      return;
+    }
+
+    const nextIndex = tabsOrder.indexOf(typedNextTab);
+    if (nextIndex !== -1 && nextIndex <= maxAccessibleTabIndex) {
+      setActiveTab(typedNextTab);
+    }
+  };
 
   const handleWarrantyValueChange = (value: number) => {
     let days = value;
@@ -352,6 +425,13 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
   };
 
   const handleSubmit = async () => {
+    if (!allTabsValid) {
+      const nextTab = tabsOrder.find((tab) => !tabValidity[tab]) || "servicio";
+      setAttemptedTabs((current) => new Set([...current, nextTab]));
+      setActiveTab(nextTab);
+      return;
+    }
+
     const normalizedItems = items
       .filter((item) => item.product_name)
       .map((item) => ({
@@ -365,7 +445,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
     const serviceData = {
       service_number: form.service_number,
       customer_id: form.customer_id,
-      service_type: form.service_type,
+      service_type: form.service_type as ServiceType,
       description: form.description,
       problem: form.problem || null,
       address: form.address || null,
@@ -477,10 +557,16 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
   };
 
   const handleNext = () => {
+    if (!activeTabIsValid) {
+      setAttemptedTabs((current) => new Set([...current, activeTab]));
+      return;
+    }
+
     const idx = tabsOrder.indexOf(activeTab);
     if (idx === -1) return;
     const next = tabsOrder[idx + 1];
     if (next) {
+      setMaxUnlockedTabIndex((current) => Math.max(current, idx + 1));
       setActiveTab(next);
     }
   };
@@ -497,17 +583,20 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <IconTabs
             value={activeTab}
-            onChange={setActiveTab}
+            onChange={handleTabChange}
             items={[
               { id: "servicio", icon: Wrench, label: "Servicio" },
               { id: "productos", icon: Package, label: "Productos" },
               { id: "imagenes", icon: Image, label: "Imágenes" },
               { id: "cliente", icon: User, label: "Cliente" },
               { id: "costos", icon: FileText, label: "Resumen" },
-            ]}
+            ].map((item, index) => ({
+              ...item,
+              disabled: !isEditing && index > maxAccessibleTabIndex,
+            }))}
           />
 
           {/* Tab: Cliente */}
@@ -535,6 +624,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
                 value={form.customer_id}
                 onValueChange={handleCustomerChange}
                 onCreateNew={() => setCustomerFormOpen(true)}
+                invalid={showClienteInvalid && !isValidCustomer}
               />
             </div>
 
@@ -544,7 +634,9 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
                 <Input
                   value={form.address}
                   onChange={(e) => setForm(prev => ({ ...prev, address: e.target.value }))}
-                  placeholder="Dirección del servicio"
+                  placeholder={showClienteInvalid && !isValidAddress ? "Campo obligatorio" : "Dirección del servicio"}
+                  aria-invalid={showClienteInvalid && !isValidAddress}
+                  className={cn(showClienteInvalid && !isValidAddress && invalidFieldClass)}
                 />
               </div>
               <div className="space-y-2">
@@ -615,18 +707,23 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
               <Input
                 value={form.description}
                 onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Ej: Reparación switch Honda 2001-2011"
+                placeholder={showServicioInvalid && !isValidDescription ? "Campo obligatorio" : "Ej: Reparación switch Honda 2001-2011"}
+                aria-invalid={showServicioInvalid && !isValidDescription}
+                className={cn(showServicioInvalid && !isValidDescription && invalidFieldClass)}
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Tipo de Servicio</Label>
+              <Label>Tipo de Servicio *</Label>
               <Select
                 value={form.service_type}
                 onValueChange={(value: ServiceType) => setForm(prev => ({ ...prev, service_type: value }))}
               >
-                <SelectTrigger>
-                  <SelectValue />
+                <SelectTrigger
+                  aria-invalid={showServicioInvalid && !isValidServiceType}
+                  className={cn(showServicioInvalid && !isValidServiceType && "border-destructive text-destructive")}
+                >
+                  <SelectValue placeholder={showServicioInvalid && !isValidServiceType ? "Campo obligatorio" : "Seleccionar tipo"} />
                 </SelectTrigger>
                 <SelectContent>
                   {serviceTypes.map(type => (
@@ -663,11 +760,27 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
           <TabsContent value="productos" className="space-y-4 mt-4">
             <div className="flex items-center justify-between">
               <Label>Productos utilizados</Label>
-              <Button type="button" variant="outline" size="sm" onClick={addItem}>
+              <Button type="button" variant="outline" size="sm" onClick={addItem} disabled={noProductsConsumed}>
                 <Plus className="w-4 h-4 mr-1" />
                 Agregar
               </Button>
             </div>
+
+            <label
+              className={cn(
+                "w-full rounded-lg border bg-background px-3.5 py-3 transition-colors",
+                "flex items-center gap-3 hover:bg-muted/50 cursor-pointer",
+                noProductsConsumed
+                  ? "border-primary text-foreground"
+                  : showProductosInvalid && items.length === 0 && "border-destructive text-destructive",
+              )}
+            >
+              <Checkbox
+                checked={noProductsConsumed}
+                onCheckedChange={(checked) => handleNoProductsConsumedChange(checked === true)}
+              />
+              <span className="text-sm font-medium">Este servicio no consume productos</span>
+            </label>
             
             {items.length === 0 ? (
               <div className="min-h-[38vh] flex items-center justify-center text-center text-muted-foreground text-sm select-none">
@@ -684,6 +797,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
                       value={item.product_id}
                       onValueChange={(id, product) => handleProductSelect(item.tempId, id, product)}
                       excludeServiceItems
+                      invalid={showProductosInvalid && invalidProductIds.has(item.tempId)}
                     />
                     <div className="grid grid-cols-3 gap-2">
                       <div>
@@ -692,7 +806,8 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
                           min={1}
                           value={item.quantity}
                           onValueChange={(value) => updateItem(item.tempId, "quantity", value || 1)}
-                          className="h-9 text-sm"
+                          aria-invalid={showProductosInvalid && invalidQuantityIds.has(item.tempId)}
+                          className={cn("h-9 text-sm", showProductosInvalid && invalidQuantityIds.has(item.tempId) && invalidFieldClass)}
                         />
                       </div>
                       <div>
@@ -702,6 +817,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
                           min="0"
                           value={item.unit_price}
                           onChange={(e) => updateItem(item.tempId, "unit_price", parseFloat(e.target.value) || 0)}
+                          placeholder="0"
                           className="h-9 text-sm"
                         />
                       </div>
@@ -739,7 +855,9 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
                   min="0"
                   value={form.labor_cost}
                   onChange={(e) => setForm(prev => ({ ...prev, labor_cost: parseFloat(e.target.value) || 0 }))}
-                  placeholder="0"
+                  placeholder={showCostosInvalid && form.labor_cost <= 0 ? "Debe ser mayor a 0" : "0"}
+                  aria-invalid={showCostosInvalid && form.labor_cost <= 0}
+                  className={cn(showCostosInvalid && form.labor_cost <= 0 && invalidFieldClass)}
                 />
               </div>
               <div className="space-y-2">
@@ -750,6 +868,8 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
                   value={form.discount}
                   onChange={(e) => setForm(prev => ({ ...prev, discount: parseFloat(e.target.value) || 0 }))}
                   placeholder="0"
+                  aria-invalid={showCostosInvalid && form.discount < 0}
+                  className={cn(showCostosInvalid && form.discount < 0 && invalidFieldClass)}
                 />
               </div>
             </div>
@@ -770,7 +890,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
               </div>
               <div className="flex justify-between text-lg font-bold pt-2 border-t">
                 <span>Total Estimado:</span>
-                <span className="text-primary">{currencySymbol}{totalEstimated.toLocaleString()}</span>
+                <span className="text-foreground dark:text-primary">{currencySymbol}{totalEstimated.toLocaleString()}</span>
               </div>
             </div>
 
@@ -808,6 +928,8 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
                         const time = form.scheduled_start_at?.split('T')[1]?.split('.')[0] || '09:00:00';
                         setForm(prev => ({ ...prev, scheduled_start_at: `${date}T${time}.000Z` }));
                       }}
+                      aria-invalid={showCostosInvalid && !!form.scheduled_start_at && Number.isNaN(Date.parse(form.scheduled_start_at))}
+                      className={cn(showCostosInvalid && !!form.scheduled_start_at && Number.isNaN(Date.parse(form.scheduled_start_at)) && invalidFieldClass)}
                     />
                   </div>
                   <div className="space-y-2">
@@ -821,6 +943,8 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
                         const date = form.scheduled_start_at?.split('T')[0] || new Date().toISOString().split('T')[0];
                         setForm(prev => ({ ...prev, scheduled_start_at: `${date}T${time}:00.000Z` }));
                       }}
+                      aria-invalid={showCostosInvalid && !!form.scheduled_start_at && Number.isNaN(Date.parse(form.scheduled_start_at))}
+                      className={cn(showCostosInvalid && !!form.scheduled_start_at && Number.isNaN(Date.parse(form.scheduled_start_at)) && invalidFieldClass)}
                     />
                   </div>
                 </div>
@@ -854,7 +978,8 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
                     min={1}
                     value={form.warranty_value}
                     onValueChange={(value) => handleWarrantyValueChange(value || 1)}
-                    className="w-20"
+                    aria-invalid={showCostosInvalid && form.has_warranty && form.warranty_value < 1}
+                    className={cn("w-20", showCostosInvalid && form.has_warranty && form.warranty_value < 1 && invalidFieldClass)}
                   />
                   <Select
                     value={form.warranty_unit}
@@ -955,7 +1080,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
               size="lg"
               className="flex-[2] h-12"
               onClick={handleSubmit}
-              disabled={isPending || !form.description}
+              disabled={isPending}
             >
               {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {isEditing ? "Guardar Cambios" : "Crear Servicio"}

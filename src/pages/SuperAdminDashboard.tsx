@@ -182,7 +182,7 @@ export default function SuperAdminDashboard() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center p-4 rounded-lg bg-success/10">
                   <CheckCircle className="w-8 h-8 text-success mx-auto mb-2" />
-                  <p className="font-medium text-success">Sistema Operativo</p>
+                  <p className="font-medium text-foreground dark:text-success">Sistema Operativo</p>
                   <p className="text-xs text-muted-foreground">Todos los servicios activos</p>
                 </div>
                 <div className="text-center p-4 rounded-lg bg-muted/50">

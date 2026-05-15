@@ -158,6 +158,7 @@ export function DetailViewDialog({
   const { data: settings } = useBusinessSettings();
   const [showImages, setShowImages] = useState(true);
   const [viewingImageIndex, setViewingImageIndex] = useState<number | null>(null);
+  const [overflowOpen, setOverflowOpen] = useState(false);
 
   if (!data) return null;
 
@@ -413,7 +414,7 @@ export function DetailViewDialog({
               )}
               <div className="flex justify-between text-lg font-bold pt-2 border-t">
                 <span>Total:</span>
-                <span className="text-success">{currencySymbol}{Number(data.total).toFixed(2)}</span>
+                <span className="text-foreground dark:text-success">{currencySymbol}{Number(data.total).toFixed(2)}</span>
               </div>
               {data.type === "service" && data.estimated_price && (
                 <div className="flex justify-between text-sm text-muted-foreground">
@@ -456,7 +457,7 @@ export function DetailViewDialog({
                   </Button>
                 )}
                 {hasOverflowMenu && (
-                  <DropdownMenu>
+                  <DropdownMenu modal={false} open={overflowOpen} onOpenChange={setOverflowOpen}>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl flex-shrink-0">
                         <MoreHorizontal className="w-5 h-5" />
@@ -466,7 +467,13 @@ export function DetailViewDialog({
                       {overflowItems.map((item, idx) => (
                         <div key={item.label}>
                           {item.separator && idx > 0 && <DropdownMenuSeparator />}
-                          <DropdownMenuItem onClick={item.onClick} className={item.className}>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setOverflowOpen(false);
+                              window.setTimeout(item.onClick, 0);
+                            }}
+                            className={item.className}
+                          >
                             <item.icon className="w-4 h-4 mr-2" />
                             {item.label}
                           </DropdownMenuItem>

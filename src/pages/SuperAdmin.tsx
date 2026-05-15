@@ -1551,23 +1551,23 @@ export default function SuperAdmin() {
 
                 <ol className="space-y-3 text-sm text-muted-foreground">
                   <li className="flex gap-2">
-                    <span className="font-bold text-primary">1.</span>
+                    <span className="font-bold text-foreground dark:text-primary">1.</span>
                     Descarga el archivo <code className="px-1 py-0.5 rounded bg-muted">upload.php</code> usando el botón de arriba
                   </li>
                   <li className="flex gap-2">
-                    <span className="font-bold text-primary">2.</span>
+                    <span className="font-bold text-foreground dark:text-primary">2.</span>
                     Súbelo a tu hosting compartido (ej: <code className="px-1 py-0.5 rounded bg-muted">public_html/api/upload.php</code>)
                   </li>
                   <li className="flex gap-2">
-                    <span className="font-bold text-primary">3.</span>
+                    <span className="font-bold text-foreground dark:text-primary">3.</span>
                     Crea una carpeta <code className="px-1 py-0.5 rounded bg-muted">uploads</code> en el mismo directorio con permisos 755
                   </li>
                   <li className="flex gap-2">
-                    <span className="font-bold text-primary">4.</span>
+                    <span className="font-bold text-foreground dark:text-primary">4.</span>
                     Asegúrate de que el endpoint acepte peticiones autenticadas de la app y guarde archivos en <code className="px-1 py-0.5 rounded bg-muted">/uploads</code>
                   </li>
                   <li className="flex gap-2">
-                    <span className="font-bold text-primary">5.</span>
+                    <span className="font-bold text-foreground dark:text-primary">5.</span>
                     Ingresa únicamente la URL del endpoint de uploads
                   </li>
                 </ol>

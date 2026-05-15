@@ -32,6 +32,7 @@ import { Switch } from "@/components/ui/switch";
 import { useCreateCustomer, useUpdateCustomer, type Customer } from "@/hooks/useCustomers";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const customerSchema = z.object({
   name: z.string().min(1, "El nombre es requerido"),
@@ -47,6 +48,14 @@ const customerSchema = z.object({
   has_debt: z.boolean().default(false),
   no_work_again: z.boolean().default(false),
   no_work_reason: z.string().optional(),
+}).superRefine((values, ctx) => {
+  if (values.no_work_again && !values.no_work_reason?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["no_work_reason"],
+      message: "La razón es requerida",
+    });
+  }
 });
 
 type CustomerFormValues = z.infer<typeof customerSchema>;
@@ -62,6 +71,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
   const updateCustomer = useUpdateCustomer();
   const { data: settings } = useBusinessSettings();
   const isEditing = !!customer;
+  const [submitAttempted, setSubmitAttempted] = useState(false);
   
   const phoneCountryCode = settings?.phone_country_code || "+52";
 
@@ -85,8 +95,19 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
   });
 
   const watchNoWork = form.watch("no_work_again");
+  const nameValue = form.watch("name");
+  const emailValue = form.watch("email");
+  const noWorkReasonValue = form.watch("no_work_reason");
+  const invalidFieldClass = "border-destructive placeholder:text-destructive focus-visible:border-destructive";
+  const isValidName = nameValue.trim().length > 0;
+  const isValidEmail = !emailValue || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue);
+  const isValidNoWorkReason = !watchNoWork || !!noWorkReasonValue?.trim();
 
   useEffect(() => {
+    if (open) {
+      setSubmitAttempted(false);
+    }
+
     if (customer) {
       form.reset({
         name: customer.name,
@@ -168,9 +189,13 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
                   <FormItem className="col-span-2">
                     <FormLabel>Nombre *</FormLabel>
                     <FormControl>
-                      <Input placeholder="Nombre completo o razón social" {...field} />
+                      <Input
+                        placeholder={submitAttempted && !isValidName ? "Campo obligatorio" : "Nombre completo o razón social"}
+                        aria-invalid={submitAttempted && !isValidName}
+                        className={cn(submitAttempted && !isValidName && invalidFieldClass)}
+                        {...field}
+                      />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -232,9 +257,14 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
                   <FormItem>
                     <FormLabel>Correo Electrónico</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="correo@ejemplo.com" {...field} />
+                      <Input
+                        type="email"
+                        placeholder={submitAttempted && !isValidEmail ? "Correo inválido" : "correo@ejemplo.com"}
+                        aria-invalid={submitAttempted && !isValidEmail}
+                        className={cn(submitAttempted && !isValidEmail && invalidFieldClass)}
+                        {...field}
+                      />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -274,7 +304,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
                     name="is_vip"
                     render={({ field }) => (
                       <FormItem className="flex items-center justify-between rounded-lg border p-3 border-primary/50">
-                        <FormLabel className="text-sm text-primary">Cerrajero Ext.</FormLabel>
+                        <FormLabel className="text-sm text-foreground dark:text-primary">Cerrajero Ext.</FormLabel>
                         <FormControl>
                           <Switch checked={field.value} onCheckedChange={field.onChange} />
                         </FormControl>
@@ -328,9 +358,13 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
                     <FormItem className="col-span-2">
                       <FormLabel>Razón (No Trabajar)</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Explica por qué no se debe trabajar con este cliente..." {...field} />
+                        <Textarea
+                          placeholder={submitAttempted && !isValidNoWorkReason ? "Campo obligatorio" : "Explica por qué no se debe trabajar con este cliente..."}
+                          aria-invalid={submitAttempted && !isValidNoWorkReason}
+                          className={cn(submitAttempted && !isValidNoWorkReason && invalidFieldClass)}
+                          {...field}
+                        />
                       </FormControl>
-                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -362,6 +396,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
                 className="flex-[2] h-12" 
                 disabled={isLoading}
                 onClick={async () => {
+                  setSubmitAttempted(true);
                   const isValid = await form.trigger();
                   if (isValid) {
                     void form.handleSubmit(onSubmit)();

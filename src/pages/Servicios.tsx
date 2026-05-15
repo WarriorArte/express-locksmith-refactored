@@ -438,7 +438,7 @@ export default function Servicios() {
           title="Servicios"
           subtitle={
             <>
-              <span className="text-primary font-bold">{stats.inProgress}</span> en curso ·{" "}
+              <span className="text-foreground dark:text-primary font-bold">{stats.inProgress}</span> en curso ·{" "}
               <span className="text-warning font-bold">{stats.pending}</span> pendientes
             </>
           }
@@ -521,7 +521,7 @@ export default function Servicios() {
                         <TypeIcon className={cn("w-5 h-5", type.iconColor)} />
                       </div>
                       <div>
-                        <p className="font-mono text-sm text-primary font-semibold leading-tight">{service.service_number}</p>
+                        <p className="font-mono text-sm text-foreground dark:text-primary font-semibold leading-tight">{service.service_number}</p>
                         <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                           <Badge className={cn("text-xs", status.color)}>
                             <StatusIcon className="w-3 h-3 mr-1" />
@@ -536,7 +536,7 @@ export default function Servicios() {
                         <p className="text-[11px] text-muted-foreground uppercase tracking-wide leading-tight">
                           {service.final_price ? "Final" : "Estimado"}
                         </p>
-                        <p className={cn("text-xl font-bold", service.final_price ? "text-success" : "text-foreground")}>
+                        <p className={cn("text-xl font-bold", service.final_price ? "text-foreground dark:text-success" : "text-foreground")}>
                           {currencySymbol}{Number(price).toLocaleString()}
                         </p>
                       </div>
@@ -573,12 +573,12 @@ export default function Servicios() {
                               </DropdownMenuItem>
                             )}
                             {service.status === "in_progress" && (
-                              <DropdownMenuItem className="text-success" onClick={() => handleStatusChange(service, "completed")}>
+                              <DropdownMenuItem className="text-foreground dark:text-success" onClick={() => handleStatusChange(service, "completed")}>
                                 <CheckCircle className="w-4 h-4 mr-2" /> Marcar completado
                               </DropdownMenuItem>
                             )}
                             {service.status === "completed" && (
-                              <DropdownMenuItem className="text-primary" onClick={() => handleStatusChange(service, "delivered")}>
+                              <DropdownMenuItem className="text-foreground dark:text-primary" onClick={() => handleStatusChange(service, "delivered")}>
                                 <Truck className="w-4 h-4 mr-2" /> Marcar entregado
                               </DropdownMenuItem>
                             )}
@@ -732,10 +732,10 @@ export default function Servicios() {
             { icon: Wrench, label: "Iniciar servicio", onClick: () => { viewingService && handleStatusChange(viewingService, "in_progress"); }, className: "text-info", separator: true },
           ] : []),
           ...(viewingService?.status === "in_progress" ? [
-            { icon: CheckCircle, label: "Marcar completado", onClick: () => { viewingService && handleStatusChange(viewingService, "completed"); }, className: "text-success", separator: true },
+            { icon: CheckCircle, label: "Marcar completado", onClick: () => { viewingService && handleStatusChange(viewingService, "completed"); }, className: "text-foreground dark:text-success", separator: true },
           ] : []),
           ...(viewingService?.status === "completed" ? [
-            { icon: Truck, label: "Marcar entregado", onClick: () => { viewingService && handleStatusChange(viewingService, "delivered"); }, className: "text-primary", separator: true },
+            { icon: Truck, label: "Marcar entregado", onClick: () => { viewingService && handleStatusChange(viewingService, "delivered"); }, className: "text-foreground dark:text-primary", separator: true },
           ] : []),
           ...((viewingService?.status === "pending" || viewingService?.status === "in_progress") ? [
             { icon: XCircle, label: "Cancelar servicio", onClick: () => { viewingService && handleStatusChange(viewingService, "cancelled"); }, className: "text-warning" },
@@ -763,7 +763,10 @@ export default function Servicios() {
         onPreview={(s) => handlePreview(s)}
         onShare={(s) => handleShare(s)}
         onAddImages={(s) => { setMobileDetailOpen(false); setImagesService(s); setImagesDialogOpen(true); }}
-        onCancel={(s) => { handleStatusChange(s, "cancelled"); setMobileDetailOpen(false); }}
+        onCancel={(s) => {
+          setMobileDetailOpen(false);
+          window.setTimeout(() => handleStatusChange(s, "cancelled"), 0);
+        }}
         onDelete={isAdmin ? (s) => { setMobileDetailOpen(false); handleDelete(s); } : undefined}
       />
     </div>

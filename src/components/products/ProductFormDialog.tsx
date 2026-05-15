@@ -10,6 +10,15 @@ import {
   DialogFooter,
 } from "@/components/ui/responsive-dialog";
 import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Form,
   FormControl,
   FormField,
@@ -23,6 +32,7 @@ import { Input } from "@/components/ui/input";
 import { UnitNumberInput } from "@/components/ui/unit-number-input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -34,10 +44,11 @@ import { Badge } from "@/components/ui/badge";
 import { useCategories } from "@/hooks/useCategories";
 import { useCreateProduct, useUpdateProduct, type Product } from "@/hooks/useProducts";
 import { useProducts } from "@/hooks/useProducts";
-import { Loader2, Package, DollarSign, Warehouse, FileText, Plus, X } from "lucide-react";
+import { Loader2, Package, DollarSign, Warehouse, FileText, Plus, X, Wrench } from "lucide-react";
 import { ImageUploader } from "@/components/shared/ImageUploader";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import { phpApiUpload } from "@/lib/phpApi";
+import { cn } from "@/lib/utils";
 
 const toOptionalNumber = z.preprocess(
   (val) => {
@@ -65,6 +76,8 @@ const serviceProductSchema = z.object({
 
 type ServiceProduct = z.infer<typeof serviceProductSchema>;
 
+type KeysOfUnion<T> = T extends T ? keyof T : never;
+
 const productSchema = z
   .object({
     item_type: z.literal("product"),
@@ -86,11 +99,12 @@ const productSchema = z
     const sale_price_max = values.sale_price_max;
     const sale_price_min = values.sale_price_min;
     const purchase_price_local = values.purchase_price_local;
+    const purchase_price_imported = values.purchase_price_imported;
     const stock_store = values.stock_store;
     const stock_warehouse = values.stock_warehouse;
     const min_stock = values.min_stock;
 
-    if (sale_price_max === undefined) {
+    if (sale_price_max === undefined || sale_price_max <= 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["sale_price_max"],
@@ -98,7 +112,7 @@ const productSchema = z
       });
     }
 
-    if (sale_price_min === undefined) {
+    if (sale_price_min === undefined || sale_price_min <= 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["sale_price_min"],
@@ -106,11 +120,18 @@ const productSchema = z
       });
     }
 
-    if (purchase_price_local === undefined) {
+    if (purchase_price_local === undefined || purchase_price_local <= 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["purchase_price_local"],
         message: "El costo local es requerido",
+      });
+    }
+    if (purchase_price_imported !== undefined && purchase_price_imported <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["purchase_price_imported"],
+        message: "El costo importado debe ser mayor a 0",
       });
     }
     if (stock_store === undefined) {
@@ -151,7 +172,7 @@ const serviceSchema = z.object({
   instructions: z.string().optional(),
   notes: z.string().optional(),
 }).superRefine((values, ctx) => {
-  if (values.labor_cost === undefined) {
+  if (values.labor_cost === undefined || values.labor_cost <= 0) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ["labor_cost"],
@@ -169,6 +190,7 @@ interface ProductFormDialogProps {
 }
 
 type InventoryItemType = "product" | "service";
+type ProductFormTab = "general" | "productos" | "precios" | "inventario" | "notas";
 
 export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDialogProps) {
   const { data: categories } = useCategories();
@@ -177,10 +199,13 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const isEditing = !!product;
-  const [activeTab, setActiveTab] = useState("general");
+  const [activeTab, setActiveTab] = useState<ProductFormTab>("general");
+  const [maxUnlockedTabIndex, setMaxUnlockedTabIndex] = useState(0);
+  const [attemptedTabs, setAttemptedTabs] = useState<Set<ProductFormTab>>(new Set());
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
-  const [inventoryItemType, setInventoryItemType] = useState<InventoryItemType>("product");
+  const [inventoryItemType, setInventoryItemType] = useState<InventoryItemType | "">("");
   const [serviceProductsList, setServiceProductsList] = useState<ServiceProduct[]>([]);
+  const [noServiceProducts, setNoServiceProducts] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string>("");
 
   // Use conditional resolver based on item type
@@ -189,7 +214,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(currentSchema),
     defaultValues: {
-      item_type: inventoryItemType,
+      item_type: "product",
       name: "",
       description: "",
       category_id: "",
@@ -211,26 +236,44 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
       }),
       instructions: "",
       notes: "",
-    },
+    } as any,
   });
 
   useEffect(() => {
     if (open) {
       setActiveTab("general");
+      setMaxUnlockedTabIndex(product ? 10 : 0);
+      setAttemptedTabs(new Set());
       setPendingImageFile(null);
       setServiceProductsList([]);
+      setNoServiceProducts(false);
       setSelectedProductId("");
     }
-    const incomingItemType = (product?.item_type === "service" ? "service" : "product") as InventoryItemType;
+    const incomingItemType = product ? ((product?.item_type === "service" ? "service" : "product") as InventoryItemType) : "";
     setInventoryItemType(incomingItemType);
   }, [open, product]);
 
   // Reset form when inventoryItemType changes
   useEffect(() => {
     if (isEditing) return; // Don't reset when editing existing products
+    if (!inventoryItemType) {
+      form.reset({
+        item_type: "product",
+        name: "",
+        description: "",
+        category_id: "",
+        image_url: "",
+        instructions: "",
+        notes: "",
+      } as any);
+      return;
+    }
 
     setActiveTab("general");
+    setMaxUnlockedTabIndex(0);
+    setAttemptedTabs(new Set());
     setServiceProductsList([]);
+    setNoServiceProducts(false);
 
     const defaultValues = {
       item_type: inventoryItemType,
@@ -305,10 +348,22 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
       if (product.service_products) {
         setServiceProductsList(product.service_products);
       }
+      setNoServiceProducts(!product.service_products?.length);
     }
   }, [product, form]);
 
   const onSubmit = async (values: ProductFormValues) => {
+    if (!isInventoryItemTypeSelected) {
+      return;
+    }
+
+    if (!allTabsValid) {
+      const firstInvalidTab = tabsOrder.find((tab) => !tabValidity[tab]) || "general";
+      setAttemptedTabs((current) => new Set([...current, firstInvalidTab]));
+      setActiveTab(firstInvalidTab);
+      return;
+    }
+
     let imageUrl: string | null = values.image_url || null;
 
     if (pendingImageFile) {
@@ -369,9 +424,29 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
   };
 
   const isLoading = createProduct.isPending || updateProduct.isPending;
+  const isInventoryItemTypeSelected = inventoryItemType === "product" || inventoryItemType === "service";
   const isServiceMode = inventoryItemType === "service";
+  const invalidFieldClass = "border-destructive placeholder:text-destructive focus-visible:border-destructive";
+  const values = form.watch() as any;
 
-  const tabValidationFields: Record<string, (keyof ProductFormValues)[]> = isServiceMode
+  const hasText = (value: unknown) => String(value ?? "").trim().length > 0;
+  const hasNumber = (value: unknown) => {
+    if (value === "" || value === undefined || value === null) return false;
+    const numberValue = Number(value);
+    return Number.isFinite(numberValue) && numberValue >= 0;
+  };
+  const hasPositiveNumber = (value: unknown) => {
+    if (value === "" || value === undefined || value === null) return false;
+    const numberValue = Number(value);
+    return Number.isFinite(numberValue) && numberValue > 0;
+  };
+  const hasEmptyOrPositiveNumber = (value: unknown) => {
+    if (value === "" || value === undefined || value === null) return true;
+    const numberValue = Number(value);
+    return Number.isFinite(numberValue) && numberValue > 0;
+  };
+
+  const tabValidationFields: Record<string, KeysOfUnion<ProductFormValues>[]> = isServiceMode
     ? {
         general: ["name", "service_type"],
         productos: [],
@@ -380,23 +455,71 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
       }
     : {
         general: ["name", "category_id"],
-        precios: ["purchase_price_local", "sale_price_min", "sale_price_max"],
+        precios: ["purchase_price_local", "purchase_price_imported", "sale_price_min", "sale_price_max"],
         inventario: ["stock_store", "stock_warehouse", "min_stock"],
         notas: [],
       };
 
-  const tabsOrder = isServiceMode 
+  const tabsOrder: ProductFormTab[] = isServiceMode
     ? ["general", "productos", "precios", "notas"] 
     : ["general", "precios", "inventario", "notas"];
 
+  const tabValidity: Record<ProductFormTab, boolean> = {
+    general: isInventoryItemTypeSelected && (isServiceMode
+      ? hasText(values.name) && hasText(values.service_type)
+      : hasText(values.name) && hasText(values.category_id)),
+    productos: isInventoryItemTypeSelected && (!isServiceMode || noServiceProducts || serviceProductsList.length > 0),
+    precios: isInventoryItemTypeSelected && (isServiceMode
+      ? hasPositiveNumber(values.labor_cost)
+      : hasPositiveNumber(values.purchase_price_local) &&
+        hasEmptyOrPositiveNumber(values.purchase_price_imported) &&
+        hasPositiveNumber(values.sale_price_min) &&
+        hasPositiveNumber(values.sale_price_max)),
+    inventario: isServiceMode
+      ? true
+      : isInventoryItemTypeSelected && hasNumber(values.stock_store) && hasNumber(values.stock_warehouse) && hasNumber(values.min_stock),
+    notas: isInventoryItemTypeSelected,
+  };
+  const maxAccessibleTabIndex = isEditing ? tabsOrder.length - 1 : maxUnlockedTabIndex;
+  const activeTabIsValid = tabValidity[activeTab] ?? true;
+  const allTabsValid = tabsOrder.every((tab) => tabValidity[tab]);
+  const shouldShowInvalid = (tab: ProductFormTab) => attemptedTabs.has(tab);
+  const showGeneralInvalid = shouldShowInvalid("general");
+  const showProductosInvalid = shouldShowInvalid("productos");
+  const showPreciosInvalid = shouldShowInvalid("precios");
+  const showInventarioInvalid = shouldShowInvalid("inventario");
+
+  const handleTabChange = (nextTab: string) => {
+    const typedNextTab = nextTab as ProductFormTab;
+    if (isEditing) {
+      setActiveTab(typedNextTab);
+      return;
+    }
+
+    const nextIndex = tabsOrder.indexOf(typedNextTab);
+    if (nextIndex !== -1 && nextIndex <= maxAccessibleTabIndex) {
+      setActiveTab(typedNextTab);
+    }
+  };
+
   const handleNext = async () => {
+    if (!isInventoryItemTypeSelected) {
+      return;
+    }
+
     const fields = tabValidationFields[activeTab] || [];
     const valid = await form.trigger(fields as any);
-    if (!valid) return;
+    if (!valid || !activeTabIsValid) {
+      setAttemptedTabs((current) => new Set([...current, activeTab]));
+      return;
+    }
     const idx = tabsOrder.indexOf(activeTab);
     if (idx === -1) return;
     const next = tabsOrder[idx + 1];
-    if (next) setActiveTab(next);
+    if (next) {
+      setMaxUnlockedTabIndex((current) => Math.max(current, idx + 1));
+      setActiveTab(next);
+    }
   };
 
   const addServiceProduct = () => {
@@ -411,6 +534,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
     };
 
     setServiceProductsList([...serviceProductsList, newProduct]);
+    setNoServiceProducts(false);
     setSelectedProductId("");
   };
 
@@ -418,46 +542,71 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
     setServiceProductsList(serviceProductsList.filter(p => p.product_id !== productId));
   };
 
+  const selectInventoryItemType = (type: InventoryItemType) => {
+    setInventoryItemType(type);
+    form.setValue("item_type", type, { shouldValidate: true });
+    setActiveTab("general");
+    setMaxUnlockedTabIndex(0);
+    setAttemptedTabs(new Set());
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <>
+    <AlertDialog
+      open={open && !isEditing && !isInventoryItemTypeSelected}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) onOpenChange(false);
+      }}
+    >
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>¿Qué deseas crear?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Elige el tipo de item que vas a agregar al inventario.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+
+        <AlertDialogFooter className="gap-2 sm:gap-2 sm:space-x-0">
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <Button
+            type="button"
+            onClick={() => selectInventoryItemType("product")}
+            className="bg-secondary text-secondary-foreground hover:bg-secondary/80"
+          >
+            <Package className="w-4 h-4 mr-2" />
+            Producto
+          </Button>
+          <Button
+            type="button"
+            onClick={() => selectInventoryItemType("service")}
+            className="bg-primary text-primary-foreground hover:bg-primary-hover"
+          >
+            <Wrench className="w-4 h-4 mr-2" />
+            Servicio
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    <Dialog open={open && (isEditing || isInventoryItemTypeSelected)} onOpenChange={onOpenChange}>
       <DialogContent fixedHeight className="max-w-[95vw] sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-base sm:text-lg">
             {isEditing
               ? (isServiceMode ? "Editar Servicio" : "Editar Producto")
-              : "Nuevo Item"}
+              : "Nuevo Producto"}
           </DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col min-h-0 h-full">
             <div className="flex-1 overflow-y-auto space-y-4 pb-2">
-            {!isEditing && (
-              <div className="space-y-2">
-                <FormLabel>Agregar al inventario como</FormLabel>
-                <Select
-                  value={inventoryItemType}
-                  onValueChange={(value) => {
-                    setInventoryItemType(value as InventoryItemType);
-                    form.setValue("item_type", value as InventoryItemType, { shouldValidate: true });
-                    setActiveTab("general");
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="product">Producto</SelectItem>
-                    <SelectItem value="service">Servicio</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            {isInventoryItemTypeSelected && (
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
               <IconTabs
                 value={activeTab}
-                onChange={setActiveTab}
-                items={isServiceMode
+                onChange={handleTabChange}
+                items={(isServiceMode
                   ? [
                       { id: "general", icon: Package, label: "General" },
                       { id: "productos", icon: Package, label: "Productos" },
@@ -469,7 +618,10 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                       { id: "precios", icon: DollarSign, label: "Precios" },
                       { id: "inventario", icon: Warehouse, label: "Inventario" },
                       { id: "notas", icon: FileText, label: "Notas" },
-                    ]}
+                    ]).map((item, index) => ({
+                      ...item,
+                      disabled: !isEditing && index > maxAccessibleTabIndex,
+                    }))}
               />
 
               {/* Tab: General */}
@@ -482,9 +634,13 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                       <FormItem>
                         <FormLabel>{isServiceMode ? "Nombre del Servicio *" : "Nombre del Producto *"}</FormLabel>
                         <FormControl>
-                          <Input placeholder={isServiceMode ? "Ej: Apertura de puerta" : "Ej: Cerradura Yale 3 Golpes"} {...field} />
+                          <Input
+                            placeholder={showGeneralInvalid && !hasText(field.value) ? "Campo obligatorio" : (isServiceMode ? "Ej: Apertura de puerta" : "Ej: Cerradura Yale 3 Golpes")}
+                            aria-invalid={showGeneralInvalid && !hasText(field.value)}
+                            className={cn(showGeneralInvalid && !hasText(field.value) && invalidFieldClass)}
+                            {...field}
+                          />
                         </FormControl>
-                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -498,8 +654,11 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                           <FormLabel>Categoría *</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Seleccionar categoría" />
+                              <SelectTrigger
+                                aria-invalid={showGeneralInvalid && !hasText(field.value)}
+                                className={cn(showGeneralInvalid && !hasText(field.value) && "border-destructive text-destructive")}
+                              >
+                                <SelectValue placeholder={showGeneralInvalid && !hasText(field.value) ? "Campo obligatorio" : "Seleccionar categoría"} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -510,7 +669,6 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                               ))}
                             </SelectContent>
                           </Select>
-                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -527,8 +685,11 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                           <FormLabel>Tipo de Servicio *</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value || ""}>
                             <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Seleccionar tipo" />
+                              <SelectTrigger
+                                aria-invalid={showGeneralInvalid && !hasText(field.value)}
+                                className={cn(showGeneralInvalid && !hasText(field.value) && "border-destructive text-destructive")}
+                              >
+                                <SelectValue placeholder={showGeneralInvalid && !hasText(field.value) ? "Campo obligatorio" : "Seleccionar tipo"} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -538,7 +699,6 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                               <SelectItem value="industrial">Industrial</SelectItem>
                             </SelectContent>
                           </Select>
-                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -585,11 +745,31 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
               {isServiceMode && (
               <TabsContent value="productos" className="space-y-4 mt-4">
                 <div className="space-y-4">
+                  <label
+                    className={cn(
+                      "w-full rounded-lg border bg-background px-3.5 py-3 transition-colors",
+                      "flex items-center gap-3 hover:bg-muted/50 cursor-pointer",
+                      noServiceProducts
+                        ? "border-primary text-foreground"
+                        : showProductosInvalid && serviceProductsList.length === 0 && "border-destructive text-destructive",
+                    )}
+                  >
+                    <Checkbox
+                      checked={noServiceProducts}
+                      onCheckedChange={(checked) => {
+                        const next = checked === true;
+                        setNoServiceProducts(next);
+                        if (next) setServiceProductsList([]);
+                      }}
+                    />
+                    <span className="text-sm font-medium">Este servicio no consume productos</span>
+                  </label>
+
                   <div className="flex gap-2">
                     <div className="flex-1">
                       <FormLabel className="text-sm">Seleccionar Producto</FormLabel>
                       <Select value={selectedProductId} onValueChange={setSelectedProductId}>
-                        <SelectTrigger>
+                        <SelectTrigger disabled={noServiceProducts}>
                           <SelectValue placeholder="Buscar producto..." />
                         </SelectTrigger>
                         <SelectContent>
@@ -609,7 +789,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                         variant="outline"
                         size="sm"
                         onClick={addServiceProduct}
-                        disabled={!selectedProductId}
+                        disabled={!selectedProductId || noServiceProducts}
                         className="h-10"
                       >
                         <Plus className="w-4 h-4" />
@@ -657,9 +837,15 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                         <FormItem>
                           <FormLabel>Mano de Obra *</FormLabel>
                           <FormControl>
-                            <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                            <Input
+                              type="number"
+                              step="0.01"
+                              placeholder={showPreciosInvalid && !hasPositiveNumber(field.value) ? "Debe ser mayor a 0" : "0.00"}
+                              aria-invalid={showPreciosInvalid && !hasPositiveNumber(field.value)}
+                              className={cn(showPreciosInvalid && !hasPositiveNumber(field.value) && invalidFieldClass)}
+                              {...field}
+                            />
                           </FormControl>
-                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -684,11 +870,17 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                       name="purchase_price_local"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Costo Local *</FormLabel>
+                          <FormLabel>Precio distribuidor local *</FormLabel>
                           <FormControl>
-                            <Input type="number" step="0.01" {...field} />
+                            <Input
+                              type="number"
+                              step="0.01"
+                              placeholder={showPreciosInvalid && !hasPositiveNumber(field.value) ? "Debe ser mayor a 0" : "0.00"}
+                              aria-invalid={showPreciosInvalid && !hasPositiveNumber(field.value)}
+                              className={cn(showPreciosInvalid && !hasPositiveNumber(field.value) && invalidFieldClass)}
+                              {...field}
+                            />
                           </FormControl>
-                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -697,24 +889,17 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                       name="purchase_price_imported"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Costo Importado</FormLabel>
+                          <FormLabel>Precio Importado</FormLabel>
                           <FormControl>
-                            <Input type="number" step="0.01" placeholder="Opcional" {...field} />
+                            <Input
+                              type="number"
+                              step="0.01"
+                              placeholder={showPreciosInvalid && !hasEmptyOrPositiveNumber(field.value) ? "Debe ser mayor a 0" : "Opcional"}
+                              aria-invalid={showPreciosInvalid && !hasEmptyOrPositiveNumber(field.value)}
+                              className={cn(showPreciosInvalid && !hasEmptyOrPositiveNumber(field.value) && invalidFieldClass)}
+                              {...field}
+                            />
                           </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="sale_price_min"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Precio con Descuento *</FormLabel>
-                          <FormControl>
-                            <Input type="number" step="0.01" {...field} />
-                          </FormControl>
-                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -725,9 +910,34 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                         <FormItem>
                           <FormLabel>Precio Sugerido *</FormLabel>
                           <FormControl>
-                            <Input type="number" step="0.01" {...field} />
+                            <Input
+                              type="number"
+                              step="0.01"
+                              placeholder={showPreciosInvalid && !hasPositiveNumber(field.value) ? "Debe ser mayor a 0" : "0.00"}
+                              aria-invalid={showPreciosInvalid && !hasPositiveNumber(field.value)}
+                              className={cn(showPreciosInvalid && !hasPositiveNumber(field.value) && invalidFieldClass)}
+                              {...field}
+                            />
                           </FormControl>
-                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="sale_price_min"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Precio con Descuento *</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              placeholder={showPreciosInvalid && !hasPositiveNumber(field.value) ? "Debe ser mayor a 0" : "0.00"}
+                              aria-invalid={showPreciosInvalid && !hasPositiveNumber(field.value)}
+                              className={cn(showPreciosInvalid && !hasPositiveNumber(field.value) && invalidFieldClass)}
+                              {...field}
+                            />
+                          </FormControl>
                         </FormItem>
                       )}
                     />
@@ -751,9 +961,10 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                             value={field.value ?? 0}
                             onValueChange={field.onChange}
                             allowManualInput
+                            aria-invalid={showInventarioInvalid && !hasNumber(field.value)}
+                            className={cn(showInventarioInvalid && !hasNumber(field.value) && invalidFieldClass)}
                           />
                         </FormControl>
-                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -769,9 +980,10 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                             value={field.value ?? 0}
                             onValueChange={field.onChange}
                             allowManualInput
+                            aria-invalid={showInventarioInvalid && !hasNumber(field.value)}
+                            className={cn(showInventarioInvalid && !hasNumber(field.value) && invalidFieldClass)}
                           />
                         </FormControl>
-                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -787,9 +999,10 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                             value={field.value ?? 0}
                             onValueChange={field.onChange}
                             allowManualInput
+                            aria-invalid={showInventarioInvalid && !hasNumber(field.value)}
+                            className={cn(showInventarioInvalid && !hasNumber(field.value) && invalidFieldClass)}
                           />
                         </FormControl>
-                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -828,6 +1041,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                 />
               </TabsContent>
             </Tabs>
+            )}
             </div>
 
             <DialogFooter className="flex-row gap-3 pt-2 shrink-0">
@@ -846,6 +1060,12 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                   className="flex-[2] h-12"
                   disabled={isLoading}
                   onClick={() => {
+                    if (!allTabsValid) {
+                      const firstInvalidTab = tabsOrder.find((tab) => !tabValidity[tab]) || "general";
+                      setAttemptedTabs((current) => new Set([...current, firstInvalidTab]));
+                      setActiveTab(firstInvalidTab);
+                      return;
+                    }
                     void form.handleSubmit(onSubmit)();
                   }}
                 >
@@ -860,5 +1080,6 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
         </Form>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

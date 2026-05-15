@@ -47,8 +47,8 @@ import type { Service, ServiceStatus } from "@/hooks/useServices";
 const STATUS_META: Record<ServiceStatus, { label: string; dot: string; cls: string }> = {
   pending:     { label: "Pendiente",  dot: "bg-warning",     cls: "bg-warning/15 text-warning" },
   in_progress: { label: "En Curso",   dot: "bg-info",        cls: "bg-info/15 text-info" },
-  completed:   { label: "Finalizado", dot: "bg-success",     cls: "bg-success/15 text-success" },
-  delivered:   { label: "Entregado",  dot: "bg-primary",     cls: "bg-primary/15 text-primary" },
+  completed:   { label: "Finalizado", dot: "bg-success",     cls: "bg-success/15 text-foreground dark:text-success" },
+  delivered:   { label: "Entregado",  dot: "bg-primary",     cls: "bg-primary/15 text-foreground dark:text-primary" },
   cancelled:   { label: "Cancelado",  dot: "bg-destructive", cls: "bg-destructive/15 text-destructive" },
 };
 
@@ -99,6 +99,7 @@ export function ServiceDetailSheet({
   const images = service?.service_images ?? [];
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [imageViewerIndex, setImageViewerIndex] = useState(0);
+  const [actionsOpen, setActionsOpen] = useState(false);
   const viewerImages = useMemo(
     () =>
       images
@@ -161,7 +162,7 @@ export function ServiceDetailSheet({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent fixedHeight disableSwipeToClose={imageViewerOpen} className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-mono text-primary">{service.service_number}</DialogTitle>
+          <DialogTitle className="font-mono text-foreground dark:text-primary">{service.service_number}</DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto space-y-3 pb-2">
@@ -257,7 +258,7 @@ export function ServiceDetailSheet({
             )}
             <div className="flex justify-between items-center pt-2 mt-2 border-t border-border">
               <span className="text-[13px] font-bold text-foreground">Total estimado</span>
-              <span className="text-base font-extrabold text-primary">
+              <span className="text-base font-extrabold text-foreground dark:text-primary">
                 {currencySymbol}{total.toLocaleString()}
               </span>
             </div>
@@ -339,7 +340,7 @@ export function ServiceDetailSheet({
                 </Button>
               )}
               {(onPrint || onPreview || onShare || onAddImages || (onCancel && (service.status === "pending" || service.status === "in_progress"))) && (
-                <DropdownMenu>
+                <DropdownMenu modal={false} open={actionsOpen} onOpenChange={setActionsOpen}>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl flex-shrink-0">
                       <MoreHorizontal className="w-5 h-5" />
@@ -382,7 +383,10 @@ export function ServiceDetailSheet({
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           className="text-destructive focus:text-destructive"
-                          onClick={() => onCancel(service)}
+                          onClick={() => {
+                            setActionsOpen(false);
+                            window.setTimeout(() => onCancel(service), 0);
+                          }}
                         >
                           <XCircle className="w-4 h-4 mr-2" /> Cancelar servicio
                         </DropdownMenuItem>

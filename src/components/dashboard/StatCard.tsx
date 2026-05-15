@@ -66,7 +66,7 @@ export function StatCard({
               trend.isPositive
                 ? isHero
                   ? "bg-[hsl(var(--primary-foreground)/0.15)] text-primary-foreground"
-                  : "bg-success-light text-success"
+                  : "bg-success-light text-foreground dark:text-success"
                 : "bg-destructive-light text-destructive",
             )}
           >

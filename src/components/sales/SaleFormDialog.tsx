@@ -35,6 +35,7 @@ import type { Customer } from "@/hooks/useCustomers";
 import type { Product } from "@/hooks/useProducts";
 import { SalePrintPreview } from "@/components/sales/SalePrintPreview";
 import { WarrantyPrintTicket } from "@/components/warranties/WarrantyPrintTicket";
+import { cn } from "@/lib/utils";
 
 interface SaleItem {
   tempId: string;
@@ -53,6 +54,7 @@ interface SaleFormDialogProps {
 }
 
 const paymentMethods: PaymentMethod[] = ["cash", "card", "transfer", "credit"];
+type SaleFormTab = "productos" | "cliente" | "resumen";
 
 export function SaleFormDialog({ open, onOpenChange, initialProduct }: SaleFormDialogProps) {
   const createSale = useCreateSale();
@@ -65,7 +67,9 @@ export function SaleFormDialog({ open, onOpenChange, initialProduct }: SaleFormD
   
   const currencySymbol = settings?.currency_symbol || "$";
   
-  const [activeTab, setActiveTab] = useState("productos");
+  const [activeTab, setActiveTab] = useState<SaleFormTab>("productos");
+  const [maxUnlockedTabIndex, setMaxUnlockedTabIndex] = useState(0);
+  const [attemptedTabs, setAttemptedTabs] = useState<Set<SaleFormTab>>(new Set());
   const [customerFormOpen, setCustomerFormOpen] = useState(false);
   const [printPreviewOpen, setPrintPreviewOpen] = useState(false);
   const [warrantyPrintOpen, setWarrantyPrintOpen] = useState(false);
@@ -114,6 +118,8 @@ export function SaleFormDialog({ open, onOpenChange, initialProduct }: SaleFormD
   useEffect(() => {
     if (open) {
       setActiveTab("productos");
+      setMaxUnlockedTabIndex(0);
+      setAttemptedTabs(new Set());
       if (currentWorkshop?.id) {
         generateSaleNumber(currentWorkshop.id).then(num => {
           setForm(prev => ({ ...prev, sale_number: num }));
@@ -185,11 +191,52 @@ export function SaleFormDialog({ open, onOpenChange, initialProduct }: SaleFormD
 
   const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
   const total = subtotal - form.discount;
-
+  const invalidFieldClass = "border-destructive placeholder:text-destructive focus-visible:border-destructive";
+  const tabsOrder: SaleFormTab[] = ["productos", "cliente", "resumen"];
+  const invalidProductIds = new Set(items.filter(item => !item.product_id && !item.product_name.trim()).map(item => item.tempId));
+  const invalidQuantityIds = new Set(items.filter(item => !Number.isFinite(item.quantity) || item.quantity < 1).map(item => item.tempId));
+  const invalidUnitPriceIds = new Set(items.filter(item => !Number.isFinite(item.unit_price) || item.unit_price <= 0).map(item => item.tempId));
   const validItems = items.filter(item => item.product_name && item.quantity > 0);
+  const tabValidity: Record<SaleFormTab, boolean> = {
+    productos: validItems.length > 0 && invalidProductIds.size === 0 && invalidQuantityIds.size === 0 && invalidUnitPriceIds.size === 0,
+    cliente: form.sale_number.trim().length > 0 && form.payment_method.trim().length > 0,
+    resumen: form.discount >= 0 && form.discount <= subtotal && total >= 0,
+  };
+  const activeTabIsValid = tabValidity[activeTab];
+  const allTabsValid = tabsOrder.every((tab) => tabValidity[tab]);
+  const maxAccessibleTabIndex = maxUnlockedTabIndex;
+  const shouldShowInvalid = (tab: SaleFormTab) => attemptedTabs.has(tab);
+  const showProductosInvalid = shouldShowInvalid("productos");
+  const showResumenInvalid = shouldShowInvalid("resumen");
+
+  const handleTabChange = (nextTab: string) => {
+    const typedNextTab = nextTab as SaleFormTab;
+    const nextIndex = tabsOrder.indexOf(typedNextTab);
+    if (nextIndex !== -1 && nextIndex <= maxAccessibleTabIndex) {
+      setActiveTab(typedNextTab);
+    }
+  };
+
+  const handleNext = () => {
+    if (!activeTabIsValid) {
+      setAttemptedTabs((current) => new Set([...current, activeTab]));
+      return;
+    }
+    const index = tabsOrder.indexOf(activeTab);
+    const next = tabsOrder[index + 1];
+    if (next) {
+      setMaxUnlockedTabIndex((current) => Math.max(current, index + 1));
+      setActiveTab(next);
+    }
+  };
 
   const handleSubmit = async () => {
-    if (validItems.length === 0) return;
+    if (!allTabsValid) {
+      const nextTab = tabsOrder.find((tab) => !tabValidity[tab]) || "productos";
+      setAttemptedTabs((current) => new Set([...current, nextTab]));
+      setActiveTab(nextTab);
+      return;
+    }
 
     const saleData = {
       sale_number: form.sale_number,
@@ -316,15 +363,18 @@ export function SaleFormDialog({ open, onOpenChange, initialProduct }: SaleFormD
           <DialogTitle className="text-base sm:text-lg">Nueva Venta</DialogTitle>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <IconTabs
             value={activeTab}
-            onChange={setActiveTab}
+            onChange={handleTabChange}
             items={[
               { id: "productos", icon: Package, label: "Productos" },
               { id: "cliente", icon: User, label: "Cliente" },
               { id: "resumen", icon: FileText, label: "Resumen" },
-            ]}
+            ].map((item, index) => ({
+              ...item,
+              disabled: index > maxAccessibleTabIndex,
+            }))}
           />
 
           {/* Tab: Cliente */}
@@ -397,6 +447,7 @@ export function SaleFormDialog({ open, onOpenChange, initialProduct }: SaleFormD
                     excludeIds={items
                       .filter(i => i.tempId !== item.tempId && i.product_id)
                       .map(i => i.product_id!)}
+                    invalid={showProductosInvalid && invalidProductIds.has(item.tempId)}
                   />
                   <div className="grid grid-cols-3 gap-2">
                     <div>
@@ -405,7 +456,8 @@ export function SaleFormDialog({ open, onOpenChange, initialProduct }: SaleFormD
                         min={1}
                         value={item.quantity}
                         onValueChange={(value) => updateItem(item.tempId, "quantity", value || 1)}
-                        className="h-9 text-sm"
+                        aria-invalid={showProductosInvalid && invalidQuantityIds.has(item.tempId)}
+                        className={cn("h-9 text-sm", showProductosInvalid && invalidQuantityIds.has(item.tempId) && invalidFieldClass)}
                       />
                     </div>
                     <div>
@@ -417,7 +469,9 @@ export function SaleFormDialog({ open, onOpenChange, initialProduct }: SaleFormD
                         onChange={(e) =>
                           updateItem(item.tempId, "unit_price", parseFloat(e.target.value) || 0)
                         }
-                        className="h-9 text-sm"
+                        placeholder={showProductosInvalid && invalidUnitPriceIds.has(item.tempId) ? "Debe ser mayor a 0" : "0"}
+                        aria-invalid={showProductosInvalid && invalidUnitPriceIds.has(item.tempId)}
+                        className={cn("h-9 text-sm", showProductosInvalid && invalidUnitPriceIds.has(item.tempId) && invalidFieldClass)}
                       />
                     </div>
                     <div className="flex items-end gap-1">
@@ -460,12 +514,13 @@ export function SaleFormDialog({ open, onOpenChange, initialProduct }: SaleFormD
                   max={subtotal}
                   value={form.discount}
                   onChange={(e) => setForm(prev => ({ ...prev, discount: parseFloat(e.target.value) || 0 }))}
-                  className="w-32 text-right"
+                  aria-invalid={showResumenInvalid && (form.discount < 0 || form.discount > subtotal)}
+                  className={cn("w-32 text-right", showResumenInvalid && (form.discount < 0 || form.discount > subtotal) && invalidFieldClass)}
                 />
               </div>
               <div className="flex justify-between text-lg font-bold pt-2 border-t">
                 <span>Total:</span>
-                <span className="text-success">{currencySymbol}{total.toLocaleString()}</span>
+                <span className="text-foreground dark:text-success">{currencySymbol}{total.toLocaleString()}</span>
               </div>
             </div>
 
@@ -509,10 +564,16 @@ export function SaleFormDialog({ open, onOpenChange, initialProduct }: SaleFormD
           <Button variant="proto-ghost" size="lg" className="flex-1 h-12" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button variant="proto" size="lg" className="flex-[2] h-12" onClick={handleSubmit} disabled={isPending || validItems.length === 0}>
-            {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            Registrar Venta
-          </Button>
+          {activeTab !== "resumen" ? (
+            <Button variant="proto" size="lg" className="flex-[2] h-12" onClick={handleNext} disabled={isPending}>
+              Siguiente
+            </Button>
+          ) : (
+            <Button variant="proto" size="lg" className="flex-[2] h-12" onClick={handleSubmit} disabled={isPending}>
+              {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Registrar Venta
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
       

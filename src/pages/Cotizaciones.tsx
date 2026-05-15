@@ -345,7 +345,7 @@ export default function Cotizaciones() {
                         <FileText className="w-5 h-5 text-info" />
                       </div>
                       <div>
-                        <p className="font-mono text-sm text-primary font-semibold leading-tight">{quote.quote_number}</p>
+                        <p className="font-mono text-sm text-foreground dark:text-primary font-semibold leading-tight">{quote.quote_number}</p>
                         <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                           <Badge className={cn("text-xs", status.color)}>
                             <StatusIcon className="w-3 h-3 mr-1" />
@@ -393,13 +393,13 @@ export default function Cotizaciones() {
                             {quote.status === "pending" && (
                               <>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-success" onClick={() => handleStatusChange(quote, "accepted")}>
+                                <DropdownMenuItem className="text-foreground dark:text-success" onClick={() => handleStatusChange(quote, "accepted")}>
                                   <CheckCircle className="w-4 h-4 mr-2" /> Marcar aceptada
                                 </DropdownMenuItem>
                                 <DropdownMenuItem className="text-destructive" onClick={() => handleStatusChange(quote, "rejected")}>
                                   <XCircle className="w-4 h-4 mr-2" /> Marcar rechazada
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="text-primary" onClick={() => { setConvertingQuote(quote); setConvertDialogOpen(true); }}>
+                                <DropdownMenuItem className="text-foreground dark:text-primary" onClick={() => { setConvertingQuote(quote); setConvertDialogOpen(true); }}>
                                   <ArrowRight className="w-4 h-4 mr-2" /> Convertir
                                 </DropdownMenuItem>
                               </>
@@ -509,9 +509,9 @@ export default function Cotizaciones() {
           { icon: Eye, label: "PDF", onClick: () => { viewingQuote && handleGeneratePDF(viewingQuote); } },
           { icon: Copy, label: "Duplicar", onClick: () => { viewingQuote && handleDuplicate(viewingQuote); } },
           ...(viewingQuote?.status === "pending" ? [
-            { icon: CheckCircle, label: "Marcar aceptada", onClick: () => { viewingQuote && handleStatusChange(viewingQuote, "accepted"); }, className: "text-success", separator: true },
+            { icon: CheckCircle, label: "Marcar aceptada", onClick: () => { viewingQuote && handleStatusChange(viewingQuote, "accepted"); }, className: "text-foreground dark:text-success", separator: true },
             { icon: XCircle, label: "Marcar rechazada", onClick: () => { viewingQuote && handleStatusChange(viewingQuote, "rejected"); }, className: "text-destructive" },
-            { icon: ArrowRight, label: "Convertir a venta", onClick: () => { setDetailDialogOpen(false); setConvertingQuote(viewingQuote); setConvertDialogOpen(true); }, className: "text-primary" },
+            { icon: ArrowRight, label: "Convertir a venta", onClick: () => { setDetailDialogOpen(false); setConvertingQuote(viewingQuote); setConvertDialogOpen(true); }, className: "text-foreground dark:text-primary" },
           ] : []),
         ]}
         onDelete={isAdmin ? () => { viewingQuote && handleDelete(viewingQuote); } : undefined}

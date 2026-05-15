@@ -21,9 +21,10 @@ interface CustomerSelectProps {
   value: string | null;
   onValueChange: (customerId: string | null, customer: Customer | null) => void;
   onCreateNew?: () => void;
+  invalid?: boolean;
 }
 
-export function CustomerSelect({ value, onValueChange, onCreateNew }: CustomerSelectProps) {
+export function CustomerSelect({ value, onValueChange, onCreateNew, invalid = false }: CustomerSelectProps) {
   const [open, setOpen] = useState(false);
   const { data: customers, isLoading } = useCustomers();
 
@@ -36,7 +37,11 @@ export function CustomerSelect({ value, onValueChange, onCreateNew }: CustomerSe
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between"
+          aria-invalid={invalid}
+          className={cn(
+            "w-full justify-between",
+            invalid && "border-destructive text-destructive hover:text-destructive",
+          )}
         >
           {selectedCustomer ? (
             <span className="flex items-center gap-2">
@@ -44,7 +49,9 @@ export function CustomerSelect({ value, onValueChange, onCreateNew }: CustomerSe
               {selectedCustomer.name}
             </span>
           ) : (
-            <span className="text-muted-foreground">Seleccionar cliente...</span>
+            <span className={cn(invalid ? "text-destructive" : "text-muted-foreground")}>
+              {invalid ? "Selecciona un cliente" : "Seleccionar cliente..."}
+            </span>
           )}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>

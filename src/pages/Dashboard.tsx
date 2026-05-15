@@ -39,12 +39,12 @@ export default function Dashboard() {
           <>
             Bienvenido
             {profile?.full_name ? (
-              <>, <span className="text-primary font-semibold">{profile.full_name}</span></>
+              <>, <span className="text-foreground dark:text-primary font-semibold">{profile.full_name}</span></>
             ) : null}
           </>
         }
         action={
-          <div className="hidden sm:flex items-center gap-1.5 text-xs text-success bg-success-light rounded-full px-3 py-1.5">
+          <div className="hidden sm:flex items-center gap-1.5 text-xs text-foreground dark:text-success bg-success-light rounded-full px-3 py-1.5">
             <TrendingUp className="w-3.5 h-3.5" />
             <span className="font-semibold">En vivo</span>
           </div>

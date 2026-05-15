@@ -23,9 +23,10 @@ interface ProductSelectProps {
   onValueChange: (productId: string | null, product: Product | null) => void;
   excludeIds?: string[];
   excludeServiceItems?: boolean;
+  invalid?: boolean;
 }
 
-export function ProductSelect({ value, onValueChange, excludeIds = [], excludeServiceItems = false }: ProductSelectProps) {
+export function ProductSelect({ value, onValueChange, excludeIds = [], excludeServiceItems = false, invalid = false }: ProductSelectProps) {
   const [open, setOpen] = useState(false);
   const { data: products, isLoading } = useProducts();
   const { data: settings } = useBusinessSettings();
@@ -56,7 +57,11 @@ export function ProductSelect({ value, onValueChange, excludeIds = [], excludeSe
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between"
+          aria-invalid={invalid}
+          className={cn(
+            "w-full justify-between",
+            invalid && "border-destructive text-destructive hover:text-destructive",
+          )}
         >
           {selectedProduct ? (
             <span className="flex items-center gap-2 truncate">
@@ -64,7 +69,9 @@ export function ProductSelect({ value, onValueChange, excludeIds = [], excludeSe
               <span className="truncate">{selectedProduct.name}</span>
             </span>
           ) : (
-            <span className="text-muted-foreground">Seleccionar producto...</span>
+            <span className={cn(invalid ? "text-destructive" : "text-muted-foreground")}>
+              {invalid ? "Selecciona un producto" : "Seleccionar producto..."}
+            </span>
           )}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>

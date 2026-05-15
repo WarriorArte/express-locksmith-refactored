@@ -21,6 +21,7 @@ export interface IconTabItem {
   id: string;
   icon: React.ComponentType<{ className?: string }>;
   label: string;
+  disabled?: boolean;
 }
 
 interface IconTabsProps {
@@ -50,11 +51,14 @@ export function IconTabs({ value, onChange, items, className }: IconTabsProps) {
             type="button"
             role="tab"
             aria-selected={active}
+            aria-disabled={item.disabled}
+            disabled={item.disabled}
             onClick={() => onChange(item.id)}
             className={cn(
               "flex-1 min-w-[64px] flex flex-col items-center justify-center gap-1",
               "py-2.5 px-1 text-[11px] font-semibold whitespace-nowrap",
               "border-b-2 -mb-px transition-colors",
+              item.disabled && "cursor-not-allowed opacity-40 hover:text-muted-foreground",
               active
                 ? "text-primary border-primary"
                 : "text-muted-foreground border-transparent hover:text-foreground/80",

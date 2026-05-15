@@ -19,7 +19,7 @@ interface Activity {
 
 const typeConfig = {
   venta: { icon: ShoppingCart, color: "text-secondary bg-secondary-light" },
-  servicio: { icon: Wrench, color: "text-success bg-success-light" },
+  servicio: { icon: Wrench, color: "text-foreground dark:text-success bg-success-light" },
   cotizacion: { icon: FileText, color: "text-info bg-info-light" },
   cliente: { icon: Users, color: "text-accent bg-accent-light" },
   producto: { icon: Package, color: "text-warning bg-warning-light" },

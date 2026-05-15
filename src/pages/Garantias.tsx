@@ -298,7 +298,7 @@ export default function Garantias() {
                         <ShieldCheck className="w-5 h-5 text-primary" />
                       </div>
                       <div>
-                        <p className="font-mono text-sm text-primary font-semibold leading-tight">{warranty.warranty_code}</p>
+                        <p className="font-mono text-sm text-foreground dark:text-primary font-semibold leading-tight">{warranty.warranty_code}</p>
                         <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                           <Badge className={cn("text-xs", status.color)}>
                             <StatusIcon className="w-3 h-3 mr-1" />
@@ -315,7 +315,7 @@ export default function Garantias() {
                         {isActive ? (
                           <>
                             <p className="text-[11px] text-muted-foreground uppercase tracking-wide leading-tight">Restantes</p>
-                            <p className={cn("text-xl font-bold", daysLeft <= 7 ? "text-warning" : "text-success")}>
+                            <p className={cn("text-xl font-bold", daysLeft <= 7 ? "text-warning" : "text-foreground dark:text-success")}>
                               {daysLeft}d
                             </p>
                           </>

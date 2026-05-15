@@ -85,7 +85,7 @@ export function WarrantyDetailDialog({
         <div className="space-y-6">
           {/* Header */}
           <div className="text-center p-4 bg-muted rounded-lg">
-            <div className="font-mono text-xl font-bold text-primary mb-2">
+            <div className="font-mono text-xl font-bold text-foreground dark:text-primary mb-2">
               {warranty.warranty_code}
             </div>
             <Badge className={cn("text-sm", status.color)}>
@@ -93,7 +93,7 @@ export function WarrantyDetailDialog({
               {status.label}
             </Badge>
             {!warranty.is_voided && !isPast(parseISO(warranty.end_date)) && (
-              <p className={cn("text-sm mt-2 font-medium", daysLeft <= 7 ? "text-warning" : "text-success")}>
+              <p className={cn("text-sm mt-2 font-medium", daysLeft <= 7 ? "text-warning" : "text-foreground dark:text-success")}>
                 {daysLeft} días restantes
               </p>
             )}

@@ -43,9 +43,9 @@ import { format, parseISO, isToday, startOfMonth, endOfMonth, isWithinInterval }
 import { es } from "date-fns/locale";
 
 const paymentMethodColors: Record<PaymentMethod, string> = {
-  cash: "bg-success-light text-success",
+  cash: "bg-success-light text-foreground dark:text-success",
   card: "bg-info-light text-info",
-  transfer: "bg-primary-light text-primary",
+  transfer: "bg-primary-light text-foreground dark:text-primary",
   credit: "bg-warning-light text-warning",
 };
 
@@ -356,7 +356,7 @@ export default function Ventas() {
                       <ShoppingCart className="w-5 h-5 text-secondary" />
                     </div>
                     <div>
-                      <p className="font-mono text-sm text-primary font-semibold leading-tight">{sale.sale_number}</p>
+                      <p className="font-mono text-sm text-foreground dark:text-primary font-semibold leading-tight">{sale.sale_number}</p>
                       <Badge className={cn("text-xs mt-1", paymentMethodColors[sale.payment_method])}>
                         {paymentMethodLabels[sale.payment_method]}
                       </Badge>
@@ -364,7 +364,7 @@ export default function Ventas() {
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="text-[11px] text-muted-foreground uppercase tracking-wide leading-tight">Total</p>
-                    <p className="text-xl font-bold text-success">{currencySymbol}{Number(sale.total).toLocaleString()}</p>
+                    <p className="text-xl font-bold text-foreground dark:text-success">{currencySymbol}{Number(sale.total).toLocaleString()}</p>
                     {sale.discount && Number(sale.discount) > 0 && (
                       <p className="text-[11px] text-destructive">-{currencySymbol}{Number(sale.discount).toLocaleString()} desc.</p>
                     )}

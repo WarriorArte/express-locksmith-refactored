@@ -178,7 +178,7 @@ export function CustomerServicesDialog({
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                            <span className="font-mono text-sm text-primary font-medium">{service.service_number}</span>
+                            <span className="font-mono text-sm text-foreground dark:text-primary font-medium">{service.service_number}</span>
                             <Badge className={cn("text-xs", status.color)}>{status.label}</Badge>
                             <span className="text-xs text-muted-foreground">
                               {format(parseISO(getServiceDisplayDate(service)), "dd MMM yyyy", { locale: es })}

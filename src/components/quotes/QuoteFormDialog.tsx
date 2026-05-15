@@ -19,6 +19,7 @@ import { CustomerFormDialog } from "@/components/customers/CustomerFormDialog";
 import { ProductSelect } from "@/components/shared/ProductSelect";
 import { useCreateQuote, useUpdateQuote, generateQuoteNumber, type Quote } from "@/hooks/useQuotes";
 import { useWorkshop } from "@/hooks/useWorkshop";
+import { cn } from "@/lib/utils";
 import type { Customer } from "@/hooks/useCustomers";
 import type { Product } from "@/hooks/useProducts";
 import { addDays, format } from "date-fns";
@@ -38,13 +39,17 @@ interface QuoteFormDialogProps {
   quote?: Quote | null;
 }
 
+type QuoteFormTab = "cliente" | "productos" | "resumen";
+
 export function QuoteFormDialog({ open, onOpenChange, quote }: QuoteFormDialogProps) {
   const isEditing = !!quote;
   const createQuote = useCreateQuote();
   const updateQuote = useUpdateQuote();
   const { currentWorkshop } = useWorkshop();
 
-  const [activeTab, setActiveTab] = useState("cliente");
+  const [activeTab, setActiveTab] = useState<QuoteFormTab>("cliente");
+  const [maxUnlockedTabIndex, setMaxUnlockedTabIndex] = useState(0);
+  const [attemptedTabs, setAttemptedTabs] = useState<Set<QuoteFormTab>>(new Set());
   const [customerFormOpen, setCustomerFormOpen] = useState(false);
 
   const [form, setForm] = useState({
@@ -69,6 +74,8 @@ export function QuoteFormDialog({ open, onOpenChange, quote }: QuoteFormDialogPr
   useEffect(() => {
     if (open) {
       setActiveTab("cliente");
+      setMaxUnlockedTabIndex(quote ? 2 : 0);
+      setAttemptedTabs(new Set());
       if (quote) {
         setForm({
           quote_number: quote.quote_number,
@@ -174,11 +181,58 @@ export function QuoteFormDialog({ open, onOpenChange, quote }: QuoteFormDialogPr
   const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
   const total = subtotal - form.discount;
   const validUntil = format(addDays(new Date(), form.validity_days), "yyyy-MM-dd");
-
+  const invalidFieldClass = "border-destructive placeholder:text-destructive focus-visible:border-destructive";
+  const tabsOrder: QuoteFormTab[] = ["cliente", "productos", "resumen"];
+  const invalidItemIds = new Set(items.filter(item => !item.description.trim()).map(item => item.tempId));
+  const invalidQuantityIds = new Set(items.filter(item => !Number.isFinite(item.quantity) || item.quantity < 1).map(item => item.tempId));
+  const invalidUnitPriceIds = new Set(items.filter(item => !Number.isFinite(item.unit_price) || item.unit_price <= 0).map(item => item.tempId));
   const validItems = items.filter(item => item.description && item.quantity > 0);
+  const tabValidity: Record<QuoteFormTab, boolean> = {
+    cliente: form.quote_number.trim().length > 0 && form.validity_days >= 1,
+    productos: validItems.length > 0 && invalidItemIds.size === 0 && invalidQuantityIds.size === 0 && invalidUnitPriceIds.size === 0,
+    resumen: form.discount >= 0 && form.discount <= subtotal && total >= 0,
+  };
+  const activeTabIsValid = tabValidity[activeTab];
+  const allTabsValid = tabsOrder.every((tab) => tabValidity[tab]);
+  const maxAccessibleTabIndex = isEditing ? tabsOrder.length - 1 : maxUnlockedTabIndex;
+  const shouldShowInvalid = (tab: QuoteFormTab) => attemptedTabs.has(tab);
+  const showClienteInvalid = shouldShowInvalid("cliente");
+  const showProductosInvalid = shouldShowInvalid("productos");
+  const showResumenInvalid = shouldShowInvalid("resumen");
+
+  const handleTabChange = (nextTab: string) => {
+    const typedNextTab = nextTab as QuoteFormTab;
+    if (isEditing) {
+      setActiveTab(typedNextTab);
+      return;
+    }
+
+    const nextIndex = tabsOrder.indexOf(typedNextTab);
+    if (nextIndex !== -1 && nextIndex <= maxAccessibleTabIndex) {
+      setActiveTab(typedNextTab);
+    }
+  };
+
+  const handleNext = () => {
+    if (!activeTabIsValid) {
+      setAttemptedTabs((current) => new Set([...current, activeTab]));
+      return;
+    }
+    const index = tabsOrder.indexOf(activeTab);
+    const next = tabsOrder[index + 1];
+    if (next) {
+      setMaxUnlockedTabIndex((current) => Math.max(current, index + 1));
+      setActiveTab(next);
+    }
+  };
 
   const handleSubmit = async () => {
-    if (validItems.length === 0) return;
+    if (!allTabsValid) {
+      const nextTab = tabsOrder.find((tab) => !tabValidity[tab]) || "cliente";
+      setAttemptedTabs((current) => new Set([...current, nextTab]));
+      setActiveTab(nextTab);
+      return;
+    }
 
     const quoteData = {
       quote_number: form.quote_number,
@@ -224,15 +278,18 @@ export function QuoteFormDialog({ open, onOpenChange, quote }: QuoteFormDialogPr
           <DialogTitle className="text-base sm:text-lg">{isEditing ? "Editar Cotización" : "Nueva Cotización"}</DialogTitle>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <IconTabs
             value={activeTab}
-            onChange={setActiveTab}
+            onChange={handleTabChange}
             items={[
               { id: "cliente", icon: User, label: "Cliente" },
               { id: "productos", icon: Package, label: "Items" },
               { id: "resumen", icon: FileText, label: "Resumen" },
-            ]}
+            ].map((item, index) => ({
+              ...item,
+              disabled: !isEditing && index > maxAccessibleTabIndex,
+            }))}
           />
 
           {/* Tab: Cliente */}
@@ -249,6 +306,8 @@ export function QuoteFormDialog({ open, onOpenChange, quote }: QuoteFormDialogPr
                   max={90}
                   value={form.validity_days}
                   onValueChange={(value) => setForm(prev => ({ ...prev, validity_days: value || 15 }))}
+                  aria-invalid={showClienteInvalid && form.validity_days < 1}
+                  className={cn(showClienteInvalid && form.validity_days < 1 && invalidFieldClass)}
                 />
               </div>
             </div>
@@ -328,8 +387,9 @@ export function QuoteFormDialog({ open, onOpenChange, quote }: QuoteFormDialogPr
                       <Input
                         value={item.description}
                         onChange={(e) => updateItem(item.tempId, "description", e.target.value)}
-                        placeholder="Descripción del item..."
-                        className="text-sm"
+                        placeholder={showProductosInvalid && invalidItemIds.has(item.tempId) ? "Campo obligatorio" : "Descripción del item..."}
+                        aria-invalid={showProductosInvalid && invalidItemIds.has(item.tempId)}
+                        className={cn("text-sm", showProductosInvalid && invalidItemIds.has(item.tempId) && invalidFieldClass)}
                       />
                       <div className="grid grid-cols-3 gap-2">
                         <div>
@@ -338,7 +398,8 @@ export function QuoteFormDialog({ open, onOpenChange, quote }: QuoteFormDialogPr
                             min={1}
                             value={item.quantity}
                             onValueChange={(value) => updateItem(item.tempId, "quantity", value || 1)}
-                            className="h-9 text-sm"
+                            aria-invalid={showProductosInvalid && invalidQuantityIds.has(item.tempId)}
+                            className={cn("h-9 text-sm", showProductosInvalid && invalidQuantityIds.has(item.tempId) && invalidFieldClass)}
                           />
                         </div>
                         <div>
@@ -348,7 +409,9 @@ export function QuoteFormDialog({ open, onOpenChange, quote }: QuoteFormDialogPr
                             min="0"
                             value={item.unit_price}
                             onChange={(e) => updateItem(item.tempId, "unit_price", parseFloat(e.target.value) || 0)}
-                            className="h-9 text-sm"
+                            placeholder={showProductosInvalid && invalidUnitPriceIds.has(item.tempId) ? "Debe ser mayor a 0" : "0"}
+                            aria-invalid={showProductosInvalid && invalidUnitPriceIds.has(item.tempId)}
+                            className={cn("h-9 text-sm", showProductosInvalid && invalidUnitPriceIds.has(item.tempId) && invalidFieldClass)}
                           />
                         </div>
                         <div>
@@ -391,12 +454,13 @@ export function QuoteFormDialog({ open, onOpenChange, quote }: QuoteFormDialogPr
                   max={subtotal}
                   value={form.discount}
                   onChange={(e) => setForm(prev => ({ ...prev, discount: parseFloat(e.target.value) || 0 }))}
-                  className="w-32 text-right"
+                  aria-invalid={showResumenInvalid && (form.discount < 0 || form.discount > subtotal)}
+                  className={cn("w-32 text-right", showResumenInvalid && (form.discount < 0 || form.discount > subtotal) && invalidFieldClass)}
                 />
               </div>
               <div className="flex justify-between text-lg font-bold pt-2 border-t">
                 <span>Total:</span>
-                <span className="text-primary">${total.toLocaleString()}</span>
+                <span className="text-foreground dark:text-primary">${total.toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>Válida hasta:</span>
@@ -431,10 +495,16 @@ export function QuoteFormDialog({ open, onOpenChange, quote }: QuoteFormDialogPr
           <Button variant="proto-ghost" size="lg" className="flex-1 h-12" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button variant="proto" size="lg" className="flex-[2] h-12" onClick={handleSubmit} disabled={isPending || validItems.length === 0}>
-            {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {isEditing ? "Guardar Cambios" : "Crear Cotización"}
-          </Button>
+          {!isEditing && activeTab !== "resumen" ? (
+            <Button variant="proto" size="lg" className="flex-[2] h-12" onClick={handleNext} disabled={isPending}>
+              Siguiente
+            </Button>
+          ) : (
+            <Button variant="proto" size="lg" className="flex-[2] h-12" onClick={handleSubmit} disabled={isPending}>
+              {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {isEditing ? "Guardar Cambios" : "Crear Cotización"}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
 

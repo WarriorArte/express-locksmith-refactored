@@ -45,7 +45,7 @@ export function CustomerAvatar({ name, customerType = "person", noWorkAgain = fa
     noWorkAgain
       ? "bg-destructive-light text-destructive"
       : customerType === "company"
-      ? "bg-primary-light text-primary"
+      ? "bg-primary-light text-foreground dark:text-primary"
       : customerType === "business"
         ? "bg-warning-light text-warning"
         : "bg-info-light text-info";

@@ -78,7 +78,7 @@ export function MainLayout() {
                       <span className="font-semibold">{profile?.full_name || "Usuario"}</span>
                       <span className="text-xs text-muted-foreground">{user?.email}</span>
                       {isAdmin && (
-                        <span className="text-xs text-primary font-semibold mt-1">Administrador</span>
+                        <span className="text-xs text-foreground dark:text-primary font-semibold mt-1">Administrador</span>
                       )}
                     </div>
                   </DropdownMenuLabel>

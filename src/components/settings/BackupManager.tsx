@@ -375,7 +375,7 @@ export function BackupManager() {
                   <div 
                     key={index}
                     className={cn(
-                      log.type === "success" && "text-success",
+                      log.type === "success" && "text-foreground dark:text-success",
                       log.type === "error" && "text-destructive",
                       log.type === "info" && "text-muted-foreground"
                     )}

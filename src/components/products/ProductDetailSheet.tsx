@@ -76,7 +76,7 @@ export function ProductDetailSheet({
   const isLow = totalStock < product.min_stock;
   const stockBadge = isLow
     ? { label: "Stock bajo", cls: "bg-warning/15 text-warning" }
-    : { label: "En stock", cls: "bg-success/15 text-success" };
+    : { label: "En stock", cls: "bg-success/15 text-foreground dark:text-success" };
 
   const stockBoxes = [
     { l: "Tienda", v: product.stock_store, i: Store },
@@ -142,7 +142,7 @@ export function ProductDetailSheet({
                 )}
                 <div className="flex justify-between items-center pt-2 mt-2 border-t border-border">
                   <span className="text-[13px] font-bold text-foreground">Total</span>
-                  <span className="text-base font-extrabold text-primary">
+                  <span className="text-base font-extrabold text-foreground dark:text-primary">
                     {currencySymbol}{Number((Number(product.labor_cost || 0) - Number(product.discount || 0)).toFixed(2)).toLocaleString()}
                   </span>
                 </div>
@@ -160,7 +160,7 @@ export function ProductDetailSheet({
                 />
                 <div className="flex justify-between items-center pt-2 mt-2 border-t border-border">
                   <span className="text-[13px] font-bold text-foreground">Precio sugerido</span>
-                  <span className="text-base font-extrabold text-primary">
+                  <span className="text-base font-extrabold text-foreground dark:text-primary">
                     {currencySymbol}{Number(product.sale_price_max || 0).toLocaleString()}
                   </span>
                 </div>
@@ -176,7 +176,7 @@ export function ProductDetailSheet({
                   <Icon
                     className={cn(
                       "w-4 h-4 mx-auto mb-1",
-                      alert && v >= product.min_stock ? "text-warning" : "text-primary",
+                      alert && v >= product.min_stock ? "text-warning" : "text-foreground dark:text-primary",
                     )}
                   />
                   <div className={cn("text-[18px] font-extrabold", isLow ? "text-warning" : "text-foreground")}>

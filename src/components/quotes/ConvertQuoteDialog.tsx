@@ -192,7 +192,7 @@ export function ConvertQuoteDialog({ open, onOpenChange, quote }: ConvertQuoteDi
             <div className="flex items-center space-x-3 p-4 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors">
               <RadioGroupItem value="service" id="service" />
               <Label htmlFor="service" className="flex items-center gap-3 cursor-pointer flex-1">
-                <div className="p-2 rounded-lg bg-success-light text-success">
+                <div className="p-2 rounded-lg bg-success-light text-foreground dark:text-success">
                   <Wrench className="w-5 h-5" />
                 </div>
                 <div>

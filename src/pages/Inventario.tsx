@@ -421,7 +421,7 @@ export default function Inventario() {
                       <span
                         className={cn(
                           "absolute bottom-1.5 right-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold",
-                          status === "low" ? "bg-warning/20 text-warning" : "bg-success/20 text-success",
+                          status === "low" ? "bg-warning/20 text-warning" : "bg-success/20 text-foreground dark:text-success",
                         )}
                       >
                         {status === "low" ? "Stock bajo" : "En stock"}
@@ -439,7 +439,7 @@ export default function Inventario() {
                             Mano de obra: <span className="font-semibold">{currencySymbol}{Number(product.labor_cost || 0).toLocaleString()}</span>
                           </span>
                         </div>
-                        <div className="text-[13px] font-extrabold text-primary leading-tight">
+                        <div className="text-[13px] font-extrabold text-foreground dark:text-primary leading-tight">
                           Total: {currencySymbol}{Number((Number(product.labor_cost || 0) - Number(product.discount || 0)).toFixed(2)).toLocaleString()}
                         </div>
                         {Number(product.discount || 0) > 0 && (
@@ -450,15 +450,15 @@ export default function Inventario() {
                       </>
                     ) : (
                       <>
-                        <div className="flex gap-1.5 mb-1">
-                          <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                            <Store className="w-2.5 h-2.5" />T:{product.stock_store}
+                        <div className="flex gap-3 mb-1.5">
+                          <span className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+                            <Store className="w-4 h-4" />T: {product.stock_store}
                           </span>
-                          <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                            <Warehouse className="w-2.5 h-2.5" />B:{product.stock_warehouse}
+                          <span className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+                            <Warehouse className="w-4 h-4" />B: {product.stock_warehouse}
                           </span>
                         </div>
-                        <div className="text-[13px] font-extrabold text-primary leading-tight">
+                        <div className="text-[13px] font-extrabold text-foreground dark:text-primary leading-tight">
                           {currencySymbol}{Number(product.sale_price_max).toLocaleString()}
                         </div>
                         <div className="text-[10px] text-muted-foreground">
@@ -509,7 +509,7 @@ export default function Inventario() {
                         {isService ? serviceTypeLabel : cn_}
                       </span>
                       {!isService && (
-                        <span className="text-[10px] text-muted-foreground">T:{product.stock_store} · B:{product.stock_warehouse}</span>
+                        <span className="text-sm font-semibold text-muted-foreground">T: {product.stock_store} · B: {product.stock_warehouse}</span>
                       )}
                       {isService && (
                         <span className="text-[10px] text-muted-foreground">
@@ -521,7 +521,7 @@ export default function Inventario() {
                   <div className="flex flex-col items-end gap-1 flex-shrink-0">
                     {isService ? (
                       <>
-                        <span className="text-[14px] font-extrabold text-primary">
+                        <span className="text-[14px] font-extrabold text-foreground dark:text-primary">
                           {currencySymbol}{Number((Number(product.labor_cost || 0) - Number(product.discount || 0)).toFixed(2)).toLocaleString()}
                         </span>
                         {Number(product.discount || 0) > 0 && (
@@ -532,12 +532,12 @@ export default function Inventario() {
                       </>
                     ) : (
                       <>
-                        <span className="text-[14px] font-extrabold text-primary">
+                        <span className="text-[14px] font-extrabold text-foreground dark:text-primary">
                           {currencySymbol}{Number(product.sale_price_max).toLocaleString()}
                         </span>
                         <span className={cn(
                           "inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold",
-                          status === "low" ? "bg-warning/20 text-warning" : "bg-success/20 text-success",
+                          status === "low" ? "bg-warning/20 text-warning" : "bg-success/20 text-foreground dark:text-success",
                         )}>
                           {status === "low" ? "Stock bajo" : "En stock"}
                         </span>
@@ -684,7 +684,7 @@ export default function Inventario() {
                           Mano de obra: <span className="font-semibold">{currencySymbol}{Number(product.labor_cost || 0).toLocaleString()}</span>
                         </span>
                       </div>
-                      <div className="text-[20px] font-extrabold text-success leading-tight">
+                      <div className="text-[20px] font-extrabold text-foreground dark:text-success leading-tight">
                         Total: {currencySymbol}{Number((Number(product.labor_cost || 0) - Number(product.discount || 0)).toFixed(2)).toLocaleString()}
                       </div>
                       {Number(product.discount || 0) > 0 && (
@@ -695,15 +695,15 @@ export default function Inventario() {
                     </>
                   ) : (
                     <>
-                      <div className="flex gap-2">
-                        <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                          <Store className="w-3 h-3" />T:{product.stock_store}
+                      <div className="flex gap-3">
+                        <span className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+                          <Store className="w-4 h-4" />T: {product.stock_store}
                         </span>
-                        <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                          <Warehouse className="w-3 h-3" />B:{product.stock_warehouse}
+                        <span className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+                          <Warehouse className="w-4 h-4" />B: {product.stock_warehouse}
                         </span>
                       </div>
-                      <div className="text-[20px] font-extrabold text-success leading-tight">
+                      <div className="text-[20px] font-extrabold text-foreground dark:text-success leading-tight">
                         {currencySymbol}{Number(product.sale_price_max).toLocaleString()}
                       </div>
                       <div className="text-[11px] text-muted-foreground leading-tight">

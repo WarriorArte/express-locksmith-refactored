@@ -187,7 +187,7 @@ export default function Clientes() {
                 <div className="flex items-start gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                   <div className="text-right">
                     <p className="text-[11px] text-muted-foreground uppercase tracking-wide leading-tight">Compras</p>
-                    <p className="text-xl font-bold text-primary">{currencySymbol}{(client.total_purchases || 0).toLocaleString()}</p>
+                    <p className="text-xl font-bold text-foreground dark:text-primary">{currencySymbol}{(client.total_purchases || 0).toLocaleString()}</p>
                     <p className="text-[11px] text-muted-foreground">{client.total_services || 0} servicios</p>
                   </div>
                   <div className="hidden md:block">
