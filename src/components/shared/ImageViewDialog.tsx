@@ -393,7 +393,7 @@ export function ImageViewDialog({
   const onWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     if (!e.ctrlKey && !e.metaKey && Math.abs(e.deltaY) < 30) return;
     e.preventDefault();
-    setScale((s) => clampScale(s - e.deltaY * 0.005));
+    applyScale((s) => s - e.deltaY * 0.005);
   };
 
   if (!open || !currentImage) return null;
@@ -418,6 +418,10 @@ export function ImageViewDialog({
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
         onPointerLeave={onPointerUp}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        onTouchCancel={onTouchEnd}
         onWheel={onWheel}
       >
         <img
@@ -460,7 +464,7 @@ export function ImageViewDialog({
           <button
             type="button"
             aria-label="Alejar"
-            onClick={() => setScale((s) => clampScale(s - 0.5))}
+            onClick={() => applyScale((s) => s - 0.5)}
             className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur"
           >
             <ZoomOut className="w-5 h-5" />
@@ -468,7 +472,7 @@ export function ImageViewDialog({
           <button
             type="button"
             aria-label="Acercar"
-            onClick={() => setScale((s) => clampScale(s + 0.5))}
+            onClick={() => applyScale((s) => s + 0.5)}
             className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur"
           >
             <ZoomIn className="w-5 h-5" />
