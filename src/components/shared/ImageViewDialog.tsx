@@ -113,12 +113,15 @@ export function ImageViewDialog({
   });
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    // Only track touch / pen / mouse-primary for gestures
     pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    gestureMovedRef.current = false;
 
     if (pointersRef.current.size === 1) {
       panLastPointRef.current = { x: e.clientX, y: e.clientY };
       panStartOffsetRef.current = offset;
       swipeStartRef.current = { x: e.clientX, y: e.clientY, t: Date.now() };
+      didPinchRef.current = false;
 
       // Double-tap to zoom
       const now = Date.now();
@@ -141,15 +144,19 @@ export function ImageViewDialog({
       pinchStartCenterRef.current = getCenter(pts[0], pts[1]);
       panStartOffsetRef.current = offset;
       swipeStartRef.current = null;
+      didPinchRef.current = true;
     }
-    e.currentTarget.setPointerCapture?.(e.pointerId);
+    // NOTE: intentionally do NOT call setPointerCapture — it breaks multi-touch
+    // pinch on some mobile browsers (the second touch never reaches the element).
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!pointersRef.current.has(e.pointerId)) return;
     pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    gestureMovedRef.current = true;
 
     if (pointersRef.current.size >= 2) {
+      didPinchRef.current = true;
       const pts = Array.from(pointersRef.current.values());
       const dist = getDistance(pts[0], pts[1]);
       const center = getCenter(pts[0], pts[1]);
@@ -184,6 +191,7 @@ export function ImageViewDialog({
     if (
       scale === 1 &&
       pointersRef.current.size === 0 &&
+      !didPinchRef.current &&
       swipeStartRef.current &&
       images.length > 1
     ) {
@@ -195,6 +203,17 @@ export function ImageViewDialog({
         else handlePrev();
       }
     }
+
+    // Tap (no movement, no pinch) toggles chrome
+    if (
+      pointersRef.current.size === 0 &&
+      !gestureMovedRef.current &&
+      !didPinchRef.current &&
+      Date.now() - (swipeStartRef.current?.t ?? 0) < 300
+    ) {
+      setChromeVisible((v) => !v);
+    }
+
     swipeStartRef.current = null;
 
     if (pointersRef.current.size < 2) {
@@ -208,6 +227,8 @@ export function ImageViewDialog({
     }
     if (pointersRef.current.size === 0) {
       panLastPointRef.current = null;
+      didPinchRef.current = false;
+      gestureMovedRef.current = false;
       if (scale <= 1) {
         setScale(1);
         setOffset({ x: 0, y: 0 });
