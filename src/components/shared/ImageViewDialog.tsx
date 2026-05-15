@@ -109,8 +109,8 @@ export function ImageViewDialog({
       if (e.key === "Escape") onOpenChange(false);
       else if (e.key === "ArrowLeft") handlePrev();
       else if (e.key === "ArrowRight") handleNext();
-      else if (e.key === "+" || e.key === "=") setScale((s) => clampScale(s + 0.5));
-      else if (e.key === "-") setScale((s) => clampScale(s - 0.5));
+      else if (e.key === "+" || e.key === "=") applyScale((s) => s + 0.5);
+      else if (e.key === "-") applyScale((s) => s - 0.5);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -135,6 +135,7 @@ export function ImageViewDialog({
   });
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === "touch") return;
     // Only track touch / pen / mouse-primary for gestures
     pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     gestureMovedRef.current = false;
@@ -148,11 +149,11 @@ export function ImageViewDialog({
       // Double-tap to zoom
       const now = Date.now();
       if (now - lastTapRef.current < 280) {
-        if (scale > 1) {
-          setScale(1);
-          setOffset({ x: 0, y: 0 });
+        if (scaleRef.current > 1) {
+          applyScale(1);
+          applyOffset({ x: 0, y: 0 });
         } else {
-          setScale(2.5);
+          applyScale(2.5);
         }
         lastTapRef.current = 0;
       } else {
@@ -162,9 +163,9 @@ export function ImageViewDialog({
     if (pointersRef.current.size === 2) {
       const pts = Array.from(pointersRef.current.values());
       pinchStartDistanceRef.current = getDistance(pts[0], pts[1]);
-      pinchStartScaleRef.current = scale;
+      pinchStartScaleRef.current = scaleRef.current;
       pinchStartCenterRef.current = getCenter(pts[0], pts[1]);
-      panStartOffsetRef.current = offset;
+      panStartOffsetRef.current = offsetRef.current;
       swipeStartRef.current = null;
       didPinchRef.current = true;
     }
@@ -173,6 +174,7 @@ export function ImageViewDialog({
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === "touch") return;
     if (!pointersRef.current.has(e.pointerId)) return;
     pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     gestureMovedRef.current = true;
@@ -188,9 +190,9 @@ export function ImageViewDialog({
         pinchStartCenterRef.current = center;
         return;
       }
-      setScale(clampScale((dist / pinchStartDistanceRef.current) * pinchStartScaleRef.current));
+      applyScale((dist / pinchStartDistanceRef.current) * pinchStartScaleRef.current);
       if (pinchStartCenterRef.current) {
-        setOffset({
+        applyOffset({
           x: panStartOffsetRef.current.x + (center.x - pinchStartCenterRef.current.x),
           y: panStartOffsetRef.current.y + (center.y - pinchStartCenterRef.current.y),
         });
@@ -198,20 +200,21 @@ export function ImageViewDialog({
       return;
     }
 
-    if (pointersRef.current.size === 1 && scale > 1 && panLastPointRef.current) {
+    if (pointersRef.current.size === 1 && scaleRef.current > 1 && panLastPointRef.current) {
       const dx = e.clientX - panLastPointRef.current.x;
       const dy = e.clientY - panLastPointRef.current.y;
       panLastPointRef.current = { x: e.clientX, y: e.clientY };
-      setOffset((p) => ({ x: p.x + dx, y: p.y + dy }));
+      applyOffset((p) => ({ x: p.x + dx, y: p.y + dy }));
     }
   };
 
   const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === "touch") return;
     pointersRef.current.delete(e.pointerId);
 
     // Swipe nav (only when not zoomed and single touch finished)
     if (
-      scale === 1 &&
+      scaleRef.current === 1 &&
       pointersRef.current.size === 0 &&
       !didPinchRef.current &&
       swipeStartRef.current &&
@@ -245,15 +248,15 @@ export function ImageViewDialog({
     if (pointersRef.current.size === 1) {
       const [pt] = Array.from(pointersRef.current.values());
       panLastPointRef.current = pt;
-      panStartOffsetRef.current = offset;
+      panStartOffsetRef.current = offsetRef.current;
     }
     if (pointersRef.current.size === 0) {
       panLastPointRef.current = null;
       didPinchRef.current = false;
       gestureMovedRef.current = false;
-      if (scale <= 1) {
-        setScale(1);
-        setOffset({ x: 0, y: 0 });
+      if (scaleRef.current <= 1) {
+        applyScale(1);
+        applyOffset({ x: 0, y: 0 });
       }
     }
   };
