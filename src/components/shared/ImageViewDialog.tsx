@@ -23,6 +23,8 @@ interface ImageViewDialogProps {
 const MIN_SCALE = 1;
 const MAX_SCALE = 5;
 
+const clampScale = (v: number) => Math.max(MIN_SCALE, Math.min(MAX_SCALE, v));
+
 export function ImageViewDialog({
   open,
   onOpenChange,
@@ -34,6 +36,8 @@ export function ImageViewDialog({
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [chromeVisible, setChromeVisible] = useState(true);
 
+  const scaleRef = useRef(1);
+  const offsetRef = useRef({ x: 0, y: 0 });
   const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
   const pinchStartDistanceRef = useRef<number | null>(null);
   const pinchStartScaleRef = useRef(1);
@@ -45,7 +49,23 @@ export function ImageViewDialog({
   const gestureMovedRef = useRef(false);
   const didPinchRef = useRef(false);
 
-  const clampScale = (v: number) => Math.max(MIN_SCALE, Math.min(MAX_SCALE, v));
+  const applyScale = (next: number | ((prev: number) => number)) => {
+    setScale((prev) => {
+      const value = clampScale(typeof next === "function" ? next(prev) : next);
+      scaleRef.current = value;
+      return value;
+    });
+  };
+
+  const applyOffset = (
+    next: { x: number; y: number } | ((prev: { x: number; y: number }) => { x: number; y: number }),
+  ) => {
+    setOffset((prev) => {
+      const value = typeof next === "function" ? next(prev) : next;
+      offsetRef.current = value;
+      return value;
+    });
+  };
 
   const resetView = useCallback(() => {
     pointersRef.current.clear();
@@ -54,6 +74,8 @@ export function ImageViewDialog({
     pinchStartCenterRef.current = null;
     panStartOffsetRef.current = { x: 0, y: 0 };
     panLastPointRef.current = null;
+    scaleRef.current = 1;
+    offsetRef.current = { x: 0, y: 0 };
     setScale(1);
     setOffset({ x: 0, y: 0 });
   }, []);
