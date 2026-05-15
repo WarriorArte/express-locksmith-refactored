@@ -42,6 +42,8 @@ export function ImageViewDialog({
   const panLastPointRef = useRef<{ x: number; y: number } | null>(null);
   const swipeStartRef = useRef<{ x: number; y: number; t: number } | null>(null);
   const lastTapRef = useRef<number>(0);
+  const gestureMovedRef = useRef(false);
+  const didPinchRef = useRef(false);
 
   const clampScale = (v: number) => Math.max(MIN_SCALE, Math.min(MAX_SCALE, v));
 
@@ -111,12 +113,15 @@ export function ImageViewDialog({
   });
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    // Only track touch / pen / mouse-primary for gestures
     pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    gestureMovedRef.current = false;
 
     if (pointersRef.current.size === 1) {
       panLastPointRef.current = { x: e.clientX, y: e.clientY };
       panStartOffsetRef.current = offset;
       swipeStartRef.current = { x: e.clientX, y: e.clientY, t: Date.now() };
+      didPinchRef.current = false;
 
       // Double-tap to zoom
       const now = Date.now();
@@ -139,15 +144,19 @@ export function ImageViewDialog({
       pinchStartCenterRef.current = getCenter(pts[0], pts[1]);
       panStartOffsetRef.current = offset;
       swipeStartRef.current = null;
+      didPinchRef.current = true;
     }
-    e.currentTarget.setPointerCapture?.(e.pointerId);
+    // NOTE: intentionally do NOT call setPointerCapture — it breaks multi-touch
+    // pinch on some mobile browsers (the second touch never reaches the element).
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!pointersRef.current.has(e.pointerId)) return;
     pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    gestureMovedRef.current = true;
 
     if (pointersRef.current.size >= 2) {
+      didPinchRef.current = true;
       const pts = Array.from(pointersRef.current.values());
       const dist = getDistance(pts[0], pts[1]);
       const center = getCenter(pts[0], pts[1]);
@@ -182,6 +191,7 @@ export function ImageViewDialog({
     if (
       scale === 1 &&
       pointersRef.current.size === 0 &&
+      !didPinchRef.current &&
       swipeStartRef.current &&
       images.length > 1
     ) {
@@ -193,6 +203,17 @@ export function ImageViewDialog({
         else handlePrev();
       }
     }
+
+    // Tap (no movement, no pinch) toggles chrome
+    if (
+      pointersRef.current.size === 0 &&
+      !gestureMovedRef.current &&
+      !didPinchRef.current &&
+      Date.now() - (swipeStartRef.current?.t ?? 0) < 300
+    ) {
+      setChromeVisible((v) => !v);
+    }
+
     swipeStartRef.current = null;
 
     if (pointersRef.current.size < 2) {
@@ -206,6 +227,8 @@ export function ImageViewDialog({
     }
     if (pointersRef.current.size === 0) {
       panLastPointRef.current = null;
+      didPinchRef.current = false;
+      gestureMovedRef.current = false;
       if (scale <= 1) {
         setScale(1);
         setOffset({ x: 0, y: 0 });
@@ -231,23 +254,23 @@ export function ImageViewDialog({
       role="dialog"
       aria-modal="true"
       aria-label={currentImage.description || "Vista de imagen"}
-      onClick={() => setChromeVisible((v) => !v)}
     >
-      {/* Image surface */}
+      {/* Image surface — owns all gestures and chrome toggling */}
       <div
         className="absolute inset-0 flex items-center justify-center"
+        style={{ touchAction: "none" }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
+        onPointerLeave={onPointerUp}
         onWheel={onWheel}
-        onClick={(e) => e.stopPropagation()}
       >
         <img
           src={resolveStorageUrl(currentImage.url) ?? undefined}
           alt={currentImage.description || "Imagen"}
           draggable={false}
-          className="max-w-full max-h-full object-contain will-change-transform"
+          className="max-w-full max-h-full object-contain will-change-transform pointer-events-none"
           style={{
             transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
             transformOrigin: "center center",
@@ -257,14 +280,24 @@ export function ImageViewDialog({
         />
       </div>
 
-      {/* Top chrome */}
+      {/* Always-on close button (escape hatch even if chrome is hidden) */}
+      <button
+        type="button"
+        aria-label="Cerrar"
+        onClick={() => onOpenChange(false)}
+        className="absolute right-3 w-11 h-11 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur z-10"
+        style={{ top: "calc(env(safe-area-inset-top) + 0.75rem)" }}
+      >
+        <X className="w-5 h-5" />
+      </button>
+
+      {/* Top chrome (counter + zoom buttons) */}
       <div
         className={cn(
-          "absolute top-0 left-0 right-0 flex items-center justify-between p-3 bg-gradient-to-b from-black/70 to-transparent transition-opacity duration-200",
+          "absolute top-0 left-0 right-16 flex items-center justify-between p-3 bg-gradient-to-b from-black/70 to-transparent transition-opacity duration-200",
           chromeVisible ? "opacity-100" : "opacity-0 pointer-events-none",
         )}
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.5rem)" }}
-        onClick={(e) => e.stopPropagation()}
       >
         <div className="text-white/90 text-sm font-medium px-2">
           {images.length > 1 ? `${currentIndex + 1} / ${images.length}` : ""}
@@ -285,14 +318,6 @@ export function ImageViewDialog({
             className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur"
           >
             <ZoomIn className="w-5 h-5" />
-          </button>
-          <button
-            type="button"
-            aria-label="Cerrar"
-            onClick={() => onOpenChange(false)}
-            className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur"
-          >
-            <X className="w-5 h-5" />
           </button>
         </div>
       </div>
