@@ -53,7 +53,7 @@ import { useCategories } from "@/hooks/useCategories";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { ProductFormDialog } from "@/components/products/ProductFormDialog";
 import { ProductDetailSheet } from "@/components/products/ProductDetailSheet";
-import { ProductImageDialog } from "@/components/products/ProductImageDialog";
+import { ImageViewDialog } from "@/components/shared/ImageViewDialog";
 import { InventoryMovementDialog } from "@/components/products/InventoryMovementDialog";
 import { InventoryHistoryDialog } from "@/components/products/InventoryHistoryDialog";
 import { CategoryManagementDialog } from "@/components/products/CategoryManagementDialog";
@@ -909,11 +909,10 @@ export default function Inventario() {
       />
 
       {/* Image Dialog */}
-      <ProductImageDialog
-        open={!!imageProduct}
-        onOpenChange={() => setImageProduct(null)}
-        imageUrl={imageProduct?.image_url || null}
-        productName={imageProduct?.name || ""}
+      <ImageViewDialog
+        open={!!imageProduct && !!imageProduct.image_url}
+        onOpenChange={(nextOpen) => { if (!nextOpen) setImageProduct(null); }}
+        images={imageProduct?.image_url ? [{ url: imageProduct.image_url, description: imageProduct.name }] : []}
       />
 
       {/* Movement Dialog */}
