@@ -36,24 +36,14 @@ import { phpApiUpload, resolveStorageUrl } from "@/lib/phpApi";
 import { cn } from "@/lib/utils";
 import type { Customer } from "@/hooks/useCustomers";
 import { useProducts, type Product } from "@/hooks/useProducts";
-
-interface ServiceItem {
-  tempId: string;
-  product_id: string | null;
-  product_name: string;
-  quantity: number;
-  unit_price: number;
-  subtotal: number;
-}
-
-interface ServiceImage {
-  tempId: string;
-  image_url: string;
-  description: string;
-  id?: string;
-}
-
-const MAX_SERVICE_IMAGES = 2;
+import {
+  MAX_SERVICE_IMAGES,
+  serviceTypes,
+  SERVICE_FORM_TABS_ORDER,
+  type ServiceItem,
+  type ServiceImage,
+  type ServiceFormTab,
+} from "./serviceFormTypes";
 
 interface ServiceFormDialogProps {
   open: boolean;
@@ -61,15 +51,6 @@ interface ServiceFormDialogProps {
   service?: Service | null;
   templateServiceId?: string | null;
 }
-
-const serviceTypes: { value: ServiceType; label: string }[] = [
-  { value: "residential", label: "Residencial" },
-  { value: "commercial", label: "Comercial" },
-  { value: "automotive", label: "Automotriz" },
-  { value: "industrial", label: "Industrial" },
-];
-
-type ServiceFormTab = "servicio" | "productos" | "imagenes" | "cliente" | "costos";
 
 export function ServiceFormDialog({ open, onOpenChange, service, templateServiceId }: ServiceFormDialogProps) {
   const MANUAL_TEMPLATE = "__manual";
