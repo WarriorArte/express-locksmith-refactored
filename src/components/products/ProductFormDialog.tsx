@@ -440,22 +440,6 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
   const invalidFieldClass = "border-destructive placeholder:text-destructive focus-visible:border-destructive";
   const values = form.watch() as any;
 
-  const hasText = (value: unknown) => String(value ?? "").trim().length > 0;
-  const hasNumber = (value: unknown) => {
-    if (value === "" || value === undefined || value === null) return false;
-    const numberValue = Number(value);
-    return Number.isFinite(numberValue) && numberValue >= 0;
-  };
-  const hasPositiveNumber = (value: unknown) => {
-    if (value === "" || value === undefined || value === null) return false;
-    const numberValue = Number(value);
-    return Number.isFinite(numberValue) && numberValue > 0;
-  };
-  const hasEmptyOrPositiveNumber = (value: unknown) => {
-    if (value === "" || value === undefined || value === null) return true;
-    const numberValue = Number(value);
-    return Number.isFinite(numberValue) && numberValue > 0;
-  };
 
   const tabValidationFields: Record<string, KeysOfUnion<ProductFormValues>[]> = isServiceMode
     ? {
