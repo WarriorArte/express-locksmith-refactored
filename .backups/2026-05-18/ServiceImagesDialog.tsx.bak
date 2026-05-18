@@ -380,6 +380,6 @@ export function ServiceImagesDialog({ open, onOpenChange, service: initialServic
         images={viewerImages}
         initialIndex={viewImageIndex ?? 0}
       />
-    </Dialog>
+```    </Dialog>
   );
 }
