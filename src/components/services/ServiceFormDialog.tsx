@@ -98,7 +98,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
   const [images, setImages] = useState<ServiceImage[]>([]);
   const [imageUploaderKey, setImageUploaderKey] = useState(0);
   const pendingFilesRef = useRef(new Map<string, File>());
-  const tabsOrder: ServiceFormTab[] = ["servicio", "productos", "imagenes", "cliente", "costos"];
+  const tabsOrder = SERVICE_FORM_TABS_ORDER;
   const serviceTemplates = (inventoryItems || []).filter(
     (item) => (item.item_type ?? "product") === "service" && item.is_active !== false && item.is_active !== 0,
   );
