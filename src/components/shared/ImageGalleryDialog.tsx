@@ -22,19 +22,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { phpApiRequest, resolveStorageUrl } from "@/lib/phpApi";
-
-interface GalleryFile {
-  filename: string;
-  url: string;
-  previewUrl: string;
-  size: number;
-  mimeType: string;
-  modified: number;
-  access_token?: string;
-  folder?: string;
-  cacheBuster?: number;
-}
+import { resolveStorageUrl } from "@/lib/phpApi";
+import { useGalleryFiles, type GalleryFile } from "@/hooks/useGalleryFiles";
 
 interface ImageGalleryDialogProps {
   open: boolean;
@@ -51,61 +40,23 @@ export function ImageGalleryDialog({
   workshopCode,
   onSelect,
 }: ImageGalleryDialogProps) {
-  const [files, setFiles] = useState<GalleryFile[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { files, loading, error, reload, deleteFile } = useGalleryFiles({
+    folder,
+    workshopCode,
+    enabled: open,
+  });
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [fileToDelete, setFileToDelete] = useState<GalleryFile | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [imageKey, setImageKey] = useState(0);
   const { toast } = useToast();
 
-  const loadFiles = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const params = new URLSearchParams({ action: 'list', folder });
-      if (workshopCode) params.set('workshop_code', workshopCode);
-      const data = await phpApiRequest<any[]>(`/uploads.php?${params}`, {
-        method: "GET",
-      });
-
-      if (Array.isArray(data)) {
-        const filesWithUrls = data.map((file: any) => ({
-          filename: file.filename,
-          url: file.secure_url,
-          previewUrl: file.secure_url,
-          size: file.size,
-          mimeType: file.mimeType,
-          modified: new Date(file.created_at).getTime() / 1000,
-          folder: file.folder || folder,
-          cacheBuster: Date.now()
-        }));
-        
-        setFiles(filesWithUrls);
-        setImageKey(prev => prev + 1);
-      } else {
-                setError('Error al cargar imágenes');
-      }
-    } catch (err) {
-      console.error('ImageGalleryDialog - Exception:', err);
-      setError('Error de conexión');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    if (open) {
-      loadFiles();
-      setSelectedFile(null);
-    }
-  }, [open, folder, workshopCode]);
+    if (open) setSelectedFile(null);
+  }, [open]);
 
   const handleSelect = () => {
-    const file = files.find(f => f.filename === selectedFile);
+    const file = files.find((f) => f.filename === selectedFile);
     if (file) {
       onSelect(file.url);
       onOpenChange(false);
@@ -120,25 +71,13 @@ export function ImageGalleryDialog({
 
   const handleDeleteConfirm = async () => {
     if (!fileToDelete) return;
-    
     setDeleting(true);
     try {
-      const deleteFormData = new FormData();
-      deleteFormData.append('filename', fileToDelete.filename);
-      deleteFormData.append('folder', fileToDelete.folder || folder);
-      if (workshopCode) deleteFormData.append('workshop_code', workshopCode);
-      await phpApiRequest<null>(`/uploads.php?action=delete`, {
-        method: "POST",
-        body: deleteFormData,
-      });
-
+      await deleteFile(fileToDelete);
       toast({ title: "Éxito", description: "Imagen eliminada correctamente" });
-      setFiles(prevFiles => prevFiles.filter(f => f.filename !== fileToDelete.filename));
-      if (selectedFile === fileToDelete.filename) {
-        setSelectedFile(null);
-      }
+      if (selectedFile === fileToDelete.filename) setSelectedFile(null);
     } catch (err) {
-      console.error('Error deleting file:', err);
+      console.error("Error deleting file:", err);
       toast({ title: "Error", description: "Error de conexión al eliminar", variant: "destructive" });
     } finally {
       setDeleting(false);
@@ -153,13 +92,12 @@ export function ImageGalleryDialog({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleDateString('es-MX', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
+  const formatDate = (timestamp: number) =>
+    new Date(timestamp * 1000).toLocaleDateString("es-MX", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
     });
-  };
 
   return (
     <>
@@ -171,7 +109,7 @@ export function ImageGalleryDialog({
                 <ImageIcon className="w-5 h-5" />
                 Galería de Imágenes
               </span>
-              <Button variant="ghost" size="icon" onClick={loadFiles} disabled={loading}>
+              <Button variant="ghost" size="icon" onClick={() => void reload()} disabled={loading}>
                 <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
               </Button>
             </DialogTitle>
@@ -197,7 +135,7 @@ export function ImageGalleryDialog({
             ) : (
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                 {files.map((file) => (
-                  <div key={`${file.filename}-${imageKey}`} className="relative group">
+                  <div key={`${file.filename}-${file.cacheBuster}`} className="relative group">
                     <button
                       type="button"
                       onClick={() => setSelectedFile(file.filename)}
@@ -206,7 +144,7 @@ export function ImageGalleryDialog({
                         "hover:ring-2 hover:ring-primary/50",
                         selectedFile === file.filename
                           ? "border-primary ring-2 ring-primary"
-                          : "border-transparent"
+                          : "border-transparent",
                       )}
                     >
                       <img
@@ -218,12 +156,12 @@ export function ImageGalleryDialog({
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           if (!target.dataset.retried) {
-                            target.dataset.retried = 'true';
+                            target.dataset.retried = "true";
                             const url = new URL(target.src);
-                            url.searchParams.set('t', Date.now().toString());
+                            url.searchParams.set("t", Date.now().toString());
                             target.src = url.toString();
                           } else {
-                            target.src = '/placeholder.svg';
+                            target.src = "/placeholder.svg";
                           }
                         }}
                       />
