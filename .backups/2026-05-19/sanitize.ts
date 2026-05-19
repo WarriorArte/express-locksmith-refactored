@@ -75,3 +75,13 @@ export function sanitizeCSS(css: string): string {
   
   return sanitized;
 }
+
+/**
+ * Sanitize both HTML and CSS for template usage
+ */
+export function sanitizeTemplate(html: string, css: string): { html: string; css: string } {
+  return {
+    html: sanitizeHTML(html),
+    css: sanitizeCSS(css),
+  };
+}

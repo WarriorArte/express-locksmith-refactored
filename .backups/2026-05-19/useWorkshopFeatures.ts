@@ -9,7 +9,7 @@ export interface WorkshopFeature {
 }
 
 // Feature keys mapping to routes and FAB actions
-const FEATURE_ROUTES: Record<string, string[]> = {
+export const FEATURE_ROUTES: Record<string, string[]> = {
   inventory: ["/inventario"],
   quotes: ["/cotizaciones"],
   customers: ["/clientes"],
@@ -17,7 +17,7 @@ const FEATURE_ROUTES: Record<string, string[]> = {
   sales: ["/ventas"],
 };
 
-const FEATURE_FAB_DIALOGS: Record<string, string> = {
+export const FEATURE_FAB_DIALOGS: Record<string, string> = {
   inventory: "product",
   quotes: "quote",
   customers: "customer",
