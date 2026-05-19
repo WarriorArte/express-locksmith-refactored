@@ -143,9 +143,6 @@ export async function phpApiRequest<T>(path: string, init?: RequestInit): Promis
   return payload as T;
 }
 
-export function phpApiBaseUrl() {
-  return API_BASE;
-}
 
 export async function phpApiUpload(file: File, folder: string, workshopCode?: string) {
   const formData = new FormData();

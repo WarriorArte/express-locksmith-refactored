@@ -84,18 +84,3 @@ export function getUserFriendlyError(error: unknown): string {
   // Default generic message
   return 'Ocurrió un error inesperado';
 }
-
-/**
- * Safely extract error message for logging purposes only
- * @param error - The error object
- * @returns The error message string (for internal use)
- */
-export function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  if (typeof error === 'string') {
-    return error;
-  }
-  return 'Unknown error';
-}

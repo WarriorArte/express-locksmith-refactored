@@ -30,7 +30,3 @@ export const countryPhoneCodes = [
   { code: "+91", country: "India", flag: "🇮🇳" },
   { code: "+61", country: "Australia", flag: "🇦🇺" },
 ];
-
-export function getCountryByCode(code: string) {
-  return countryPhoneCodes.find(c => c.code === code);
-}
