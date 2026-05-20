@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import { ImageUploader } from "@/components/shared/ImageUploader";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { phpApiRequest, phpApiUpload } from "@/lib/phpApi";
 
 export function ProfileSettings() {
@@ -15,7 +15,6 @@ export function ProfileSettings() {
   const { currentWorkshop } = useWorkshop();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
   const [profileForm, setProfileForm] = useState({
@@ -24,27 +23,24 @@ export function ProfileSettings() {
     avatar_url: "",
   });
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (!user || !profile?.id) return;
-      
-      setIsLoading(true);
-      const data = await phpApiRequest<any>(`/profiles.php?id=${encodeURIComponent(profile.id)}`, {
+  const { data: profileData, isLoading } = useQuery({
+    queryKey: ["profiles", profile?.id],
+    enabled: !!user && !!profile?.id,
+    queryFn: () =>
+      phpApiRequest<any>(`/profiles.php?id=${encodeURIComponent(profile!.id)}`, {
         method: "GET",
+      }),
+  });
+
+  useEffect(() => {
+    if (profileData) {
+      setProfileForm({
+        full_name: profileData.full_name || "",
+        email: profileData.email || user?.email || "",
+        avatar_url: profileData.avatar_url || "",
       });
-
-      if (data) {
-        setProfileForm({
-          full_name: data.full_name || "",
-          email: data.email || user.email || "",
-          avatar_url: data.avatar_url || "",
-        });
-      }
-      setIsLoading(false);
-    };
-
-    fetchProfile();
-  }, [user, profile?.id]);
+    }
+  }, [profileData, user?.email]);
 
   const handleSaveProfile = async () => {
     if (!user || !profile?.id) return;
