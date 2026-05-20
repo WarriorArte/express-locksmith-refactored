@@ -97,6 +97,7 @@ const App = () => (
         </Suspense>
       </BrowserRouter>
     </TooltipProvider>
+    </LazyMotion>
   </QueryClientProvider>
 );
 
