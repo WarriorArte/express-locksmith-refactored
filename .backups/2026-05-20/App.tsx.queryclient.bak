@@ -27,22 +27,7 @@ const Herramientas = lazy(() => import("./pages/Herramientas"));
 const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      // Datos considerados frescos durante 1 min -> evita refetch al cambiar de pestaña/ventana
-      staleTime: 60_000,
-      // Mantener cache 5 min tras desmontar para navegación rápida back/forward
-      gcTime: 5 * 60_000,
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: true,
-      retry: 1,
-    },
-    mutations: {
-      retry: 0,
-    },
-  },
-});
+const queryClient = new QueryClient();
 
 function detectRouterBase(): string {
   const configuredBase = (import.meta.env.BASE_URL || "/").trim();
