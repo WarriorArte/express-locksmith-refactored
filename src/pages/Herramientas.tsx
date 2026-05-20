@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Wrench, Construction } from "lucide-react";
 

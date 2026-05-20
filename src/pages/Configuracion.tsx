@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 import { 
   Building2,
   Printer,

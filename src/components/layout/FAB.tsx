@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "react-router-dom";
 import { Plus, Package, FileText, Users, Wrench, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 import { 
   Plus, FileText, Printer, Shield, Trash2, Edit, Eye, Loader2, Image as ImageIcon,
   Code

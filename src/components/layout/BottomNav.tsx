@@ -8,7 +8,7 @@ import { useWorkshopFeatures } from "@/hooks/useWorkshopFeatures";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 import {
   Dialog,
   DialogContent,

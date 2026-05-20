@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { resolveStorageUrl } from "@/lib/phpApi";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 import { 
   Plus, 
   Package, 

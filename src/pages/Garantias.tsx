@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatsLayout } from "@/components/ui/stats-layout";
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 import gsap from "gsap";
 import { 
   ShieldCheck, 

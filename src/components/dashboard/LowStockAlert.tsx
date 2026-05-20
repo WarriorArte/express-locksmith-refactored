@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 import { resolveStorageUrl } from "@/lib/phpApi";
 import { AlertTriangle, ExternalLink, Package } from "lucide-react";
 import { useNavigate } from "react-router-dom";
