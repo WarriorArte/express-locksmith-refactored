@@ -81,21 +81,6 @@ export function useQuotes() {
   });
 }
 
-export function useQuote(id: string | undefined) {
-  return useQuery({
-    queryKey: ["quotes", id],
-    queryFn: async () => {
-      if (!id) return null;
-
-      const data = await phpApiRequest<any>(`/quotes.php?id=${encodeURIComponent(id)}`, {
-        method: "GET",
-      });
-
-      return normalizeQuote(data);
-    },
-    enabled: !!id,
-  });
-}
 
 export function useCreateQuote() {
   const queryClient = useQueryClient();

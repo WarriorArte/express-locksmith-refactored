@@ -183,28 +183,6 @@ export function useWarranties() {
   });
 }
 
-// Fetch single warranty by code
-export function useWarrantyByCode(code: string | undefined) {
-  const { currentWorkshop } = useWorkshop();
-
-  return useQuery({
-    queryKey: ["warranty", currentWorkshop?.id, code],
-    queryFn: async () => {
-      if (!code || !currentWorkshop?.id) return null;
-
-      const data = await phpApiRequest<any[]>(`/warranties.php?workshop_id=${encodeURIComponent(currentWorkshop.id)}`, {
-        method: "GET",
-      });
-
-      const found = (data || []).find(
-        (item) => (item.warranty_code || "").toUpperCase() === code.toUpperCase()
-      );
-
-      return found ? normalizeWarranty(found) : null;
-    },
-    enabled: !!code && !!currentWorkshop?.id,
-  });
-}
 
 // Fetch warranty category settings
 export function useWarrantyCategorySettings() {

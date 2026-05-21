@@ -318,11 +318,3 @@ export function Sidebar({
     </>
   );
 }
-
-export function MobileMenuButton({ onClick }: { onClick: () => void }) {
-  return (
-    <Button variant="ghost" size="icon" onClick={onClick} className="lg:hidden">
-      <Menu className="w-[50px] h-[30px]" />
-    </Button>
-  );
-}

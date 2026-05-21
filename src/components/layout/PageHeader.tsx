@@ -118,26 +118,3 @@ export function PageHeader({
   );
 }
 
-/**
- * Small green "+" pill commonly placed in the PageHeader action slot (desktop).
- */
-export function PageHeaderAddButton({
-  onClick,
-  label = "Nuevo",
-  children,
-}: {
-  onClick?: () => void;
-  label?: string;
-  children?: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={label}
-      className="h-10 w-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shadow-[0_0_20px_hsl(var(--primary)/0.35)] active:scale-95 transition-transform"
-    >
-      {children}
-    </button>
-  );
-}
