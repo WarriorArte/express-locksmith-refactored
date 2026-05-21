@@ -31,27 +31,6 @@ export function useAppAdminSettings() {
   });
 }
 
-/**
- * Hook para obtener solo el endpoint de storage
- * Accesible para todos los usuarios autenticados (usa business_settings como fallback)
- */
-export function useStorageEndpoint() {
-  return useQuery({
-    queryKey: ["storage-endpoint"],
-    queryFn: async (): Promise<string | null> => {
-      const adminSettings = await phpApiRequest<Pick<AppAdminSettings, "storage_endpoint"> | null>("/appadmin-settings.php", {
-        method: "GET",
-      });
-
-      if (adminSettings?.storage_endpoint) {
-        return adminSettings.storage_endpoint;
-      }
-
-      return null;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-}
 
 /**
  * Hook para actualizar la configuración global

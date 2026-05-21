@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const toOptionalNumber = z.preprocess(
+const toOptionalNumber = z.preprocess(
   (val) => {
     if (val === "" || val === undefined || val === null) return undefined;
     const num = Number(val);
@@ -9,7 +9,7 @@ export const toOptionalNumber = z.preprocess(
   z.number().min(0, "Debe ser mayor o igual a 0").optional()
 );
 
-export const toRequiredNumber = z.preprocess(
+const toRequiredNumber = z.preprocess(
   (val) => {
     if (val === "" || val === undefined || val === null) return undefined;
     const num = Number(val);

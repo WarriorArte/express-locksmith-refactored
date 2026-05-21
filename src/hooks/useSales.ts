@@ -73,21 +73,6 @@ export function useSales() {
   });
 }
 
-export function useSale(id: string | undefined) {
-  return useQuery({
-    queryKey: ["sales", id],
-    queryFn: async () => {
-      if (!id) return null;
-
-      const data = await phpApiRequest<any>(`/sales.php?id=${encodeURIComponent(id)}`, {
-        method: "GET",
-      });
-
-      return normalizeSale(data);
-    },
-    enabled: !!id,
-  });
-}
 
 export function useCreateSale() {
   const queryClient = useQueryClient();
@@ -129,38 +114,6 @@ export function useCreateSale() {
   });
 }
 
-export function useUpdateSale() {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-  const { currentWorkshop } = useWorkshop();
-
-  return useMutation({
-    mutationFn: async ({ id, ...sale }: SaleMutationData & { id: string }) => {
-      const data = await phpApiRequest<any>(`/sales.php?id=${encodeURIComponent(id)}`, {
-        method: "PUT",
-        body: JSON.stringify(sale),
-      });
-
-      return normalizeSale(data);
-    },
-    onSuccess: () => {
-      const wid = currentWorkshop?.id;
-      queryClient.invalidateQueries({ queryKey: ["sales", wid] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard-stats", wid] });
-      toast({
-        title: "Venta actualizada",
-        description: "Los cambios han sido guardados",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-}
 
 export function useDeleteSale() {
   const queryClient = useQueryClient();
