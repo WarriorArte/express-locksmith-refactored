@@ -312,7 +312,7 @@ export function ImageViewDialog({
           e.stopPropagation();
           onOpenChange(false);
         }}
-        className="absolute right-3 w-12 h-12 rounded-full bg-black/70 hover:bg-black/85 text-white flex items-center justify-center backdrop-blur z-[300] pointer-events-auto touch-none"
+        className="absolute right-3 w-12 h-12 rounded-full bg-black/70 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur z-[300] pointer-events-auto touch-none"
         style={{ top: "calc(env(safe-area-inset-top) + 0.75rem)", pointerEvents: "auto", touchAction: "manipulation" }}
       >
         <X className="w-5 h-5" />
