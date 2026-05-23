@@ -65,8 +65,13 @@ export function ImageViewDialog({
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
+    const prevPointerEvents = document.body.style.pointerEvents;
     document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = prev; };
+    document.body.style.pointerEvents = "auto";
+    return () => {
+      document.body.style.overflow = prev;
+      document.body.style.pointerEvents = prevPointerEvents;
+    };
   }, [open]);
 
   useEffect(() => {
@@ -239,12 +244,18 @@ export function ImageViewDialog({
   const lightbox = (
     <div
       ref={lightboxRef}
-      className="fixed inset-0 z-[200] bg-black/95 overflow-hidden select-none"
-      style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
+      className="fixed inset-0 z-[200] bg-black/95 overflow-hidden select-none pointer-events-auto"
+      style={{
+        paddingTop: "env(safe-area-inset-top)",
+        paddingBottom: "env(safe-area-inset-bottom)",
+        pointerEvents: "auto",
+        touchAction: "none",
+      }}
       role="dialog"
       aria-modal="true"
-      onClick={(e) => e.stopPropagation()}
-      onPointerDown={(e) => e.stopPropagation()}
+      onClickCapture={(e) => e.stopPropagation()}
+      onPointerDownCapture={(e) => e.stopPropagation()}
+      onTouchStartCapture={(e) => e.stopPropagation()}
     >
 
       <div 
@@ -292,10 +303,17 @@ export function ImageViewDialog({
       <button
         type="button"
         aria-label="Cerrar"
-        onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); onOpenChange(false); }}
-        onClick={(e) => { e.stopPropagation(); onOpenChange(false); }}
-        className="absolute right-3 w-11 h-11 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur z-[50]"
-        style={{ top: "calc(env(safe-area-inset-top) + 0.75rem)" }}
+        onPointerDown={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          onOpenChange(false);
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpenChange(false);
+        }}
+        className="absolute right-3 w-12 h-12 rounded-full bg-black/70 hover:bg-black/85 text-white flex items-center justify-center backdrop-blur z-[300] pointer-events-auto touch-none"
+        style={{ top: "calc(env(safe-area-inset-top) + 0.75rem)", pointerEvents: "auto", touchAction: "manipulation" }}
       >
         <X className="w-5 h-5" />
       </button>
