@@ -268,8 +268,9 @@ export function ImageViewDialog({
       <button
         type="button"
         aria-label="Cerrar"
-        onClick={() => onOpenChange(false)}
-        className="absolute right-3 w-11 h-11 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur z-10"
+        onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); onOpenChange(false); }}
+        onClick={(e) => { e.stopPropagation(); onOpenChange(false); }}
+        className="absolute right-3 w-11 h-11 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur z-[50]"
         style={{ top: "calc(env(safe-area-inset-top) + 0.75rem)" }}
       >
         <X className="w-5 h-5" />
@@ -277,13 +278,14 @@ export function ImageViewDialog({
 
       {/* Chrome superior: contador + zoom */}
       <div
-        className="absolute top-0 left-0 right-16 flex items-center justify-between p-3 bg-gradient-to-b from-black/70 to-transparent pointer-events-none"
+        className="absolute top-0 left-0 right-16 flex items-center justify-between p-3 bg-gradient-to-b from-black/70 to-transparent pointer-events-none z-[40]"
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.5rem)" }}
       >
         <span className="text-white/90 text-sm font-medium px-2">
           {images.length > 1 ? `${imageIndex + 1} / ${images.length}` : ""}
         </span>
-        <div className="flex items-center gap-1 pointer-events-auto">
+        {/* Botones de zoom: solo desktop (en móvil se usa pinch / doble-tap) */}
+        <div className="hidden sm:flex items-center gap-1 pointer-events-auto">
           <button
             type="button"
             aria-label="Alejar"
@@ -309,6 +311,7 @@ export function ImageViewDialog({
           </button>
         </div>
       </div>
+
 
       {/* Nav lateral — solo desktop */}
       {images.length > 1 && (
