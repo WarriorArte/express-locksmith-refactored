@@ -364,5 +364,5 @@ export function ImageViewDialog({
     </div>
   );
 
-  return createPortal(lightbox, document.body);
+  return lightbox;
 }
