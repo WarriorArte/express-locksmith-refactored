@@ -1,6 +1,7 @@
 import { AnimatePresence, m as motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { resolveStorageUrl } from "@/lib/phpApi";
 import { cn } from "@/lib/utils";
 
@@ -210,12 +211,34 @@ export function ImageViewDialog({
   };
   // -----------------------------------
 
+  // Ref del contenedor para intercepción de eventos a nivel document.
+  const lightboxRef = useRef<HTMLDivElement | null>(null);
+
+  // Bloquea los detectores "click-outside" de Radix (Dialog/Sheet/Popover/etc.)
+  // mientras el visor está abierto, deteniendo los eventos en fase de captura
+  // ANTES de que lleguen a los listeners de document que usa Radix.
+  useEffect(() => {
+    if (!open) return;
+    const stopIfInside = (e: Event) => {
+      const target = e.target as Node | null;
+      if (target && lightboxRef.current?.contains(target)) {
+        e.stopPropagation();
+      }
+    };
+    const types = ["pointerdown", "mousedown", "touchstart", "click"] as const;
+    types.forEach((t) => document.addEventListener(t, stopIfInside, true));
+    return () => {
+      types.forEach((t) => document.removeEventListener(t, stopIfInside, true));
+    };
+  }, [open]);
+
   if (!open || images.length === 0) return null;
   const currentImage = images[imageIndex];
   if (!currentImage) return null;
 
   const lightbox = (
     <div
+      ref={lightboxRef}
       className="fixed inset-0 z-[200] bg-black/95 overflow-hidden select-none"
       style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
       role="dialog"
@@ -223,6 +246,7 @@ export function ImageViewDialog({
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
     >
+
       <div 
         className="relative w-full h-full flex items-center justify-center overflow-hidden touch-none"
         onTouchStart={handleTouchStart}
@@ -367,5 +391,5 @@ export function ImageViewDialog({
     </div>
   );
 
-  return lightbox;
+  return createPortal(lightbox, document.body);
 }
