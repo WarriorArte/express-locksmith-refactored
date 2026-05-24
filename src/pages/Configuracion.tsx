@@ -51,7 +51,7 @@ import { ImageUploader } from "@/components/shared/ImageUploader";
 import { phpApiUpload } from "@/lib/phpApi";
 import { BackupManager } from "@/components/settings/BackupManager";
 import { ThermalPrinterPreview } from "@/components/settings/ThermalPrinterPreview";
-import { countryPhoneCodes } from "@/lib/countryPhoneCodes";
+import { COUNTRIES, getCountryByCode, inferCountryCode } from "@/lib/countries";
 
 export default function Configuracion() {
   const [activeTab, setActiveTab] = useState<string>(
