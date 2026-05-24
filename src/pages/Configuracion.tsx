@@ -83,6 +83,7 @@ export default function Configuracion() {
     logo_url: "",
     currency_symbol: "$",
     phone_country_code: "+52",
+    country_code: "MX",
     printer_model: "80mm",
     print_logo: true,
     auto_cut: true,
