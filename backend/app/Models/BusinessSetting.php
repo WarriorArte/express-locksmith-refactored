@@ -16,6 +16,7 @@ final class BusinessSetting extends Model
         'name',
         'phone',
         'phone_country_code',
+        'country_code',
         'address',
         'email',
         'website',

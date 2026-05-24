@@ -32,8 +32,8 @@ export function DetailViewFooter({ onPrint, onEdit, onDelete, overflowItems }: P
   const MainIcon = mainAction?.icon;
 
   return (
-    <div className="pt-4 border-t mt-2">
-      <div className="flex items-center gap-2 w-full">
+    <div className="w-full">
+      <div className="flex w-full items-center gap-2">
         {onDelete && (
           <button
             type="button"

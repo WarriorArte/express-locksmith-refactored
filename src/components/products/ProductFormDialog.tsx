@@ -55,6 +55,7 @@ import { Badge } from "@/components/ui/badge";
 import { useCategories } from "@/hooks/useCategories";
 import { useCreateProduct, useUpdateProduct, type Product } from "@/hooks/useProducts";
 import { useProducts } from "@/hooks/useProducts";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { Loader2, Package, DollarSign, Warehouse, FileText, Plus, X, Wrench } from "lucide-react";
 import { ImageUploader } from "@/components/shared/ImageUploader";
 import { useWorkshop } from "@/hooks/useWorkshop";
@@ -73,6 +74,7 @@ type ProductFormTab = "general" | "productos" | "precios" | "inventario" | "nota
 export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDialogProps) {
   const { data: categories } = useCategories();
   const { data: allProducts } = useProducts();
+  const { data: businessSettings } = useBusinessSettings();
   const { currentWorkshop } = useWorkshop();
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
@@ -354,7 +356,8 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
   const serviceLaborCost = Number(values.labor_cost || 0);
   const serviceDiscountPrice = Number(values.discount || 0);
   const servicePrice = Math.max(0, serviceLaborCost + serviceProductsSubtotal);
-  const formatMoney = (value: number) => `$${Number(value || 0).toLocaleString()}`;
+  const currencySymbol = businessSettings?.currency_symbol || "$";
+  const formatMoney = (value: number) => `${currencySymbol}${Number(value || 0).toLocaleString()}`;
 
   const handleTabChange = (nextTab: string) => {
     const typedNextTab = nextTab as ProductFormTab;

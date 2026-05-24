@@ -249,6 +249,44 @@ export function ImageViewDialog({
   };
   // -----------------------------------
 
+  // --- CONTROL DE ARRASTRE CON MOUSE (DESKTOP) ---
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (scale <= 1) return; // Solo permitir arrastrar si hay zoom
+    if (e.button !== 0) return; // Solo clic izquierdo
+    e.preventDefault(); // Evitar el drag por defecto del navegador para imágenes
+    e.stopPropagation();
+    
+    touchState.current = {
+      ...touchState.current,
+      isDragging: true,
+      startX: e.clientX,
+      startY: e.clientY,
+      lastPan: { ...pan }
+    };
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!touchState.current.isDragging || scale <= 1) return;
+    e.stopPropagation();
+    
+    const deltaX = e.clientX - touchState.current.startX;
+    const deltaY = e.clientY - touchState.current.startY;
+
+    setPan(clampPan(
+      touchState.current.lastPan.x + deltaX,
+      touchState.current.lastPan.y + deltaY,
+      scale,
+    ));
+  };
+
+  const handleMouseUpOrLeave = (e: React.MouseEvent) => {
+    if (touchState.current.isDragging) {
+      e.stopPropagation();
+      touchState.current.isDragging = false;
+    }
+  };
+  // -----------------------------------
+
   const lightboxRef = useRef<HTMLDivElement | null>(null);
   const currentImage = images.length > 0 ? images[imageIndex] : null;
 
@@ -279,6 +317,10 @@ export function ImageViewDialog({
             onTouchEnd={handleTouchEnd}
             onTouchCancel={handleTouchEnd}
             onDoubleClick={handleDoubleClick}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUpOrLeave}
+            onMouseLeave={handleMouseUpOrLeave}
           >
             <AnimatePresence initial={false} custom={direction}>
               <motion.div

@@ -32,6 +32,7 @@ export interface BusinessSettingsRow extends BaseRow {
   printer_model?: string | null;
   currency_symbol?: string | null;
   phone_country_code?: string | null;
+  country_code?: string | null;
   print_logo?: boolean | number;
   auto_cut?: boolean | number;
 }

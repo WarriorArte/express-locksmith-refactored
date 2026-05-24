@@ -466,7 +466,7 @@ export default function Inventario() {
                         <div className="text-[13px] font-extrabold text-foreground dark:text-primary leading-tight">
                           {currencySymbol}{serviceTotals?.totalWithProducts.toLocaleString()}
                         </div>
-                        <div className="text-[12px] text-muted-foreground leading-tight">
+                        <div className="text-[12px] text-destructive leading-tight">
                           Descuento: {currencySymbol}{serviceTotals?.discount.toLocaleString()}
                         </div>
                       </div>
@@ -483,7 +483,7 @@ export default function Inventario() {
                         <div className="text-[13px] font-extrabold text-foreground dark:text-primary leading-tight">
                           {currencySymbol}{Number(product.sale_price_max).toLocaleString()}
                         </div>
-                        <div className="text-[12px] text-muted-foreground leading-tight">
+                        <div className="text-[12px] text-destructive leading-tight">
                           Descuento: {currencySymbol}{Number(product.sale_price_min).toLocaleString()}
                         </div>
                       </div>
@@ -714,7 +714,7 @@ export default function Inventario() {
                       <div className="text-[20px] font-extrabold text-foreground dark:text-success leading-tight">
                         {currencySymbol}{serviceTotals?.totalWithProducts.toLocaleString()}
                       </div>
-                      <div className="text-[11px] text-muted-foreground leading-tight">
+                      <div className="text-[11px] text-destructive leading-tight">
                         Descuento: {currencySymbol}{serviceTotals?.discount.toLocaleString()}
                       </div>
                     </div>
@@ -734,7 +734,7 @@ export default function Inventario() {
                       <div className="text-[11px] text-muted-foreground leading-tight">
                         Costo: {currencySymbol}{Number(product.purchase_price_local || 0).toLocaleString()}
                       </div>
-                      <div className="text-[11px] text-muted-foreground leading-tight">
+                      <div className="text-[11px] text-destructive leading-tight">
                         Descuento: {currencySymbol}{Number(product.sale_price_min || 0).toLocaleString()}
                       </div>
                     </div>

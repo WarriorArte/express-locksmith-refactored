@@ -352,8 +352,8 @@ export default function Ventas() {
                 {/* Header: folio + total */}
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="p-2.5 rounded-xl bg-secondary-light flex-shrink-0">
-                      <ShoppingCart className="w-5 h-5 text-secondary" />
+                    <div className="p-2.5 rounded-xl bg-primary-light text-primary border border-primary/20 flex-shrink-0">
+                      <ShoppingCart className="w-5 h-5" />
                     </div>
                     <div>
                       <p className="font-mono text-sm text-foreground dark:text-primary font-semibold leading-tight">{sale.sale_number}</p>

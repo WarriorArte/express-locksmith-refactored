@@ -145,7 +145,7 @@ export function ProductDetailSheet({
               <>
                 <Row label="Mano de obra" value={`${currencySymbol}${labor.toLocaleString()}`} />
                 <Row label="Productos" value={`${currencySymbol}${serviceProductsSubtotal.toLocaleString()}`} />
-                <Row label="Precio con descuento" value={`${currencySymbol}${discount.toLocaleString()}`} accent="text-warning" />
+                <Row label="Precio con descuento" value={`${currencySymbol}${discount.toLocaleString()}`} accent="text-destructive" />
                 <div className="flex justify-between items-center pt-2 mt-2 border-t border-border">
                   <span className="text-[13px] font-bold text-foreground">Precio del servicio</span>
                   <span className="text-base font-extrabold text-foreground dark:text-primary">
@@ -162,7 +162,7 @@ export function ProductDetailSheet({
                 <Row
                   label="Precio con descuento"
                   value={`${currencySymbol}${Number(product.sale_price_min || 0).toLocaleString()}`}
-                  accent="text-warning"
+                  accent="text-destructive"
                 />
                 <div className="flex justify-between items-center pt-2 mt-2 border-t border-border">
                   <span className="text-[13px] font-bold text-foreground">Precio sugerido</span>

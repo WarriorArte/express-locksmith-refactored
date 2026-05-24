@@ -116,6 +116,7 @@ CREATE TABLE IF NOT EXISTS business_settings (
   name VARCHAR(255) NOT NULL DEFAULT 'Mi Cerrajeria',
   phone VARCHAR(40) NULL,
   phone_country_code VARCHAR(10) DEFAULT '+52',
+  country_code CHAR(2) NULL,
   address TEXT NULL,
   email VARCHAR(320) NULL,
   website VARCHAR(255) NULL,

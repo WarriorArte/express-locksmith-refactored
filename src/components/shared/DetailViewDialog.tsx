@@ -2,11 +2,11 @@ import { useState } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/responsive-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
@@ -76,43 +76,49 @@ export function DetailViewDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent
-          disableSwipeToClose={viewingImageIndex !== null}
-          className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto"
-        >
+        <DialogContent fixedHeight disableSwipeToClose={viewingImageIndex !== null} className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${config.color}`}>
-                <Icon className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="font-mono">{data.number}</span>
-                <span className="text-muted-foreground ml-2">- {config.label}</span>
-              </div>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <span className={`inline-flex size-8 items-center justify-center rounded-xl ${config.color}`}>
+                <Icon className="w-4 h-4" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-mono text-foreground dark:text-primary">{data.number}</span>
+                <span className="block text-xs font-medium text-muted-foreground">{config.label}</span>
+              </span>
               {statusConfig && <Badge className={statusConfig.color}>{statusConfig.label}</Badge>}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-6">
-            {/* General Info */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <div className="flex items-center gap-2 text-sm">
-                <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                <span className="text-muted-foreground">Fecha:</span>
-                <span className="truncate">
+          <div className="flex flex-col gap-3 pb-2">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-xl bg-[hsl(var(--surface-2))] px-3 py-2.5">
+                <div className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <Calendar className="w-3.5 h-3.5" />
+                  Fecha
+                </div>
+                <div className="truncate text-[13px] font-semibold text-foreground">
                   {format(parseISO(data.date), "dd MMM yyyy HH:mm", { locale: es })}
-                </span>
+                </div>
               </div>
+
               {data.valid_until && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                  <span className="text-muted-foreground">Válido hasta:</span>
-                  <span>{format(parseISO(data.valid_until), "dd MMM yyyy", { locale: es })}</span>
+                <div className="rounded-xl bg-[hsl(var(--surface-2))] px-3 py-2.5">
+                  <div className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <Calendar className="w-3.5 h-3.5" />
+                    Valido hasta
+                  </div>
+                  <div className="truncate text-[13px] font-semibold text-foreground">
+                    {format(parseISO(data.valid_until), "dd MMM yyyy", { locale: es })}
+                  </div>
                 </div>
               )}
+
               {data.payment_method && (
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-muted-foreground">Pago:</span>
+                <div className="rounded-xl bg-[hsl(var(--surface-2))] px-3 py-2.5">
+                  <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Pago
+                  </div>
                   <Badge variant="outline" className="text-xs">
                     {paymentMethodLabels[data.payment_method] || data.payment_method}
                   </Badge>
@@ -121,62 +127,58 @@ export function DetailViewDialog({
             </div>
 
             {(data.customer_name || data.customer_phone || data.customer_email) && (
-              <>
-                <Separator />
+              <div className="rounded-2xl bg-[hsl(var(--surface-2))] p-3.5">
                 <DetailViewCustomer data={data} />
-              </>
+              </div>
             )}
 
             {(data.description || data.problem) && (
-              <>
-                <Separator />
-                <div>
-                  <h4 className="font-semibold mb-2">Descripción</h4>
-                  <p className="text-sm text-muted-foreground">{data.description}</p>
-                  {data.problem && (
-                    <div className="mt-2">
-                      <span className="text-sm font-medium">Solución: </span>
-                      <span className="text-sm text-muted-foreground">{data.problem}</span>
-                    </div>
-                  )}
-                </div>
-              </>
+              <div className="rounded-2xl bg-[hsl(var(--surface-2))] p-3.5">
+                <h4 className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Descripcion
+                </h4>
+                <p className="text-sm text-foreground">{data.description}</p>
+                {data.problem && (
+                  <p className="mt-1.5 text-[13px] text-muted-foreground">
+                    <span className="font-semibold text-foreground">Solucion: </span>
+                    {data.problem}
+                  </p>
+                )}
+              </div>
             )}
 
             {data.type === "service" && images.length > 0 && (
-              <>
-                <Separator />
+              <div className="rounded-2xl bg-[hsl(var(--surface-2))] p-3.5">
                 <DetailViewImages images={images} onView={setViewingImageIndex} />
-              </>
+              </div>
             )}
 
             {data.items.length > 0 && (
-              <>
-                <Separator />
-                <DetailViewItems type={data.type} items={data.items} currencySymbol={currencySymbol} />
-              </>
+              <DetailViewItems type={data.type} items={data.items} currencySymbol={currencySymbol} />
             )}
 
-            <Separator />
-            <DetailViewTotals data={data} currencySymbol={currencySymbol} />
+            <div className="rounded-2xl bg-[hsl(var(--surface-2))] p-3.5">
+              <DetailViewTotals data={data} currencySymbol={currencySymbol} />
+            </div>
 
             {data.notes && (
-              <>
-                <Separator />
-                <div>
-                  <h4 className="font-semibold mb-2">Notas</h4>
-                  <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">{data.notes}</p>
-                </div>
-              </>
+              <div className="rounded-2xl bg-[hsl(var(--surface-2))] p-3.5">
+                <h4 className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Notas
+                </h4>
+                <p className="whitespace-pre-wrap text-[13px] text-foreground">{data.notes}</p>
+              </div>
             )}
           </div>
 
-          <DetailViewFooter
-            onPrint={onPrint}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            overflowItems={overflowItems}
-          />
+          <DialogFooter className="pt-1 gap-2">
+            <DetailViewFooter
+              onPrint={onPrint}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              overflowItems={overflowItems}
+            />
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
