@@ -683,9 +683,35 @@ function MobileConfigTabs({
               <Input value={businessForm.phone} onChange={(e) => setBusinessForm((p: any) => ({ ...p, phone: e.target.value }))} />
             </div>
             <div>
-              <Label>Símbolo moneda</Label>
-              <Input maxLength={5} value={businessForm.currency_symbol}
-                onChange={(e) => setBusinessForm((p: any) => ({ ...p, currency_symbol: e.target.value }))} />
+              <Label>País</Label>
+              <Select
+                value={businessForm.country_code}
+                onValueChange={(value) => {
+                  const info = getCountryByCode(value);
+                  setBusinessForm((p: any) => ({
+                    ...p,
+                    country_code: value,
+                    currency_symbol: info?.currencySymbol ?? p.currency_symbol,
+                    phone_country_code: info?.dial ?? p.phone_country_code,
+                  }));
+                }}
+              >
+                <SelectTrigger><SelectValue placeholder="País" /></SelectTrigger>
+                <SelectContent className="max-h-[260px]">
+                  {COUNTRIES.map((c) => (
+                    <SelectItem key={c.code} value={c.code}>
+                      <span className="flex items-center gap-2">
+                        <span>{c.flag}</span>
+                        <span>{c.name}</span>
+                        <span className="text-muted-foreground text-xs">{c.currencySymbol}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Moneda: <strong>{businessForm.currency_symbol}</strong> · Tel: <strong>{businessForm.phone_country_code}</strong>
+              </p>
             </div>
           </div>
           <div>
