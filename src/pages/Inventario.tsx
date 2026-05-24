@@ -22,6 +22,7 @@ import {
   Palette,
   AlertTriangle,
   ShoppingCart,
+  Wrench,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -150,6 +151,21 @@ export default function Inventario() {
     if ((product.item_type ?? "product") === "service") return "normal";
     const totalStock = product.stock_store + product.stock_warehouse;
     return totalStock < product.min_stock ? "low" : "normal";
+  };
+
+  const getServiceTotals = (product: Product) => {
+    const labor = Number(product.labor_cost || 0);
+    const discount = Number(product.discount || 0);
+    const productsSubtotal = (product.service_products || []).reduce(
+      (sum, item) => sum + Number(item.subtotal || 0),
+      0,
+    );
+    return {
+      labor,
+      discount,
+      productsSubtotal,
+      totalWithProducts: Math.max(0, labor + productsSubtotal),
+    };
   };
 
   const handleEdit = (product: Product) => {
@@ -390,6 +406,7 @@ export default function Inventario() {
               const cc = getCategoryColor(product.category_id);
               const cn_ = getCategoryName(product.category_id);
               const serviceTypeLabel = getServiceTypeLabel(product.service_type);
+              const serviceTotals = isService ? getServiceTotals(product) : null;
               return (
                 <motion.div
                   key={product.id}
@@ -397,60 +414,65 @@ export default function Inventario() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.08 }}
                   onClick={() => openDetail(product)}
-                  className="bg-card border border-border rounded-2xl overflow-hidden text-left active:scale-[0.98] transition-transform"
+                  className="flex flex-col h-full bg-card border border-border rounded-2xl overflow-hidden text-left active:scale-[0.98] transition-transform"
                 >
-                  <div className="relative aspect-square bg-[hsl(var(--surface-2))] flex items-center justify-center">
-                    {product.image_url ? (
-                      <img src={resolveStorageUrl(product.image_url) ?? undefined} alt={product.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <Package className="w-9 h-9 text-muted-foreground" />
-                    )}
-                    <span
-                      className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold"
-                      style={isService ? getServiceTypeBadgeStyle() : getCategoryBadgeStyle(product.category_id)}
-                    >
-                      {isService ? serviceTypeLabel : cn_}
-                    </span>
-                    <span
-                      onClick={(e) => { e.stopPropagation(); handleEdit(product); }}
-                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-lg bg-foreground/40 backdrop-blur flex items-center justify-center"
-                    >
-                      <Edit className="w-3 h-3 text-background" />
-                    </span>
-                    {!isService && (
+                  {/* Contenedor de la miniatura (cuadrado garantizado) */}
+                  <div className="relative w-full pb-[100%] bg-[hsl(var(--surface-2))] shrink-0">
+                    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+                      {product.image_url ? (
+                        <img src={resolveStorageUrl(product.image_url) ?? undefined} alt={product.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <Package className="w-9 h-9 text-muted-foreground" />
+                      )}
                       <span
-                        className={cn(
-                          "absolute bottom-1.5 right-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold",
-                          status === "low" ? "bg-warning/20 text-warning" : "bg-success/20 text-foreground dark:text-success",
-                        )}
+                        className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold z-10"
+                        style={isService ? getServiceTypeBadgeStyle() : getCategoryBadgeStyle(product.category_id)}
                       >
-                        {status === "low" ? "Stock bajo" : "En stock"}
+                        {isService ? serviceTypeLabel : cn_}
                       </span>
-                    )}
+                      <span
+                        onClick={(e) => { e.stopPropagation(); handleEdit(product); }}
+                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-lg bg-foreground/40 backdrop-blur flex items-center justify-center z-10"
+                      >
+                        <Edit className="w-3 h-3 text-background" />
+                      </span>
+                      {!isService && (
+                        <span
+                          className={cn(
+                            "absolute bottom-1.5 right-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold z-10",
+                            status === "low" ? "bg-warning/20 text-warning" : "bg-success/20 text-foreground dark:text-success",
+                          )}
+                        >
+                          {status === "low" ? "Stock bajo" : "En stock"}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="px-2.5 py-2.5">
+                  <div className="flex flex-col flex-1 p-2.5">
                     <div className="text-[12px] font-bold text-foreground leading-tight line-clamp-2 mb-1.5 min-h-[28px]">
                       {product.name}
                     </div>
                     {isService ? (
-                      <>
-                        <div className="flex gap-1.5 mb-1">
-                          <span className="text-[10px] text-muted-foreground">
-                            Mano de obra: <span className="font-semibold">{currencySymbol}{Number(product.labor_cost || 0).toLocaleString()}</span>
+                      <div className="min-h-[72px] space-y-1">
+                        <div className="flex gap-3">
+                          <span className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+                            <Wrench className="w-4 h-4" />{currencySymbol}{serviceTotals?.labor.toLocaleString()}
+                          </span>
+                          <span className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+                            <Package className="w-4 h-4" />
+                            {currencySymbol}{serviceTotals?.productsSubtotal.toLocaleString()}
                           </span>
                         </div>
                         <div className="text-[13px] font-extrabold text-foreground dark:text-primary leading-tight">
-                          Total: {currencySymbol}{Number((Number(product.labor_cost || 0) - Number(product.discount || 0)).toFixed(2)).toLocaleString()}
+                          {currencySymbol}{serviceTotals?.totalWithProducts.toLocaleString()}
                         </div>
-                        {Number(product.discount || 0) > 0 && (
-                          <div className="text-[10px] text-muted-foreground">
-                            Descuento: {currencySymbol}{Number(product.discount).toLocaleString()}
-                          </div>
-                        )}
-                      </>
+                        <div className="text-[12px] text-muted-foreground leading-tight">
+                          Descuento: {currencySymbol}{serviceTotals?.discount.toLocaleString()}
+                        </div>
+                      </div>
                     ) : (
-                      <>
-                        <div className="flex gap-3 mb-1.5">
+                      <div className="min-h-[72px] space-y-1">
+                        <div className="flex gap-3">
                           <span className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
                             <Store className="w-4 h-4" />T: {product.stock_store}
                           </span>
@@ -461,14 +483,14 @@ export default function Inventario() {
                         <div className="text-[13px] font-extrabold text-foreground dark:text-primary leading-tight">
                           {currencySymbol}{Number(product.sale_price_max).toLocaleString()}
                         </div>
-                        <div className="text-[10px] text-muted-foreground">
+                        <div className="text-[12px] text-muted-foreground leading-tight">
                           Descuento: {currencySymbol}{Number(product.sale_price_min).toLocaleString()}
                         </div>
-                      </>
+                      </div>
                     )}
                     <Button
                       type="button"
-                      className="w-full h-8 mt-2 rounded-xl bg-primary text-primary-foreground hover:bg-primary-hover text-[11px] font-semibold"
+                      className="w-full h-8 mt-auto rounded-xl bg-primary text-primary-foreground hover:bg-primary-hover text-[11px] font-semibold"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleSell(product);
@@ -569,13 +591,14 @@ export default function Inventario() {
             const status = getStockStatus(product);
             const isService = (product.item_type ?? "product") === "service";
             const serviceTypeLabel = getServiceTypeLabel(product.service_type);
+            const serviceTotals = isService ? getServiceTotals(product) : null;
             return (
               <motion.div
                 key={product.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.08 }}
-                className="card-elevated overflow-hidden group"
+                className="card-elevated overflow-hidden group h-full flex flex-col"
               >
                 {/* Product Image */}
                 <div className="relative aspect-square bg-muted/50 flex items-center justify-center cursor-pointer" onClick={() => { setDetailProduct(product); setDetailOpen(true); }}>
@@ -674,27 +697,29 @@ export default function Inventario() {
                 </div>
 
                 {/* Product Info */}
-                <div className="px-3 pb-3 pt-2.5 space-y-2.5">
-                  <h3 className="font-semibold text-foreground line-clamp-2 text-sm sm:text-base">{product.name}</h3>
+                <div className="px-3 pb-3 pt-2.5 space-y-2.5 flex-1">
+                  <h3 className="font-semibold text-foreground line-clamp-2 text-sm sm:text-base min-h-[40px]">{product.name}</h3>
 
                   {isService ? (
-                    <>
-                      <div className="flex gap-1.5">
-                        <span className="text-[11px] text-muted-foreground">
-                          Mano de obra: <span className="font-semibold">{currencySymbol}{Number(product.labor_cost || 0).toLocaleString()}</span>
+                    <div className="min-h-[92px] space-y-1.5">
+                      <div className="flex gap-3">
+                        <span className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+                          <Wrench className="w-4 h-4" />{currencySymbol}{serviceTotals?.labor.toLocaleString()}
+                        </span>
+                        <span className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+                          <Package className="w-4 h-4" />
+                          {currencySymbol}{serviceTotals?.productsSubtotal.toLocaleString()}
                         </span>
                       </div>
                       <div className="text-[20px] font-extrabold text-foreground dark:text-success leading-tight">
-                        Total: {currencySymbol}{Number((Number(product.labor_cost || 0) - Number(product.discount || 0)).toFixed(2)).toLocaleString()}
+                        {currencySymbol}{serviceTotals?.totalWithProducts.toLocaleString()}
                       </div>
-                      {Number(product.discount || 0) > 0 && (
-                        <div className="text-[11px] text-muted-foreground leading-tight">
-                          Descuento: {currencySymbol}{Number(product.discount).toLocaleString()}
-                        </div>
-                      )}
-                    </>
+                      <div className="text-[11px] text-muted-foreground leading-tight">
+                        Descuento: {currencySymbol}{serviceTotals?.discount.toLocaleString()}
+                      </div>
+                    </div>
                   ) : (
-                    <>
+                    <div className="min-h-[92px] space-y-1.5">
                       <div className="flex gap-3">
                         <span className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
                           <Store className="w-4 h-4" />T: {product.stock_store}
@@ -712,7 +737,7 @@ export default function Inventario() {
                       <div className="text-[11px] text-muted-foreground leading-tight">
                         Descuento: {currencySymbol}{Number(product.sale_price_min || 0).toLocaleString()}
                       </div>
-                    </>
+                    </div>
                   )}
                 </div>
               </motion.div>

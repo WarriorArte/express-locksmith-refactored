@@ -22,6 +22,8 @@ export const serviceProductSchema = z.object({
   product_id: z.string().min(1, "Producto requerido"),
   quantity: z.number().min(1, "La cantidad debe ser al menos 1"),
   product_name: z.string().optional(),
+  unit_price: z.number().min(0).optional(),
+  subtotal: z.number().min(0).optional(),
 });
 
 export type ServiceProduct = z.infer<typeof serviceProductSchema>;

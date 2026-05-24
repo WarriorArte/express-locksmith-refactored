@@ -74,6 +74,13 @@ export function ProductDetailSheet({
 
   const totalStock = product.stock_store + product.stock_warehouse;
   const isLow = totalStock < product.min_stock;
+  const labor = Number(product.labor_cost || 0);
+  const discount = Number(product.discount || 0);
+  const serviceProductsSubtotal = (product.service_products || []).reduce(
+    (sum, item) => sum + Number(item.subtotal || 0),
+    0,
+  );
+  const serviceTotal = Math.max(0, labor + serviceProductsSubtotal);
   const stockBadge = isLow
     ? { label: "Stock bajo", cls: "bg-warning/15 text-warning" }
     : { label: "En stock", cls: "bg-success/15 text-foreground dark:text-success" };
@@ -136,14 +143,13 @@ export function ProductDetailSheet({
             </div>
             {isService ? (
               <>
-                <Row label="Mano de obra" value={`${currencySymbol}${Number(product.labor_cost || 0).toLocaleString()}`} />
-                {Number(product.discount || 0) > 0 && (
-                  <Row label="Descuento" value={`${currencySymbol}${Number(product.discount).toLocaleString()}`} accent="text-warning" />
-                )}
+                <Row label="Mano de obra" value={`${currencySymbol}${labor.toLocaleString()}`} />
+                <Row label="Productos" value={`${currencySymbol}${serviceProductsSubtotal.toLocaleString()}`} />
+                <Row label="Precio con descuento" value={`${currencySymbol}${discount.toLocaleString()}`} accent="text-warning" />
                 <div className="flex justify-between items-center pt-2 mt-2 border-t border-border">
-                  <span className="text-[13px] font-bold text-foreground">Total</span>
+                  <span className="text-[13px] font-bold text-foreground">Precio del servicio</span>
                   <span className="text-base font-extrabold text-foreground dark:text-primary">
-                    {currencySymbol}{Number((Number(product.labor_cost || 0) - Number(product.discount || 0)).toFixed(2)).toLocaleString()}
+                    {currencySymbol}{serviceTotal.toLocaleString()}
                   </span>
                 </div>
               </>

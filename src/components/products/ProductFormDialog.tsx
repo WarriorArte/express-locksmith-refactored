@@ -350,6 +350,11 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
   const showProductosInvalid = shouldShowInvalid("productos");
   const showPreciosInvalid = shouldShowInvalid("precios");
   const showInventarioInvalid = shouldShowInvalid("inventario");
+  const serviceProductsSubtotal = serviceProductsList.reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
+  const serviceLaborCost = Number(values.labor_cost || 0);
+  const serviceDiscountPrice = Number(values.discount || 0);
+  const servicePrice = Math.max(0, serviceLaborCost + serviceProductsSubtotal);
+  const formatMoney = (value: number) => `$${Number(value || 0).toLocaleString()}`;
 
   const handleTabChange = (nextTab: string) => {
     const typedNextTab = nextTab as ProductFormTab;
@@ -393,6 +398,8 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
       product_id: selectedProductId,
       product_name: product.name,
       quantity: 1,
+      unit_price: Number(product.sale_price_min || product.sale_price_max || 0),
+      subtotal: Number(product.sale_price_min || product.sale_price_max || 0),
     };
 
     setServiceProductsList([...serviceProductsList, newProduct]);
@@ -670,6 +677,9 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                           >
                             <div className="flex-1">
                               <p className="font-medium text-sm">{item.product_name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {formatMoney(Number(item.unit_price || 0))}
+                              </p>
                             </div>
                             <Button
                               type="button"
@@ -691,35 +701,73 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
               {/* Tab: Precios */}
               <TabsContent value="precios" className="space-y-4 mt-4">
                 {isServiceMode ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="labor_cost"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Mano de Obra *</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              placeholder={showPreciosInvalid && !hasPositiveNumber(field.value) ? "Debe ser mayor a 0" : "0.00"}
-                              aria-invalid={showPreciosInvalid && !hasPositiveNumber(field.value)}
-                              className={cn(showPreciosInvalid && !hasPositiveNumber(field.value) && invalidFieldClass)}
-                              {...field}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
+                  <div className="space-y-4">
+                    {serviceProductsList.length > 0 && (
+                      <div className="rounded-lg border bg-secondary/30 p-3 space-y-2">
+                        <div className="flex items-center justify-between gap-3">
+                          <FormLabel className="text-sm">Productos</FormLabel>
+                          <span className="text-sm font-semibold">{formatMoney(serviceProductsSubtotal)}</span>
+                        </div>
+                        <div className="space-y-2">
+                          {serviceProductsList.map((item) => (
+                            <div key={item.product_id} className="flex items-center justify-between gap-3 text-sm">
+                              <span className="min-w-0 truncate text-muted-foreground">{item.product_name}</span>
+                              <span className="font-medium">{formatMoney(Number(item.subtotal || 0))}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="labor_cost"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Mano de Obra *</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder={showPreciosInvalid && !hasPositiveNumber(field.value) ? "Debe ser mayor a 0" : "0.00"}
+                                aria-invalid={showPreciosInvalid && !hasPositiveNumber(field.value)}
+                                className={cn(showPreciosInvalid && !hasPositiveNumber(field.value) && invalidFieldClass)}
+                                {...field}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="rounded-lg border bg-card p-3 space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Mano de obra</span>
+                        <span className="font-medium">{formatMoney(serviceLaborCost)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Productos</span>
+                        <span className="font-medium">{formatMoney(serviceProductsSubtotal)}</span>
+                      </div>
+                      <div className="flex items-center justify-between border-t pt-2">
+                        <span className="text-sm font-semibold">Precio del servicio</span>
+                        <span className="text-lg font-extrabold">{formatMoney(servicePrice)}</span>
+                      </div>
+                    </div>
+
                     <FormField
                       control={form.control}
                       name="discount"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Descuento</FormLabel>
+                          <FormLabel>Precio con Descuento</FormLabel>
                           <FormControl>
                             <Input type="number" step="0.01" placeholder="0.00" {...field} />
                           </FormControl>
+                          <p className="text-xs text-muted-foreground">
+                            Referencia comercial; no modifica el precio del servicio.
+                          </p>
                           <FormMessage />
                         </FormItem>
                       )}
