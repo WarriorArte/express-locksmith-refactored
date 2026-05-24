@@ -76,6 +76,7 @@ final class BusinessSettingsController
             'name' => $data['name'] ?? 'Mi Cerrajeria',
             'phone' => $data['phone'] ?? null,
             'phone_country_code' => $data['phone_country_code'] ?? '+52',
+            'country_code' => $data['country_code'] ?? 'MX',
             'address' => $data['address'] ?? null,
             'email' => $data['email'] ?? null,
             'website' => $data['website'] ?? null,
