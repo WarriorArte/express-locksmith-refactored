@@ -389,54 +389,44 @@ export default function Configuracion() {
                 </div>
               </div>
 
-              {/* Currency Symbol */}
-              <div className="lg:col-span-2 pt-4 border-t">
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <DollarSign className="w-4 h-4" />
-                    Símbolo de Moneda
-                  </Label>
-                  <div className="flex items-center gap-4">
-                    <Input 
-                      value={businessForm.currency_symbol}
-                      onChange={(e) => setBusinessForm(prev => ({ ...prev, currency_symbol: e.target.value }))}
-                      className="w-24"
-                      maxLength={5}
-                      placeholder="$"
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      Ejemplos: $, €, Q, Bs, ₡, S/.
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Phone Country Code */}
+              {/* País → autocompleta moneda y prefijo telefónico */}
               <div className="lg:col-span-2 pt-4 border-t">
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2">
                     <Globe className="w-4 h-4" />
-                    País (Prefijo Telefónico)
+                    País del Negocio
                   </Label>
                   <Select
-                    value={businessForm.phone_country_code}
-                    onValueChange={(value) => setBusinessForm(prev => ({ ...prev, phone_country_code: value }))}
+                    value={businessForm.country_code}
+                    onValueChange={(value) => {
+                      const info = getCountryByCode(value);
+                      setBusinessForm(prev => ({
+                        ...prev,
+                        country_code: value,
+                        currency_symbol: info?.currencySymbol ?? prev.currency_symbol,
+                        phone_country_code: info?.dial ?? prev.phone_country_code,
+                      }));
+                    }}
                   >
                     <SelectTrigger className="w-full max-w-sm">
                       <SelectValue placeholder="Selecciona un país" />
                     </SelectTrigger>
                     <SelectContent className="max-h-[300px]">
-                      {countryPhoneCodes.map((country) => (
-                        <SelectItem key={country.code} value={country.code}>
+                      {COUNTRIES.map((c) => (
+                        <SelectItem key={c.code} value={c.code}>
                           <span className="flex items-center gap-2">
-                            <span>{country.flag}</span>
-                            <span>{country.country}</span>
-                            <span className="text-muted-foreground">({country.code})</span>
+                            <span>{c.flag}</span>
+                            <span>{c.name}</span>
+                            <span className="text-muted-foreground">({c.dial} · {c.currencySymbol})</span>
                           </span>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-muted-foreground flex items-center gap-3 pt-1">
+                    <span className="inline-flex items-center gap-1"><DollarSign className="w-3 h-3" /> Moneda: <strong>{businessForm.currency_symbol}</strong></span>
+                    <span className="inline-flex items-center gap-1">Prefijo: <strong>{businessForm.phone_country_code}</strong></span>
+                  </p>
                 </div>
               </div>
 
