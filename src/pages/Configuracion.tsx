@@ -92,6 +92,10 @@ export default function Configuracion() {
 
   useEffect(() => {
     if (settings) {
+      const inferred = (settings as any).country_code
+        || inferCountryCode(settings.phone_country_code, settings.currency_symbol)
+        || "MX";
+      const info = getCountryByCode(inferred);
       setBusinessForm({
         name: settings.name || "",
         phone: settings.phone || "",
@@ -102,8 +106,9 @@ export default function Configuracion() {
         instagram: settings.instagram || "",
         whatsapp: settings.whatsapp || "",
         logo_url: settings.logo_url || "",
-        currency_symbol: settings.currency_symbol || "$",
-        phone_country_code: settings.phone_country_code || "+52",
+        currency_symbol: settings.currency_symbol || info?.currencySymbol || "$",
+        phone_country_code: settings.phone_country_code || info?.dial || "+52",
+        country_code: inferred,
         printer_model: settings.printer_model || "80mm",
         print_logo: settings.print_logo == null ? true : !!settings.print_logo,
         auto_cut: settings.auto_cut == null ? true : !!settings.auto_cut,
