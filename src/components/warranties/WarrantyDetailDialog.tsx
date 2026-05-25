@@ -25,6 +25,7 @@ interface WarrantyDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   warranty: Warranty | null;
   onVoid?: () => void;
+  onPrint?: () => void;
 }
 
 export function WarrantyDetailDialog({
@@ -32,6 +33,7 @@ export function WarrantyDetailDialog({
   onOpenChange,
   warranty,
   onVoid,
+  onPrint,
 }: WarrantyDetailDialogProps) {
   if (!warranty) return null;
 
