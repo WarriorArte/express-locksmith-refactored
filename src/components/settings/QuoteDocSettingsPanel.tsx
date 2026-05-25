@@ -69,23 +69,39 @@ export function QuoteDocSettingsPanel({ compact = false }: { compact?: boolean }
       {/* Palette */}
       <section>
         <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-2 block">Paletas</Label>
-        <div className="grid grid-cols-3 gap-2">
-          {QUOTE_PRESETS.map(p => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => applyPreset(p)}
-              className={cn(
-                "rounded-xl border-2 overflow-hidden bg-card transition-all",
-                settings.presetId === p.id ? "border-primary" : "border-border hover:border-muted-foreground/40",
-              )}
-            >
-              <div className="h-10 relative" style={{ background: p.ink }}>
-                <div className="absolute left-2 right-2 bottom-1.5 h-1.5 rounded" style={{ background: p.accent }} />
-              </div>
-              <div className="text-[10px] font-mono text-muted-foreground py-1 px-2 truncate">{p.name}</div>
-            </button>
-          ))}
+        <div className="grid grid-cols-3 gap-2.5">
+          {QUOTE_PRESETS.map(p => {
+            const active = settings.presetId === p.id;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => applyPreset(p)}
+                className={cn(
+                  "rounded-xl border-2 overflow-hidden transition-all text-left",
+                  active ? "border-foreground shadow-[0_0_0_1px_hsl(var(--foreground))]" : "border-border hover:border-muted-foreground/50",
+                )}
+                style={{ background: p.paper }}
+              >
+                <div className="flex items-center gap-2 px-3 pt-3 pb-2">
+                  <span
+                    className="w-8 h-8 rounded-full ring-1 ring-black/5"
+                    style={{ background: p.accent }}
+                  />
+                  <span
+                    className="w-4 h-4 rounded-full ring-1 ring-black/5"
+                    style={{ background: p.ink }}
+                  />
+                </div>
+                <div
+                  className="text-[11px] font-semibold py-1.5 px-3 border-t"
+                  style={{ color: p.ink, borderColor: "rgba(0,0,0,0.08)" }}
+                >
+                  {p.name}
+                </div>
+              </button>
+            );
+          })}
         </div>
       </section>
 
