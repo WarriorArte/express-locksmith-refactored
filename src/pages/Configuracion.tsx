@@ -199,7 +199,7 @@ export default function Configuracion() {
         className="hidden lg:block"
       >
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-7 gap-2 h-auto p-1 bg-muted">
+          <TabsList className="grid grid-cols-5 gap-2 h-auto p-1 bg-muted">
             <TabsTrigger value="perfil" className="gap-2 py-3">
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">Perfil</span>
@@ -211,14 +211,6 @@ export default function Configuracion() {
             <TabsTrigger value="negocio" className="gap-2 py-3">
               <Building2 className="w-4 h-4" />
               <span className="hidden sm:inline">Negocio</span>
-            </TabsTrigger>
-            <TabsTrigger value="impresora" className="gap-2 py-3">
-              <Printer className="w-4 h-4" />
-              <span className="hidden sm:inline">Ticket Térmico</span>
-            </TabsTrigger>
-            <TabsTrigger value="plantillas" className="gap-2 py-3">
-              <FileText className="w-4 h-4" />
-              <span className="hidden sm:inline">Plantillas</span>
             </TabsTrigger>
             {isAdmin && (
               <>
@@ -233,6 +225,7 @@ export default function Configuracion() {
               </>
             )}
           </TabsList>
+
 
           {/* Perfil Tab */}
           <TabsContent value="perfil" className="space-y-6">
@@ -447,85 +440,6 @@ export default function Configuracion() {
             </div>
           </TabsContent>
 
-          {/* Impresora Tab */}
-          <TabsContent value="impresora" className="space-y-6">
-            <div className="card-elevated p-6">
-              <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                <Printer className="w-5 h-5 text-primary" />
-                Configuración de Ticket Térmico
-              </h3>
-
-              <p className="text-sm text-muted-foreground mb-6">
-                Configura los parámetros de impresión para tickets térmicos. El tamaño y diseño se gestionan desde las plantillas.
-              </p>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label>Tamaño de Papel Térmico</Label>
-                  <Select 
-                    value={businessForm.printer_model}
-                    onValueChange={(value) => setBusinessForm(prev => ({ ...prev, printer_model: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="58mm">58mm (pequeño)</SelectItem>
-                      <SelectItem value="80mm">80mm (estándar)</SelectItem>
-                      <SelectItem value="110mm">110mm (grande)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Este tamaño se aplica a las plantillas de tickets térmicos
-                  </p>
-                  <div className="mt-4">
-                    <ThermalPrinterPreview printerModel={businessForm.printer_model as any} showLogo={businessForm.print_logo} />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between h-full">
-                    <div>
-                      <Label>Imprimir Logo en Tickets</Label>
-                      <p className="text-sm text-muted-foreground">Incluir el logo del negocio en los recibos</p>
-                    </div>
-                    <Switch 
-                      checked={businessForm.print_logo}
-                      onCheckedChange={(checked) => setBusinessForm(prev => ({ ...prev, print_logo: checked }))}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2 lg:col-span-2">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Corte Automático</Label>
-                      <p className="text-sm text-muted-foreground">Cortar papel automáticamente después de imprimir</p>
-                    </div>
-                    <Switch 
-                      checked={businessForm.auto_cut}
-                      onCheckedChange={(checked) => setBusinessForm(prev => ({ ...prev, auto_cut: checked }))}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end mt-6 pt-6 border-t">
-                <Button 
-                  className="gap-2"
-                  onClick={handleSaveSettings}
-                  disabled={updateSettings.isPending}
-                >
-                  {updateSettings.isPending ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Save className="w-4 h-4" />
-                  )}
-                  Guardar
-                </Button>
-              </div>
-            </div>
-          </TabsContent>
 
           {/* Usuarios Tab - Old version, kept for reference */}
           {isAdmin && (
@@ -583,12 +497,6 @@ export default function Configuracion() {
             </TabsContent>
           )}
 
-          {/* Plantillas Tab */}
-          <TabsContent value="plantillas" className="space-y-6">
-            <div className="card-elevated p-6">
-              <TemplateSelector />
-            </div>
-          </TabsContent>
 
           {/* Usuarios Tab */}
           {isAdmin && (
@@ -760,25 +668,9 @@ function MobileConfigTabs({
             <Switch checked={theme === "dark"} onCheckedChange={(c) => setTheme(c ? "dark" : "light")} />
           </div>
 
-          {/* Tamaño impresora */}
-          <div>
-            <Label>Tamaño de papel térmico</Label>
-            <Select value={businessForm.printer_model}
-              onValueChange={(v) => setBusinessForm((p: any) => ({ ...p, printer_model: v }))}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="58mm">58mm (pequeño)</SelectItem>
-                <SelectItem value="80mm">80mm (estándar)</SelectItem>
-                <SelectItem value="110mm">110mm (grande)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Plantillas + Backup as list-item card */}
+          {/* Backup as list-item card */}
           <div className="bg-card rounded-2xl border border-border overflow-hidden">
-            <SystemRow icon={Printer} label="Impresora térmica" sub="Configurar ticket" onClick={() => {}} />
-            <SystemRow icon={FileText} label="Plantillas" sub="Tickets y documentos" onClick={() => document.getElementById("__cfg_templates")?.scrollIntoView({ behavior: "smooth" })} divider />
-            {isAdmin && <SystemRow icon={Shield} label="Respaldo de datos" sub="Copia de seguridad" onClick={() => document.getElementById("__cfg_backup")?.scrollIntoView({ behavior: "smooth" })} divider />}
+            {isAdmin && <SystemRow icon={Shield} label="Respaldo de datos" sub="Copia de seguridad" onClick={() => document.getElementById("__cfg_backup")?.scrollIntoView({ behavior: "smooth" })} />}
             <SystemRow icon={Bell} label="Notificaciones" sub="Alertas de stock y servicios" onClick={() => {}} divider />
           </div>
 
@@ -787,9 +679,7 @@ function MobileConfigTabs({
             Guardar
           </Button>
 
-          <div id="__cfg_templates" className="pt-4">
-            <TemplateSelector />
-          </div>
+
           {isAdmin && (
             <div id="__cfg_backup" className="pt-4">
               <BackupManager />

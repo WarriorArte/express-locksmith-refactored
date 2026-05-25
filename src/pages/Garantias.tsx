@@ -430,11 +430,6 @@ export default function Garantias() {
           ? () => { setDetailDialogOpen(false); handleVoid(viewingWarranty); }
           : undefined}
       />
-
-        onVoid={isAdmin && viewingWarranty && !viewingWarranty.is_voided
-          ? () => { setDetailDialogOpen(false); handleVoid(viewingWarranty); }
-          : undefined}
-      />
     </div>
   );
 }
