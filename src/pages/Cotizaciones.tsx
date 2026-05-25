@@ -67,8 +67,6 @@ export default function Cotizaciones() {
   const [convertingQuote, setConvertingQuote] = useState<Quote | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [viewingQuote, setViewingQuote] = useState<Quote | null>(null);
-  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
-  const [pdfPreviewQuote, setPdfPreviewQuote] = useState<Quote | null>(null);
   
   const { isAdmin } = useAuth();
   const { toast } = useToast();
@@ -78,7 +76,7 @@ export default function Cotizaciones() {
   const deleteQuote = useDeleteQuote();
   const updateQuote = useUpdateQuote();
   const duplicateQuote = useDuplicateQuote();
-  const { printQuote } = useQuotePrint();
+  
   const statsRef = useRef<HTMLDivElement>(null);
   const statsHeightRef = useRef(0);
   const searchActiveRef = useRef(false);
