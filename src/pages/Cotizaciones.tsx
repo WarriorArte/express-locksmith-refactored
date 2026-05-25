@@ -363,13 +363,6 @@ export default function Cotizaciones() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handlePrint(quote)}>
-                              <Printer className="w-4 h-4 mr-2" /> Imprimir
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleGeneratePDF(quote)}>
-                              <Eye className="w-4 h-4 mr-2" /> Vista previa / PDF
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => handleDuplicate(quote)}>
                               <Copy className="w-4 h-4 mr-2" /> Duplicar
                             </DropdownMenuItem>
