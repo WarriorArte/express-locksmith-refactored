@@ -545,9 +545,10 @@ function MobileConfigTabs({
   onPendingLogoFile,
   signOut,
 }: any) {
-  const [tab, setTab] = useState<"negocio" | "usuarios" | "sistema">("negocio");
+  const [tab, setTab] = useState<"negocio" | "cotizacion" | "usuarios" | "sistema">("negocio");
   const tabs = [
     { id: "negocio" as const, icon: Building2, label: "Negocio" },
+    { id: "cotizacion" as const, icon: FileText, label: "Cotización" },
     ...(isAdmin ? [{ id: "usuarios" as const, icon: Users, label: "Usuarios" }] : []),
     { id: "sistema" as const, icon: Palette, label: "Sistema" },
   ];
