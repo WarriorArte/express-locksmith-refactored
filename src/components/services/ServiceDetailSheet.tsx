@@ -74,9 +74,6 @@ interface Props {
   currencySymbol?: string;
   onEdit?: (s: Service) => void;
   onStatusChange?: (s: Service, next: ServiceStatus) => void;
-  onPrint?: (s: Service) => void;
-  onPreview?: (s: Service) => void;
-  onShare?: (s: Service) => void;
   onAddImages?: (s: Service) => void;
   onCancel?: (s: Service) => void;
   onDelete?: (s: Service) => void;
