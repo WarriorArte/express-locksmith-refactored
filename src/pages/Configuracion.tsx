@@ -50,6 +50,7 @@ import { useWorkshop } from "@/hooks/useWorkshop";
 import { ImageUploader } from "@/components/shared/ImageUploader";
 import { phpApiUpload } from "@/lib/phpApi";
 import { BackupManager } from "@/components/settings/BackupManager";
+import { QuoteDocSettingsPanel } from "@/components/settings/QuoteDocSettingsPanel";
 
 import { COUNTRIES, getCountryByCode, inferCountryCode } from "@/lib/countries";
 
@@ -191,7 +192,7 @@ export default function Configuracion() {
         className="hidden lg:block"
       >
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-5 gap-2 h-auto p-1 bg-muted">
+          <TabsList className="grid grid-cols-6 gap-2 h-auto p-1 bg-muted">
             <TabsTrigger value="perfil" className="gap-2 py-3">
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">Perfil</span>
@@ -203,6 +204,10 @@ export default function Configuracion() {
             <TabsTrigger value="negocio" className="gap-2 py-3">
               <Building2 className="w-4 h-4" />
               <span className="hidden sm:inline">Negocio</span>
+            </TabsTrigger>
+            <TabsTrigger value="cotizacion" className="gap-2 py-3">
+              <FileText className="w-4 h-4" />
+              <span className="hidden sm:inline">Cotización</span>
             </TabsTrigger>
             {isAdmin && (
               <>
@@ -217,6 +222,7 @@ export default function Configuracion() {
               </>
             )}
           </TabsList>
+
 
 
           {/* Perfil Tab */}
@@ -427,6 +433,22 @@ export default function Configuracion() {
             </div>
           </TabsContent>
 
+          {/* Cotización Tab */}
+          <TabsContent value="cotizacion" className="space-y-6">
+            <div className="card-elevated p-6">
+              <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-primary" />
+                Diseño de cotización
+              </h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                Personaliza cómo se imprimen tus cotizaciones. Los cambios se aplican a todas las cotizaciones.
+              </p>
+              <QuoteDocSettingsPanel />
+            </div>
+          </TabsContent>
+
+
+
 
           {/* Usuarios Tab - Old version, kept for reference */}
           {isAdmin && (
@@ -523,9 +545,10 @@ function MobileConfigTabs({
   onPendingLogoFile,
   signOut,
 }: any) {
-  const [tab, setTab] = useState<"negocio" | "usuarios" | "sistema">("negocio");
+  const [tab, setTab] = useState<"negocio" | "cotizacion" | "usuarios" | "sistema">("negocio");
   const tabs = [
     { id: "negocio" as const, icon: Building2, label: "Negocio" },
+    { id: "cotizacion" as const, icon: FileText, label: "Cotización" },
     ...(isAdmin ? [{ id: "usuarios" as const, icon: Users, label: "Usuarios" }] : []),
     { id: "sistema" as const, icon: Palette, label: "Sistema" },
   ];
@@ -640,8 +663,12 @@ function MobileConfigTabs({
         </div>
       )}
 
+      {/* Cotización */}
+      {tab === "cotizacion" && <QuoteDocSettingsPanel compact />}
+
       {/* Usuarios */}
       {tab === "usuarios" && isAdmin && <UserManagement />}
+
 
       {/* Sistema */}
       {tab === "sistema" && (

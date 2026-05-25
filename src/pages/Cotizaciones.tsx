@@ -17,7 +17,9 @@ import {
   XCircle,
   Clock,
   Loader2,
+  Printer,
 } from "lucide-react";
+import { QuotePrintDialog } from "@/components/quotes/QuotePrintDialog";
 import { QuoteFormDialog } from "@/components/quotes/QuoteFormDialog";
 import { ConvertQuoteDialog } from "@/components/quotes/ConvertQuoteDialog";
 import { DetailViewDialog } from "@/components/shared/DetailViewDialog";
@@ -67,6 +69,8 @@ export default function Cotizaciones() {
   const [convertingQuote, setConvertingQuote] = useState<Quote | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [viewingQuote, setViewingQuote] = useState<Quote | null>(null);
+  const [printDialogOpen, setPrintDialogOpen] = useState(false);
+  const [printingQuote, setPrintingQuote] = useState<Quote | null>(null);
   
   const { isAdmin } = useAuth();
   const { toast } = useToast();
@@ -485,6 +489,7 @@ export default function Cotizaciones() {
         }}
         
         overflowActions={[
+          { icon: Printer, label: "Imprimir / PDF", onClick: () => { if (viewingQuote) { setDetailDialogOpen(false); setPrintingQuote(viewingQuote); setPrintDialogOpen(true); } } },
           { icon: Copy, label: "Duplicar", onClick: () => { viewingQuote && handleDuplicate(viewingQuote); } },
           ...(viewingQuote?.status === "pending" ? [
             { icon: CheckCircle, label: "Marcar aceptada", onClick: () => { viewingQuote && handleStatusChange(viewingQuote, "accepted"); }, className: "text-foreground dark:text-success", separator: true },
@@ -494,6 +499,13 @@ export default function Cotizaciones() {
         ]}
         onDelete={isAdmin ? () => { viewingQuote && handleDelete(viewingQuote); } : undefined}
       />
+
+      <QuotePrintDialog
+        open={printDialogOpen}
+        onOpenChange={setPrintDialogOpen}
+        quote={printingQuote}
+      />
+
 
     </div>
   );
