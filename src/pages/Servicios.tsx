@@ -709,6 +709,8 @@ export default function Servicios() {
         onDelete={isAdmin ? (s) => { setMobileDetailOpen(false); handleDelete(s); } : undefined}
       />
 
+      <TicketDialog open={ticketOpen} onOpenChange={setTicketOpen} data={ticketData} />
+
     </div>
   );
 }
