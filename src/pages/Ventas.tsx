@@ -144,68 +144,12 @@ export default function Ventas() {
     }
   };
 
-  const handlePrint = (sale: Sale) => {
-    printSale(sale);
-  };
-
-  const handlePreview = (sale: Sale) => {
-    setPdfPreviewSale(sale);
-    setPdfPreviewOpen(true);
-  };
-
   const handleViewDetail = (sale: Sale) => {
     setViewingSale(sale);
     setDetailDialogOpen(true);
   };
 
-  const handleShare = (sale: Sale) => {
-    const phone = sale.customer?.phone;
-    const businessName = settings?.name || "Mi Negocio";
-    
-    const itemsList = sale.sale_items?.map(item => 
-      `• ${item.product_name} (${item.quantity}): ${currencySymbol}${Number(item.subtotal).toLocaleString()}`
-    ).join("\n") || "";
-    
-    const message = `*${businessName}*\n\n` +
-      `🧾 *Ticket de Venta ${sale.sale_number}*\n` +
-      `📅 ${format(parseISO(sale.created_at), "dd/MM/yyyy HH:mm", { locale: es })}\n\n` +
-      (itemsList ? `*Productos:*\n${itemsList}\n\n` : "") +
-      `*Total: ${currencySymbol}${Number(sale.total).toLocaleString()}*\n\n` +
-      `Pago: ${paymentMethodLabels[sale.payment_method]}\n\n` +
-      `¡Gracias por su compra!`;
-    
-    const encodedMessage = encodeURIComponent(message);
-    const phoneNumber = phone ? phone.replace(/\D/g, "") : "";
-    
-    if (phoneNumber) {
-      window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, "_blank");
-    } else {
-      navigator.clipboard.writeText(message);
-      toast({
-        title: "Mensaje copiado",
-        description: "El mensaje ha sido copiado al portapapeles.",
-      });
-    }
-  };
 
-  const getPdfData = (sale: Sale) => ({
-    sale_number: sale.sale_number,
-    created_at: sale.created_at,
-    customer_name: sale.customer_name || sale.customer?.name,
-    customer_phone: sale.customer?.phone,
-    items: sale.sale_items?.map(item => ({
-      id: item.id,
-      product_name: item.product_name,
-      quantity: item.quantity,
-      unit_price: item.unit_price,
-      subtotal: item.subtotal,
-    })) || [],
-    subtotal: sale.subtotal,
-    discount: sale.discount,
-    total: sale.total,
-    notes: sale.notes,
-    payment_method: sale.payment_method,
-  });
 
   const getPrintData = (sale: Sale) => ({
     type: "sale" as const,
