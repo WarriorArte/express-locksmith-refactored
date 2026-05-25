@@ -15,7 +15,6 @@ type BusinessSettingsMutationData = Partial<Omit<BusinessSettings, "id" | "works
 function normalizeBusinessSettings(raw: any): BusinessSettings {
   return {
     ...raw,
-    print_logo: typeof raw.print_logo === "boolean" ? raw.print_logo : !!raw.print_logo,
     auto_cut: typeof raw.auto_cut === "boolean" ? raw.auto_cut : !!raw.auto_cut,
   } as BusinessSettings;
 }

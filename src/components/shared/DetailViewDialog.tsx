@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { Calendar, Eye, MessageCircle, Printer } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { ImageViewDialog } from "@/components/shared/ImageViewDialog";
 
 import {
@@ -32,10 +32,7 @@ interface DetailViewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   data: DetailData | null;
-  onPrint?: () => void;
   onEdit?: () => void;
-  onPreview?: () => void;
-  onShare?: () => void;
   overflowActions?: OverflowAction[];
   onDelete?: () => void;
 }
@@ -44,10 +41,7 @@ export function DetailViewDialog({
   open,
   onOpenChange,
   data,
-  onPrint,
   onEdit,
-  onPreview,
-  onShare,
   overflowActions,
   onDelete,
 }: DetailViewDialogProps) {
@@ -66,12 +60,7 @@ export function DetailViewDialog({
     description: image.description || undefined,
   }));
 
-  const overflowItems: OverflowAction[] = [
-    ...(onEdit && onPrint ? [{ icon: Printer, label: "Ticket", onClick: onPrint }] : []),
-    ...(onPreview ? [{ icon: Eye, label: "PDF", onClick: onPreview }] : []),
-    ...(onShare ? [{ icon: MessageCircle, label: "WhatsApp", onClick: onShare, className: "text-[#25D366]" }] : []),
-    ...(overflowActions ?? []),
-  ];
+  const overflowItems: OverflowAction[] = [...(overflowActions ?? [])];
 
   return (
     <>
@@ -173,7 +162,6 @@ export function DetailViewDialog({
 
           <DialogFooter className="pt-1 gap-2">
             <DetailViewFooter
-              onPrint={onPrint}
               onEdit={onEdit}
               onDelete={onDelete}
               overflowItems={overflowItems}

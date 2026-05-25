@@ -18,10 +18,10 @@ SET @u3 := (SELECT id FROM app_users WHERE LOWER(email) = 'lolo@correo.com'     
 -- BUSINESS SETTINGS
 -- ============================================================
 INSERT IGNORE INTO business_settings
-  (id, workshop_id, name, phone, phone_country_code, address, email, website, whatsapp, currency_symbol, printer_size, printer_model)
+  (id, workshop_id, name, phone, phone_country_code, address, email, website, currency_symbol, printer_size)
 VALUES
-  ('11111111-1111-1111-1111-000000000001', @w1, 'Cerrajería EGT',    '5512345678', '+52', 'Av. Reforma 123, CDMX', 'contacto@egt.mx',   'https://egt.mx',   '5512345678', '$', '80mm', 'generic'),
-  ('11111111-1111-1111-1111-000000000002', @w2, 'Cerrajería López',  '5587654321', '+52', 'Calle Juárez 45, GDL',  'hola@lopez.mx',     'https://lopez.mx', '5587654321', '$', '58mm', 'generic');
+  ('11111111-1111-1111-1111-000000000001', @w1, 'Cerrajería EGT',    '5512345678', '+52', 'Av. Reforma 123, CDMX', 'contacto@egt.mx',   'https://egt.mx',   '$', '80mm'),
+  ('11111111-1111-1111-1111-000000000002', @w2, 'Cerrajería López',  '5587654321', '+52', 'Calle Juárez 45, GDL',  'hola@lopez.mx',     'https://lopez.mx', '$', '58mm');
 
 -- ============================================================
 -- WORKSHOP FEATURES (módulos habilitados)

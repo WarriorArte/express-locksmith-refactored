@@ -1,12 +1,6 @@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/responsive-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { format, parseISO, isPast, differenceInDays } from "date-fns";
 import { es } from "date-fns/locale";
@@ -20,9 +14,6 @@ import {
   AlertCircle,
   Package,
   Wrench,
-  Printer,
-  Eye,
-  MoreHorizontal,
   type LucideIcon,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -32,8 +23,6 @@ interface WarrantyDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   warranty: Warranty | null;
-  onPrint?: () => void;
-  onPreview?: () => void;
   onVoid?: () => void;
 }
 
@@ -41,8 +30,6 @@ export function WarrantyDetailDialog({
   open,
   onOpenChange,
   warranty,
-  onPrint,
-  onPreview,
   onVoid,
 }: WarrantyDetailDialogProps) {
   if (!warranty) return null;
@@ -68,13 +55,7 @@ export function WarrantyDetailDialog({
   const typeLabel = warranty.warranty_type === "sale" ? "Garantia de venta" : "Garantia de servicio";
   const TypeIcon = warranty.warranty_type === "sale" ? Package : Wrench;
 
-  const mainAction = onPreview
-    ? { label: "Vista previa", icon: Eye, onClick: onPreview }
-    : onPrint
-    ? { label: "Imprimir", icon: Printer, onClick: onPrint }
-    : null;
-  const hasMenu = !!onPrint || !!onPreview || (!!onVoid && !warranty.is_voided);
-  const hasFooter = !!mainAction || hasMenu;
+  const showVoid = !!onVoid && !warranty.is_voided;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -165,45 +146,15 @@ export function WarrantyDetailDialog({
           )}
         </div>
 
-        {hasFooter && (
+        {showVoid && (
           <DialogFooter className="pt-1 gap-2">
-            <div className="flex w-full items-center gap-2">
-              {mainAction && (
-                <Button
-                  variant="outline"
-                  className="h-12 flex-1 rounded-2xl font-semibold"
-                  onClick={mainAction.onClick}
-                >
-                  <mainAction.icon className="w-4 h-4 mr-1.5" /> {mainAction.label}
-                </Button>
-              )}
-              {hasMenu && (
-                <DropdownMenu modal={false}>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon" className="h-12 w-12 shrink-0 rounded-2xl">
-                      <MoreHorizontal className="w-5 h-5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" side="top">
-                    {onPrint && (
-                      <DropdownMenuItem onClick={onPrint}>
-                        <Printer className="w-4 h-4 mr-2" /> Imprimir ticket
-                      </DropdownMenuItem>
-                    )}
-                    {onPreview && (
-                      <DropdownMenuItem onClick={onPreview}>
-                        <Eye className="w-4 h-4 mr-2" /> Vista previa
-                      </DropdownMenuItem>
-                    )}
-                    {onVoid && !warranty.is_voided && (
-                      <DropdownMenuItem onClick={onVoid} className="text-destructive focus:text-destructive">
-                        <XCircle className="w-4 h-4 mr-2" /> Anular garantia
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-            </div>
+            <Button
+              variant="outline"
+              className="h-12 w-full rounded-2xl font-semibold text-destructive hover:text-destructive"
+              onClick={onVoid}
+            >
+              <XCircle className="w-4 h-4 mr-1.5" /> Anular garantia
+            </Button>
           </DialogFooter>
         )}
       </DialogContent>

@@ -79,14 +79,10 @@ export default function Configuracion() {
     website: "",
     facebook: "",
     instagram: "",
-    whatsapp: "",
     logo_url: "",
     currency_symbol: "$",
     phone_country_code: "+52",
     country_code: "MX",
-    printer_model: "80mm",
-    print_logo: true,
-    auto_cut: true,
   });
 
 
@@ -104,14 +100,10 @@ export default function Configuracion() {
         website: settings.website || "",
         facebook: settings.facebook || "",
         instagram: settings.instagram || "",
-        whatsapp: settings.whatsapp || "",
         logo_url: settings.logo_url || "",
         currency_symbol: settings.currency_symbol || info?.currencySymbol || "$",
         phone_country_code: settings.phone_country_code || info?.dial || "+52",
         country_code: inferred,
-        printer_model: settings.printer_model || "80mm",
-        print_logo: settings.print_logo == null ? true : !!settings.print_logo,
-        auto_cut: settings.auto_cut == null ? true : !!settings.auto_cut,
       });
     }
   }, [settings]);
@@ -362,7 +354,7 @@ export default function Configuracion() {
 
                 <div className="space-y-2 lg:col-span-2">
                   <Label htmlFor="social">Redes Sociales</Label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Input 
                       placeholder="Facebook" 
                       value={businessForm.facebook}
@@ -372,11 +364,6 @@ export default function Configuracion() {
                       placeholder="Instagram" 
                       value={businessForm.instagram}
                       onChange={(e) => setBusinessForm(prev => ({ ...prev, instagram: e.target.value }))}
-                    />
-                    <Input 
-                      placeholder="WhatsApp" 
-                      value={businessForm.whatsapp}
-                      onChange={(e) => setBusinessForm(prev => ({ ...prev, whatsapp: e.target.value }))}
                     />
                   </div>
                 </div>

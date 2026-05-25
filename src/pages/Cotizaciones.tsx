@@ -483,7 +483,7 @@ export default function Cotizaciones() {
           setEditingQuote(viewingQuote);
           setFormDialogOpen(true);
         }}
-        onPrint={undefined}
+        
         overflowActions={[
           { icon: Copy, label: "Duplicar", onClick: () => { viewingQuote && handleDuplicate(viewingQuote); } },
           ...(viewingQuote?.status === "pending" ? [

@@ -123,11 +123,8 @@ CREATE TABLE IF NOT EXISTS business_settings (
   logo_url TEXT NULL,
   facebook VARCHAR(255) NULL,
   instagram VARCHAR(255) NULL,
-  whatsapp VARCHAR(40) NULL,
   printer_size VARCHAR(30) DEFAULT '80mm',
-  printer_model VARCHAR(120) DEFAULT 'generic',
   currency_symbol VARCHAR(10) DEFAULT '$',
-  print_logo TINYINT(1) DEFAULT 1,
   auto_cut TINYINT(1) DEFAULT 1,
   storage_endpoint TEXT NULL,
   storage_secret_key TEXT NULL,
@@ -507,45 +504,6 @@ CREATE TABLE IF NOT EXISTS inventory_movements (
     ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
-CREATE TABLE IF NOT EXISTS templates (
-  id CHAR(36) NOT NULL DEFAULT (UUID()),
-  workshop_id CHAR(36) NULL,
-  name VARCHAR(255) NOT NULL,
-  template_type VARCHAR(80) NOT NULL,
-  html_content LONGTEXT NULL,
-  css_content LONGTEXT NULL,
-  thumbnail_url TEXT NULL,
-  is_default TINYINT(1) DEFAULT 0,
-  is_global TINYINT(1) NOT NULL DEFAULT 0,
-  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
-  PRIMARY KEY (id),
-  KEY idx_templates_workshop (workshop_id),
-  KEY idx_templates_type (template_type),
-  KEY idx_templates_global (is_global),
-  CONSTRAINT fk_templates_workshop_id
-    FOREIGN KEY (workshop_id) REFERENCES workshops(id)
-    ON DELETE CASCADE
-) ENGINE=InnoDB;
-
-CREATE TABLE IF NOT EXISTS workshop_template_selections (
-  id CHAR(36) NOT NULL DEFAULT (UUID()),
-  workshop_id CHAR(36) NOT NULL,
-  template_type VARCHAR(80) NOT NULL,
-  template_id CHAR(36) NOT NULL,
-  custom_css LONGTEXT NULL,
-  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
-  PRIMARY KEY (id),
-  UNIQUE KEY uq_workshop_template_selections (workshop_id, template_type),
-  KEY idx_workshop_template_selections_template (template_id),
-  CONSTRAINT fk_wts_workshop_id
-    FOREIGN KEY (workshop_id) REFERENCES workshops(id)
-    ON DELETE CASCADE,
-  CONSTRAINT fk_wts_template_id
-    FOREIGN KEY (template_id) REFERENCES templates(id)
-    ON DELETE CASCADE
-) ENGINE=InnoDB;
 
 -- ============================================================
 -- Warranties

@@ -50,7 +50,7 @@ final class BackupRestoreController
             $this->restoreWarrantySettings($workshopId, $tables, $counts);
             $this->restoreWarranties($workshopId, $tables, $counts);
             $this->restoreInventoryMovements($workshopId, $tables, $counts);
-            $this->restoreTemplates($workshopId, $tables, $counts);
+            
         });
 
         return ApiResponse::success([
@@ -79,7 +79,7 @@ final class BackupRestoreController
             'warranty_category_settings' => 0,
             'warranties' => 0,
             'inventory_movements' => 0,
-            'templates' => 0,
+            
             'business_settings' => 0,
         ];
     }
@@ -102,7 +102,7 @@ final class BackupRestoreController
             'customers',
             'warranty_category_settings',
             'warranty_settings',
-            'workshop_template_selections',
+            
             'tags',
             'categories',
             'business_settings',
@@ -110,7 +110,7 @@ final class BackupRestoreController
             DB::table($table)->where('workshop_id', $workshopId)->delete();
         }
 
-        DB::table('templates')->where('workshop_id', $workshopId)->where('is_global', 0)->delete();
+        
     }
 
     private function restoreBusinessSettings(string $workshopId, array $tables, array &$counts): void
@@ -130,11 +130,8 @@ final class BackupRestoreController
             'logo_url' => $row['logo_url'] ?? null,
             'facebook' => $row['facebook'] ?? null,
             'instagram' => $row['instagram'] ?? null,
-            'whatsapp' => $row['whatsapp'] ?? null,
             'printer_size' => $row['printer_size'] ?? '80mm',
-            'printer_model' => $row['printer_model'] ?? 'generic',
             'currency_symbol' => $row['currency_symbol'] ?? '$',
-            'print_logo' => $this->boolInt($row['print_logo'] ?? 1, 1),
             'auto_cut' => $this->boolInt($row['auto_cut'] ?? 1, 1),
             'storage_endpoint' => $row['storage_endpoint'] ?? null,
             'storage_secret_key' => $row['storage_secret_key'] ?? null,
@@ -459,25 +456,6 @@ final class BackupRestoreController
         }
     }
 
-    private function restoreTemplates(string $workshopId, array $tables, array &$counts): void
-    {
-        foreach ($this->rows($tables['templates'] ?? []) as $row) {
-            if (empty($row['name']) || empty($row['template_type'])) continue;
-            if ($this->boolInt($row['is_global'] ?? 0) === 1) continue;
-            DB::table('templates')->insert([
-                'id' => $row['id'] ?? $this->uuid(),
-                'workshop_id' => $workshopId,
-                'name' => $row['name'],
-                'template_type' => $row['template_type'],
-                'html_content' => $row['html_content'] ?? null,
-                'css_content' => $row['css_content'] ?? null,
-                'thumbnail_url' => $row['thumbnail_url'] ?? null,
-                'is_default' => $this->boolInt($row['is_default'] ?? 0),
-                'is_global' => 0,
-            ]);
-            $counts['templates']++;
-        }
-    }
 
     private function rows(mixed $value): array
     {
