@@ -51,6 +51,7 @@ import { format, parseISO, isPast, isFuture, differenceInDays } from "date-fns";
 import { es } from "date-fns/locale";
 import { WarrantySettingsDialog } from "@/components/warranties/WarrantySettingsDialog";
 import { WarrantyDetailDialog } from "@/components/warranties/WarrantyDetailDialog";
+import { TicketDialog, type TicketData } from "@/components/shared/TicketDialog";
 import { UnifiedSearchInput } from "@/components/shared/UnifiedSearchInput";
 
 const getWarrantyStatus = (warranty: Warranty) => {
