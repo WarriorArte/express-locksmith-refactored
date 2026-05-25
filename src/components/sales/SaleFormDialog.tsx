@@ -580,21 +580,6 @@ export function SaleFormDialog({ open, onOpenChange, initialProduct }: SaleFormD
         onOpenChange={setCustomerFormOpen}
       />
       
-      {completedSale && (
-        <SalePrintPreview
-          sale={completedSale}
-          open={printPreviewOpen}
-          onOpenChange={handleClosePrintPreview}
-        />
-      )}
-      
-      {createdWarranty && (
-        <WarrantyPrintTicket
-          warranty={createdWarranty}
-          open={warrantyPrintOpen}
-          onOpenChange={setWarrantyPrintOpen}
-        />
-      )}
     </Dialog>
   );
 }
