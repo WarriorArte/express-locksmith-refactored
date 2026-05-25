@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>Cotización — TechSolutions</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Archivo:wght@500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="doc-styles.css">
+
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: #2a2722;
+    color: #1a1f2e;
+    font-family: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    height: 100%;
+    overflow: hidden;
+  }
+  #root { height: 100vh; width: 100vw; }
+
+  .app {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    height: 100vh;
+    background: #2a2722;
+  }
+
+  /* ---------- sidebar ---------- */
+  .sidebar {
+    background: #1c1a17;
+    color: #e8e4dc;
+    border-right: 1px solid rgba(255,255,255,.06);
+    display: flex; flex-direction: column;
+    min-width: 0;
+  }
+  .sidebar-head {
+    padding: 20px 22px 16px;
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+  }
+  .sidebar-head h1 {
+    font-family: "Archivo", sans-serif;
+    font-weight: 800;
+    font-size: 17px;
+    margin: 0;
+    color: #f1ece1;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  .sidebar-head h1 em { font-style: normal; color: var(--accent, #f4c430); }
+  .sidebar-head .meta {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10.5px;
+    color: #8a8275;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .sidebar-body {
+    flex: 1; overflow-y: auto;
+    padding: 18px 22px 28px;
+    scrollbar-width: thin;
+    scrollbar-color: #3a342c transparent;
+  }
+  .sidebar-body::-webkit-scrollbar { width: 8px; }
+  .sidebar-body::-webkit-scrollbar-thumb { background: #3a342c; border-radius: 4px; }
+
+  .section { margin-bottom: 22px; }
+  .section-label {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #8a8275;
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 12px;
+  }
+  .section-label::after {
+    content: ""; flex: 1; height: 1px; background: rgba(255,255,255,.07);
+  }
+
+  .field { margin-bottom: 12px; }
+  .field label {
+    display: block;
+    font-size: 12px;
+    color: #c3bcae;
+    margin-bottom: 6px;
+  }
+  .field label .v {
+    float: right;
+    font-family: "JetBrains Mono", monospace;
+    color: #8a8275;
+    font-size: 11px;
+  }
+  .input, .textarea {
+    width: 100%;
+    background: #25221d;
+    border: 1px solid #3a342c;
+    border-radius: 6px;
+    color: #e8e4dc;
+    padding: 9px 11px;
+    font: inherit; font-size: 13px;
+    font-family: inherit;
+  }
+  .input:focus, .textarea:focus {
+    outline: none; border-color: #6a6055; background: #2c2823;
+  }
+  .textarea { min-height: 76px; resize: vertical; line-height: 1.5; }
+
+  .range {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 4px;
+    background: #3a342c; border-radius: 2px; outline: none;
+  }
+  .range::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 16px; height: 16px; background: #f1ece1;
+    border-radius: 50%; cursor: pointer; border: 0;
+  }
+  .range::-moz-range-thumb {
+    width: 16px; height: 16px; background: #f1ece1;
+    border-radius: 50%; cursor: pointer; border: 0;
+  }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* layout picker — visual buttons */
+  .layouts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .lay-btn {
+    background: #25221d;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 8px 6px 6px;
+    color: #c3bcae;
+    font-family: inherit;
+    transition: border-color .15s, transform .1s;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .lay-btn:hover { transform: translateY(-1px); }
+  .lay-btn[aria-selected="true"] { border-color: #f1ece1; color: #f1ece1; }
+  .lay-btn svg { display: block; }
+  .lay-btn .nm {
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+    text-align: center;
+  }
+
+  /* palette cards */
+  .palettes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .palcard {
+    border: 2px solid transparent;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    background: #25221d;
+    transition: transform .12s ease, border-color .15s ease;
+  }
+  .palcard:hover { transform: translateY(-1px); }
+  .palcard[aria-selected="true"] { border-color: #f1ece1; }
+  .palcard .preview { height: 42px; position: relative; }
+  .palcard .preview .dark { position: absolute; inset: 0; }
+  .palcard .preview .accent {
+    position: absolute; left: 8px; right: 8px; bottom: 6px;
+    height: 7px; border-radius: 2px;
+  }
+  .palcard .nm {
+    padding: 5px 8px;
+    font-size: 10px;
+    color: #c3bcae;
+    font-family: "JetBrains Mono", monospace;
+    text-align: center;
+    border-top: 1px solid rgba(255,255,255,.06);
+  }
+
+  /* color picker rows */
+  .colors-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .color-pick {
+    display: flex; align-items: center; gap: 10px;
+    background: #25221d;
+    border: 1px solid #3a342c;
+    border-radius: 6px;
+    padding: 7px 8px;
+  }
+  .color-pick input[type="color"] {
+    width: 34px; height: 28px;
+    border: 0; padding: 0;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 4px;
+    flex: 0 0 auto;
+  }
+  .color-pick input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+  .color-pick input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 4px; }
+  .color-pick .info {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column;
+  }
+  .color-pick .info .lbl {
+    font-size: 10.5px;
+    color: #8a8275;
+    letter-spacing: 0.04em;
+  }
+  .color-pick .info .hex {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11.5px;
+    color: #e8e4dc;
+    text-transform: uppercase;
+  }
+
+  /* bg image controls */
+  .bg-controls {
+    background: #25221d;
+    border: 1px solid #3a342c;
+    border-radius: 8px;
+    padding: 12px;
+  }
+  .bg-controls .top {
+    display: flex; gap: 10px; align-items: center;
+    margin-bottom: 10px;
+  }
+  .bg-controls .preview {
+    width: 56px; height: 56px;
+    border-radius: 6px;
+    background: #1c1a17;
+    border: 1px dashed #3a342c;
+    background-size: cover;
+    background-position: center;
+    flex: 0 0 auto;
+    position: relative;
+    overflow: hidden;
+  }
+  .bg-controls .preview.empty::after {
+    content: "";
+    position: absolute;
+    inset: 6px;
+    border-radius: 4px;
+    background:
+      linear-gradient(135deg, transparent 45%, #3a342c 45%, #3a342c 55%, transparent 55%);
+  }
+  .bg-controls .actions {
+    flex: 1; display: flex; flex-direction: column; gap: 6px;
+  }
+  .bg-actions-row { display: flex; gap: 6px; }
+  .btn-soft {
+    flex: 1;
+    background: #1c1a17;
+    color: #e8e4dc;
+    border: 1px solid #3a342c;
+    border-radius: 5px;
+    padding: 7px 9px;
+    font: inherit;
+    font-size: 11.5px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background .15s;
+  }
+  .btn-soft:hover { background: #2c2823; }
+  .btn-soft.danger { color: #e0998c; }
+  .bg-controls .url-input {
+    width: 100%;
+    background: #1c1a17;
+    border: 1px solid #3a342c;
+    border-radius: 5px;
+    padding: 7px 9px;
+    color: #e8e4dc;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+  }
+  .bg-controls .url-input:focus { outline: none; border-color: #6a6055; }
+
+  .check-row {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: #c3bcae;
+    margin-top: 10px;
+  }
+  .check-row input { accent-color: var(--accent, #f4c430); }
+
+  .print-btn {
+    width: 100%;
+    background: var(--accent, #f4c430);
+    color: var(--accent-ink, #1a1f2e);
+    border: 0; border-radius: 8px;
+    padding: 13px 14px;
+    font: inherit; font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: filter .15s, transform .05s;
+  }
+  .print-btn:hover { filter: brightness(1.08); }
+  .print-btn:active { transform: translateY(1px); }
+
+  /* =================== canvas =================== */
+  .canvas {
+    overflow: auto;
+    padding: 36px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    background:
+      radial-gradient(1200px 600px at 30% -10%, rgba(255,255,255,.025), transparent 70%),
+      #2a2722;
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="layouts.jsx"></script>
+
+<script type="text/babel">
+const { useState, useMemo, useRef } = React;
+
+/* ---------- data ---------- */
+const COMPANY = {
+  name: 'TechSolutions',
+  slogan: 'Innovación a tu alcance',
+  initial: 'T',
+  address: 'Avenida de la Innovación 456, Zona 1\nQuetzaltenango, Guatemala',
+  phone: '+502 1234 5678',
+  email: 'contacto@techsolutions.gt',
+  website: 'www.techsolutions.gt'
+};
+const CLIENT = {
+  name: 'Empresa Cliente Ltda.',
+  contact: 'Juan Pérez',
+  quoteNumber: 'COT-2026-001',
+  date: new Date().toISOString().split('T')[0],
+  validUntil: '15 Días'
+};
+const ITEMS = [
+  { id: 1, title: 'Diseño de Interfaz de Usuario (UI) — App Móvil', sub: 'Incluye investigación, wireframes y prototipo interactivo.', qty: 1, price: 3500.00 },
+  { id: 2, title: 'Desarrollo Frontend (React Native)', sub: 'Horas de desarrollo para los módulos principales.', qty: 120, price: 45.00 },
+  { id: 3, title: 'Configuración de Servidores y Base de Datos (AWS)', sub: 'Arquitectura escalable en la nube.', qty: 1, price: 1200.00 },
+  { id: 4, title: 'Licencia Anual de Software de Gestión', sub: '', qty: 5, price: 299.99 },
+  { id: 5, title: 'Soporte Técnico Especializado · Paquete 50 hrs', sub: 'Soporte preventivo y correctivo nivel 2 y 3.', qty: 1, price: 1500.00 },
+  { id: 6, title: 'Auditoría de Seguridad Informática', sub: '', qty: 1, price: 2800.00 }
+];
+const PAYMENT = {
+  account: '01-2345678-9',
+  name:    'TechSolutions S.A.',
+  bank:    'Banco Industrial · Cta. Monetaria'
+};
+
+const PRESETS = [
+  { id: 'navy-yellow',   name: 'Navy/Yellow',   ink: '#1a1f2e', ink2: '#0f1320', accent: '#f4c430', paper: '#ffffff' },
+  { id: 'navy-blue',     name: 'Navy/Blue',     ink: '#0d2546', ink2: '#081832', accent: '#3b82f6', paper: '#ffffff' },
+  { id: 'charcoal',      name: 'Carbón/Ámbar',  ink: '#1c1c1c', ink2: '#101010', accent: '#ff9c2a', paper: '#ffffff' },
+  { id: 'forest',        name: 'Bosque/Lima',   ink: '#0f2a1f', ink2: '#08180f', accent: '#c6ee5b', paper: '#ffffff' },
+  { id: 'wine',          name: 'Vino/Rosa',     ink: '#2a0f1a', ink2: '#1a0810', accent: '#ff8da1', paper: '#f9f6f3' },
+  { id: 'mono',          name: 'Mono',          ink: '#0a0a0a', ink2: '#000000', accent: '#e6e6e6', paper: '#ffffff' },
+  { id: 'plum-cream',    name: 'Ciruela/Crema', ink: '#3b1f3f', ink2: '#28132c', accent: '#f1d5b4', paper: '#fbf6ee' },
+  { id: 'teal-coral',    name: 'Teal/Coral',    ink: '#0e3a3f', ink2: '#072428', accent: '#ff6b5a', paper: '#ffffff' },
+  { id: 'paper-ink',     name: 'Papel/Tinta',   ink: '#1a1714', ink2: '#0f0d0b', accent: '#b04a2f', paper: '#f6f2ea' },
+];
+
+const LAYOUTS = [
+  {
+    id: 'bold',    name: 'Hero',     Comp: () => window.LayoutBold,
+    icon: (
+      <svg width="40" height="52" viewBox="0 0 40 52" fill="none">
+        <rect width="40" height="52" rx="2" fill="#2c2823"/>
+        <rect width="40" height="18" fill="currentColor"/>
+        <rect x="22" y="14" width="14" height="6" rx="1" fill="#f4c430"/>
+        <rect x="4" y="24" width="32" height="3" rx="1" fill="currentColor" opacity=".35"/>
+        <rect x="4" y="29" width="32" height="2" rx="1" fill="currentColor" opacity=".2"/>
+        <rect x="4" y="33" width="32" height="2" rx="1" fill="currentColor" opacity=".2"/>
+        <rect x="4" y="37" width="32" height="2" rx="1" fill="currentColor" opacity=".2"/>
+        <rect y="44" width="40" height="8" fill="currentColor"/>
+      </svg>
+    )
+  },
+  {
+    id: 'banner',  name: 'Banda',    Comp: () => window.LayoutBanner,
+    icon: (
+      <svg width="40" height="52" viewBox="0 0 40 52" fill="none">
+        <rect width="40" height="52" rx="2" fill="#2c2823"/>
+        <rect x="4" y="4" width="14" height="3" rx="1" fill="currentColor"/>
+        <rect x="22" y="4" width="14" height="2" rx="1" fill="currentColor" opacity=".4"/>
+        <rect y="14" width="40" height="9" fill="#f4c430"/>
+        <rect x="4" y="27" width="32" height="3" rx="1" fill="currentColor" opacity=".35"/>
+        <rect x="4" y="32" width="32" height="2" rx="1" fill="currentColor" opacity=".2"/>
+        <rect x="4" y="36" width="32" height="2" rx="1" fill="currentColor" opacity=".2"/>
+        <rect x="22" y="44" width="14" height="4" rx="1" fill="#f4c430"/>
+      </svg>
+    )
+  },
+  {
+    id: 'classic', name: 'Clásica',  Comp: () => window.LayoutClassic,
+    icon: (
+      <svg width="40" height="52" viewBox="0 0 40 52" fill="none">
+        <rect width="40" height="52" rx="2" fill="#2c2823"/>
+        <circle cx="8" cy="8" r="3" fill="#f4c430"/>
+        <rect x="24" y="4" width="12" height="4" rx="1" fill="currentColor"/>
+        <rect x="26" y="10" width="10" height="3" rx=".5" fill="none" stroke="currentColor" strokeWidth=".5"/>
+        <line x1="4" y1="18" x2="18" y2="18" stroke="currentColor" strokeWidth=".8"/>
+        <line x1="22" y1="18" x2="36" y2="18" stroke="currentColor" strokeWidth=".8"/>
+        <line x1="4" y1="22" x2="36" y2="22" stroke="currentColor" strokeWidth=".8"/>
+        <rect x="4" y="26" width="32" height="14" rx=".5" fill="none" stroke="currentColor" strokeWidth=".5"/>
+        <rect x="4" y="42" width="32" height="2" fill="currentColor" opacity=".25"/>
+        <line x1="4" y1="48" x2="16" y2="48" stroke="currentColor" strokeWidth=".8"/>
+        <circle cx="32" cy="47" r="4" fill="none" stroke="#f4c430" strokeWidth=".8"/>
+      </svg>
+    )
+  }
+];
+
+/* ---------- helpers ---------- */
+function hexToRgb(hex) {
+  const h = hex.replace('#', '');
+  const full = h.length === 3
+    ? h.split('').map(c => c + c).join('')
+    : h.padEnd(6, '0');
+  return [parseInt(full.slice(0,2),16), parseInt(full.slice(2,4),16), parseInt(full.slice(4,6),16)];
+}
+function luminance(hex) {
+  const [r,g,b] = hexToRgb(hex).map(v => {
+    v /= 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+function autoAccentInk(accent) {
+  return luminance(accent) > 0.55 ? '#1a1f2e' : '#ffffff';
+}
+function darken(hex, amt = 0.3) {
+  const [r,g,b] = hexToRgb(hex);
+  const f = 1 - amt;
+  const toHex = (v) => v.toString(16).padStart(2, '0');
+  return '#' + toHex(Math.round(r * f)) + toHex(Math.round(g * f)) + toHex(Math.round(b * f));
+}
+
+/* ---------- App ---------- */
+function App() {
+  const [layoutId, setLayoutId] = useState('bold');
+  const [colors, setColors] = useState({
+    ink:    PRESETS[0].ink,
+    accent: PRESETS[0].accent,
+    paper:  PRESETS[0].paper,
+  });
+  const [presetId, setPresetId] = useState('navy-yellow');
+  const [currency,  setCurrency]  = useState('Q');
+  const [taxRate,   setTaxRate]   = useState(12);
+  const [notes,     setNotes]     = useState('Los precios incluyen IVA. Forma de pago: 50% anticipo, 50% contra entrega.');
+  const [bgUrl,     setBgUrl]     = useState('');
+  const [bgOpacity, setBgOpacity] = useState(0.08);
+  const [bgBlend,   setBgBlend]   = useState('multiply');
+  const fileRef = useRef(null);
+
+  const subtotal = useMemo(() => ITEMS.reduce((a, i) => a + i.qty * i.price, 0), []);
+  const tax      = subtotal * (taxRate / 100);
+  const total    = subtotal + tax;
+
+  const accentInk = autoAccentInk(colors.accent);
+  const ink2 = darken(colors.ink, 0.35);
+
+  const pageStyle = {
+    '--ink':        colors.ink,
+    '--ink-2':      ink2,
+    '--accent':     colors.accent,
+    '--accent-ink': accentInk,
+    '--paper':      colors.paper,
+  };
+
+  const applyPreset = (p) => {
+    setPresetId(p.id);
+    setColors({ ink: p.ink, accent: p.accent, paper: p.paper });
+  };
+
+  const setColor = (key, val) => {
+    setPresetId('custom');
+    setColors(c => ({ ...c, [key]: val }));
+  };
+
+  const onUpload = (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = (ev) => setBgUrl(ev.target.result);
+    r.readAsDataURL(f);
+  };
+
+  const Layout =
+    layoutId === 'bold'    ? window.LayoutBold :
+    layoutId === 'banner'  ? window.LayoutBanner :
+    layoutId === 'classic' ? window.LayoutClassic :
+    window.LayoutBold;
+
+  return (
+    <div className="app" style={pageStyle}>
+      {/* ============== SIDEBAR ============== */}
+      <aside className="sidebar">
+        <div className="sidebar-head">
+          <h1>Cotización <em>·</em> Editor</h1>
+          <div className="meta">v.2026</div>
+        </div>
+
+        <div className="sidebar-body">
+
+          {/* LAYOUT */}
+          <div className="section">
+            <div className="section-label">Disposición</div>
+            <div className="layouts">
+              {LAYOUTS.map(L => (
+                <button key={L.id}
+                        className="lay-btn"
+                        aria-selected={layoutId === L.id}
+                        onClick={() => setLayoutId(L.id)}>
+                  <span style={{color: layoutId === L.id ? colors.ink : '#3a342c'}}>{L.icon}</span>
+                  <span className="nm">{L.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* PALETTES */}
+          <div className="section">
+            <div className="section-label">Paletas</div>
+            <div className="palettes">
+              {PRESETS.map(p => (
+                <div key={p.id}
+                     className="palcard"
+                     aria-selected={presetId === p.id}
+                     onClick={() => applyPreset(p)}>
+                  <div className="preview">
+                    <div className="dark" style={{background: p.ink}}></div>
+                    <div className="accent" style={{background: p.accent}}></div>
+                  </div>
+                  <div className="nm">{p.name}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* CUSTOM COLORS */}
+          <div className="section">
+            <div className="section-label">Colores personalizados {presetId === 'custom' && <span style={{color: colors.accent, fontWeight: 600}}>· custom</span>}</div>
+            <div className="colors-row">
+              <label className="color-pick">
+                <input type="color" value={colors.ink}
+                       onChange={e => setColor('ink', e.target.value)} />
+                <div className="info">
+                  <span className="lbl">Base</span>
+                  <span className="hex">{colors.ink}</span>
+                </div>
+              </label>
+              <label className="color-pick">
+                <input type="color" value={colors.accent}
+                       onChange={e => setColor('accent', e.target.value)} />
+                <div className="info">
+                  <span className="lbl">Acento</span>
+                  <span className="hex">{colors.accent}</span>
+                </div>
+              </label>
+              <label className="color-pick" style={{gridColumn: '1 / -1'}}>
+                <input type="color" value={colors.paper}
+                       onChange={e => setColor('paper', e.target.value)} />
+                <div className="info">
+                  <span className="lbl">Papel (fondo de página)</span>
+                  <span className="hex">{colors.paper}</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          {/* BACKGROUND IMAGE */}
+          <div className="section">
+            <div className="section-label">Imagen de fondo</div>
+            <div className="bg-controls">
+              <div className="top">
+                <div className={`preview ${bgUrl ? '' : 'empty'}`}
+                     style={bgUrl ? { backgroundImage: `url(${bgUrl})` } : {}}></div>
+                <div className="actions">
+                  <div className="bg-actions-row">
+                    <button className="btn-soft" onClick={() => fileRef.current && fileRef.current.click()}>Subir</button>
+                    {bgUrl && (
+                      <button className="btn-soft danger" onClick={() => setBgUrl('')}>Quitar</button>
+                    )}
+                  </div>
+                  <input ref={fileRef} type="file" accept="image/*"
+                         style={{display: 'none'}} onChange={onUpload} />
+                </div>
+              </div>
+              <input type="text"
+                     className="url-input"
+                     placeholder="o pega una URL: https://..."
+                     value={bgUrl.startsWith('data:') ? '' : bgUrl}
+                     onChange={e => setBgUrl(e.target.value)} />
+
+              <div className="field" style={{marginTop: 12, marginBottom: 6}}>
+                <label>Opacidad <span className="v">{Math.round(bgOpacity * 100)}%</span></label>
+                <input type="range" min="0" max="1" step="0.01" className="range"
+                       value={bgOpacity}
+                       onChange={e => setBgOpacity(parseFloat(e.target.value))} />
+              </div>
+
+              <div className="field" style={{marginBottom: 0}}>
+                <label>Modo de mezcla</label>
+                <div className="row2" style={{gridTemplateColumns: 'repeat(3, 1fr)'}}>
+                  {['normal', 'multiply', 'luminosity'].map(m => (
+                    <button key={m}
+                            className="btn-soft"
+                            style={bgBlend === m ? {borderColor: '#f1ece1', color: '#f1ece1'} : {}}
+                            onClick={() => setBgBlend(m)}>{m}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* PARAMS */}
+          <div className="section">
+            <div className="section-label">Parámetros</div>
+            <div className="row2">
+              <div className="field">
+                <label>Moneda</label>
+                <input className="input" value={currency} onChange={e => setCurrency(e.target.value)} maxLength={3} />
+              </div>
+              <div className="field">
+                <label>Impuesto <span className="v">{taxRate}%</span></label>
+                <input type="range" min="0" max="25" step="1" className="range"
+                       value={taxRate} onChange={e => setTaxRate(parseInt(e.target.value, 10))} />
+              </div>
+            </div>
+          </div>
+
+          {/* NOTES */}
+          <div className="section">
+            <div className="section-label">Notas y términos</div>
+            <textarea className="textarea" value={notes} onChange={e => setNotes(e.target.value)} />
+          </div>
+
+          <button className="print-btn" onClick={() => window.print()}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 6 2 18 2 18 9"></polyline>
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+              <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+            Imprimir / PDF
+          </button>
+
+          <div style={{
+            marginTop: 22, paddingTop: 18,
+            borderTop: '1px solid rgba(255,255,255,.06)',
+            fontFamily: 'JetBrains Mono, monospace',
+            fontSize: 10.5, color: '#6a6055', letterSpacing: '0.04em', lineHeight: 1.6
+          }}>
+            Tamaño Carta · 8.5 × 11 in<br/>
+            {LAYOUTS.find(l => l.id === layoutId).name.toLowerCase()} · {presetId}
+          </div>
+        </div>
+      </aside>
+
+      {/* ============== CANVAS ============== */}
+      <main className="canvas">
+        <div className="page">
+          {bgUrl && (
+            <div className="bg-image" style={{
+              backgroundImage: `url(${bgUrl})`,
+              opacity: bgOpacity,
+              mixBlendMode: bgBlend,
+            }} />
+          )}
+          <div className="page-inner">
+            <Layout
+              company={COMPANY}
+              client={CLIENT}
+              items={ITEMS}
+              payment={PAYMENT}
+              notes={notes}
+              currency={currency}
+              taxRate={taxRate}
+              subtotal={subtotal}
+              tax={tax}
+              total={total}
+            />
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
