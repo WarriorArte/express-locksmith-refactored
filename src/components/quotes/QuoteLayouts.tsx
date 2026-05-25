@@ -182,10 +182,10 @@ export function LayoutBold(props: LayoutData) {
               {company.slogan && <div className="brand-slogan">{company.slogan}</div>}
             </div>
           </div>
-          <div className="doc-wordmark">
-            <div className="label">Documento</div>
-            <h2>COTIZACIÓN<span className="dot">.</span></h2>
+          <div className="doc-id">
+            <div className="eyebrow">Cotización</div>
             <div className="num">№ {client.quoteNumber}</div>
+            <div className="date">{fmtDate(client.date)} · vigencia {client.validUntil}</div>
           </div>
         </div>
         <div className="hero-meta">
@@ -280,10 +280,8 @@ export function LayoutBanner(props: LayoutData) {
         </div>
       </header>
 
-      <div className="banner">
-        <div className="stripe left"></div>
-        <h2>COTIZACIÓN</h2>
-        <div className="stripe right"></div>
+      <div className="banner" aria-hidden="true">
+        <div className="stripe"></div>
       </div>
 
       <section className="info-row">
@@ -352,6 +350,7 @@ export function LayoutClassic(props: LayoutData) {
         <div className="c-brand">
           <div className="c-logo">{company.initial}</div>
           <div className="c-brand-info">
+            {client.contact && <div className="name">{client.contact}</div>}
             <div className="company">{company.name}</div>
             {addressLines[0] && <div className="addr">{addressLines[0]}</div>}
             {addressLines[1] && <div className="addr">{addressLines[1]}</div>}
@@ -361,7 +360,8 @@ export function LayoutClassic(props: LayoutData) {
           </div>
         </div>
         <div className="c-title">
-          <h2>COTIZACIÓN</h2>
+          <div className="c-title-eyebrow">Documento</div>
+          <h2>Cotización</h2>
           <table className="c-meta">
             <thead>
               <tr><th>FECHA</th><th>NÚMERO</th></tr>
@@ -476,6 +476,7 @@ export function LayoutClassic(props: LayoutData) {
           <div className="lbl">Aprobado:</div>
           <div className="line"></div>
           <div className="name">{company.name}</div>
+          <div className="stamp" aria-hidden="true"><span>APROBADO</span></div>
         </div>
       </footer>
     </div>
