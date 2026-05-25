@@ -6,7 +6,19 @@ const runtimeApiBase =
     : undefined;
 
 const envApiBase = import.meta.env.VITE_PHP_API_BASE as string | undefined;
-const API_BASE = (runtimeApiBase || envApiBase || `${import.meta.env.BASE_URL}api`).replace(/\/$/, "");
+const localApiBase = `${import.meta.env.BASE_URL}api`;
+const apiBaseCandidates = [runtimeApiBase, envApiBase, localApiBase];
+
+// ===== KEYLUNE FALLBACK START =====
+// Fallback temporal: solo se intenta si window.__PHP_API_BASE__, VITE_PHP_API_BASE
+// y la ruta local /api no responden como API. Para quitarlo, borra este bloque completo.
+apiBaseCandidates.push("https://keylune.com/api");
+// ===== KEYLUNE FALLBACK END =====
+
+const API_BASES = Array.from(
+  new Set(apiBaseCandidates.filter(Boolean).map((base) => base!.replace(/\/$/, ""))),
+);
+const API_BASE = API_BASES[0];
 
 if (typeof window !== "undefined" && !(window as any).__PHP_API_BASE_LOGGED__) {
   (window as any).__PHP_API_BASE_LOGGED__ = true;
@@ -112,12 +124,46 @@ export async function phpApiRequest<T>(path: string, init?: RequestInit): Promis
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const response = await fetch(`${API_BASE}${path}`, {
-    ...init,
-    headers,
-  });
+  const requestFromBase = async (base: string) => {
+    const response = await fetch(`${base}${path}`, {
+      ...init,
+      headers,
+    });
+    const payload = await parseJson(response);
+    return { response, payload };
+  };
 
-  const payload = await parseJson(response);
+  let response: Response;
+  let payload: unknown;
+  let lastApiUnavailableError: unknown = null;
+
+  for (let index = 0; index < API_BASES.length; index += 1) {
+    const base = API_BASES[index];
+    const hasNextBase = index < API_BASES.length - 1;
+
+    try {
+      const result = await requestFromBase(base);
+      response = result.response;
+      payload = result.payload;
+
+      if (hasNextBase && [404, 405, 502, 503, 504].includes(response.status)) {
+        continue;
+      }
+
+      break;
+    } catch (error) {
+      lastApiUnavailableError = error;
+      if (!hasNextBase) {
+        throw error;
+      }
+    }
+  }
+
+  if (!response!) {
+    throw lastApiUnavailableError instanceof Error
+      ? lastApiUnavailableError
+      : new Error("No se pudo conectar con la API");
+  }
 
   if (!response.ok) {
     const message = (payload as ApiError | null)?.message || "Error de solicitud";
