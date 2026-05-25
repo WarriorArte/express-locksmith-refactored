@@ -1,4 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { phpApiRequest } from "@/lib/phpApi";
+import { useToast } from "@/hooks/use-toast";
 import { useWorkshop } from "@/hooks/useWorkshop";
 
 export type QuoteLayoutId = "bold" | "banner" | "classic";
@@ -10,7 +13,6 @@ export type QuoteDocSettings = {
   ink: string;
   accent: string;
   paper: string;
-  taxRate: number;
   notes: string;
   payment: {
     account: string;
@@ -20,7 +22,6 @@ export type QuoteDocSettings = {
   bgUrl: string;
   bgOpacity: number;
   bgBlend: QuoteBlendMode;
-  signatureName: string;
 };
 
 export const QUOTE_PRESETS = [
@@ -41,16 +42,71 @@ const DEFAULTS: QuoteDocSettings = {
   ink: "#1a1f2e",
   accent: "#f4c430",
   paper: "#ffffff",
-  taxRate: 0,
   notes: "Forma de pago: 50% anticipo, 50% contra entrega.",
   payment: { account: "", name: "", bank: "" },
   bgUrl: "",
   bgOpacity: 0.08,
   bgBlend: "multiply",
-  signatureName: "",
 };
 
 const key = (wid?: string) => `quote-doc-settings:${wid || "default"}`;
+
+type QuoteDocSettingsRow = {
+  id?: string;
+  workshop_id?: string;
+  layout?: QuoteLayoutId | null;
+  preset_id?: string | null;
+  ink?: string | null;
+  accent?: string | null;
+  paper?: string | null;
+  notes?: string | null;
+  payment_account?: string | null;
+  payment_name?: string | null;
+  payment_bank?: string | null;
+  bg_url?: string | null;
+  bg_opacity?: number | string | null;
+  bg_blend?: QuoteBlendMode | null;
+};
+
+function normalizeQuoteDocSettings(raw: QuoteDocSettingsRow | null | undefined, workshopId?: string): QuoteDocSettings {
+  const fallback = loadQuoteDocSettings(workshopId);
+  if (!raw) return fallback;
+
+  return {
+    ...DEFAULTS,
+    layout: raw.layout || DEFAULTS.layout,
+    presetId: raw.preset_id || DEFAULTS.presetId,
+    ink: raw.ink || DEFAULTS.ink,
+    accent: raw.accent || DEFAULTS.accent,
+    paper: raw.paper || DEFAULTS.paper,
+    notes: raw.notes ?? DEFAULTS.notes,
+    payment: {
+      account: raw.payment_account || "",
+      name: raw.payment_name || "",
+      bank: raw.payment_bank || "",
+    },
+    bgUrl: raw.bg_url || "",
+    bgOpacity: Number(raw.bg_opacity ?? DEFAULTS.bgOpacity),
+    bgBlend: raw.bg_blend || DEFAULTS.bgBlend,
+  };
+}
+
+function toApiPayload(settings: QuoteDocSettings) {
+  return {
+    layout: settings.layout,
+    preset_id: settings.presetId,
+    ink: settings.ink,
+    accent: settings.accent,
+    paper: settings.paper,
+    notes: settings.notes,
+    payment_account: settings.payment.account,
+    payment_name: settings.payment.name,
+    payment_bank: settings.payment.bank,
+    bg_url: settings.bgUrl,
+    bg_opacity: settings.bgOpacity,
+    bg_blend: settings.bgBlend,
+  };
+}
 
 export function loadQuoteDocSettings(workshopId?: string): QuoteDocSettings {
   if (typeof window === "undefined") return DEFAULTS;
@@ -65,27 +121,83 @@ export function loadQuoteDocSettings(workshopId?: string): QuoteDocSettings {
 
 export function useQuoteDocSettings() {
   const { currentWorkshop } = useWorkshop();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   const wid = currentWorkshop?.id;
-  const [settings, setSettings] = useState<QuoteDocSettings>(() => loadQuoteDocSettings(wid));
+  const query = useQuery({
+    queryKey: ["quote-doc-settings", wid],
+    queryFn: async () => {
+      if (!wid) return null;
+      const data = await phpApiRequest<QuoteDocSettingsRow | null>(
+        `/quote-doc-settings.php?workshop_id=${encodeURIComponent(wid)}`,
+        { method: "GET" },
+      );
+      return {
+        exists: !!data,
+        settings: normalizeQuoteDocSettings(data, wid),
+      };
+    },
+    enabled: !!wid,
+  });
+
+  const serverSettings = useMemo(
+    () => query.data?.settings || loadQuoteDocSettings(wid),
+    [query.data, wid],
+  );
+  const [settings, setSettings] = useState<QuoteDocSettings>(serverSettings);
 
   useEffect(() => {
-    setSettings(loadQuoteDocSettings(wid));
-  }, [wid]);
+    setSettings(serverSettings);
+  }, [serverSettings]);
 
-  const save = useCallback((next: QuoteDocSettings) => {
+  const mutation = useMutation({
+    mutationFn: async (next: QuoteDocSettings) => {
+      if (!wid) throw new Error("No hay taller seleccionado");
+      const data = await phpApiRequest<QuoteDocSettingsRow>("/quote-doc-settings.php", {
+        method: "PUT",
+        body: JSON.stringify({
+          workshop_id: wid,
+          ...toApiPayload(next),
+        }),
+      });
+      return normalizeQuoteDocSettings(data, wid);
+    },
+    onSuccess: (saved) => {
+      queryClient.setQueryData(["quote-doc-settings", wid], { exists: true, settings: saved });
+      try { localStorage.removeItem(key(wid)); } catch {}
+      toast({
+        title: "Cotización guardada",
+        description: "Los cambios del documento se guardaron en la base de datos",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "No se pudo guardar la configuración",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const save = useCallback((next: QuoteDocSettings = settings) => {
     setSettings(next);
-    try { localStorage.setItem(key(wid), JSON.stringify(next)); } catch {}
-  }, [wid]);
+    return mutation.mutateAsync(next);
+  }, [mutation, settings]);
 
   const update = useCallback((patch: Partial<QuoteDocSettings>) => {
-    setSettings(prev => {
-      const next = { ...prev, ...patch };
-      try { localStorage.setItem(key(wid), JSON.stringify(next)); } catch {}
-      return next;
-    });
-  }, [wid]);
+    setSettings(prev => ({ ...prev, ...patch }));
+  }, []);
 
-  return { settings, save, update };
+  const hasUnsavedChanges = query.data?.exists === false || JSON.stringify(settings) !== JSON.stringify(serverSettings);
+
+  return {
+    settings,
+    save,
+    update,
+    isLoading: query.isLoading,
+    isSaving: mutation.isPending,
+    hasUnsavedChanges,
+  };
 }
 
 /* ---------- color helpers ---------- */

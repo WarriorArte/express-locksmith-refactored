@@ -1,0 +1,86 @@
+import { forwardRef, useMemo } from "react";
+import type { BusinessSettings } from "@/hooks/useBusinessSettings";
+import type { QuoteDocSettings } from "@/hooks/useQuoteDocSettings";
+import { autoAccentInk, darken } from "@/hooks/useQuoteDocSettings";
+import type { Quote } from "@/hooks/useQuotes";
+import { cn } from "@/lib/utils";
+import { LayoutBanner, LayoutBold, LayoutClassic, buildLayoutData } from "./QuoteLayouts";
+import "@/styles/quote-doc.css";
+
+interface QuoteDocumentPageProps {
+  quote: Quote;
+  biz: BusinessSettings | null;
+  settings: QuoteDocSettings;
+  zoom?: number;
+  className?: string;
+}
+
+export const QuoteDocumentPage = forwardRef<HTMLDivElement, QuoteDocumentPageProps>(
+  ({ quote, biz, settings, zoom = 1, className }, ref) => {
+    const data = useMemo(
+      () => buildLayoutData(quote, biz, settings),
+      [quote, biz, settings],
+    );
+
+    const pageStyle = useMemo(() => ({
+      "--ink": settings.ink,
+      "--ink-2": darken(settings.ink, 0.35),
+      "--accent": settings.accent,
+      "--accent-ink": autoAccentInk(settings.accent),
+      "--paper": settings.paper,
+      zoom,
+    } as React.CSSProperties), [settings.ink, settings.accent, settings.paper, zoom]);
+
+    const Layout =
+      settings.layout === "banner" ? LayoutBanner :
+      settings.layout === "classic" ? LayoutClassic :
+      LayoutBold;
+
+    return (
+      <div ref={ref} className={cn("page qd-page-screen", className)} style={pageStyle}>
+        {settings.bgUrl && (
+          <div
+            className="bg-image"
+            style={{
+              backgroundImage: `url(${settings.bgUrl})`,
+              opacity: settings.bgOpacity,
+              mixBlendMode: settings.bgBlend as React.CSSProperties["mixBlendMode"],
+            }}
+          />
+        )}
+        <div className="page-inner">
+          <Layout {...data} />
+        </div>
+      </div>
+    );
+  },
+);
+
+QuoteDocumentPage.displayName = "QuoteDocumentPage";
+
+export function createSampleQuote(): Quote {
+  return {
+    id: "preview",
+    workshop_id: "preview",
+    quote_number: "C-250526-001",
+    customer_name: "Cliente de ejemplo",
+    customer_phone: "+502 5555 1234",
+    customer_email: "cliente@ejemplo.com",
+    customer_address: "Zona 10, Ciudad de Guatemala",
+    description: "Instalacion de cerradura inteligente y ajuste de puerta principal.",
+    status: "pending",
+    subtotal: 1425,
+    discount: 0,
+    total: 1425,
+    validity_days: 15,
+    valid_until: "2026-06-09",
+    notes: "",
+    policies: "",
+    created_at: "2026-05-25T10:30:00.000000Z",
+    updated_at: "2026-05-25T10:30:00.000000Z",
+    quote_items: [
+      { id: "1", quote_id: "preview", description: "Cerradura inteligente", quantity: 1, unit_price: 950, subtotal: 950, sort_order: 0 },
+      { id: "2", quote_id: "preview", description: "Instalacion y ajuste", quantity: 1, unit_price: 475, subtotal: 475, sort_order: 1 },
+    ],
+  } as Quote;
+}

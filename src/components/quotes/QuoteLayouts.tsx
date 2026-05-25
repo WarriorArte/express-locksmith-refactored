@@ -37,11 +37,8 @@ export type LayoutData = {
   payment: { account: string; name: string; bank: string };
   notes: string;
   currency: string;
-  taxRate: number;
   subtotal: number;
-  tax: number;
   total: number;
-  signatureName: string;
   description?: string | null;
 };
 
@@ -55,9 +52,7 @@ export function buildLayoutData(quote: Quote, biz: BusinessSettings | null, sett
     price: Number(it.unit_price || 0),
   }));
   const subtotal = Number(quote.subtotal || 0);
-  const taxRate = Number(settings.taxRate || 0);
-  const tax = subtotal * (taxRate / 100);
-  const total = Number(quote.total || subtotal + tax);
+  const total = Number(quote.total || subtotal);
   const companyName = biz?.name || "Mi Negocio";
 
   return {
@@ -83,11 +78,8 @@ export function buildLayoutData(quote: Quote, biz: BusinessSettings | null, sett
     payment: settings.payment,
     notes: quote.notes || settings.notes || "",
     currency,
-    taxRate,
     subtotal,
-    tax,
     total,
-    signatureName: settings.signatureName || companyName,
     description: quote.description,
   };
 }
@@ -123,19 +115,13 @@ function ItemsTable({ items, currency }: { items: LayoutData["items"]; currency:
   );
 }
 
-function TotalsBlock({ subtotal, tax, taxRate, total, currency }: Pick<LayoutData, "subtotal" | "tax" | "taxRate" | "total" | "currency">) {
+function TotalsBlock({ subtotal, total, currency }: Pick<LayoutData, "subtotal" | "total" | "currency">) {
   return (
     <div className="totals">
       <div className="tot-row">
         <div className="k">Subtotal</div>
         <div className="v">{fmtMoney(subtotal, currency)}</div>
       </div>
-      {taxRate > 0 && (
-        <div className="tot-row">
-          <div className="k">Impuestos · {taxRate}%</div>
-          <div className="v">{fmtMoney(tax, currency)}</div>
-        </div>
-      )}
       <div className="grand-row">
         <div className="k">Total</div>
         <div className="v"><span className="cur">{currency}</span>{fmtNum(total)}</div>
@@ -170,7 +156,7 @@ function PaymentBlock({ payment }: { payment: LayoutData["payment"] }) {
 
 /* ---------- LAYOUT A — BOLD ---------- */
 export function LayoutBold(props: LayoutData) {
-  const { company, client, items, payment, notes, currency, taxRate, subtotal, tax, total, signatureName } = props;
+  const { company, client, items, payment, notes, currency, subtotal, total } = props;
   return (
     <div className="layout-bold">
       <header className="hero">
@@ -231,7 +217,7 @@ export function LayoutBold(props: LayoutData) {
           <NotesBlock notes={notes} />
           <PaymentBlock payment={payment} />
         </div>
-        <TotalsBlock subtotal={subtotal} tax={tax} taxRate={taxRate} total={total} currency={currency} />
+        <TotalsBlock subtotal={subtotal} total={total} currency={currency} />
       </section>
 
       <footer className="foot">
@@ -249,11 +235,6 @@ export function LayoutBold(props: LayoutData) {
               {company.website && <div>{company.website}</div>}
             </div>
           </div>
-          <div className="signature">
-            <div className="line"></div>
-            <div className="sig-label">Firma autorizada</div>
-            <div className="sig-name">{signatureName}</div>
-          </div>
         </div>
       </footer>
     </div>
@@ -262,7 +243,7 @@ export function LayoutBold(props: LayoutData) {
 
 /* ---------- LAYOUT B — BANNER ---------- */
 export function LayoutBanner(props: LayoutData) {
-  const { company, client, items, payment, notes, currency, taxRate, subtotal, tax, total, signatureName } = props;
+  const { company, client, items, payment, notes, currency, subtotal, total } = props;
   return (
     <div className="layout-banner">
       <header className="b-head">
@@ -317,7 +298,7 @@ export function LayoutBanner(props: LayoutData) {
           <NotesBlock notes={notes} />
           <PaymentBlock payment={payment} />
         </div>
-        <TotalsBlock subtotal={subtotal} tax={tax} taxRate={taxRate} total={total} currency={currency} />
+        <TotalsBlock subtotal={subtotal} total={total} currency={currency} />
       </section>
 
       <footer className="foot">
@@ -329,11 +310,6 @@ export function LayoutBanner(props: LayoutData) {
               {company.website && <div>{company.website}</div>}
             </div>
           </div>
-          <div className="signature">
-            <div className="line"></div>
-            <div className="sig-label">Firma autorizada</div>
-            <div className="sig-name">{signatureName}</div>
-          </div>
         </div>
       </footer>
     </div>
@@ -342,7 +318,7 @@ export function LayoutBanner(props: LayoutData) {
 
 /* ---------- LAYOUT C — CLASSIC ---------- */
 export function LayoutClassic(props: LayoutData) {
-  const { company, client, items, payment, notes, currency, taxRate, subtotal, tax, total, description } = props;
+  const { company, client, items, payment, notes, currency, subtotal, total, description } = props;
   const addressLines = (company.address || "").split("\n");
   return (
     <div className="layout-classic">
@@ -452,12 +428,6 @@ export function LayoutClassic(props: LayoutData) {
               <td className="k">SUB TOTAL</td>
               <td className="v">{fmtMoney(subtotal, currency)}</td>
             </tr>
-            {taxRate > 0 && (
-              <tr>
-                <td className="k">IVA ({taxRate}%)</td>
-                <td className="v">{fmtMoney(tax, currency)}</td>
-              </tr>
-            )}
             <tr className="total">
               <td className="k">TOTAL</td>
               <td className="v">{fmtMoney(total, currency)}</td>

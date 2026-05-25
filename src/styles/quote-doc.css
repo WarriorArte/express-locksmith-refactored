@@ -790,7 +790,10 @@
     z-index: auto !important;
     display: block !important;
     height: auto !important;
+    visibility: visible !important;
   }
+  #quote-print-area,
+  #quote-print-area * { visibility: visible !important; }
   #quote-print-area .no-print { display: none !important; }
   .qd {
     display: block !important;

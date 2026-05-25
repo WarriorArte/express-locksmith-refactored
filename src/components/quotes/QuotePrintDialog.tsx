@@ -1,12 +1,11 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Printer, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
-import { useQuoteDocSettings, autoAccentInk, darken } from "@/hooks/useQuoteDocSettings";
+import { useQuoteDocSettings } from "@/hooks/useQuoteDocSettings";
 import type { Quote } from "@/hooks/useQuotes";
-import { LayoutBold, LayoutBanner, LayoutClassic, buildLayoutData } from "./QuoteLayouts";
-import "@/styles/quote-doc.css";
+import { QuotePreviewFrame } from "./QuotePreviewFrame";
 
 interface Props {
   open: boolean;
@@ -14,32 +13,16 @@ interface Props {
   quote: Quote | null;
 }
 
-// 8.5in × 11in at 96dpi
-const PAGE_W = 816;
-
 export function QuotePrintDialog({ open, onOpenChange, quote }: Props) {
   const { data: biz } = useBusinessSettings();
   const { settings } = useQuoteDocSettings();
-  const stageRef = useRef<HTMLDivElement>(null);
   const pageRef = useRef<HTMLDivElement>(null);
-  const [zoom, setZoom] = useState(1);
-
-  const data = useMemo(
-    () => (quote ? buildLayoutData(quote, biz ?? null, settings) : null),
-    [quote, biz, settings],
-  );
-
-  const pageStyle = useMemo(() => ({
-    "--ink": settings.ink,
-    "--ink-2": darken(settings.ink, 0.35),
-    "--accent": settings.accent,
-    "--accent-ink": autoAccentInk(settings.accent),
-    "--paper": settings.paper,
-  } as React.CSSProperties), [settings.ink, settings.accent, settings.paper]);
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onOpenChange(false); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onOpenChange(false);
+    };
     document.addEventListener("keydown", onKey);
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -49,26 +32,7 @@ export function QuotePrintDialog({ open, onOpenChange, quote }: Props) {
     };
   }, [open, onOpenChange]);
 
-  useLayoutEffect(() => {
-    if (!open) return;
-    const compute = () => {
-      const el = stageRef.current;
-      if (!el) return;
-      const avail = el.clientWidth - 24; // padding budget
-      const z = Math.min(1, avail / PAGE_W);
-      setZoom(z > 0 ? z : 1);
-    };
-    compute();
-    window.addEventListener("resize", compute);
-    return () => window.removeEventListener("resize", compute);
-  }, [open]);
-
-  if (!open || !quote || !data) return null;
-
-  const Layout =
-    settings.layout === "banner" ? LayoutBanner :
-    settings.layout === "classic" ? LayoutClassic :
-    LayoutBold;
+  if (!open || !quote) return null;
 
   const handlePrint = async () => {
     const page = pageRef.current;
@@ -77,10 +41,10 @@ export function QuotePrintDialog({ open, onOpenChange, quote }: Props) {
     const iframe = document.createElement("iframe");
     iframe.setAttribute("aria-hidden", "true");
     iframe.style.position = "fixed";
-    iframe.style.right = "0";
-    iframe.style.bottom = "0";
-    iframe.style.width = "0";
-    iframe.style.height = "0";
+    iframe.style.left = "-10000px";
+    iframe.style.top = "0";
+    iframe.style.width = "8.5in";
+    iframe.style.height = "11in";
     iframe.style.border = "0";
     iframe.style.opacity = "0";
     document.body.appendChild(iframe);
@@ -104,6 +68,7 @@ export function QuotePrintDialog({ open, onOpenChange, quote }: Props) {
           ${styles}
           <style>
             @page { size: letter; margin: 0; }
+            body * { visibility: visible !important; }
             html, body {
               margin: 0 !important;
               padding: 0 !important;
@@ -141,18 +106,15 @@ export function QuotePrintDialog({ open, onOpenChange, quote }: Props) {
     printDoc.write(html);
     printDoc.close();
 
-    const waitForImages = async () => {
-      const images = Array.from(printDoc.images);
-      await Promise.all(
-        images.map((img) => {
-          if (img.complete) return Promise.resolve();
-          return new Promise<void>((resolve) => {
-            img.addEventListener("load", () => resolve(), { once: true });
-            img.addEventListener("error", () => resolve(), { once: true });
-          });
-        }),
-      );
-    };
+    await Promise.all(
+      Array.from(printDoc.images).map((img) => {
+        if (img.complete) return Promise.resolve();
+        return new Promise<void>((resolve) => {
+          img.addEventListener("load", () => resolve(), { once: true });
+          img.addEventListener("error", () => resolve(), { once: true });
+        });
+      }),
+    );
 
     const cleanup = () => {
       printWin.removeEventListener("afterprint", cleanup);
@@ -161,7 +123,6 @@ export function QuotePrintDialog({ open, onOpenChange, quote }: Props) {
 
     printWin.addEventListener("afterprint", cleanup);
 
-    await waitForImages();
     if ("fonts" in printDoc) {
       await printDoc.fonts.ready.catch(() => undefined);
     }
@@ -173,59 +134,32 @@ export function QuotePrintDialog({ open, onOpenChange, quote }: Props) {
   };
 
   return createPortal(
-    <div
-      id="quote-print-area"
-      className="fixed inset-0 z-[100] bg-[#2a2722] overflow-auto flex flex-col"
-    >
-      {/* Toolbar */}
-      <div className="no-print sticky top-0 z-10 px-4 py-3 bg-[#1c1a17] border-b border-white/10 flex items-center justify-between">
-        <div className="text-[#e8e4dc] font-semibold text-sm truncate pr-2">
-          Cotización · {quote.quote_number}
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <Button
-            onClick={handlePrint}
-            className="bg-[#f4c430] text-[#1a1f2e] hover:brightness-110 font-bold"
-            size="sm"
-          >
-            <Printer className="w-4 h-4 sm:mr-2" />
-            <span className="hidden sm:inline">Imprimir / PDF</span>
-          </Button>
-          <Button
-            onClick={() => onOpenChange(false)}
-            variant="ghost"
-            size="icon"
-            className="text-[#e8e4dc] hover:bg-white/10"
-          >
-            <X className="w-4 h-4" />
+    <div className="fixed inset-0 z-[120] bg-black/40 p-1 sm:p-4 overflow-auto">
+      <div className="mx-auto min-h-full max-w-[460px] sm:max-w-[560px] bg-background text-foreground rounded-sm shadow-2xl flex flex-col">
+        <div className="flex items-center justify-between px-4 py-4 shrink-0">
+          <h2 className="text-lg font-bold tracking-normal">Preview</h2>
+          <Button type="button" variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
+            <X className="w-5 h-5" />
           </Button>
         </div>
-      </div>
 
-      <div ref={stageRef} className="qd flex justify-center p-3 sm:p-9">
-        <div
-          ref={pageRef}
-          className="page qd-page-screen"
-          style={{
-            ...pageStyle,
-            // CSS `zoom` scales both layout box and content — keeps scrolling sane
-            // and is automatically ignored in @media print where we reset it.
-            zoom: zoom,
-          } as React.CSSProperties}
-        >
-          {settings.bgUrl && (
-            <div
-              className="bg-image"
-              style={{
-                backgroundImage: `url(${settings.bgUrl})`,
-                opacity: settings.bgOpacity,
-                mixBlendMode: settings.bgBlend as React.CSSProperties["mixBlendMode"],
-              }}
-            />
-          )}
-          <div className="page-inner">
-            <Layout {...data} />
-          </div>
+        <div className="px-4 pb-4 flex-1 min-h-0">
+          <QuotePreviewFrame
+            ref={pageRef}
+            quote={quote}
+            biz={biz ?? null}
+            settings={settings}
+            zoom={0.44}
+            fillHeight
+            className="min-h-[calc(100vh-10.5rem)]"
+          />
+        </div>
+
+        <div className="px-4 pb-4 pt-1 shrink-0">
+          <Button type="button" onClick={handlePrint} className="w-full gap-2">
+            <Printer className="w-4 h-4" />
+            Imprimir / PDF
+          </Button>
         </div>
       </div>
     </div>,

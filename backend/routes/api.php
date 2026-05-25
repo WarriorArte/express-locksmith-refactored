@@ -11,6 +11,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\WorkshopController;
 use App\Http\Controllers\QuoteController;
+use App\Http\Controllers\QuoteDocSettingsController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServiceImageController;
@@ -70,6 +71,8 @@ Route::middleware('legacy.auth')->group(function (): void {
     Route::post('/quotes', [QuoteController::class, 'store']);
     Route::put('/quotes/{id}', [QuoteController::class, 'update']);
     Route::delete('/quotes/{id}', [QuoteController::class, 'destroy']);
+    Route::get('/quote-doc-settings', [QuoteDocSettingsController::class, 'show']);
+    Route::put('/quote-doc-settings', [QuoteDocSettingsController::class, 'update']);
 
     // Sales
     Route::get('/sales', [SaleController::class, 'index']);
@@ -113,6 +116,7 @@ Route::middleware('legacy.auth')->group(function (): void {
     Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/products.php', [ProductController::class, 'handle']);
     Route::match(['GET', 'POST'], '/inventory-movements.php', [InventoryMovementController::class, 'handle']);
     Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/quotes.php', [QuoteController::class, 'handle']);
+    Route::match(['GET', 'PUT'], '/quote-doc-settings.php', [QuoteDocSettingsController::class, 'handle']);
     Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/services.php', [ServiceController::class, 'handle']);
     Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/sales.php', [SaleController::class, 'handle']);
     Route::match(['GET', 'POST', 'DELETE'], '/service-images.php', [ServiceImageController::class, 'handle']);

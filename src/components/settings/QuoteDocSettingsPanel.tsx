@@ -1,9 +1,10 @@
-import { useMemo, useRef } from "react";
-import { FileText } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { Eye, FileText, Loader2, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { cn } from "@/lib/utils";
 import {
   useQuoteDocSettings,
@@ -11,8 +12,10 @@ import {
   autoAccentInk,
   darken,
   type QuoteLayoutId,
-  type QuoteBlendMode,
 } from "@/hooks/useQuoteDocSettings";
+import { createSampleQuote } from "@/components/quotes/QuoteDocumentPage";
+import { QuotePreviewFrame } from "@/components/quotes/QuotePreviewFrame";
+import "@/styles/quote-doc.css";
 
 const LAYOUTS: Array<{ id: QuoteLayoutId; name: string }> = [
   { id: "bold", name: "Hero" },
@@ -21,8 +24,10 @@ const LAYOUTS: Array<{ id: QuoteLayoutId; name: string }> = [
 ];
 
 export function QuoteDocSettingsPanel({ compact = false }: { compact?: boolean }) {
-  const { settings, update } = useQuoteDocSettings();
+  const { settings, update, save, isLoading, isSaving, hasUnsavedChanges } = useQuoteDocSettings();
+  const { data: biz } = useBusinessSettings();
   const fileRef = useRef<HTMLInputElement>(null);
+  const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
 
   const accentInk = useMemo(() => autoAccentInk(settings.accent), [settings.accent]);
   const ink2 = useMemo(() => darken(settings.ink, 0.35), [settings.ink]);
@@ -43,8 +48,38 @@ export function QuoteDocSettingsPanel({ compact = false }: { compact?: boolean }
     r.readAsDataURL(f);
   };
 
+  const preview = <QuotePreview settings={settings} compact={compact} />;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-10 text-muted-foreground">
+        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+        Cargando configuracion
+      </div>
+    );
+  }
+
   return (
-    <div className={cn("space-y-6", compact && "space-y-4")}>
+    <div className={cn("grid gap-6", !compact && "xl:grid-cols-[minmax(0,560px)_minmax(360px,1fr)] xl:items-start")}>
+      <div className={cn("space-y-6", compact && "space-y-4")}>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-sm font-semibold text-foreground">Plantilla del documento</div>
+            <div className="text-xs text-muted-foreground">
+              {hasUnsavedChanges ? "Cambios pendientes por guardar" : "Configuracion sincronizada"}
+            </div>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => setMobilePreviewOpen(true)}
+            className={cn("gap-2", !compact && "xl:hidden")}
+          >
+            <Eye className="w-4 h-4" />
+            Preview
+          </Button>
+        </div>
       {/* Layout picker */}
       <section>
         <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-2 block">Disposición</Label>
@@ -153,48 +188,15 @@ export function QuoteDocSettingsPanel({ compact = false }: { compact?: boolean }
               className="w-full mt-1 accent-primary"
             />
           </div>
-          <div>
-            <Label className="text-xs mb-1 block">Modo de mezcla</Label>
-            <div className="grid grid-cols-3 gap-1">
-              {(["normal", "multiply", "luminosity"] as QuoteBlendMode[]).map(m => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => update({ bgBlend: m })}
-                  className={cn(
-                    "px-2 py-1.5 rounded-md border text-xs transition-colors",
-                    settings.bgBlend === m ? "border-primary text-primary" : "border-border text-muted-foreground hover:border-muted-foreground/60",
-                  )}
-                >
-                  {m}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </section>
 
       {/* Tax + notes */}
       <section>
         <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-2 block">Parámetros del documento</Label>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label className="text-xs flex justify-between">Impuesto <span className="font-mono">{settings.taxRate}%</span></Label>
-            <input
-              type="range" min={0} max={25} step={1}
-              value={settings.taxRate}
-              onChange={e => update({ taxRate: parseInt(e.target.value, 10) })}
-              className="w-full mt-1 accent-primary"
-            />
-          </div>
-          <div>
-            <Label className="text-xs">Firma autorizada</Label>
-            <Input
-              value={settings.signatureName}
-              onChange={e => update({ signatureName: e.target.value })}
-              placeholder="Nombre del firmante"
-            />
-          </div>
+        <div className="rounded-xl border border-border bg-card p-3 text-sm text-muted-foreground">
+          El documento usa tamaÃ±o Carta 8.5 Ã— 11 in y toma los datos de contacto desde la configuraciÃ³n del negocio
+          {biz?.name ? ` (${biz.name})` : ""}.
         </div>
       </section>
 
@@ -228,11 +230,52 @@ export function QuoteDocSettingsPanel({ compact = false }: { compact?: boolean }
         </div>
       </section>
 
-      <p className="text-[11px] text-muted-foreground font-mono pt-2 border-t border-border">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-border">
+      <p className="text-[11px] text-muted-foreground font-mono">
         <FileText className="w-3 h-3 inline mr-1" />
-        Los cambios se guardan automáticamente · Tamaño Carta 8.5 × 11 in · {LAYOUTS.find(l => l.id === settings.layout)?.name.toLowerCase()} · {settings.presetId}
+        Tamaño Carta 8.5 × 11 in · {LAYOUTS.find(l => l.id === settings.layout)?.name.toLowerCase()} · {settings.presetId}
       </p>
+      <Button type="button" onClick={() => void save(settings)} disabled={isSaving || !hasUnsavedChanges} className="gap-2">
+        {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+        Guardar cambios
+      </Button>
+      </div>
+      </div>
+
+      {!compact && (
+        <aside className="hidden xl:block sticky top-4">
+          {preview}
+        </aside>
+      )}
+
+      {mobilePreviewOpen && (
+        <div className="fixed inset-0 z-[120] bg-background/95 backdrop-blur-sm p-3 overflow-auto xl:hidden">
+          <div className="flex items-center justify-between mb-3">
+            <div className="font-semibold">Preview</div>
+            <Button type="button" variant="ghost" size="icon" onClick={() => setMobilePreviewOpen(false)}>
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+          {preview}
+        </div>
+      )}
     </div>
+  );
+}
+
+function QuotePreview({ settings, compact }: { settings: ReturnType<typeof useQuoteDocSettings>["settings"]; compact?: boolean }) {
+  const { data: biz } = useBusinessSettings();
+  const sampleQuote = useMemo(() => createSampleQuote(), []);
+
+  return (
+    <QuotePreviewFrame
+      quote={sampleQuote}
+      biz={biz ?? null}
+      settings={settings}
+      zoom={compact ? 0.44 : 0.44}
+      fillHeight={compact}
+      className={compact ? "h-[calc(100vh-5rem)]" : undefined}
+    />
   );
 }
 

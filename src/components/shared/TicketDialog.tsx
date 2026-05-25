@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import QRCode from "qrcode";
+import { useRef } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/responsive-dialog";
 import { Button } from "@/components/ui/button";
 import { Printer, X } from "lucide-react";
@@ -59,15 +59,7 @@ const kindTitle: Record<TicketKind, string> = {
 
 export function TicketDialog({ open, onOpenChange, data }: Props) {
   const { data: settings } = useBusinessSettings();
-  const [qr, setQr] = useState<string>("");
   const ticketRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!data?.number) return;
-    QRCode.toDataURL(data.number, { margin: 1, width: 220 })
-      .then(setQr)
-      .catch(() => setQr(""));
-  }, [data?.number]);
 
   if (!data) return null;
 
@@ -234,7 +226,7 @@ export function TicketDialog({ open, onOpenChange, data }: Props) {
 
             {/* QR */}
             <div className="border-t border-dashed border-black/40 pt-2 flex flex-col items-center">
-              {qr && <img src={qr} alt="QR" className="w-32 h-32" />}
+              <QRCodeSVG value={data.number} size={128} marginSize={1} />
               <div className="font-mono text-[11px] mt-1 font-bold">{data.number}</div>
               <div className="text-[9px] text-center mt-1 text-black/60">
                 Conserve este comprobante
