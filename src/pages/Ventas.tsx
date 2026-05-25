@@ -380,7 +380,39 @@ export default function Ventas() {
         onOpenChange={setDetailDialogOpen}
         data={viewingSale ? getDetailData(viewingSale) : null}
         onDelete={isAdmin ? () => viewingSale && handleDelete(viewingSale) : undefined}
+        overflowActions={viewingSale ? [
+          {
+            icon: Printer,
+            label: "Imprimir ticket",
+            onClick: () => {
+              if (!viewingSale) return;
+              setTicketData({
+                kind: "sale",
+                number: viewingSale.sale_number,
+                date: viewingSale.created_at,
+                customer_name: viewingSale.customer_name || viewingSale.customer?.name,
+                customer_phone: viewingSale.customer?.phone,
+                customer_email: viewingSale.customer?.email,
+                items: (viewingSale.sale_items || []).map(it => ({
+                  name: it.product_name,
+                  quantity: it.quantity,
+                  unit_price: Number(it.unit_price),
+                  subtotal: Number(it.subtotal),
+                })),
+                subtotal: Number(viewingSale.subtotal),
+                discount: Number(viewingSale.discount || 0),
+                total: Number(viewingSale.total),
+                payment_method: viewingSale.payment_method,
+                notes: viewingSale.notes,
+              });
+              setDetailDialogOpen(false);
+              setTicketOpen(true);
+            },
+          },
+        ] : []}
       />
+
+      <TicketDialog open={ticketOpen} onOpenChange={setTicketOpen} data={ticketData} />
 
     </div>
   );
