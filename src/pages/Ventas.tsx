@@ -8,18 +8,12 @@ import {
   ShoppingCart, 
   Calendar,
   User,
-  Printer,
-  Eye,
-  MessageCircle,
   TrendingUp,
   DollarSign,
   Loader2,
   Trash2,
-  Share2,
 } from "lucide-react";
 import { SaleFormDialog } from "@/components/sales/SaleFormDialog";
-import { SalePrintPreview } from "@/components/sales/SalePrintPreview";
-import { useSalePrint } from "@/hooks/useSalePrint";
 import { DetailViewDialog } from "@/components/shared/DetailViewDialog";
 import { UnifiedSearchInput } from "@/components/shared/UnifiedSearchInput";
 import { Button } from "@/components/ui/button";
