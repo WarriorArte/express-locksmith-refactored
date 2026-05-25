@@ -83,7 +83,7 @@ export default function Garantias() {
   const { toast } = useToast();
   const { data: warranties, isLoading } = useWarranties();
   const voidWarranty = useVoidWarranty();
-  const { printWarranty } = useWarrantyPrint();
+  
   const statsRef = useRef<HTMLDivElement>(null);
   const statsHeightRef = useRef(0);
   const searchActiveRef = useRef(false);
@@ -174,14 +174,6 @@ export default function Garantias() {
     }
   };
 
-  const handlePrint = (warranty: Warranty) => {
-    printWarranty(warranty);
-  };
-
-  const handlePreview = (warranty: Warranty) => {
-    setPreviewWarranty(warranty);
-    setPreviewDialogOpen(true);
-  };
 
   const handleViewDetail = (warranty: Warranty) => {
     setViewingWarranty(warranty);
@@ -334,12 +326,7 @@ export default function Garantias() {
                             <DropdownMenuItem onClick={() => handleViewDetail(warranty)}>
                               <Eye className="w-4 h-4 mr-2" /> Ver detalle
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handlePrint(warranty)}>
-                              <Printer className="w-4 h-4 mr-2" /> Imprimir Ticket
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handlePreview(warranty)}>
-                              <Eye className="w-4 h-4 mr-2" /> Vista previa
-                            </DropdownMenuItem>
+
                             {!warranty.is_voided && isAdmin && (
                               <>
                                 <DropdownMenuSeparator />
@@ -428,13 +415,6 @@ export default function Garantias() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Print Preview Dialog */}
-      <WarrantyPrintTicket
-        open={previewDialogOpen}
-        onOpenChange={setPreviewDialogOpen}
-        warranty={previewWarranty}
-      />
-
       {/* Settings Dialog */}
       <WarrantySettingsDialog
         open={settingsDialogOpen}
@@ -446,8 +426,11 @@ export default function Garantias() {
         open={detailDialogOpen}
         onOpenChange={setDetailDialogOpen}
         warranty={viewingWarranty}
-        onPrint={() => viewingWarranty && handlePrint(viewingWarranty)}
-        onPreview={() => viewingWarranty && handlePreview(viewingWarranty)}
+        onVoid={isAdmin && viewingWarranty && !viewingWarranty.is_voided
+          ? () => { setDetailDialogOpen(false); handleVoid(viewingWarranty); }
+          : undefined}
+      />
+
         onVoid={isAdmin && viewingWarranty && !viewingWarranty.is_voided
           ? () => { setDetailDialogOpen(false); handleVoid(viewingWarranty); }
           : undefined}

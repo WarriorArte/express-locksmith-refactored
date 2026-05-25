@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { TemplateSelector } from "@/components/settings/TemplateSelector";
+
 import { UserManagement } from "@/components/settings/UserManagement";
 import { ProfileSettings } from "@/components/settings/ProfileSettings";
 import {
@@ -50,7 +50,7 @@ import { useWorkshop } from "@/hooks/useWorkshop";
 import { ImageUploader } from "@/components/shared/ImageUploader";
 import { phpApiUpload } from "@/lib/phpApi";
 import { BackupManager } from "@/components/settings/BackupManager";
-import { ThermalPrinterPreview } from "@/components/settings/ThermalPrinterPreview";
+
 import { COUNTRIES, getCountryByCode, inferCountryCode } from "@/lib/countries";
 
 export default function Configuracion() {

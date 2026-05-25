@@ -33,8 +33,6 @@ import { useProducts } from "@/hooks/useProducts";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import type { Customer } from "@/hooks/useCustomers";
 import type { Product } from "@/hooks/useProducts";
-import { SalePrintPreview } from "@/components/sales/SalePrintPreview";
-import { WarrantyPrintTicket } from "@/components/warranties/WarrantyPrintTicket";
 import { cn } from "@/lib/utils";
 
 interface SaleItem {
