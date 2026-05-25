@@ -199,7 +199,7 @@ export default function Configuracion() {
         className="hidden lg:block"
       >
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-7 gap-2 h-auto p-1 bg-muted">
+          <TabsList className="grid grid-cols-5 gap-2 h-auto p-1 bg-muted">
             <TabsTrigger value="perfil" className="gap-2 py-3">
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">Perfil</span>
@@ -211,14 +211,6 @@ export default function Configuracion() {
             <TabsTrigger value="negocio" className="gap-2 py-3">
               <Building2 className="w-4 h-4" />
               <span className="hidden sm:inline">Negocio</span>
-            </TabsTrigger>
-            <TabsTrigger value="impresora" className="gap-2 py-3">
-              <Printer className="w-4 h-4" />
-              <span className="hidden sm:inline">Ticket Térmico</span>
-            </TabsTrigger>
-            <TabsTrigger value="plantillas" className="gap-2 py-3">
-              <FileText className="w-4 h-4" />
-              <span className="hidden sm:inline">Plantillas</span>
             </TabsTrigger>
             {isAdmin && (
               <>
@@ -233,6 +225,7 @@ export default function Configuracion() {
               </>
             )}
           </TabsList>
+
 
           {/* Perfil Tab */}
           <TabsContent value="perfil" className="space-y-6">
