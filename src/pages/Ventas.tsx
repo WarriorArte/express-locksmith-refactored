@@ -48,8 +48,6 @@ export default function Ventas() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [formDialogOpen, setFormDialogOpen] = useState(false);
-  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
-  const [pdfPreviewSale, setPdfPreviewSale] = useState<Sale | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [viewingSale, setViewingSale] = useState<Sale | null>(null);
   
@@ -58,7 +56,6 @@ export default function Ventas() {
   const { data: sales, isLoading } = useSales();
   const { data: settings } = useBusinessSettings();
   const deleteSale = useDeleteSale();
-  const { printSale } = useSalePrint();
   const statsRef = useRef<HTMLDivElement>(null);
   const statsHeightRef = useRef(0);
   const searchActiveRef = useRef(false);
