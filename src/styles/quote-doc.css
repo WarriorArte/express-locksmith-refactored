@@ -806,15 +806,25 @@
 
 /* ---------- PRINT ---------- */
 @media print {
-  html, body { background: #fff !important; overflow: visible !important; height: auto !important; }
-  .app { display: block !important; }
-  .sidebar { display: none !important; }
-  .canvas { padding: 0 !important; background: #fff !important; overflow: visible !important; }
-  .qd .page {
+  body.printing-quote { background: #fff !important; }
+  body.printing-quote * { visibility: hidden !important; }
+  body.printing-quote #quote-print-area,
+  body.printing-quote #quote-print-area * { visibility: visible !important; }
+  body.printing-quote #quote-print-area {
+    position: fixed !important;
+    inset: 0 !important;
+    overflow: visible !important;
+    background: #fff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+  }
+  body.printing-quote #quote-print-area .qd .page {
     width: 8.5in !important;
     min-height: 11in !important;
     box-shadow: none !important;
     border-radius: 0 !important;
+    margin: 0 auto !important;
   }
   @page { size: letter; margin: 0; }
 }
