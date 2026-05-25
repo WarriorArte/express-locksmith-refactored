@@ -50,6 +50,7 @@ import { useWorkshop } from "@/hooks/useWorkshop";
 import { ImageUploader } from "@/components/shared/ImageUploader";
 import { phpApiUpload } from "@/lib/phpApi";
 import { BackupManager } from "@/components/settings/BackupManager";
+import { QuoteDocSettingsPanel } from "@/components/settings/QuoteDocSettingsPanel";
 
 import { COUNTRIES, getCountryByCode, inferCountryCode } from "@/lib/countries";
 
