@@ -27,13 +27,10 @@ export interface BusinessSettingsRow extends BaseRow {
   logo_url?: string | null;
   facebook?: string | null;
   instagram?: string | null;
-  whatsapp?: string | null;
   printer_size?: string | null;
-  printer_model?: string | null;
   currency_symbol?: string | null;
   phone_country_code?: string | null;
   country_code?: string | null;
-  print_logo?: boolean | number;
   auto_cut?: boolean | number;
 }
 

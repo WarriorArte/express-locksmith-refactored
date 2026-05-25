@@ -15,8 +15,6 @@ use App\Http\Controllers\SaleController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServiceImageController;
 use App\Http\Controllers\SuperAdminAccessController;
-use App\Http\Controllers\TemplateController;
-use App\Http\Controllers\TemplateSelectionController;
 use App\Http\Controllers\WarrantyController;
 use App\Http\Controllers\WarrantySettingsController;
 use App\Http\Controllers\DashboardStatsController;
@@ -120,8 +118,6 @@ Route::middleware('legacy.auth')->group(function (): void {
     Route::match(['GET', 'POST', 'DELETE'], '/service-images.php', [ServiceImageController::class, 'handle']);
     Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/warranties.php', [WarrantyController::class, 'handle']);
     Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/warranty-settings.php', [WarrantySettingsController::class, 'handle']);
-    Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/templates.php', [TemplateController::class, 'handle']);
-    Route::match(['GET', 'POST', 'DELETE'], '/template-selections.php', [TemplateSelectionController::class, 'handle']);
     Route::match(['GET', 'PUT'], '/appadmin-settings.php', [AppAdminSettingsController::class, 'handle']);
     Route::match(['GET', 'PUT'], '/superadmin-access.php', [SuperAdminAccessController::class, 'handle']);
     Route::match(['GET', 'PUT'], '/workshop-features.php', [WorkshopFeatureController::class, 'handle']);
