@@ -9,7 +9,6 @@ import {
   User,
   MoreVertical,
   Eye,
-  Printer,
   Filter,
   Loader2,
   XCircle,
@@ -50,9 +49,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, isPast, isFuture, differenceInDays } from "date-fns";
 import { es } from "date-fns/locale";
-import { WarrantyPrintTicket } from "@/components/warranties/WarrantyPrintTicket";
 import { WarrantySettingsDialog } from "@/components/warranties/WarrantySettingsDialog";
-import { useWarrantyPrint } from "@/hooks/useWarrantyPrint";
 import { WarrantyDetailDialog } from "@/components/warranties/WarrantyDetailDialog";
 import { UnifiedSearchInput } from "@/components/shared/UnifiedSearchInput";
 
