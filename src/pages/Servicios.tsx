@@ -271,9 +271,8 @@ export default function Servicios() {
     
     const updatedService = await updateService.mutateAsync(updates);
     
-    // Actualizar en ambos modales (desktop y mobile)
     setViewingService((prev) => prev ? { ...prev, status: newStatus, started_at: updates.started_at, scheduled_start_at: updates.scheduled_start_at, completed_at: updates.completed_at } : null);
-    setMobileDetailService((prev) => prev ? (updatedService || { ...prev, status: newStatus, started_at: updates.started_at, scheduled_start_at: updates.scheduled_start_at, completed_at: updates.completed_at }) : null);
+    void updatedService;
   };
 
   const handleViewDetail = (service: Service) => {
