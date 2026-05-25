@@ -79,6 +79,8 @@ export default function Garantias() {
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [viewingWarranty, setViewingWarranty] = useState<Warranty | null>(null);
+  const [ticketOpen, setTicketOpen] = useState(false);
+  const [ticketData, setTicketData] = useState<TicketData | null>(null);
   
   const { isAdmin } = useAuth();
   const { toast } = useToast();
