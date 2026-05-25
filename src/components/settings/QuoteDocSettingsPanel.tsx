@@ -1,5 +1,5 @@
 import { useMemo, useRef } from "react";
-import { FileText, Save, Loader2, Printer } from "lucide-react";
+import { FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
