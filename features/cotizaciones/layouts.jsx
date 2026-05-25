@@ -102,10 +102,10 @@ function LayoutBold({ company, client, items, payment, notes, currency, taxRate,
               <div className="brand-slogan">{company.slogan}</div>
             </div>
           </div>
-          <div className="doc-wordmark">
-            <div className="label">Documento</div>
-            <h2>COTIZACIÓN<span className="dot">.</span></h2>
+          <div className="doc-id">
+            <div className="eyebrow">Cotización</div>
             <div className="num">№ {client.quoteNumber}</div>
+            <div className="date">{fmtDate(client.date)} · vigencia {client.validUntil}</div>
           </div>
         </div>
 
@@ -201,10 +201,8 @@ function LayoutBanner({ company, client, items, payment, notes, currency, taxRat
         </div>
       </header>
 
-      <div className="banner">
-        <div className="stripe left"></div>
-        <h2>COTIZACIÓN</h2>
-        <div className="stripe right"></div>
+      <div className="banner" aria-hidden="true">
+        <div className="stripe"></div>
       </div>
 
       <section className="info-row">
@@ -280,7 +278,8 @@ function LayoutClassic({ company, client, items, payment, notes, currency, taxRa
           </div>
         </div>
         <div className="c-title">
-          <h2>COTIZACIÓN</h2>
+          <div className="c-title-eyebrow">Documento</div>
+          <h2>Cotización</h2>
           <table className="c-meta">
             <thead>
               <tr><th>FECHA</th><th>NÚMERO</th></tr>
