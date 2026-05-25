@@ -643,10 +643,7 @@ export default function Servicios() {
           setEditingService(viewingService);
           setFormDialogOpen(true);
         }}
-        onPrint={() => viewingService && handlePrint(viewingService)}
         overflowActions={[
-          { icon: Eye, label: "PDF", onClick: () => { viewingService && handlePreview(viewingService); } },
-          { icon: Share2, label: "WhatsApp", onClick: () => { viewingService && handleShare(viewingService); } },
           { icon: ImagePlus, label: "Agregar imágenes", onClick: () => { viewingService && setImagesService(viewingService); setImagesDialogOpen(true); } },
           ...(viewingService?.status === "pending" ? [
             { icon: Wrench, label: "Iniciar servicio", onClick: () => { viewingService && handleStatusChange(viewingService, "in_progress"); }, className: "text-info", separator: true },
@@ -664,13 +661,6 @@ export default function Servicios() {
         onDelete={isAdmin ? () => { viewingService && handleDelete(viewingService); } : undefined}
       />
 
-      {/* PDF Preview Dialog */}
-      <ServicePrintPreview
-        open={pdfPreviewOpen}
-        onOpenChange={setPdfPreviewOpen}
-        service={pdfPreviewService ? getPdfData(pdfPreviewService) : null}
-      />
-
       {/* Mobile detail sheet (Redesign v2) */}
       <ServiceDetailSheet
         service={mobileDetailService}
@@ -679,9 +669,6 @@ export default function Servicios() {
         currencySymbol={currencySymbol}
         onEdit={(s) => { setMobileDetailOpen(false); setEditingService(s); setFormDialogOpen(true); }}
         onStatusChange={(s, next) => handleStatusChange(s, next)}
-        onPrint={(s) => handlePrint(s)}
-        onPreview={(s) => handlePreview(s)}
-        onShare={(s) => handleShare(s)}
         onAddImages={(s) => { setMobileDetailOpen(false); setImagesService(s); setImagesDialogOpen(true); }}
         onCancel={(s) => {
           setMobileDetailOpen(false);
@@ -689,6 +676,7 @@ export default function Servicios() {
         }}
         onDelete={isAdmin ? (s) => { setMobileDetailOpen(false); handleDelete(s); } : undefined}
       />
+
     </div>
   );
 }
