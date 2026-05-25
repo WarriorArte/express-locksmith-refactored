@@ -17,7 +17,9 @@ import {
   XCircle,
   Clock,
   Loader2,
+  Printer,
 } from "lucide-react";
+import { QuotePrintDialog } from "@/components/quotes/QuotePrintDialog";
 import { QuoteFormDialog } from "@/components/quotes/QuoteFormDialog";
 import { ConvertQuoteDialog } from "@/components/quotes/ConvertQuoteDialog";
 import { DetailViewDialog } from "@/components/shared/DetailViewDialog";
