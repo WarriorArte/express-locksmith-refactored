@@ -11,20 +11,15 @@ import {
   MoreVertical,
   Edit,
   Trash2,
-  Eye,
   Copy,
-  Share2,
   ArrowRight,
   CheckCircle,
   XCircle,
   Clock,
   Loader2,
-  Printer,
 } from "lucide-react";
 import { QuoteFormDialog } from "@/components/quotes/QuoteFormDialog";
 import { ConvertQuoteDialog } from "@/components/quotes/ConvertQuoteDialog";
-import { QuotePrintPreview } from "@/components/quotes/QuotePrintPreview";
-import { useQuotePrint } from "@/hooks/useQuotePrint";
 import { DetailViewDialog } from "@/components/shared/DetailViewDialog";
 import { UnifiedSearchInput } from "@/components/shared/UnifiedSearchInput";
 import { Button } from "@/components/ui/button";
