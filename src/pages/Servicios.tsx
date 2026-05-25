@@ -437,7 +437,7 @@ export default function Servicios() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.08 }}
                 className="card-elevated overflow-hidden cursor-pointer active:scale-[0.99] transition-transform"
-                onClick={() => openMobileDetail(service)}
+                onClick={() => handleViewDetail(service)}
               >
                 <div className="p-4">
                   {/* Header: icono + número + badges | precio + menú */}
