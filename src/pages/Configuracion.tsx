@@ -497,12 +497,6 @@ export default function Configuracion() {
             </TabsContent>
           )}
 
-          {/* Plantillas Tab */}
-          <TabsContent value="plantillas" className="space-y-6">
-            <div className="card-elevated p-6">
-              <TemplateSelector />
-            </div>
-          </TabsContent>
 
           {/* Usuarios Tab */}
           {isAdmin && (
