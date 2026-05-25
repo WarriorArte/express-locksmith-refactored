@@ -601,11 +601,16 @@ export default function Inventario() {
                 className="card-elevated overflow-hidden group h-full flex flex-col"
               >
                 {/* Product Image */}
-                <div className="relative aspect-square bg-muted/50 flex items-center justify-center cursor-pointer" onClick={() => { setDetailProduct(product); setDetailOpen(true); }}>
+                <div
+                  className="relative aspect-[4/3] max-h-48 bg-[hsl(var(--surface-2))] flex items-center justify-center cursor-pointer overflow-hidden"
+                  onClick={() => { setDetailProduct(product); setDetailOpen(true); }}
+                >
                   {product.image_url ? (
                     <img src={resolveStorageUrl(product.image_url) ?? undefined} alt={product.name} className="w-full h-full object-cover" />
                   ) : (
-                    <Package className="w-16 h-16 text-muted-foreground" />
+                    <div className="flex size-20 items-center justify-center rounded-2xl bg-background/70 text-muted-foreground">
+                      <Package className="w-10 h-10" />
+                    </div>
                   )}
                   {!isService && status === "low" && (
                     <Badge className="absolute bottom-2 right-2 bg-warning text-warning-foreground">
