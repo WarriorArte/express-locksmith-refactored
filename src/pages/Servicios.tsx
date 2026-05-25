@@ -109,8 +109,7 @@ export default function Servicios() {
   const [viewingService, setViewingService] = useState<Service | null>(null);
   const [ticketOpen, setTicketOpen] = useState(false);
   const [ticketData, setTicketData] = useState<TicketData | null>(null);
-  const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
-  const [mobileDetailService, setMobileDetailService] = useState<Service | null>(null);
+  
   
   const { isAdmin } = useAuth();
   const { toast } = useToast();
