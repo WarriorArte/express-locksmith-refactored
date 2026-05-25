@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Package,
   Wrench,
+  Printer,
   type LucideIcon,
 } from "lucide-react";
 import type { ReactNode } from "react";
