@@ -489,6 +489,7 @@ export default function Cotizaciones() {
         }}
         
         overflowActions={[
+          { icon: Printer, label: "Imprimir / PDF", onClick: () => { if (viewingQuote) { setDetailDialogOpen(false); setPrintingQuote(viewingQuote); setPrintDialogOpen(true); } } },
           { icon: Copy, label: "Duplicar", onClick: () => { viewingQuote && handleDuplicate(viewingQuote); } },
           ...(viewingQuote?.status === "pending" ? [
             { icon: CheckCircle, label: "Marcar aceptada", onClick: () => { viewingQuote && handleStatusChange(viewingQuote, "accepted"); }, className: "text-foreground dark:text-success", separator: true },
@@ -498,6 +499,13 @@ export default function Cotizaciones() {
         ]}
         onDelete={isAdmin ? () => { viewingQuote && handleDelete(viewingQuote); } : undefined}
       />
+
+      <QuotePrintDialog
+        open={printDialogOpen}
+        onOpenChange={setPrintDialogOpen}
+        quote={printingQuote}
+      />
+
 
     </div>
   );
