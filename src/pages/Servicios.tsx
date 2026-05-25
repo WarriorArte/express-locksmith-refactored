@@ -107,6 +107,8 @@ export default function Servicios() {
   const [imagesService, setImagesService] = useState<Service | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [viewingService, setViewingService] = useState<Service | null>(null);
+  const [ticketOpen, setTicketOpen] = useState(false);
+  const [ticketData, setTicketData] = useState<TicketData | null>(null);
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const [mobileDetailService, setMobileDetailService] = useState<Service | null>(null);
   
