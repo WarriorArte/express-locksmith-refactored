@@ -30,6 +30,7 @@ import { ServiceFormDialog } from "@/components/services/ServiceFormDialog";
 import { ServiceDetailSheet } from "@/components/services/ServiceDetailSheet";
 import { ServiceImagesDialog } from "@/components/services/ServiceImagesDialog";
 import { DetailViewDialog } from "@/components/shared/DetailViewDialog";
+import { TicketDialog, type TicketData } from "@/components/shared/TicketDialog";
 import { UnifiedSearchInput } from "@/components/shared/UnifiedSearchInput";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
