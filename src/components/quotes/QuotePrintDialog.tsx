@@ -16,13 +16,12 @@ interface Props {
 
 // 8.5in × 11in at 96dpi
 const PAGE_W = 816;
-const PAGE_H = 1056;
 
 export function QuotePrintDialog({ open, onOpenChange, quote }: Props) {
   const { data: biz } = useBusinessSettings();
   const { settings } = useQuoteDocSettings();
   const stageRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1);
+  const [zoom, setZoom] = useState(1);
 
   const data = useMemo(
     () => (quote ? buildLayoutData(quote, biz ?? null, settings) : null),
@@ -55,8 +54,8 @@ export function QuotePrintDialog({ open, onOpenChange, quote }: Props) {
       const el = stageRef.current;
       if (!el) return;
       const avail = el.clientWidth - 24; // padding budget
-      const s = Math.min(1, avail / PAGE_W);
-      setScale(s > 0 ? s : 1);
+      const z = Math.min(1, avail / PAGE_W);
+      setZoom(z > 0 ? z : 1);
     };
     compute();
     window.addEventListener("resize", compute);
@@ -112,33 +111,26 @@ export function QuotePrintDialog({ open, onOpenChange, quote }: Props) {
 
       <div ref={stageRef} className="qd flex justify-center p-3 sm:p-9">
         <div
-          className="qd-scale"
+          className="page qd-page-screen"
           style={{
-            width: PAGE_W * scale,
-            height: PAGE_H * scale,
-          }}
+            ...pageStyle,
+            // CSS `zoom` scales both layout box and content — keeps scrolling sane
+            // and is automatically ignored in @media print where we reset it.
+            zoom: zoom,
+          } as React.CSSProperties}
         >
-          <div
-            className="page"
-            style={{
-              ...pageStyle,
-              transform: `scale(${scale})`,
-              transformOrigin: "top left",
-            }}
-          >
-            {settings.bgUrl && (
-              <div
-                className="bg-image"
-                style={{
-                  backgroundImage: `url(${settings.bgUrl})`,
-                  opacity: settings.bgOpacity,
-                  mixBlendMode: settings.bgBlend as React.CSSProperties["mixBlendMode"],
-                }}
-              />
-            )}
-            <div className="page-inner">
-              <Layout {...data} />
-            </div>
+          {settings.bgUrl && (
+            <div
+              className="bg-image"
+              style={{
+                backgroundImage: `url(${settings.bgUrl})`,
+                opacity: settings.bgOpacity,
+                mixBlendMode: settings.bgBlend as React.CSSProperties["mixBlendMode"],
+              }}
+            />
+          )}
+          <div className="page-inner">
+            <Layout {...data} />
           </div>
         </div>
       </div>
