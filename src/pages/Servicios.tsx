@@ -24,11 +24,13 @@ import {
   MapPin,
   Loader2,
   ImagePlus,
+  Printer,
 } from "lucide-react";
 import { ServiceFormDialog } from "@/components/services/ServiceFormDialog";
 import { ServiceDetailSheet } from "@/components/services/ServiceDetailSheet";
 import { ServiceImagesDialog } from "@/components/services/ServiceImagesDialog";
 import { DetailViewDialog } from "@/components/shared/DetailViewDialog";
+import { TicketDialog, type TicketData } from "@/components/shared/TicketDialog";
 import { UnifiedSearchInput } from "@/components/shared/UnifiedSearchInput";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -105,6 +107,8 @@ export default function Servicios() {
   const [imagesService, setImagesService] = useState<Service | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [viewingService, setViewingService] = useState<Service | null>(null);
+  const [ticketOpen, setTicketOpen] = useState(false);
+  const [ticketData, setTicketData] = useState<TicketData | null>(null);
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const [mobileDetailService, setMobileDetailService] = useState<Service | null>(null);
   
@@ -645,6 +649,34 @@ export default function Servicios() {
         }}
         overflowActions={[
           { icon: ImagePlus, label: "Agregar imágenes", onClick: () => { viewingService && setImagesService(viewingService); setImagesDialogOpen(true); } },
+          { icon: Printer, label: "Imprimir ticket", onClick: () => {
+            if (!viewingService) return;
+            const productsSubtotal = viewingService.service_products?.reduce((acc: number, p: any) => acc + Number(p.subtotal || 0), 0) || 0;
+            setTicketData({
+              kind: "service",
+              number: viewingService.service_number,
+              date: viewingService.created_at,
+              status: viewingService.status,
+              customer_name: viewingService.customer_name || viewingService.customer?.name,
+              customer_phone: viewingService.customer?.phone,
+              customer_email: viewingService.customer?.email,
+              description: viewingService.description,
+              problem: viewingService.problem,
+              items: (viewingService.service_products || []).map((it: any) => ({
+                name: it.product_name,
+                quantity: Number(it.quantity),
+                unit_price: Number(it.unit_price),
+                subtotal: Number(it.subtotal),
+              })),
+              labor_cost: Number(viewingService.labor_cost || 0),
+              subtotal: productsSubtotal,
+              discount: Number(viewingService.discount || 0),
+              total: Number(viewingService.final_price || viewingService.estimated_price || 0),
+              notes: viewingService.internal_notes,
+            });
+            setDetailDialogOpen(false);
+            setTicketOpen(true);
+          } },
           ...(viewingService?.status === "pending" ? [
             { icon: Wrench, label: "Iniciar servicio", onClick: () => { viewingService && handleStatusChange(viewingService, "in_progress"); }, className: "text-info", separator: true },
           ] : []),
@@ -676,6 +708,8 @@ export default function Servicios() {
         }}
         onDelete={isAdmin ? (s) => { setMobileDetailOpen(false); handleDelete(s); } : undefined}
       />
+
+      <TicketDialog open={ticketOpen} onOpenChange={setTicketOpen} data={ticketData} />
 
     </div>
   );

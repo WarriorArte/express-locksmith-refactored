@@ -51,6 +51,7 @@ import { format, parseISO, isPast, isFuture, differenceInDays } from "date-fns";
 import { es } from "date-fns/locale";
 import { WarrantySettingsDialog } from "@/components/warranties/WarrantySettingsDialog";
 import { WarrantyDetailDialog } from "@/components/warranties/WarrantyDetailDialog";
+import { TicketDialog, type TicketData } from "@/components/shared/TicketDialog";
 import { UnifiedSearchInput } from "@/components/shared/UnifiedSearchInput";
 
 const getWarrantyStatus = (warranty: Warranty) => {
@@ -78,6 +79,8 @@ export default function Garantias() {
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [viewingWarranty, setViewingWarranty] = useState<Warranty | null>(null);
+  const [ticketOpen, setTicketOpen] = useState(false);
+  const [ticketData, setTicketData] = useState<TicketData | null>(null);
   
   const { isAdmin } = useAuth();
   const { toast } = useToast();
@@ -429,7 +432,31 @@ export default function Garantias() {
         onVoid={isAdmin && viewingWarranty && !viewingWarranty.is_voided
           ? () => { setDetailDialogOpen(false); handleVoid(viewingWarranty); }
           : undefined}
+        onPrint={viewingWarranty ? () => {
+          if (!viewingWarranty) return;
+          setTicketData({
+            kind: "warranty",
+            number: viewingWarranty.warranty_code,
+            date: viewingWarranty.created_at,
+            status: viewingWarranty.is_voided ? "cancelled" : undefined,
+            customer_name: viewingWarranty.customer_name,
+            customer_phone: viewingWarranty.customer?.phone,
+            customer_email: viewingWarranty.customer?.email,
+            warranty_type: viewingWarranty.warranty_type,
+            warranty_days: viewingWarranty.warranty_days,
+            start_date: viewingWarranty.start_date,
+            end_date: viewingWarranty.end_date,
+            product_name: viewingWarranty.product_name,
+            service_description: viewingWarranty.service_description,
+            reference_number: viewingWarranty.sale?.sale_number || viewingWarranty.service?.service_number || null,
+            notes: viewingWarranty.notes,
+          });
+          setDetailDialogOpen(false);
+          setTicketOpen(true);
+        } : undefined}
       />
+
+      <TicketDialog open={ticketOpen} onOpenChange={setTicketOpen} data={ticketData} />
     </div>
   );
 }

@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Package,
   Wrench,
+  Printer,
   type LucideIcon,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -24,6 +25,7 @@ interface WarrantyDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   warranty: Warranty | null;
   onVoid?: () => void;
+  onPrint?: () => void;
 }
 
 export function WarrantyDetailDialog({
@@ -31,6 +33,7 @@ export function WarrantyDetailDialog({
   onOpenChange,
   warranty,
   onVoid,
+  onPrint,
 }: WarrantyDetailDialogProps) {
   if (!warranty) return null;
 
@@ -146,15 +149,26 @@ export function WarrantyDetailDialog({
           )}
         </div>
 
-        {showVoid && (
+        {(showVoid || onPrint) && (
           <DialogFooter className="pt-1 gap-2">
-            <Button
-              variant="outline"
-              className="h-12 w-full rounded-2xl font-semibold text-destructive hover:text-destructive"
-              onClick={onVoid}
-            >
-              <XCircle className="w-4 h-4 mr-1.5" /> Anular garantia
-            </Button>
+            {onPrint && (
+              <Button
+                variant="outline"
+                className="h-12 flex-1 rounded-2xl font-semibold"
+                onClick={onPrint}
+              >
+                <Printer className="w-4 h-4 mr-1.5" /> Imprimir
+              </Button>
+            )}
+            {showVoid && (
+              <Button
+                variant="outline"
+                className="h-12 flex-1 rounded-2xl font-semibold text-destructive hover:text-destructive"
+                onClick={onVoid}
+              >
+                <XCircle className="w-4 h-4 mr-1.5" /> Anular
+              </Button>
+            )}
           </DialogFooter>
         )}
       </DialogContent>
