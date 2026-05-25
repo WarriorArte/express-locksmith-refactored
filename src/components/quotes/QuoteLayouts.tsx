@@ -350,6 +350,7 @@ export function LayoutClassic(props: LayoutData) {
         <div className="c-brand">
           <div className="c-logo">{company.initial}</div>
           <div className="c-brand-info">
+            {client.contact && <div className="name">{client.contact}</div>}
             <div className="company">{company.name}</div>
             {addressLines[0] && <div className="addr">{addressLines[0]}</div>}
             {addressLines[1] && <div className="addr">{addressLines[1]}</div>}
@@ -359,7 +360,8 @@ export function LayoutClassic(props: LayoutData) {
           </div>
         </div>
         <div className="c-title">
-          <h2>COTIZACIÓN</h2>
+          <div className="c-title-eyebrow">Documento</div>
+          <h2>Cotización</h2>
           <table className="c-meta">
             <thead>
               <tr><th>FECHA</th><th>NÚMERO</th></tr>
