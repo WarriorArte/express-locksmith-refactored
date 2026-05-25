@@ -24,6 +24,7 @@ import {
   MapPin,
   Loader2,
   ImagePlus,
+  Printer,
 } from "lucide-react";
 import { ServiceFormDialog } from "@/components/services/ServiceFormDialog";
 import { ServiceDetailSheet } from "@/components/services/ServiceDetailSheet";
