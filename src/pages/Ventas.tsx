@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { SaleFormDialog } from "@/components/sales/SaleFormDialog";
 import { DetailViewDialog } from "@/components/shared/DetailViewDialog";
+import { TicketDialog, type TicketData } from "@/components/shared/TicketDialog";
+import { Printer } from "lucide-react";
 import { UnifiedSearchInput } from "@/components/shared/UnifiedSearchInput";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
