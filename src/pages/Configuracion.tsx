@@ -663,8 +663,12 @@ function MobileConfigTabs({
         </div>
       )}
 
+      {/* Cotización */}
+      {tab === "cotizacion" && <QuoteDocSettingsPanel compact />}
+
       {/* Usuarios */}
       {tab === "usuarios" && isAdmin && <UserManagement />}
+
 
       {/* Sistema */}
       {tab === "sistema" && (
