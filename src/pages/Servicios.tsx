@@ -651,6 +651,7 @@ export default function Servicios() {
           { icon: ImagePlus, label: "Agregar imágenes", onClick: () => { viewingService && setImagesService(viewingService); setImagesDialogOpen(true); } },
           { icon: Printer, label: "Imprimir ticket", onClick: () => {
             if (!viewingService) return;
+            const productsSubtotal = viewingService.service_products?.reduce((acc: number, p: any) => acc + Number(p.subtotal || 0), 0) || 0;
             setTicketData({
               kind: "service",
               number: viewingService.service_number,
@@ -668,7 +669,7 @@ export default function Servicios() {
                 subtotal: Number(it.subtotal),
               })),
               labor_cost: Number(viewingService.labor_cost || 0),
-              subtotal: Number(viewingService.subtotal || 0),
+              subtotal: productsSubtotal,
               discount: Number(viewingService.discount || 0),
               total: Number(viewingService.final_price || viewingService.estimated_price || 0),
               notes: viewingService.internal_notes,
