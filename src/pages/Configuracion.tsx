@@ -668,25 +668,9 @@ function MobileConfigTabs({
             <Switch checked={theme === "dark"} onCheckedChange={(c) => setTheme(c ? "dark" : "light")} />
           </div>
 
-          {/* Tamaño impresora */}
-          <div>
-            <Label>Tamaño de papel térmico</Label>
-            <Select value={businessForm.printer_model}
-              onValueChange={(v) => setBusinessForm((p: any) => ({ ...p, printer_model: v }))}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="58mm">58mm (pequeño)</SelectItem>
-                <SelectItem value="80mm">80mm (estándar)</SelectItem>
-                <SelectItem value="110mm">110mm (grande)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Plantillas + Backup as list-item card */}
+          {/* Backup as list-item card */}
           <div className="bg-card rounded-2xl border border-border overflow-hidden">
-            <SystemRow icon={Printer} label="Impresora térmica" sub="Configurar ticket" onClick={() => {}} />
-            <SystemRow icon={FileText} label="Plantillas" sub="Tickets y documentos" onClick={() => document.getElementById("__cfg_templates")?.scrollIntoView({ behavior: "smooth" })} divider />
-            {isAdmin && <SystemRow icon={Shield} label="Respaldo de datos" sub="Copia de seguridad" onClick={() => document.getElementById("__cfg_backup")?.scrollIntoView({ behavior: "smooth" })} divider />}
+            {isAdmin && <SystemRow icon={Shield} label="Respaldo de datos" sub="Copia de seguridad" onClick={() => document.getElementById("__cfg_backup")?.scrollIntoView({ behavior: "smooth" })} />}
             <SystemRow icon={Bell} label="Notificaciones" sub="Alertas de stock y servicios" onClick={() => {}} divider />
           </div>
 
@@ -695,9 +679,7 @@ function MobileConfigTabs({
             Guardar
           </Button>
 
-          <div id="__cfg_templates" className="pt-4">
-            <TemplateSelector />
-          </div>
+
           {isAdmin && (
             <div id="__cfg_backup" className="pt-4">
               <BackupManager />
