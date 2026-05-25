@@ -11,20 +11,15 @@ import {
   MoreVertical,
   Edit,
   Trash2,
-  Eye,
   Copy,
-  Share2,
   ArrowRight,
   CheckCircle,
   XCircle,
   Clock,
   Loader2,
-  Printer,
 } from "lucide-react";
 import { QuoteFormDialog } from "@/components/quotes/QuoteFormDialog";
 import { ConvertQuoteDialog } from "@/components/quotes/ConvertQuoteDialog";
-import { QuotePrintPreview } from "@/components/quotes/QuotePrintPreview";
-import { useQuotePrint } from "@/hooks/useQuotePrint";
 import { DetailViewDialog } from "@/components/shared/DetailViewDialog";
 import { UnifiedSearchInput } from "@/components/shared/UnifiedSearchInput";
 import { Button } from "@/components/ui/button";
@@ -72,8 +67,6 @@ export default function Cotizaciones() {
   const [convertingQuote, setConvertingQuote] = useState<Quote | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [viewingQuote, setViewingQuote] = useState<Quote | null>(null);
-  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
-  const [pdfPreviewQuote, setPdfPreviewQuote] = useState<Quote | null>(null);
   
   const { isAdmin } = useAuth();
   const { toast } = useToast();
@@ -83,7 +76,7 @@ export default function Cotizaciones() {
   const deleteQuote = useDeleteQuote();
   const updateQuote = useUpdateQuote();
   const duplicateQuote = useDuplicateQuote();
-  const { printQuote } = useQuotePrint();
+  
   const statsRef = useRef<HTMLDivElement>(null);
   const statsHeightRef = useRef(0);
   const searchActiveRef = useRef(false);
@@ -177,10 +170,6 @@ export default function Cotizaciones() {
     });
   };
 
-  const handlePrint = (quote: Quote) => {
-    printQuote(quote);
-  };
-
   const handleViewDetail = (quote: Quote) => {
     setViewingQuote(quote);
     setDetailDialogOpen(true);
@@ -190,10 +179,7 @@ export default function Cotizaciones() {
     await duplicateQuote.mutateAsync(quote);
   };
 
-  const handleGeneratePDF = (quote: Quote) => {
-    setPdfPreviewQuote(quote);
-    setPdfPreviewOpen(true);
-  };
+
 
   const getPrintData = (quote: Quote) => ({
     type: "quote" as const,
@@ -377,13 +363,6 @@ export default function Cotizaciones() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handlePrint(quote)}>
-                              <Printer className="w-4 h-4 mr-2" /> Imprimir
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleGeneratePDF(quote)}>
-                              <Eye className="w-4 h-4 mr-2" /> Vista previa / PDF
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => handleDuplicate(quote)}>
                               <Copy className="w-4 h-4 mr-2" /> Duplicar
                             </DropdownMenuItem>
@@ -504,9 +483,8 @@ export default function Cotizaciones() {
           setEditingQuote(viewingQuote);
           setFormDialogOpen(true);
         }}
-        onPrint={() => viewingQuote && handlePrint(viewingQuote)}
+        onPrint={undefined}
         overflowActions={[
-          { icon: Eye, label: "PDF", onClick: () => { viewingQuote && handleGeneratePDF(viewingQuote); } },
           { icon: Copy, label: "Duplicar", onClick: () => { viewingQuote && handleDuplicate(viewingQuote); } },
           ...(viewingQuote?.status === "pending" ? [
             { icon: CheckCircle, label: "Marcar aceptada", onClick: () => { viewingQuote && handleStatusChange(viewingQuote, "accepted"); }, className: "text-foreground dark:text-success", separator: true },
@@ -517,34 +495,6 @@ export default function Cotizaciones() {
         onDelete={isAdmin ? () => { viewingQuote && handleDelete(viewingQuote); } : undefined}
       />
 
-      {/* PDF Preview Dialog */}
-      <QuotePrintPreview
-        open={pdfPreviewOpen}
-        onOpenChange={setPdfPreviewOpen}
-        quote={pdfPreviewQuote ? {
-          quote_number: pdfPreviewQuote.quote_number,
-          created_at: pdfPreviewQuote.created_at,
-          valid_until: pdfPreviewQuote.valid_until,
-          customer_name: pdfPreviewQuote.customer_name || pdfPreviewQuote.customer?.name,
-          customer_phone: pdfPreviewQuote.customer_phone || pdfPreviewQuote.customer?.phone,
-          customer_email: pdfPreviewQuote.customer_email || pdfPreviewQuote.customer?.email,
-          customer_address: pdfPreviewQuote.customer_address || pdfPreviewQuote.customer?.address,
-          description: pdfPreviewQuote.description,
-          location: pdfPreviewQuote.location,
-          items: pdfPreviewQuote.quote_items?.map(item => ({
-            id: item.id,
-            description: item.description,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            subtotal: item.subtotal,
-          })) || [],
-          subtotal: pdfPreviewQuote.subtotal,
-          discount: pdfPreviewQuote.discount,
-          total: pdfPreviewQuote.total,
-          notes: pdfPreviewQuote.notes,
-          policies: pdfPreviewQuote.policies,
-        } : null}
-      />
     </div>
   );
 }

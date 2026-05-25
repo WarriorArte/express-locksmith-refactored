@@ -24,14 +24,10 @@ import {
   MapPin,
   Loader2,
   ImagePlus,
-  Printer,
-  Share2,
 } from "lucide-react";
 import { ServiceFormDialog } from "@/components/services/ServiceFormDialog";
 import { ServiceDetailSheet } from "@/components/services/ServiceDetailSheet";
 import { ServiceImagesDialog } from "@/components/services/ServiceImagesDialog";
-import { ServicePrintPreview } from "@/components/services/ServicePrintPreview";
-import { useServicePrint } from "@/hooks/useServicePrint";
 import { DetailViewDialog } from "@/components/shared/DetailViewDialog";
 import { UnifiedSearchInput } from "@/components/shared/UnifiedSearchInput";
 import { Button } from "@/components/ui/button";
@@ -107,8 +103,6 @@ export default function Servicios() {
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [imagesDialogOpen, setImagesDialogOpen] = useState(false);
   const [imagesService, setImagesService] = useState<Service | null>(null);
-  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
-  const [pdfPreviewService, setPdfPreviewService] = useState<Service | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [viewingService, setViewingService] = useState<Service | null>(null);
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
@@ -121,7 +115,7 @@ export default function Servicios() {
   const { data: products } = useProducts();
   const deleteService = useDeleteService();
   const updateService = useUpdateService();
-  const { printService } = useServicePrint();
+  
   const { updateForService } = useBatchInventoryUpdate();
 
   const currencySymbol = settings?.currency_symbol || "$";
@@ -279,81 +273,12 @@ export default function Servicios() {
     setMobileDetailService((prev) => prev ? (updatedService || { ...prev, status: newStatus, started_at: updates.started_at, scheduled_start_at: updates.scheduled_start_at, completed_at: updates.completed_at }) : null);
   };
 
-  const handlePrint = (service: Service) => {
-    printService(service);
-  };
-
-  const handlePreview = (service: Service) => {
-    setPdfPreviewService(service);
-    setPdfPreviewOpen(true);
-  };
-
   const handleViewDetail = (service: Service) => {
     setViewingService(service);
     setDetailDialogOpen(true);
   };
 
-  const handleShare = (service: Service) => {
-    const phone = service.customer?.phone;
-    const businessName = settings?.name || "Mi Negocio";
-    const statusLabel = statusConfig[service.status].label;
-    const typeLabel = typeConfig[service.service_type].label;
-    
-    const message = `*${businessName}*\n\n` +
-      `🔧 *Orden de Servicio ${service.service_number}*\n` +
-      `📅 ${format(parseISO(getServiceDisplayDate(service)), "dd/MM/yyyy", { locale: es })}\n\n` +
-      `*Tipo:* ${typeLabel}\n` +
-      `*Estado:* ${statusLabel}\n\n` +
-      `*Descripción:*\n${service.description}\n\n` +
-      (service.problem ? `*Problema:*\n${service.problem}\n\n` : "") +
-      (service.address ? `📍 ${service.address}\n\n` : "") +
-      `*Presupuesto: ${currencySymbol}${Number(service.estimated_price).toLocaleString()}*\n` +
-      (service.final_price ? `*Precio Final: ${currencySymbol}${Number(service.final_price).toLocaleString()}*\n` : "") +
-      `\n¡Gracias por su confianza!`;
-    
-    const encodedMessage = encodeURIComponent(message);
-    const phoneNumber = phone ? phone.replace(/\D/g, "") : "";
-    
-    if (phoneNumber) {
-      window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, "_blank");
-    } else {
-      navigator.clipboard.writeText(message);
-      toast({
-        title: "Mensaje copiado",
-        description: "El mensaje ha sido copiado al portapapeles.",
-      });
-    }
-  };
 
-  const getPdfData = (service: Service) => {
-    const productsSubtotal = service.service_products?.reduce((acc, p) => acc + Number(p.subtotal), 0) || 0;
-    return {
-      service_number: service.service_number,
-      created_at: getServiceDisplayDate(service),
-      customer_name: service.customer?.name,
-      customer_phone: service.customer?.phone,
-      customer_address: service.address || service.customer?.address,
-      description: service.description,
-      problem: service.problem,
-      location: service.location || service.address,
-      items: service.service_products?.map(item => ({
-        id: item.id,
-        product_name: item.product_name,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        subtotal: item.subtotal,
-      })) || [],
-      subtotal: productsSubtotal + Number(service.labor_cost || 0),
-      discount: service.discount,
-      total: service.final_price || service.estimated_price,
-      notes: service.internal_notes,
-      status: statusConfig[service.status].label,
-      service_type: typeConfig[service.service_type].label,
-      labor_cost: service.labor_cost,
-      estimated_price: service.estimated_price,
-      final_price: service.final_price,
-    };
-  };
 
   const getPrintData = (service: Service) => {
     const productsSubtotal = service.service_products?.reduce((acc, p) => acc + Number(p.subtotal), 0) || 0;
@@ -554,15 +479,6 @@ export default function Servicios() {
                             <DropdownMenuItem onClick={() => handleViewDetail(service)}>
                               <Eye className="w-4 h-4 mr-2" /> Ver detalle
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handlePrint(service)}>
-                              <Printer className="w-4 h-4 mr-2" /> Imprimir Ticket
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handlePreview(service)}>
-                              <Eye className="w-4 h-4 mr-2" /> Vista previa
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleShare(service)}>
-                              <Share2 className="w-4 h-4 mr-2" /> Compartir WhatsApp
-                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => { setImagesService(service); setImagesDialogOpen(true); }}>
                               <ImagePlus className="w-4 h-4 mr-2" /> Agregar imágenes
                             </DropdownMenuItem>
@@ -570,6 +486,7 @@ export default function Servicios() {
                               <Edit className="w-4 h-4 mr-2" /> Editar
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
+
                             {service.status === "pending" && (
                               <DropdownMenuItem className="text-info" onClick={() => handleStatusChange(service, "in_progress")}>
                                 <Wrench className="w-4 h-4 mr-2" /> Iniciar servicio
@@ -726,10 +643,7 @@ export default function Servicios() {
           setEditingService(viewingService);
           setFormDialogOpen(true);
         }}
-        onPrint={() => viewingService && handlePrint(viewingService)}
         overflowActions={[
-          { icon: Eye, label: "PDF", onClick: () => { viewingService && handlePreview(viewingService); } },
-          { icon: Share2, label: "WhatsApp", onClick: () => { viewingService && handleShare(viewingService); } },
           { icon: ImagePlus, label: "Agregar imágenes", onClick: () => { viewingService && setImagesService(viewingService); setImagesDialogOpen(true); } },
           ...(viewingService?.status === "pending" ? [
             { icon: Wrench, label: "Iniciar servicio", onClick: () => { viewingService && handleStatusChange(viewingService, "in_progress"); }, className: "text-info", separator: true },
@@ -747,13 +661,6 @@ export default function Servicios() {
         onDelete={isAdmin ? () => { viewingService && handleDelete(viewingService); } : undefined}
       />
 
-      {/* PDF Preview Dialog */}
-      <ServicePrintPreview
-        open={pdfPreviewOpen}
-        onOpenChange={setPdfPreviewOpen}
-        service={pdfPreviewService ? getPdfData(pdfPreviewService) : null}
-      />
-
       {/* Mobile detail sheet (Redesign v2) */}
       <ServiceDetailSheet
         service={mobileDetailService}
@@ -762,9 +669,6 @@ export default function Servicios() {
         currencySymbol={currencySymbol}
         onEdit={(s) => { setMobileDetailOpen(false); setEditingService(s); setFormDialogOpen(true); }}
         onStatusChange={(s, next) => handleStatusChange(s, next)}
-        onPrint={(s) => handlePrint(s)}
-        onPreview={(s) => handlePreview(s)}
-        onShare={(s) => handleShare(s)}
         onAddImages={(s) => { setMobileDetailOpen(false); setImagesService(s); setImagesDialogOpen(true); }}
         onCancel={(s) => {
           setMobileDetailOpen(false);
@@ -772,6 +676,7 @@ export default function Servicios() {
         }}
         onDelete={isAdmin ? (s) => { setMobileDetailOpen(false); handleDelete(s); } : undefined}
       />
+
     </div>
   );
 }
