@@ -52,6 +52,8 @@ export default function Ventas() {
   const [formDialogOpen, setFormDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [viewingSale, setViewingSale] = useState<Sale | null>(null);
+  const [ticketOpen, setTicketOpen] = useState(false);
+  const [ticketData, setTicketData] = useState<TicketData | null>(null);
   
   const { isAdmin } = useAuth();
   const { toast } = useToast();
