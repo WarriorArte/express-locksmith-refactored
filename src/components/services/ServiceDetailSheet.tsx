@@ -86,9 +86,6 @@ export function ServiceDetailSheet({
   currencySymbol = "$",
   onEdit,
   onStatusChange,
-  onPrint,
-  onPreview,
-  onShare,
   onAddImages,
   onCancel,
   onDelete,
@@ -149,9 +146,6 @@ export function ServiceDetailSheet({
     !!next ||
     !!onDelete ||
     !!onEdit ||
-    !!onPrint ||
-    !!onPreview ||
-    !!onShare ||
     !!onAddImages ||
     (!!onCancel && (service.status === "pending" || service.status === "in_progress"));
 
@@ -336,7 +330,7 @@ export function ServiceDetailSheet({
                   <Edit className="w-4 h-4 mr-1.5" /> Editar
                 </Button>
               )}
-              {(onPrint || onPreview || onShare || onAddImages || (onCancel && (service.status === "pending" || service.status === "in_progress"))) && (
+              {(onAddImages || (onCancel && (service.status === "pending" || service.status === "in_progress"))) && (
                 <DropdownMenu modal={false} open={actionsOpen} onOpenChange={setActionsOpen}>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl flex-shrink-0">
@@ -344,19 +338,9 @@ export function ServiceDetailSheet({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" side="top">
-                    {onPrint && (
-                      <DropdownMenuItem onClick={() => onPrint(service)}>
-                        <Printer className="w-4 h-4 mr-2" /> Imprimir ticket
-                      </DropdownMenuItem>
-                    )}
-                    {onPreview && (
-                      <DropdownMenuItem onClick={() => onPreview(service)}>
-                        <Eye className="w-4 h-4 mr-2" /> Vista previa
-                      </DropdownMenuItem>
-                    )}
-                    {onShare && (
-                      <DropdownMenuItem onClick={() => onShare(service)}>
-                        <MessageCircle className="w-4 h-4 mr-2" /> Compartir WhatsApp
+                    {onAddImages && (
+                      <DropdownMenuItem onClick={() => onAddImages(service)}>
+                        <ImagePlus className="w-4 h-4 mr-2" /> Agregar imágenes
                       </DropdownMenuItem>
                     )}
                     {onAddImages && (
