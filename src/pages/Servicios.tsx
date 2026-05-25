@@ -687,21 +687,8 @@ export default function Servicios() {
         onDelete={isAdmin ? () => { viewingService && handleDelete(viewingService); } : undefined}
       />
 
-      {/* Mobile detail sheet (Redesign v2) */}
-      <ServiceDetailSheet
-        service={mobileDetailService}
-        open={mobileDetailOpen}
-        onOpenChange={setMobileDetailOpen}
-        currencySymbol={currencySymbol}
-        onEdit={(s) => { setMobileDetailOpen(false); setEditingService(s); setFormDialogOpen(true); }}
-        onStatusChange={(s, next) => handleStatusChange(s, next)}
-        onAddImages={(s) => { setMobileDetailOpen(false); setImagesService(s); setImagesDialogOpen(true); }}
-        onCancel={(s) => {
-          setMobileDetailOpen(false);
-          window.setTimeout(() => handleStatusChange(s, "cancelled"), 0);
-        }}
-        onDelete={isAdmin ? (s) => { setMobileDetailOpen(false); handleDelete(s); } : undefined}
-      />
+
+
 
       <TicketDialog open={ticketOpen} onOpenChange={setTicketOpen} data={ticketData} />
 
