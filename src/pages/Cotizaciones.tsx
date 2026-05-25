@@ -170,10 +170,6 @@ export default function Cotizaciones() {
     });
   };
 
-  const handlePrint = (quote: Quote) => {
-    printQuote(quote);
-  };
-
   const handleViewDetail = (quote: Quote) => {
     setViewingQuote(quote);
     setDetailDialogOpen(true);
@@ -183,10 +179,7 @@ export default function Cotizaciones() {
     await duplicateQuote.mutateAsync(quote);
   };
 
-  const handleGeneratePDF = (quote: Quote) => {
-    setPdfPreviewQuote(quote);
-    setPdfPreviewOpen(true);
-  };
+
 
   const getPrintData = (quote: Quote) => ({
     type: "quote" as const,
