@@ -24,14 +24,10 @@ import {
   MapPin,
   Loader2,
   ImagePlus,
-  Printer,
-  Share2,
 } from "lucide-react";
 import { ServiceFormDialog } from "@/components/services/ServiceFormDialog";
 import { ServiceDetailSheet } from "@/components/services/ServiceDetailSheet";
 import { ServiceImagesDialog } from "@/components/services/ServiceImagesDialog";
-import { ServicePrintPreview } from "@/components/services/ServicePrintPreview";
-import { useServicePrint } from "@/hooks/useServicePrint";
 import { DetailViewDialog } from "@/components/shared/DetailViewDialog";
 import { UnifiedSearchInput } from "@/components/shared/UnifiedSearchInput";
 import { Button } from "@/components/ui/button";
