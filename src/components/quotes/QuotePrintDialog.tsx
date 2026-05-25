@@ -21,6 +21,7 @@ export function QuotePrintDialog({ open, onOpenChange, quote }: Props) {
   const { data: biz } = useBusinessSettings();
   const { settings } = useQuoteDocSettings();
   const stageRef = useRef<HTMLDivElement>(null);
+  const pageRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
 
   const data = useMemo(
@@ -69,14 +70,106 @@ export function QuotePrintDialog({ open, onOpenChange, quote }: Props) {
     settings.layout === "classic" ? LayoutClassic :
     LayoutBold;
 
-  const handlePrint = () => {
-    document.body.classList.add("printing-quote");
-    const cleanup = () => {
-      document.body.classList.remove("printing-quote");
-      window.removeEventListener("afterprint", cleanup);
+  const handlePrint = async () => {
+    const page = pageRef.current;
+    if (!page) return;
+
+    const iframe = document.createElement("iframe");
+    iframe.setAttribute("aria-hidden", "true");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.style.opacity = "0";
+    document.body.appendChild(iframe);
+
+    const printDoc = iframe.contentDocument;
+    const printWin = iframe.contentWindow;
+    if (!printDoc || !printWin) {
+      iframe.remove();
+      return;
+    }
+
+    const styles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+      .map((node) => node.outerHTML)
+      .join("\n");
+
+    const html = `<!doctype html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <base href="${window.location.href}" />
+          ${styles}
+          <style>
+            @page { size: letter; margin: 0; }
+            html, body {
+              margin: 0 !important;
+              padding: 0 !important;
+              background: #fff !important;
+              overflow: visible !important;
+            }
+            body {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            #quote-print-area {
+              display: block !important;
+              padding: 0 !important;
+              margin: 0 !important;
+              background: #fff !important;
+            }
+            #quote-print-area .page {
+              width: 8.5in !important;
+              min-height: 11in !important;
+              margin: 0 auto !important;
+              box-shadow: none !important;
+              border-radius: 0 !important;
+              overflow: hidden !important;
+              zoom: 1 !important;
+              transform: none !important;
+            }
+          </style>
+        </head>
+        <body>
+          <div id="quote-print-area" class="qd">${page.outerHTML}</div>
+        </body>
+      </html>`;
+
+    printDoc.open();
+    printDoc.write(html);
+    printDoc.close();
+
+    const waitForImages = async () => {
+      const images = Array.from(printDoc.images);
+      await Promise.all(
+        images.map((img) => {
+          if (img.complete) return Promise.resolve();
+          return new Promise<void>((resolve) => {
+            img.addEventListener("load", () => resolve(), { once: true });
+            img.addEventListener("error", () => resolve(), { once: true });
+          });
+        }),
+      );
     };
-    window.addEventListener("afterprint", cleanup);
-    setTimeout(() => window.print(), 50);
+
+    const cleanup = () => {
+      printWin.removeEventListener("afterprint", cleanup);
+      window.setTimeout(() => iframe.remove(), 300);
+    };
+
+    printWin.addEventListener("afterprint", cleanup);
+
+    await waitForImages();
+    if ("fonts" in printDoc) {
+      await printDoc.fonts.ready.catch(() => undefined);
+    }
+
+    await new Promise((resolve) => window.requestAnimationFrame(() => resolve(undefined)));
+    printWin.focus();
+    printWin.print();
+    window.setTimeout(cleanup, 1500);
   };
 
   return createPortal(
@@ -111,6 +204,7 @@ export function QuotePrintDialog({ open, onOpenChange, quote }: Props) {
 
       <div ref={stageRef} className="qd flex justify-center p-3 sm:p-9">
         <div
+          ref={pageRef}
           className="page qd-page-screen"
           style={{
             ...pageStyle,
