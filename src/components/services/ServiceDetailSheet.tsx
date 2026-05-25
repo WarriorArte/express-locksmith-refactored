@@ -27,9 +27,6 @@ import { cn } from "@/lib/utils";
 import {
   MapPin,
   Edit,
-  Printer,
-  Eye,
-  MessageCircle,
   XCircle,
   Trash2,
   Wrench,
