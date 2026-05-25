@@ -292,3 +292,21 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
+
+@media print {
+  @page { margin: 4mm; size: 80mm auto; }
+  body * { visibility: hidden !important; }
+  #ticket-print-area, #ticket-print-area * { visibility: visible !important; }
+  #ticket-print-area {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 72mm !important;
+    max-width: 72mm !important;
+    margin: 0 auto !important;
+    padding: 2mm !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    background: white !important;
+    color: black !important;
+  }
+}
