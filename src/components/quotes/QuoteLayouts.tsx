@@ -476,6 +476,7 @@ export function LayoutClassic(props: LayoutData) {
           <div className="lbl">Aprobado:</div>
           <div className="line"></div>
           <div className="name">{company.name}</div>
+          <div className="stamp" aria-hidden="true"><span>APROBADO</span></div>
         </div>
       </footer>
     </div>
