@@ -375,18 +375,9 @@ export default function Ventas() {
         open={detailDialogOpen}
         onOpenChange={setDetailDialogOpen}
         data={viewingSale ? getDetailData(viewingSale) : null}
-        onPrint={() => viewingSale && handlePrint(viewingSale)}
-        onPreview={() => viewingSale && handlePreview(viewingSale)}
-        onShare={() => viewingSale && handleShare(viewingSale)}
         onDelete={isAdmin ? () => viewingSale && handleDelete(viewingSale) : undefined}
       />
 
-      {/* PDF Preview Dialog */}
-      <SalePrintPreview
-        open={pdfPreviewOpen}
-        onOpenChange={setPdfPreviewOpen}
-        sale={pdfPreviewSale ? getPdfData(pdfPreviewSale) : null}
-      />
     </div>
   );
 }
