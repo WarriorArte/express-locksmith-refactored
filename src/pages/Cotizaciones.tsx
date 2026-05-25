@@ -483,9 +483,8 @@ export default function Cotizaciones() {
           setEditingQuote(viewingQuote);
           setFormDialogOpen(true);
         }}
-        onPrint={() => viewingQuote && handlePrint(viewingQuote)}
+        onPrint={undefined}
         overflowActions={[
-          { icon: Eye, label: "PDF", onClick: () => { viewingQuote && handleGeneratePDF(viewingQuote); } },
           { icon: Copy, label: "Duplicar", onClick: () => { viewingQuote && handleDuplicate(viewingQuote); } },
           ...(viewingQuote?.status === "pending" ? [
             { icon: CheckCircle, label: "Marcar aceptada", onClick: () => { viewingQuote && handleStatusChange(viewingQuote, "accepted"); }, className: "text-foreground dark:text-success", separator: true },
@@ -496,34 +495,6 @@ export default function Cotizaciones() {
         onDelete={isAdmin ? () => { viewingQuote && handleDelete(viewingQuote); } : undefined}
       />
 
-      {/* PDF Preview Dialog */}
-      <QuotePrintPreview
-        open={pdfPreviewOpen}
-        onOpenChange={setPdfPreviewOpen}
-        quote={pdfPreviewQuote ? {
-          quote_number: pdfPreviewQuote.quote_number,
-          created_at: pdfPreviewQuote.created_at,
-          valid_until: pdfPreviewQuote.valid_until,
-          customer_name: pdfPreviewQuote.customer_name || pdfPreviewQuote.customer?.name,
-          customer_phone: pdfPreviewQuote.customer_phone || pdfPreviewQuote.customer?.phone,
-          customer_email: pdfPreviewQuote.customer_email || pdfPreviewQuote.customer?.email,
-          customer_address: pdfPreviewQuote.customer_address || pdfPreviewQuote.customer?.address,
-          description: pdfPreviewQuote.description,
-          location: pdfPreviewQuote.location,
-          items: pdfPreviewQuote.quote_items?.map(item => ({
-            id: item.id,
-            description: item.description,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            subtotal: item.subtotal,
-          })) || [],
-          subtotal: pdfPreviewQuote.subtotal,
-          discount: pdfPreviewQuote.discount,
-          total: pdfPreviewQuote.total,
-          notes: pdfPreviewQuote.notes,
-          policies: pdfPreviewQuote.policies,
-        } : null}
-      />
     </div>
   );
 }
