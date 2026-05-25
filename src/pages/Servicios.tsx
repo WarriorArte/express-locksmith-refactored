@@ -355,10 +355,6 @@ export default function Servicios() {
     { key: "cancelled", label: "Cancelados" },
   ];
 
-  const openMobileDetail = (service: Service) => {
-    setMobileDetailService(service);
-    setMobileDetailOpen(true);
-  };
 
   return (
     <div className="flex-1 min-h-0 flex flex-col">
