@@ -27,7 +27,7 @@ import {
   Printer,
 } from "lucide-react";
 import { ServiceFormDialog } from "@/components/services/ServiceFormDialog";
-import { ServiceDetailSheet } from "@/components/services/ServiceDetailSheet";
+
 import { ServiceImagesDialog } from "@/components/services/ServiceImagesDialog";
 import { DetailViewDialog } from "@/components/shared/DetailViewDialog";
 import { TicketDialog, type TicketData } from "@/components/shared/TicketDialog";
