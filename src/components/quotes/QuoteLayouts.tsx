@@ -182,10 +182,10 @@ export function LayoutBold(props: LayoutData) {
               {company.slogan && <div className="brand-slogan">{company.slogan}</div>}
             </div>
           </div>
-          <div className="doc-wordmark">
-            <div className="label">Documento</div>
-            <h2>COTIZACIÓN<span className="dot">.</span></h2>
+          <div className="doc-id">
+            <div className="eyebrow">Cotización</div>
             <div className="num">№ {client.quoteNumber}</div>
+            <div className="date">{fmtDate(client.date)} · vigencia {client.validUntil}</div>
           </div>
         </div>
         <div className="hero-meta">
