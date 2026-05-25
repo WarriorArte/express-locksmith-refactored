@@ -280,10 +280,8 @@ export function LayoutBanner(props: LayoutData) {
         </div>
       </header>
 
-      <div className="banner">
-        <div className="stripe left"></div>
-        <h2>COTIZACIÓN</h2>
-        <div className="stripe right"></div>
+      <div className="banner" aria-hidden="true">
+        <div className="stripe"></div>
       </div>
 
       <section className="info-row">
