@@ -432,7 +432,31 @@ export default function Garantias() {
         onVoid={isAdmin && viewingWarranty && !viewingWarranty.is_voided
           ? () => { setDetailDialogOpen(false); handleVoid(viewingWarranty); }
           : undefined}
+        onPrint={viewingWarranty ? () => {
+          if (!viewingWarranty) return;
+          setTicketData({
+            kind: "warranty",
+            number: viewingWarranty.warranty_code,
+            date: viewingWarranty.created_at,
+            status: viewingWarranty.is_voided ? "cancelled" : undefined,
+            customer_name: viewingWarranty.customer_name,
+            customer_phone: viewingWarranty.customer?.phone,
+            customer_email: viewingWarranty.customer?.email,
+            warranty_type: viewingWarranty.warranty_type,
+            warranty_days: viewingWarranty.warranty_days,
+            start_date: viewingWarranty.start_date,
+            end_date: viewingWarranty.end_date,
+            product_name: viewingWarranty.product_name,
+            service_description: viewingWarranty.service_description,
+            reference_number: viewingWarranty.sale?.sale_number || viewingWarranty.service?.service_number || null,
+            notes: viewingWarranty.notes,
+          });
+          setDetailDialogOpen(false);
+          setTicketOpen(true);
+        } : undefined}
       />
+
+      <TicketDialog open={ticketOpen} onOpenChange={setTicketOpen} data={ticketData} />
     </div>
   );
 }
