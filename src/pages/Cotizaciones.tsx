@@ -69,6 +69,8 @@ export default function Cotizaciones() {
   const [convertingQuote, setConvertingQuote] = useState<Quote | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [viewingQuote, setViewingQuote] = useState<Quote | null>(null);
+  const [printDialogOpen, setPrintDialogOpen] = useState(false);
+  const [printingQuote, setPrintingQuote] = useState<Quote | null>(null);
   
   const { isAdmin } = useAuth();
   const { toast } = useToast();
