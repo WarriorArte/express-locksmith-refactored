@@ -27,7 +27,7 @@ import {
   Printer,
 } from "lucide-react";
 import { ServiceFormDialog } from "@/components/services/ServiceFormDialog";
-import { ServiceDetailSheet } from "@/components/services/ServiceDetailSheet";
+
 import { ServiceImagesDialog } from "@/components/services/ServiceImagesDialog";
 import { DetailViewDialog } from "@/components/shared/DetailViewDialog";
 import { TicketDialog, type TicketData } from "@/components/shared/TicketDialog";
@@ -109,8 +109,7 @@ export default function Servicios() {
   const [viewingService, setViewingService] = useState<Service | null>(null);
   const [ticketOpen, setTicketOpen] = useState(false);
   const [ticketData, setTicketData] = useState<TicketData | null>(null);
-  const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
-  const [mobileDetailService, setMobileDetailService] = useState<Service | null>(null);
+  
   
   const { isAdmin } = useAuth();
   const { toast } = useToast();
@@ -272,9 +271,8 @@ export default function Servicios() {
     
     const updatedService = await updateService.mutateAsync(updates);
     
-    // Actualizar en ambos modales (desktop y mobile)
     setViewingService((prev) => prev ? { ...prev, status: newStatus, started_at: updates.started_at, scheduled_start_at: updates.scheduled_start_at, completed_at: updates.completed_at } : null);
-    setMobileDetailService((prev) => prev ? (updatedService || { ...prev, status: newStatus, started_at: updates.started_at, scheduled_start_at: updates.scheduled_start_at, completed_at: updates.completed_at }) : null);
+    void updatedService;
   };
 
   const handleViewDetail = (service: Service) => {
@@ -357,10 +355,6 @@ export default function Servicios() {
     { key: "cancelled", label: "Cancelados" },
   ];
 
-  const openMobileDetail = (service: Service) => {
-    setMobileDetailService(service);
-    setMobileDetailOpen(true);
-  };
 
   return (
     <div className="flex-1 min-h-0 flex flex-col">
@@ -443,7 +437,7 @@ export default function Servicios() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.08 }}
                 className="card-elevated overflow-hidden cursor-pointer active:scale-[0.99] transition-transform"
-                onClick={() => openMobileDetail(service)}
+                onClick={() => handleViewDetail(service)}
               >
                 <div className="p-4">
                   {/* Header: icono + número + badges | precio + menú */}
@@ -693,21 +687,8 @@ export default function Servicios() {
         onDelete={isAdmin ? () => { viewingService && handleDelete(viewingService); } : undefined}
       />
 
-      {/* Mobile detail sheet (Redesign v2) */}
-      <ServiceDetailSheet
-        service={mobileDetailService}
-        open={mobileDetailOpen}
-        onOpenChange={setMobileDetailOpen}
-        currencySymbol={currencySymbol}
-        onEdit={(s) => { setMobileDetailOpen(false); setEditingService(s); setFormDialogOpen(true); }}
-        onStatusChange={(s, next) => handleStatusChange(s, next)}
-        onAddImages={(s) => { setMobileDetailOpen(false); setImagesService(s); setImagesDialogOpen(true); }}
-        onCancel={(s) => {
-          setMobileDetailOpen(false);
-          window.setTimeout(() => handleStatusChange(s, "cancelled"), 0);
-        }}
-        onDelete={isAdmin ? (s) => { setMobileDetailOpen(false); handleDelete(s); } : undefined}
-      />
+
+
 
       <TicketDialog open={ticketOpen} onOpenChange={setTicketOpen} data={ticketData} />
 
