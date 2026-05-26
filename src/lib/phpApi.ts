@@ -9,31 +9,80 @@ const envApiBase = import.meta.env.VITE_PHP_API_BASE as string | undefined;
 const localApiBase = `${import.meta.env.BASE_URL}api`;
 const apiBaseCandidates = [runtimeApiBase, envApiBase, localApiBase];
 
+// ===== KEYLUNE FALLBACK START =====
+// Cuarto fallback: solo se intenta si los anteriores no responden como API.
+// Para quitarlo, selecciona este bloque completo y borralo.
+apiBaseCandidates.push("https://keylune.com/api");
+// ===== KEYLUNE FALLBACK END =====
+
 const API_BASES = Array.from(
   new Set(apiBaseCandidates.filter(Boolean).map((base) => base!.replace(/\/$/, ""))),
 );
 const API_BASE = API_BASES[0];
+const ACTIVE_API_BASE_KEY = "ce_php_active_api_base";
 
-if (typeof window !== "undefined" && !(window as any).__PHP_API_BASE_LOGGED__) {
-  (window as any).__PHP_API_BASE_LOGGED__ = true;
-  console.info("[phpApi] BASE =", API_BASE);
+function getStoredActiveApiBase() {
+  if (typeof window === "undefined") return null;
+  const storedBase = localStorage.getItem(ACTIVE_API_BASE_KEY);
+  return storedBase && API_BASES.includes(storedBase) ? storedBase : null;
 }
 
-const STORAGE_BASE = API_BASE.replace(/\/api(\/.*)?$/, "");
+function setActiveApiBase(base: string) {
+  activeApiBase = base;
+  if (typeof window !== "undefined") {
+    localStorage.setItem(ACTIVE_API_BASE_KEY, base);
+  }
+}
 
-// ===== KEYLUNE FALLBACK START =====
-// ...
-apiBaseCandidates.push("https://keylune.com/api");
-// ===== KEYLUNE FALLBACK END =====
+let activeApiBase = getStoredActiveApiBase() || API_BASE;
+let apiBaseResolutionPromise: Promise<string> | null = null;
 
+function getStorageBase() {
+  return activeApiBase.replace(/\/api(\/.*)?$/, "");
+}
+
+function isApiBaseUnavailableStatus(status: number) {
+  return [404, 405, 502, 503, 504].includes(status);
+}
+
+async function ensureActiveApiBase(headers: Headers) {
+  if (apiBaseResolutionPromise) return apiBaseResolutionPromise;
+
+  apiBaseResolutionPromise = (async () => {
+    const orderedApiBases = [activeApiBase, ...API_BASES.filter((base) => base !== activeApiBase)];
+    let lastError: unknown = null;
+
+    for (const base of orderedApiBases) {
+      try {
+        const response = await fetch(`${base}/auth/me`, {
+          method: "GET",
+          headers,
+        });
+
+        if (!isApiBaseUnavailableStatus(response.status)) {
+          setActiveApiBase(base);
+          return activeApiBase;
+        }
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    apiBaseResolutionPromise = null;
+    throw lastError instanceof Error ? lastError : new Error("No se pudo conectar con la API");
+  })();
+
+  return apiBaseResolutionPromise;
+}
 
 export function resolveStorageUrl(path: string | null | undefined): string | null {
   if (!path) return null;
-  if (path.startsWith("/")) return `${STORAGE_BASE}${path}`;
+  const storageBase = getStorageBase();
+  if (path.startsWith("/")) return `${storageBase}${path}`;
   if (path.startsWith("blob:") || path.startsWith("data:")) return path;
   try {
     const parsed = new URL(path);
-    return `${STORAGE_BASE}${parsed.pathname}`;
+    return `${storageBase}${parsed.pathname}`;
   } catch {
     return path;
   }
@@ -124,6 +173,8 @@ export async function phpApiRequest<T>(path: string, init?: RequestInit): Promis
     headers.set("Authorization", `Bearer ${token}`);
   }
 
+  await ensureActiveApiBase(headers);
+
   const requestFromBase = async (base: string) => {
     const response = await fetch(`${base}${path}`, {
       ...init,
@@ -137,17 +188,25 @@ export async function phpApiRequest<T>(path: string, init?: RequestInit): Promis
   let payload: unknown;
   let lastApiUnavailableError: unknown = null;
 
-  for (let index = 0; index < API_BASES.length; index += 1) {
-    const base = API_BASES[index];
-    const hasNextBase = index < API_BASES.length - 1;
+  const orderedApiBases = [activeApiBase, ...API_BASES.filter((base) => base !== activeApiBase)];
+
+  for (let index = 0; index < orderedApiBases.length; index += 1) {
+    const base = orderedApiBases[index];
+    const hasNextBase = index < orderedApiBases.length - 1;
 
     try {
       const result = await requestFromBase(base);
       response = result.response;
       payload = result.payload;
 
-      if (hasNextBase && [404, 405, 502, 503, 504].includes(response.status)) {
+      if (hasNextBase && isApiBaseUnavailableStatus(response.status)) {
+        apiBaseResolutionPromise = null;
         continue;
+      }
+
+      if (response.ok) {
+        setActiveApiBase(base);
+        apiBaseResolutionPromise = Promise.resolve(base);
       }
 
       break;

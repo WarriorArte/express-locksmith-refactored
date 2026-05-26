@@ -1,4 +1,4 @@
-import { AnimatePresence, m as motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -18,7 +18,6 @@ const SWIPE_DISTANCE_THRESHOLD = 50;
 const slideVariants = {
   enter: (dir: number) => ({ x: dir > 0 ? 1000 : -1000, opacity: 0 }),
   center: { x: 0, opacity: 1, zIndex: 1 },
-  exit: (dir: number) => ({ x: dir < 0 ? 1000 : -1000, opacity: 0, zIndex: 0 }),
 };
 
 export function ImageViewDialog({
@@ -290,24 +289,23 @@ export function ImageViewDialog({
   const lightboxRef = useRef<HTMLDivElement | null>(null);
   const currentImage = images.length > 0 ? images[imageIndex] : null;
 
+  if (!open || images.length === 0 || !currentImage) return null;
+
   return createPortal(
-    <AnimatePresence>
-      {open && images.length > 0 && currentImage && (
-        <motion.div
-          ref={lightboxRef}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.25, ease: "easeOut" }}
-          className="fixed inset-0 z-[200] bg-black/90 overflow-hidden select-none pointer-events-auto"
-          style={{
-            touchAction: "none",
-          }}
-          role="dialog"
-          aria-modal="true"
-          onClick={(e) => e.stopPropagation()}
-          onPointerDown={(e) => e.stopPropagation()}
-        >
+    <motion.div
+      ref={lightboxRef}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
+      className="fixed inset-0 z-[200] bg-black/90 overflow-hidden select-none pointer-events-auto"
+      style={{
+        touchAction: "none",
+      }}
+      role="dialog"
+      aria-modal="true"
+      onClick={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+    >
 
           {/* Contenedor principal de la imagen (perfectamente centrado) */}
           <div 
@@ -322,14 +320,12 @@ export function ImageViewDialog({
             onMouseUp={handleMouseUpOrLeave}
             onMouseLeave={handleMouseUpOrLeave}
           >
-            <AnimatePresence initial={false} custom={direction}>
-              <motion.div
+            <motion.div
                 key={page}
                 custom={direction}
                 variants={slideVariants}
                 initial="enter"
                 animate="center"
-                exit="exit"
                 transition={{
                   x: { type: "spring", stiffness: 300, damping: 30 },
                   opacity: { duration: 0.2 },
@@ -350,8 +346,7 @@ export function ImageViewDialog({
                   }}
                   transition={{ type: "spring", stiffness: 600, damping: 50, mass: 0.5 }}
                 />
-              </motion.div>
-            </AnimatePresence>
+            </motion.div>
           </div>
 
           {/* Barra superior de controles (simétrica y con safe area, sin gradientes) */}
@@ -466,9 +461,7 @@ export function ImageViewDialog({
               )}
             </div>
           )}
-        </motion.div>
-      )}
-    </AnimatePresence>,
+    </motion.div>,
     document.body
   );
 }
