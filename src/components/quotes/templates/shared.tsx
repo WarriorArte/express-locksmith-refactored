@@ -29,6 +29,7 @@ export function buildLayoutData(quote: Quote, biz: BusinessSettings | null, sett
     price: Number(it.unit_price || 0),
   }));
   const subtotal = Number(quote.subtotal || 0);
+  const discount = Number(quote.discount || 0);
   const total = Number(quote.total || subtotal);
   const companyName = biz?.name || "Mi Negocio";
 
@@ -57,6 +58,7 @@ export function buildLayoutData(quote: Quote, biz: BusinessSettings | null, sett
     notes: quote.notes || settings.notes || "",
     currency,
     subtotal,
+    discount,
     total,
     description: quote.description,
   };
@@ -92,13 +94,19 @@ export function ItemsTable({ items, currency }: { items: LayoutData["items"]; cu
   );
 }
 
-export function TotalsBlock({ subtotal, total, currency }: Pick<LayoutData, "subtotal" | "total" | "currency">) {
+export function TotalsBlock({ subtotal, discount, total, currency }: Pick<LayoutData, "subtotal" | "discount" | "total" | "currency">) {
   return (
     <div className="totals">
       <div className="tot-row">
         <div className="k">Subtotal</div>
         <div className="v">{fmtMoney(subtotal, currency)}</div>
       </div>
+      {discount > 0 && (
+        <div className="tot-row discount-row">
+          <div className="k">Descuento</div>
+          <div className="v">-{fmtMoney(discount, currency)}</div>
+        </div>
+      )}
       <div className="grand-row">
         <div className="k">Total</div>
         <div className="v"><span className="cur">{currency}</span>{fmtNum(total)}</div>

@@ -87,7 +87,12 @@ export function ServiceProductsEditor({
     const allowEmpty = showDescriptionField;
     if (!allowEmpty && !pendingProductId) return;
 
-    const unitPrice = pendingProduct ? Number(pendingProduct.sale_price_min || 0) : 0;
+    const isService = (pendingProduct?.item_type ?? "product") === "service";
+    const unitPrice = pendingProduct
+      ? isService
+        ? Math.max(0, Number(pendingProduct.labor_cost || 0) + (pendingProduct.service_products || []).reduce((sum, i) => sum + Number(i.subtotal || 0), 0))
+        : Number(pendingProduct.sale_price_min || 0)
+      : 0;
     onNoProductsConsumedChange?.(false);
     onItemsChange([
       ...items,
@@ -167,7 +172,7 @@ export function ServiceProductsEditor({
         )}
       >
         <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Seleccionar Producto
+          {showDescriptionField ? "Seleccionar Producto o Servicio" : "Seleccionar Producto"}
         </Label>
         <div className="flex gap-2">
           <div className="flex-1">

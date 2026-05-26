@@ -3,7 +3,6 @@ import { Eye, FileText, Loader2, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { cn } from "@/lib/utils";
 import {
@@ -28,7 +27,6 @@ export function QuoteDocSettingsPanel({
 }) {
   const localState = useQuoteDocSettings();
   const { settings, update, save, isLoading, isSaving, hasUnsavedChanges } = state ?? localState;
-  const { data: biz } = useBusinessSettings();
   const fileRef = useRef<HTMLInputElement>(null);
   const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
 
@@ -191,45 +189,6 @@ export function QuoteDocSettingsPanel({
               className="w-full mt-1 accent-primary"
             />
           </div>
-        </div>
-      </section>
-
-      {/* Tax + notes */}
-      <section>
-        <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-2 block">Parámetros del documento</Label>
-        <div className="rounded-xl border border-border bg-card p-3 text-sm text-muted-foreground">
-          El documento usa tamaÃ±o Carta 8.5 Ã— 11 in y toma los datos de contacto desde la configuraciÃ³n del negocio
-          {biz?.name ? ` (${biz.name})` : ""}.
-        </div>
-      </section>
-
-      <section>
-        <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-2 block">Notas y términos por defecto</Label>
-        <Textarea
-          value={settings.notes}
-          onChange={e => update({ notes: e.target.value })}
-          rows={3}
-        />
-      </section>
-
-      <section>
-        <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-2 block">Información de pago</Label>
-        <div className="grid grid-cols-1 gap-2">
-          <Input
-            placeholder="Cuenta №"
-            value={settings.payment.account}
-            onChange={e => update({ payment: { ...settings.payment, account: e.target.value } })}
-          />
-          <Input
-            placeholder="A nombre de"
-            value={settings.payment.name}
-            onChange={e => update({ payment: { ...settings.payment, name: e.target.value } })}
-          />
-          <Input
-            placeholder="Banco · tipo de cuenta"
-            value={settings.payment.bank}
-            onChange={e => update({ payment: { ...settings.payment, bank: e.target.value } })}
-          />
         </div>
       </section>
 

@@ -80,7 +80,7 @@ export function ProductSelect({ value, onValueChange, excludeIds = [], excludeSe
             </span>
           ) : (
             <span className={cn(invalid ? "text-destructive" : "text-muted-foreground")}>
-              {invalid ? "Selecciona un producto" : "Seleccionar producto..."}
+              {invalid ? "Selecciona un producto" : "Seleccionar..."}
             </span>
           )}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -95,7 +95,7 @@ export function ProductSelect({ value, onValueChange, excludeIds = [], excludeSe
       >
         <Command>
           <CommandInput
-            placeholder="Buscar producto..."
+            placeholder="Buscar..."
             autoFocus={false}
             readOnly={!inputReady}
           />
@@ -104,31 +104,60 @@ export function ProductSelect({ value, onValueChange, excludeIds = [], excludeSe
               {isLoading ? "Cargando..." : "No se encontraron productos."}
             </CommandEmpty>
             <CommandGroup>
-              {availableProducts?.map((product) => (
-                <CommandItem
-                  key={product.id}
-                  value={product.name}
-                  onSelect={() => {
-                    onValueChange(product.id, product);
-                    setOpen(false);
-                  }}
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4 flex-shrink-0",
-                      value === product.id ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  <div className="flex flex-col flex-1 min-w-0">
-                    <span className="truncate">{product.name}</span>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span>{currencySymbol}{product.sale_price_min.toLocaleString()} - {currencySymbol}{product.sale_price_max.toLocaleString()}</span>
-                      <span>•</span>
-                      <span>Stock: {product.stock_store + product.stock_warehouse}</span>
+              {availableProducts?.map((product) => {
+                const isService = (product.item_type ?? "product") === "service";
+                return (
+                  <CommandItem
+                    key={product.id}
+                    value={product.name}
+                    onSelect={() => {
+                      onValueChange(product.id, product);
+                      setOpen(false);
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4 flex-shrink-0",
+                        value === product.id ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    <div className="flex flex-col flex-1 min-w-0">
+                      <span className="truncate">{product.name}</span>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        {isService ? (
+                          (() => {
+                            const labor = Number(product.labor_cost || 0);
+                            const disc = Number(product.discount || 0);
+                            const productsSubtotal = (product.service_products || []).reduce(
+                              (sum, item) => sum + Number(item.subtotal || 0), 0
+                            );
+                            const total = Math.max(0, labor + productsSubtotal);
+                            return disc > 0 ? (
+                              <span>{currencySymbol}{total.toLocaleString()} • -{currencySymbol}{disc.toLocaleString()} desc.</span>
+                            ) : (
+                              <span>{currencySymbol}{total.toLocaleString()}</span>
+                            );
+                          })()
+                        ) : (
+                          (() => {
+                            const priceMax = Number(product.sale_price_max || 0);
+                            const priceMin = Number(product.sale_price_min || 0);
+                            const disc = priceMin < priceMax ? priceMax - priceMin : 0;
+                            const stock = (product.stock_store ?? 0) + (product.stock_warehouse ?? 0);
+                            return (
+                              <>
+                                <span>{currencySymbol}{priceMax.toLocaleString()}</span>
+                                {disc > 0 && <span>• -{currencySymbol}{disc.toLocaleString()} desc.</span>}
+                                <span>• Stock: {stock}</span>
+                              </>
+                            );
+                          })()
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </CommandItem>
-              ))}
+                  </CommandItem>
+                );
+              })}
             </CommandGroup>
           </CommandList>
         </Command>

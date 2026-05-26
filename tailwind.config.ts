@@ -13,6 +13,12 @@ export default {
       },
     },
     extend: {
+      transitionDuration: {
+        "320": "320ms",
+      },
+      transitionTimingFunction: {
+        sheet: "cubic-bezier(0.2,0,0,1)",
+      },
       fontFamily: {
         sans: ["DM Sans", "system-ui", "sans-serif"],
       },

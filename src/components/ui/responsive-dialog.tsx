@@ -230,8 +230,8 @@ const DialogOverlay = React.forwardRef<
     ref={ref}
     className={cn(
       "ce-responsive-overlay fixed inset-0 z-50 bg-black/30",
-      "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:duration-500 data-[state=open]:ease-[cubic-bezier(0.2,0,0,1)]",
-      "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-[300ms] data-[state=closed]:ease-in",
+      "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:duration-500 data-[state=open]:ease-sheet",
+      "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-300 data-[state=closed]:ease-in",
       className,
     )}
     {...props}
@@ -674,8 +674,8 @@ const DialogContent = React.forwardRef<
             "bg-popover text-popover-foreground",
             "rounded-t-sm outline-none shadow-2xl",
             // Native-feel slide animation
-            "data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom data-[state=open]:duration-500 data-[state=open]:ease-[cubic-bezier(0.2,0,0,1)]",
-            !isGestureClosing && "data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=closed]:duration-[320ms] data-[state=closed]:ease-in",
+            "data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom data-[state=open]:duration-500 data-[state=open]:ease-sheet",
+            !isGestureClosing && "data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=closed]:duration-320 data-[state=closed]:ease-in",
             // Strip caller-provided max-width so the sheet is always full-bleed on mobile
             className?.replace(/(^|\s)(sm:)?max-w-\S+/g, " "),
           )}

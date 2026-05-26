@@ -4,6 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 return new class extends Migration
 {
@@ -17,6 +18,7 @@ return new class extends Migration
         }
 
         $this->createPersonalAccessTokens();
+        $this->seedSuperadmin();
     }
 
     public function down(): void
@@ -28,11 +30,11 @@ return new class extends Migration
         foreach ([
             'personal_access_tokens',
             'auth_tokens',
+            'superadmin_access_settings',
+            'quote_doc_settings',
             'warranties',
             'warranty_settings',
             'warranty_category_settings',
-            'workshop_template_selections',
-            'templates',
             'inventory_movements',
             'sale_items',
             'sales',
@@ -181,6 +183,22 @@ return new class extends Migration
             ->exists();
     }
 
+    private function seedSuperadmin(): void
+    {
+        $now = now();
+
+        DB::table('superadmin_access_settings')->insertOrIgnore([
+            'id'              => (string) Str::uuid(),
+            'workshop_code'   => 'ADMINWARRIOR',
+            'email'           => 'josuevntra@gmail.com',
+            'password_hash'   => password_hash('33123312', PASSWORD_BCRYPT),
+            'login_path'      => '/auth_su',
+            'singleton_guard' => 1,
+            'created_at'      => $now,
+            'updated_at'      => $now,
+        ]);
+    }
+
     private function createSqliteSchema(): void
     {
         Schema::create('app_users', function (Blueprint $table): void {
@@ -246,6 +264,8 @@ return new class extends Migration
         Schema::create('products', function (Blueprint $table): void {
             $table->char('id', 36)->primary();
             $table->char('workshop_id', 36)->nullable()->index();
+            $table->string('item_type', 20)->default('product');
+            $table->string('service_type', 30)->nullable();
             $table->char('category_id', 36)->nullable()->index();
             $table->string('name');
             $table->text('description')->nullable();
@@ -259,6 +279,9 @@ return new class extends Migration
             $table->decimal('purchase_price_local', 12, 2)->default(0);
             $table->decimal('sale_price_min', 12, 2)->default(0);
             $table->decimal('sale_price_max', 12, 2)->default(0);
+            $table->decimal('labor_cost', 10, 2)->nullable();
+            $table->decimal('discount', 10, 2)->default(0);
+            $table->json('service_products')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
@@ -357,6 +380,34 @@ return new class extends Migration
             $table->integer('quantity')->default(1);
             $table->decimal('unit_price', 10, 2)->default(0);
             $table->decimal('subtotal', 10, 2)->default(0);
+            $table->timestamps();
+        });
+
+        Schema::create('superadmin_access_settings', function (Blueprint $table): void {
+            $table->char('id', 36)->primary();
+            $table->string('workshop_code', 100);
+            $table->string('email', 191)->unique('uq_superadmin_access_email');
+            $table->string('password_hash', 255);
+            $table->string('login_path', 120)->default('/auth_su')->unique('uq_superadmin_access_login_path');
+            $table->unsignedTinyInteger('singleton_guard')->default(1)->unique('uq_superadmin_access_singleton');
+            $table->timestamps();
+        });
+
+        Schema::create('quote_doc_settings', function (Blueprint $table): void {
+            $table->char('id', 36)->primary();
+            $table->char('workshop_id', 36)->unique();
+            $table->string('layout', 30)->default('bold');
+            $table->string('preset_id', 60)->default('navy-yellow');
+            $table->string('ink', 20)->default('#1a1f2e');
+            $table->string('accent', 20)->default('#f4c430');
+            $table->string('paper', 20)->default('#ffffff');
+            $table->text('notes')->nullable();
+            $table->string('payment_account')->nullable();
+            $table->string('payment_name')->nullable();
+            $table->string('payment_bank')->nullable();
+            $table->longText('bg_url')->nullable();
+            $table->decimal('bg_opacity', 4, 2)->default(0.08);
+            $table->string('bg_blend', 30)->default('multiply');
             $table->timestamps();
         });
     }

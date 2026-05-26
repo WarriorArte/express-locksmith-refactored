@@ -183,6 +183,8 @@ CREATE TABLE IF NOT EXISTS tags (
 CREATE TABLE IF NOT EXISTS products (
   id CHAR(36) NOT NULL DEFAULT (UUID()),
   workshop_id CHAR(36) NULL,
+  item_type VARCHAR(20) NOT NULL DEFAULT 'product',
+  service_type ENUM('automotive','residential','commercial','industrial') NULL,
   category_id CHAR(36) NULL,
   name VARCHAR(255) NOT NULL,
   description TEXT NULL,
@@ -196,6 +198,9 @@ CREATE TABLE IF NOT EXISTS products (
   purchase_price_local DECIMAL(10,2) NOT NULL DEFAULT 0,
   sale_price_min DECIMAL(10,2) NOT NULL DEFAULT 0,
   sale_price_max DECIMAL(10,2) NOT NULL DEFAULT 0,
+  labor_cost DECIMAL(10,2) NULL,
+  discount DECIMAL(10,2) NOT NULL DEFAULT 0,
+  service_products JSON NULL,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
@@ -357,6 +362,7 @@ CREATE TABLE IF NOT EXISTS services (
   assigned_to CHAR(36) NULL,
   created_by CHAR(36) NULL,
   started_at DATETIME(3) NULL,
+  scheduled_start_at DATETIME(3) NULL,
   completed_at DATETIME(3) NULL,
   delivered_at DATETIME(3) NULL,
   has_warranty TINYINT(1) DEFAULT 0,
@@ -607,8 +613,53 @@ CREATE TABLE IF NOT EXISTS auth_tokens (
     ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- Limpieza automÃ¡tica de tokens expirados (evento opcional)
+-- Limpieza automática de tokens expirados (evento opcional)
 -- CREATE EVENT IF NOT EXISTS ev_cleanup_auth_tokens
 --   ON SCHEDULE EVERY 1 DAY
 --   DO DELETE FROM auth_tokens WHERE expires_at < NOW();
+
+-- ============================================================
+-- Superadmin access settings
+-- ============================================================
+CREATE TABLE IF NOT EXISTS superadmin_access_settings (
+  id CHAR(36) NOT NULL,
+  workshop_code VARCHAR(100) NOT NULL,
+  email VARCHAR(191) NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  login_path VARCHAR(120) NOT NULL DEFAULT '/auth_su',
+  singleton_guard TINYINT(1) UNSIGNED NOT NULL DEFAULT 1,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_superadmin_access_email (email),
+  UNIQUE KEY uq_superadmin_access_login_path (login_path),
+  UNIQUE KEY uq_superadmin_access_singleton (singleton_guard)
+) ENGINE=InnoDB;
+
+-- ============================================================
+-- Quote document settings
+-- ============================================================
+CREATE TABLE IF NOT EXISTS quote_doc_settings (
+  id CHAR(36) NOT NULL,
+  workshop_id CHAR(36) NOT NULL,
+  layout VARCHAR(30) NOT NULL DEFAULT 'bold',
+  preset_id VARCHAR(60) NOT NULL DEFAULT 'navy-yellow',
+  ink VARCHAR(20) NOT NULL DEFAULT '#1a1f2e',
+  accent VARCHAR(20) NOT NULL DEFAULT '#f4c430',
+  paper VARCHAR(20) NOT NULL DEFAULT '#ffffff',
+  notes TEXT NULL,
+  payment_account VARCHAR(255) NULL,
+  payment_name VARCHAR(255) NULL,
+  payment_bank VARCHAR(255) NULL,
+  bg_url LONGTEXT NULL,
+  bg_opacity DECIMAL(4,2) NOT NULL DEFAULT 0.08,
+  bg_blend VARCHAR(30) NOT NULL DEFAULT 'multiply',
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_quote_doc_settings_workshop (workshop_id),
+  CONSTRAINT fk_quote_doc_settings_workshop_id
+    FOREIGN KEY (workshop_id) REFERENCES workshops(id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB;
 

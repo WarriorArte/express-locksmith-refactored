@@ -698,6 +698,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
               onNoProductsConsumedChange={setNoProductsConsumed}
               onItemsChange={(newItems) => setItems(newItems)}
               editable={true}
+              excludeServiceItems={true}
               currencySymbol={currencySymbol}
               showInvalid={showProductosInvalid}
               invalidQuantityIds={invalidQuantityIds}

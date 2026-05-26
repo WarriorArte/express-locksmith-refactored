@@ -407,7 +407,38 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
 
   const selectInventoryItemType = (type: InventoryItemType) => {
     setInventoryItemType(type);
-    form.setValue("item_type", type, { shouldValidate: true });
+    const baseValues = {
+      item_type: type,
+      name: "",
+      description: "",
+      category_id: "",
+      image_url: "",
+      instructions: "",
+      notes: "",
+    };
+
+    form.reset(
+      type === "product"
+        ? {
+            ...baseValues,
+            item_type: "product",
+            purchase_price_local: "",
+            purchase_price_imported: "",
+            sale_price_min: "",
+            sale_price_max: "",
+            stock_store: "",
+            stock_warehouse: "",
+            min_stock: "",
+          }
+        : {
+            ...baseValues,
+            item_type: "service",
+            service_type: "",
+            labor_cost: "",
+            discount: "",
+            service_products: [],
+          } as any,
+    );
     setActiveTab("general");
     setMaxUnlockedTabIndex(0);
     setAttemptedTabs(new Set());
@@ -502,6 +533,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                             aria-invalid={showGeneralInvalid && !hasText(field.value)}
                             className={cn(showGeneralInvalid && !hasText(field.value) && invalidFieldClass)}
                             {...field}
+                            value={field.value ?? ""}
                           />
                         </FormControl>
                       </FormItem>
@@ -515,7 +547,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Categoría *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value || ""}>
                             <FormControl>
                               <SelectTrigger
                                 aria-invalid={showGeneralInvalid && !hasText(field.value)}
@@ -576,7 +608,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                       <FormLabel>{isServiceMode ? "Imagen del Servicio" : "Imagen del Producto"}</FormLabel>
                       <FormControl>
                         <ImageUploader
-                          value={field.value}
+                          value={field.value ?? ""}
                           onChange={field.onChange}
                           onPendingFile={(file) => setPendingImageFile(file)}
                           folder="products"
@@ -596,7 +628,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                     <FormItem>
                       <FormLabel>Descripción</FormLabel>
                       <FormControl>
-                        <Textarea placeholder={isServiceMode ? "Descripción del servicio..." : "Descripción del producto..."} rows={3} {...field} />
+                        <Textarea placeholder={isServiceMode ? "Descripción del servicio..." : "Descripción del producto..."} rows={3} {...field} value={field.value ?? ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -613,6 +645,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                   onNoProductsConsumedChange={setNoServiceProducts}
                   onItemsChange={(newItems) => setServiceProductsList(newItems)}
                   editable={false}
+                  excludeServiceItems={true}
                   currencySymbol={currencySymbol}
                   showInvalid={showProductosInvalid}
                 />
@@ -655,6 +688,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                                 aria-invalid={showPreciosInvalid && !hasPositiveNumber(field.value)}
                                 className={cn(showPreciosInvalid && !hasPositiveNumber(field.value) && invalidFieldClass)}
                                 {...field}
+                                value={field.value ?? ""}
                               />
                             </FormControl>
                           </FormItem>
@@ -684,7 +718,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                         <FormItem>
                           <FormLabel>Precio con Descuento</FormLabel>
                           <FormControl>
-                            <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                            <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ""} />
                           </FormControl>
                           <p className="text-xs text-muted-foreground">
                             Referencia comercial; no modifica el precio del servicio.
@@ -710,6 +744,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                               aria-invalid={showPreciosInvalid && !hasPositiveNumber(field.value)}
                               className={cn(showPreciosInvalid && !hasPositiveNumber(field.value) && invalidFieldClass)}
                               {...field}
+                              value={field.value ?? ""}
                             />
                           </FormControl>
                         </FormItem>
@@ -729,6 +764,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                               aria-invalid={showPreciosInvalid && !hasEmptyOrPositiveNumber(field.value)}
                               className={cn(showPreciosInvalid && !hasEmptyOrPositiveNumber(field.value) && invalidFieldClass)}
                               {...field}
+                              value={field.value ?? ""}
                             />
                           </FormControl>
                         </FormItem>
@@ -748,6 +784,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                               aria-invalid={showPreciosInvalid && !hasPositiveNumber(field.value)}
                               className={cn(showPreciosInvalid && !hasPositiveNumber(field.value) && invalidFieldClass)}
                               {...field}
+                              value={field.value ?? ""}
                             />
                           </FormControl>
                         </FormItem>
@@ -767,6 +804,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                               aria-invalid={showPreciosInvalid && !hasPositiveNumber(field.value)}
                               className={cn(showPreciosInvalid && !hasPositiveNumber(field.value) && invalidFieldClass)}
                               {...field}
+                              value={field.value ?? ""}
                             />
                           </FormControl>
                         </FormItem>
@@ -850,7 +888,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                     <FormItem>
                       <FormLabel>{isServiceMode ? "Requisitos" : "Instrucciones de Uso"}</FormLabel>
                       <FormControl>
-                        <Textarea placeholder={isServiceMode ? "Requisitos previos del servicio..." : "Instrucciones para instalación o uso..."} rows={4} {...field} />
+                        <Textarea placeholder={isServiceMode ? "Requisitos previos del servicio..." : "Instrucciones para instalación o uso..."} rows={4} {...field} value={field.value ?? ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -864,7 +902,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                     <FormItem>
                       <FormLabel>Notas Internas</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Notas adicionales..." rows={4} {...field} />
+                        <Textarea placeholder="Notas adicionales..." rows={4} {...field} value={field.value ?? ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

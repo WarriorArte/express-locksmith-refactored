@@ -28,6 +28,7 @@ export type LayoutData = {
   notes: string;
   currency: string;
   subtotal: number;
+  discount: number;
   total: number;
   description?: string | null;
 };

@@ -1,8 +1,9 @@
+import "./classic.css";
 import type { LayoutData, QuoteTemplateDefinition, QuoteTemplateThumbProps } from "../types";
 import { fmtDate, fmtMoney } from "../shared";
 
 function ClassicTemplate(props: LayoutData) {
-  const { company, client, items, payment, notes, currency, subtotal, total, description } = props;
+  const { company, client, items, payment, notes, currency, subtotal, discount, total } = props;
   const addressLines = (company.address || "").split("\n");
   return (
     <div className="layout-classic">
@@ -14,8 +15,6 @@ function ClassicTemplate(props: LayoutData) {
             <div className="c-logo">{company.initial}</div>
           )}
           <div className="c-brand-info">
-            {client.contact && <div className="name">{client.contact}</div>}
-            <div className="company">{company.name}</div>
             {addressLines[0] && <div className="addr">{addressLines[0]}</div>}
             {addressLines[1] && <div className="addr">{addressLines[1]}</div>}
             {company.phone && <div className="contact">Tel: {company.phone}</div>}
@@ -41,30 +40,19 @@ function ClassicTemplate(props: LayoutData) {
       </header>
 
       <section className="c-prep">
-        <div className="c-prep-title">Preparado para:</div>
+        <div className="c-prep-title">Para:</div>
         <div className="c-form">
           <div className="row r1">
             <span className="lbl">Cliente:</span>
             <span className="val">{client.name}</span>
-            <span className="lbl">Contacto:</span>
-            <span className="val">{client.contact}</span>
           </div>
           <div className="row r3">
             <span className="lbl">Validez:</span>
             <span className="val">{client.validUntil}</span>
-            <span className="lbl">Emision:</span>
-            <span className="val">{fmtDate(client.date)}</span>
           </div>
         </div>
       </section>
-
-      {description && (
-        <section className="c-project">
-          <div className="c-project-label">Descripcion del proyecto:</div>
-          <div className="c-project-box">{description}</div>
-        </section>
-      )}
-
+    
       <section className="c-items">
         <table className="c-items-table">
           <thead>
@@ -95,7 +83,7 @@ function ClassicTemplate(props: LayoutData) {
         <div className="c-notes">
           {notes && (
             <>
-              <div className="c-notes-title">Esta cotizacion esta sujeta a los siguientes terminos:</div>
+              <div className="c-notes-title">Notas y terminos:</div>
               <div className="c-notes-body">{notes}</div>
             </>
           )}
@@ -114,6 +102,12 @@ function ClassicTemplate(props: LayoutData) {
               <td className="k">SUB TOTAL</td>
               <td className="v">{fmtMoney(subtotal, currency)}</td>
             </tr>
+            {discount > 0 && (
+              <tr className="discount">
+                <td className="k">DESCUENTO</td>
+                <td className="v">-{fmtMoney(discount, currency)}</td>
+              </tr>
+            )}
             <tr className="total">
               <td className="k">TOTAL</td>
               <td className="v">{fmtMoney(total, currency)}</td>
@@ -127,17 +121,37 @@ function ClassicTemplate(props: LayoutData) {
 
 function ClassicThumb({ accent, ink }: QuoteTemplateThumbProps) {
   return (
-    <svg width="40" height="52" viewBox="0 0 40 52" className="mx-auto">
-      <rect width="40" height="52" rx="2" fill="hsl(var(--muted))" />
-      <circle cx="8" cy="8" r="3" fill={accent} />
-      <rect x="24" y="4" width="12" height="4" rx="1" fill={ink} />
-      <rect x="26" y="10" width="10" height="3" rx=".5" fill="none" stroke={ink} strokeWidth=".5" />
-      <line x1="4" y1="18" x2="18" y2="18" stroke={ink} strokeWidth=".8" />
-      <line x1="22" y1="18" x2="36" y2="18" stroke={ink} strokeWidth=".8" />
-      <line x1="4" y1="22" x2="36" y2="22" stroke={ink} strokeWidth=".8" />
-      <rect x="4" y="26" width="32" height="14" rx=".5" fill="none" stroke={ink} strokeWidth=".5" />
-      <line x1="4" y1="48" x2="16" y2="48" stroke={ink} strokeWidth=".8" />
-      <circle cx="32" cy="47" r="4" fill="none" stroke={accent} strokeWidth=".8" />
+    <svg width="40" height="52" viewBox="0 0 40 52" className="mx-auto" aria-hidden="true">
+      <rect width="40" height="52" rx="3" fill="#ffffff" stroke="#d7dce2" strokeWidth="0.6" />
+      <circle cx="7" cy="7" r="3.8" fill={accent} />
+      <rect x="12" y="4.5" width="8" height="1.2" rx="0.5" fill={ink} opacity="0.55" />
+      <rect x="12" y="7" width="10" height="1" rx="0.5" fill={ink} opacity="0.32" />
+      <rect x="25" y="4" width="11" height="3.5" rx="0.4" fill="#f2f5f7" stroke={ink} strokeWidth="0.45" />
+      <rect x="26.4" y="5.2" width="3.4" height="0.8" rx="0.3" fill={ink} opacity="0.45" />
+      <rect x="25" y="8.2" width="11" height="3.5" rx="0.4" fill="#ffffff" stroke={ink} strokeWidth="0.45" />
+      <rect x="26.4" y="9.4" width="5" height="0.8" rx="0.3" fill={ink} opacity="0.45" />
+
+      <rect x="4" y="16" width="32" height="8.6" rx="0.4" fill="#ffffff" stroke={ink} strokeWidth="0.5" />
+      <line x1="4" y1="19" x2="36" y2="19" stroke={ink} strokeWidth="0.45" />
+      <line x1="4" y1="22" x2="36" y2="22" stroke={ink} strokeWidth="0.45" />
+      <rect x="6" y="17.1" width="5" height="0.9" rx="0.3" fill={ink} opacity="0.42" />
+      <rect x="13" y="17.1" width="9" height="0.9" rx="0.3" fill={ink} opacity="0.25" />
+      <rect x="6" y="20.1" width="6" height="0.9" rx="0.3" fill={ink} opacity="0.42" />
+      <rect x="14" y="20.1" width="7" height="0.9" rx="0.3" fill={ink} opacity="0.25" />
+
+      <rect x="4" y="28" width="32" height="13" rx="0.4" fill="#ffffff" stroke={ink} strokeWidth="0.55" />
+      <rect x="4" y="28" width="32" height="3" fill="#f2f5f7" />
+      <line x1="9" y1="28" x2="9" y2="41" stroke={ink} strokeWidth="0.45" />
+      <line x1="24" y1="28" x2="24" y2="41" stroke={ink} strokeWidth="0.45" />
+      <line x1="31" y1="28" x2="31" y2="41" stroke={ink} strokeWidth="0.45" />
+      <line x1="4" y1="34" x2="36" y2="34" stroke={ink} strokeWidth="0.45" />
+      <line x1="4" y1="37.5" x2="36" y2="37.5" stroke={ink} strokeWidth="0.45" />
+      <rect x="11" y="32" width="9" height="0.9" rx="0.3" fill={ink} opacity="0.35" />
+      <rect x="11" y="35.3" width="8" height="0.9" rx="0.3" fill={ink} opacity="0.28" />
+
+      <rect x="23" y="44" width="13" height="4" rx="0.4" fill={accent} />
+      <rect x="5" y="45" width="12" height="1" rx="0.4" fill={ink} opacity="0.32" />
+      <rect x="25" y="45.5" width="7" height="1" rx="0.4" fill="#ffffff" opacity="0.9" />
     </svg>
   );
 }
