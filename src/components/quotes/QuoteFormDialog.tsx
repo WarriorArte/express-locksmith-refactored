@@ -13,25 +13,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { IconTabs } from "@/components/ui/icon-tabs";
-import { Loader2, Plus, Trash2, User, Package, FileText } from "lucide-react";
+import { Loader2, Plus, User, Package, FileText } from "lucide-react";
 import { CustomerSelect } from "@/components/shared/CustomerSelect";
 import { CustomerFormDialog } from "@/components/customers/CustomerFormDialog";
-import { ProductSelect } from "@/components/shared/ProductSelect";
+import { ServiceProductsEditor, type ProductEditorItem } from "@/components/shared/ServiceProductsEditor";
 import { useCreateQuote, useUpdateQuote, generateQuoteNumber, type Quote } from "@/hooks/useQuotes";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import { cn } from "@/lib/utils";
 import type { Customer } from "@/hooks/useCustomers";
-import type { Product } from "@/hooks/useProducts";
 import { addDays, format } from "date-fns";
-
-interface QuoteItem {
-  tempId: string;
-  product_id: string | null;
-  description: string;
-  quantity: number;
-  unit_price: number;
-  subtotal: number;
-}
 
 interface QuoteFormDialogProps {
   open: boolean;
@@ -46,6 +37,8 @@ export function QuoteFormDialog({ open, onOpenChange, quote }: QuoteFormDialogPr
   const createQuote = useCreateQuote();
   const updateQuote = useUpdateQuote();
   const { currentWorkshop } = useWorkshop();
+  const { data: settings } = useBusinessSettings();
+  const currencySymbol = settings?.currency_symbol || "$";
 
   const [activeTab, setActiveTab] = useState<QuoteFormTab>("cliente");
   const [maxUnlockedTabIndex, setMaxUnlockedTabIndex] = useState(0);
@@ -67,9 +60,7 @@ export function QuoteFormDialog({ open, onOpenChange, quote }: QuoteFormDialogPr
     policies: "",
   });
 
-  const [items, setItems] = useState<QuoteItem[]>([
-    { tempId: crypto.randomUUID(), product_id: null, description: "", quantity: 1, unit_price: 0, subtotal: 0 }
-  ]);
+  const [items, setItems] = useState<ProductEditorItem[]>([]);
 
   useEffect(() => {
     if (open) {
@@ -94,11 +85,12 @@ export function QuoteFormDialog({ open, onOpenChange, quote }: QuoteFormDialogPr
         setItems(quote.quote_items?.map(item => ({
           tempId: item.id,
           product_id: item.product_id,
+          product_name: item.description,
           description: item.description,
           quantity: item.quantity,
           unit_price: Number(item.unit_price),
           subtotal: Number(item.subtotal),
-        })) || [{ tempId: crypto.randomUUID(), product_id: null, description: "", quantity: 1, unit_price: 0, subtotal: 0 }]);
+        })) || []);
       } else {
         if (currentWorkshop?.id) {
           generateQuoteNumber(currentWorkshop.id).then(num => {
@@ -119,9 +111,7 @@ export function QuoteFormDialog({ open, onOpenChange, quote }: QuoteFormDialogPr
           notes: "",
           policies: "",
         }));
-        setItems([
-          { tempId: crypto.randomUUID(), product_id: null, description: "", quantity: 1, unit_price: 0, subtotal: 0 }
-        ]);
+        setItems([]);
       }
     }
   }, [open, quote, currentWorkshop?.id]);
@@ -137,56 +127,15 @@ export function QuoteFormDialog({ open, onOpenChange, quote }: QuoteFormDialogPr
     }));
   };
 
-  const addItem = () => {
-    setItems(prev => [...prev, {
-      tempId: crypto.randomUUID(),
-      product_id: null,
-      description: "",
-      quantity: 1,
-      unit_price: 0,
-      subtotal: 0,
-    }]);
-  };
-
-  const updateItem = (tempId: string, field: keyof QuoteItem, value: any) => {
-    setItems(prev => prev.map(item => {
-      if (item.tempId !== tempId) return item;
-      const updated = { ...item, [field]: value };
-      if (field === "quantity" || field === "unit_price") {
-        updated.subtotal = updated.quantity * updated.unit_price;
-      }
-      return updated;
-    }));
-  };
-
-  const handleProductSelect = (tempId: string, productId: string | null, product: Product | null) => {
-    setItems(prev => prev.map(item => {
-      if (item.tempId !== tempId) return item;
-      return {
-        ...item,
-        product_id: productId,
-        description: product?.name || item.description,
-        unit_price: product?.sale_price_min || item.unit_price,
-        subtotal: item.quantity * (product?.sale_price_min || item.unit_price),
-      };
-    }));
-  };
-
-  const removeItem = (tempId: string) => {
-    if (items.length > 1) {
-      setItems(prev => prev.filter(item => item.tempId !== tempId));
-    }
-  };
-
   const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
   const total = subtotal - form.discount;
   const validUntil = format(addDays(new Date(), form.validity_days), "yyyy-MM-dd");
   const invalidFieldClass = "border-destructive placeholder:text-destructive focus-visible:border-destructive";
   const tabsOrder: QuoteFormTab[] = ["cliente", "productos", "resumen"];
-  const invalidItemIds = new Set(items.filter(item => !item.description.trim()).map(item => item.tempId));
+  const invalidItemIds = new Set(items.filter(item => !(item.description ?? "").trim()).map(item => item.tempId));
   const invalidQuantityIds = new Set(items.filter(item => !Number.isFinite(item.quantity) || item.quantity < 1).map(item => item.tempId));
   const invalidUnitPriceIds = new Set(items.filter(item => !Number.isFinite(item.unit_price) || item.unit_price <= 0).map(item => item.tempId));
-  const validItems = items.filter(item => item.description && item.quantity > 0);
+  const validItems = items.filter(item => (item.description ?? "").trim() && item.quantity > 0);
   const tabValidity: Record<QuoteFormTab, boolean> = {
     cliente: form.quote_number.trim().length > 0 && form.validity_days >= 1,
     productos: validItems.length > 0 && invalidItemIds.size === 0 && invalidQuantityIds.size === 0 && invalidUnitPriceIds.size === 0,
@@ -252,7 +201,7 @@ export function QuoteFormDialog({ open, onOpenChange, quote }: QuoteFormDialogPr
       policies: form.policies || null,
       items: validItems.map((item, index) => ({
         product_id: item.product_id,
-        description: item.description,
+        description: item.description ?? item.product_name,
         quantity: item.quantity,
         unit_price: item.unit_price,
         subtotal: item.subtotal,
@@ -365,77 +314,19 @@ export function QuoteFormDialog({ open, onOpenChange, quote }: QuoteFormDialogPr
           </TabsContent>
 
           {/* Tab: Productos */}
-          <TabsContent value="productos" className="space-y-4 mt-4">
-            <div className="flex items-center justify-between">
-              <Label>Productos / Servicios *</Label>
-              <Button type="button" variant="outline" size="sm" onClick={addItem}>
-                <Plus className="w-4 h-4 mr-1" />
-                Agregar
-              </Button>
-            </div>
-            
-            <div className="space-y-2 max-h-[45vh] overflow-y-auto">
-              {items.map((item, index) => (
-                <div key={item.tempId} className="p-3 bg-muted/50 rounded-lg border space-y-2">
-                  <div className="flex items-start gap-2">
-                    <span className="text-xs text-muted-foreground w-5 mt-2">{index + 1}.</span>
-                    <div className="flex-1 space-y-2">
-                      <ProductSelect
-                        value={item.product_id}
-                        onValueChange={(id, product) => handleProductSelect(item.tempId, id, product)}
-                      />
-                      <Input
-                        value={item.description}
-                        onChange={(e) => updateItem(item.tempId, "description", e.target.value)}
-                        placeholder={showProductosInvalid && invalidItemIds.has(item.tempId) ? "Campo obligatorio" : "Descripción del item..."}
-                        aria-invalid={showProductosInvalid && invalidItemIds.has(item.tempId)}
-                        className={cn("text-sm", showProductosInvalid && invalidItemIds.has(item.tempId) && invalidFieldClass)}
-                      />
-                      <div className="grid grid-cols-3 gap-2">
-                        <div>
-                          <Label className="text-xs text-muted-foreground">Cantidad</Label>
-                          <UnitNumberInput
-                            min={1}
-                            value={item.quantity}
-                            onValueChange={(value) => updateItem(item.tempId, "quantity", value || 1)}
-                            aria-invalid={showProductosInvalid && invalidQuantityIds.has(item.tempId)}
-                            className={cn("h-9 text-sm", showProductosInvalid && invalidQuantityIds.has(item.tempId) && invalidFieldClass)}
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs text-muted-foreground">Precio</Label>
-                          <Input
-                            type="number"
-                            min="0"
-                            value={item.unit_price}
-                            onChange={(e) => updateItem(item.tempId, "unit_price", parseFloat(e.target.value) || 0)}
-                            placeholder={showProductosInvalid && invalidUnitPriceIds.has(item.tempId) ? "Debe ser mayor a 0" : "0"}
-                            aria-invalid={showProductosInvalid && invalidUnitPriceIds.has(item.tempId)}
-                            className={cn("h-9 text-sm", showProductosInvalid && invalidUnitPriceIds.has(item.tempId) && invalidFieldClass)}
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs text-muted-foreground">Subtotal</Label>
-                          <div className="h-9 px-2 py-1 bg-background rounded text-sm font-medium flex items-center">
-                            ${item.subtotal.toLocaleString()}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 mt-1"
-                      onClick={() => removeItem(item.tempId)}
-                      disabled={items.length === 1}
-                    >
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+          <TabsContent value="productos" className="mt-4">
+            <ServiceProductsEditor
+              items={items}
+              onItemsChange={setItems}
+              editable={true}
+              minItems={1}
+              showDescriptionField={true}
+              showInvalid={showProductosInvalid}
+              invalidQuantityIds={invalidQuantityIds}
+              invalidDescriptionIds={invalidItemIds}
+              invalidPriceIds={invalidUnitPriceIds}
+              currencySymbol={currencySymbol}
+            />
           </TabsContent>
 
           {/* Tab: Resumen */}

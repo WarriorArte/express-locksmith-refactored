@@ -10,7 +10,6 @@ import {
   hasPositiveNumber,
   hasEmptyOrPositiveNumber,
   type ProductFormValues,
-  type ServiceProduct,
   type KeysOfUnion,
 } from "./productFormSchema";
 import {
@@ -54,10 +53,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useCategories } from "@/hooks/useCategories";
 import { useCreateProduct, useUpdateProduct, type Product } from "@/hooks/useProducts";
-import { useProducts } from "@/hooks/useProducts";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
-import { Loader2, Package, DollarSign, Warehouse, FileText, Plus, X, Wrench } from "lucide-react";
+import { Loader2, Package, DollarSign, Warehouse, FileText, Wrench } from "lucide-react";
 import { ImageUploader } from "@/components/shared/ImageUploader";
+import { ServiceProductsEditor, type ProductEditorItem } from "@/components/shared/ServiceProductsEditor";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import { phpApiUpload } from "@/lib/phpApi";
 import { cn } from "@/lib/utils";
@@ -73,7 +72,6 @@ type ProductFormTab = "general" | "productos" | "precios" | "inventario" | "nota
 
 export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDialogProps) {
   const { data: categories } = useCategories();
-  const { data: allProducts } = useProducts();
   const { data: businessSettings } = useBusinessSettings();
   const { currentWorkshop } = useWorkshop();
   const createProduct = useCreateProduct();
@@ -84,9 +82,8 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
   const [attemptedTabs, setAttemptedTabs] = useState<Set<ProductFormTab>>(new Set());
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const [inventoryItemType, setInventoryItemType] = useState<InventoryItemType | "">("");
-  const [serviceProductsList, setServiceProductsList] = useState<ServiceProduct[]>([]);
+  const [serviceProductsList, setServiceProductsList] = useState<ProductEditorItem[]>([]);
   const [noServiceProducts, setNoServiceProducts] = useState(false);
-  const [selectedProductId, setSelectedProductId] = useState<string>("");
 
   // Use conditional resolver based on item type
   const currentSchema = inventoryItemType === "service" ? serviceSchema : productSchema;
@@ -127,7 +124,6 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
       setPendingImageFile(null);
       setServiceProductsList([]);
       setNoServiceProducts(false);
-      setSelectedProductId("");
     }
     const incomingItemType = product ? ((product?.item_type === "service" ? "service" : "product") as InventoryItemType) : "";
     setInventoryItemType(incomingItemType);
@@ -226,7 +222,16 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
         service_products: product.service_products || [],
       } as any);
       if (product.service_products) {
-        setServiceProductsList(product.service_products);
+        setServiceProductsList(
+          product.service_products.map((sp) => ({
+            tempId: crypto.randomUUID(),
+            product_id: sp.product_id,
+            product_name: sp.product_name || "",
+            quantity: sp.quantity || 1,
+            unit_price: Number(sp.unit_price || 0),
+            subtotal: Number(sp.subtotal || 0),
+          })),
+        );
       }
       setNoServiceProducts(!product.service_products?.length);
     }
@@ -288,7 +293,15 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
         service_type: serviceValues.service_type,
         labor_cost: serviceValues.labor_cost ? Number(serviceValues.labor_cost) : 0,
         discount: serviceValues.discount ? Number(serviceValues.discount) : 0,
-        service_products: serviceProductsList,
+        service_products: serviceProductsList
+          .filter((item) => item.product_id !== null)
+          .map((item) => ({
+            product_id: item.product_id!,
+            product_name: item.product_name,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            subtotal: item.subtotal,
+          })),
         instructions: serviceValues.instructions || null,
         notes: serviceValues.notes || null,
       };
@@ -390,28 +403,6 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
       setMaxUnlockedTabIndex((current) => Math.max(current, idx + 1));
       setActiveTab(next);
     }
-  };
-
-  const addServiceProduct = () => {
-    if (!selectedProductId) return;
-    const product = allProducts?.find(p => p.id === selectedProductId && p.item_type !== "service");
-    if (!product) return;
-
-    const newProduct: ServiceProduct = {
-      product_id: selectedProductId,
-      product_name: product.name,
-      quantity: 1,
-      unit_price: Number(product.sale_price_min || product.sale_price_max || 0),
-      subtotal: Number(product.sale_price_min || product.sale_price_max || 0),
-    };
-
-    setServiceProductsList([...serviceProductsList, newProduct]);
-    setNoServiceProducts(false);
-    setSelectedProductId("");
-  };
-
-  const removeServiceProduct = (productId: string) => {
-    setServiceProductsList(serviceProductsList.filter(p => p.product_id !== productId));
   };
 
   const selectInventoryItemType = (type: InventoryItemType) => {
@@ -615,89 +606,16 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
 
               {/* Tab: Productos (solo para servicios) */}
               {isServiceMode && (
-              <TabsContent value="productos" className="space-y-4 mt-4">
-                <div className="space-y-4">
-                  <label
-                    className={cn(
-                      "w-full rounded-lg border bg-background px-3.5 py-3 transition-colors",
-                      "flex items-center gap-3 hover:bg-muted/50 cursor-pointer",
-                      noServiceProducts
-                        ? "border-primary text-foreground"
-                        : showProductosInvalid && serviceProductsList.length === 0 && "border-destructive text-destructive",
-                    )}
-                  >
-                    <Checkbox
-                      checked={noServiceProducts}
-                      onCheckedChange={(checked) => {
-                        const next = checked === true;
-                        setNoServiceProducts(next);
-                        if (next) setServiceProductsList([]);
-                      }}
-                    />
-                    <span className="text-sm font-medium">Este servicio no consume productos</span>
-                  </label>
-
-                  <div className="flex gap-2">
-                    <div className="flex-1">
-                      <FormLabel className="text-sm">Seleccionar Producto</FormLabel>
-                      <Select value={selectedProductId} onValueChange={setSelectedProductId}>
-                        <SelectTrigger disabled={noServiceProducts}>
-                          <SelectValue placeholder="Buscar producto..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {allProducts
-                            ?.filter((p) => p.item_type !== "service")
-                            .map((product) => (
-                              <SelectItem key={product.id} value={product.id}>
-                                {product.name}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex items-end">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={addServiceProduct}
-                        disabled={!selectedProductId || noServiceProducts}
-                        className="h-10"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {serviceProductsList.length > 0 && (
-                    <div className="space-y-2">
-                      <FormLabel className="text-sm">Productos Agregados</FormLabel>
-                      <div className="space-y-2 max-h-48 overflow-y-auto">
-                        {serviceProductsList.map((item) => (
-                          <div
-                            key={item.product_id}
-                            className="flex items-center justify-between p-2 bg-secondary/50 rounded border"
-                          >
-                            <div className="flex-1">
-                              <p className="font-medium text-sm">{item.product_name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {formatMoney(Number(item.unit_price || 0))}
-                              </p>
-                            </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeServiceProduct(item.product_id)}
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+              <TabsContent value="productos" className="mt-4">
+                <ServiceProductsEditor
+                  items={serviceProductsList}
+                  noProductsConsumed={noServiceProducts}
+                  onNoProductsConsumedChange={setNoServiceProducts}
+                  onItemsChange={(newItems) => setServiceProductsList(newItems)}
+                  editable={false}
+                  currencySymbol={currencySymbol}
+                  showInvalid={showProductosInvalid}
+                />
               </TabsContent>
               )}
 

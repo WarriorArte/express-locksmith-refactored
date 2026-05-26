@@ -22,9 +22,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Plus, Trash2, MapPin, Shield, Package, User, Wrench, FileText, Image } from "lucide-react";
+import { Loader2, Plus, MapPin, Shield, Package, User, Wrench, FileText, Image } from "lucide-react";
 import { CustomerSelect } from "@/components/shared/CustomerSelect";
-import { ProductSelect } from "@/components/shared/ProductSelect";
+import { ServiceProductsEditor } from "@/components/shared/ServiceProductsEditor";
 import { ImageUploader } from "@/components/shared/ImageUploader";
 import { CustomerFormDialog } from "@/components/customers/CustomerFormDialog";
 import { useCreateService, useUpdateService, generateServiceNumber, type Service, type ServiceType } from "@/hooks/useServices";
@@ -269,53 +269,6 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
       customer_phone: customer?.phone || "",
       address: customer?.address || prev.address,
     }));
-  };
-
-  const addItem = () => {
-    setNoProductsConsumed(false);
-    setItems(prev => [...prev, {
-      tempId: crypto.randomUUID(),
-      product_id: null,
-      product_name: "",
-      quantity: 1,
-      unit_price: 0,
-      subtotal: 0,
-    }]);
-  };
-
-  const updateItem = <K extends keyof ServiceItem>(tempId: string, field: K, value: ServiceItem[K]) => {
-    setItems(prev => prev.map(item => {
-      if (item.tempId !== tempId) return item;
-      const updated: ServiceItem = { ...item, [field]: value };
-      if (field === "quantity" || field === "unit_price") {
-        updated.subtotal = updated.quantity * updated.unit_price;
-      }
-      return updated;
-    }));
-  };
-
-  const handleProductSelect = (tempId: string, productId: string | null, product: Product | null) => {
-    setItems(prev => prev.map(item => {
-      if (item.tempId !== tempId) return item;
-      return {
-        ...item,
-        product_id: productId,
-        product_name: product?.name || "",
-        unit_price: product?.sale_price_min || 0,
-        subtotal: item.quantity * (product?.sale_price_min || 0),
-      };
-    }));
-  };
-
-  const removeItem = (tempId: string) => {
-    setItems(prev => prev.filter(item => item.tempId !== tempId));
-  };
-
-  const handleNoProductsConsumedChange = (checked: boolean) => {
-    setNoProductsConsumed(checked);
-    if (checked) {
-      setItems([]);
-    }
   };
 
   const addImage = (url: string) => {
@@ -738,92 +691,17 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
           </TabsContent>
 
           {/* Tab: Productos */}
-          <TabsContent value="productos" className="space-y-4 mt-4">
-            <div className="flex items-center justify-between">
-              <Label>Productos utilizados</Label>
-              <Button type="button" variant="outline" size="sm" onClick={addItem} disabled={noProductsConsumed}>
-                <Plus className="w-4 h-4 mr-1" />
-                Agregar
-              </Button>
-            </div>
-
-            <label
-              className={cn(
-                "w-full rounded-lg border bg-background px-3.5 py-3 transition-colors",
-                "flex items-center gap-3 hover:bg-muted/50 cursor-pointer",
-                noProductsConsumed
-                  ? "border-primary text-foreground"
-                  : showProductosInvalid && items.length === 0 && "border-destructive text-destructive",
-              )}
-            >
-              <Checkbox
-                checked={noProductsConsumed}
-                onCheckedChange={(checked) => handleNoProductsConsumedChange(checked === true)}
-              />
-              <span className="text-sm font-medium">Este servicio no consume productos</span>
-            </label>
-            
-            {items.length === 0 ? (
-              <div className="min-h-[38vh] flex items-center justify-center text-center text-muted-foreground text-sm select-none">
-                No hay productos agregados
-              </div>
-            ) : (
-              <div className="space-y-2 max-h-[40vh] overflow-y-auto">
-                {items.map((item) => (
-                  <div
-                    key={item.tempId}
-                    className="space-y-2 p-3 bg-muted/50 rounded-lg border"
-                  >
-                    <ProductSelect
-                      value={item.product_id}
-                      onValueChange={(id, product) => handleProductSelect(item.tempId, id, product)}
-                      excludeServiceItems
-                      invalid={showProductosInvalid && invalidProductIds.has(item.tempId)}
-                    />
-                    <div className="grid grid-cols-3 gap-2">
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Cantidad</Label>
-                        <UnitNumberInput
-                          min={1}
-                          value={item.quantity}
-                          onValueChange={(value) => updateItem(item.tempId, "quantity", value || 1)}
-                          aria-invalid={showProductosInvalid && invalidQuantityIds.has(item.tempId)}
-                          className={cn("h-9 text-sm", showProductosInvalid && invalidQuantityIds.has(item.tempId) && invalidFieldClass)}
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Precio</Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          value={item.unit_price}
-                          onChange={(e) => updateItem(item.tempId, "unit_price", parseFloat(e.target.value) || 0)}
-                          placeholder="0"
-                          className="h-9 text-sm"
-                        />
-                      </div>
-                      <div className="flex items-end gap-1">
-                        <div className="flex-1">
-                          <Label className="text-xs text-muted-foreground">Subtotal</Label>
-                          <div className="h-9 px-2 py-1 bg-background rounded text-sm font-medium flex items-center">
-                            {currencySymbol}{item.subtotal.toLocaleString()}
-                          </div>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-9 w-9"
-                          onClick={() => removeItem(item.tempId)}
-                        >
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+          <TabsContent value="productos" className="mt-4">
+            <ServiceProductsEditor
+              items={items}
+              noProductsConsumed={noProductsConsumed}
+              onNoProductsConsumedChange={setNoProductsConsumed}
+              onItemsChange={(newItems) => setItems(newItems)}
+              editable={true}
+              currencySymbol={currencySymbol}
+              showInvalid={showProductosInvalid}
+              invalidQuantityIds={invalidQuantityIds}
+            />
           </TabsContent>
 
           {/* Tab: Costos */}

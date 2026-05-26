@@ -52,7 +52,6 @@ function BannerTemplate(props: LayoutData) {
             <div className="k">Numero</div><div className="v">{client.quoteNumber}</div>
             <div className="k">Emision</div><div className="v">{fmtDate(client.date)}</div>
             <div className="k">Validez</div><div className="v">{client.validUntil}</div>
-            <div className="k">Moneda</div><div className="v">{currency}</div>
           </div>
         </div>
       </section>

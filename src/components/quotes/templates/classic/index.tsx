@@ -54,8 +54,6 @@ function ClassicTemplate(props: LayoutData) {
             <span className="val">{client.validUntil}</span>
             <span className="lbl">Emision:</span>
             <span className="val">{fmtDate(client.date)}</span>
-            <span className="lbl">Moneda:</span>
-            <span className="val">{currency}</span>
           </div>
         </div>
       </section>

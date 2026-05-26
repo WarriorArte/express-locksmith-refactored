@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/responsive-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { UnitNumberInput } from "@/components/ui/unit-number-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,29 +20,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Plus, Trash2, UserPlus, Shield, User, Package, FileText } from "lucide-react";
+import { Loader2, UserPlus, Shield, User, Package, FileText } from "lucide-react";
 import { CustomerSelect } from "@/components/shared/CustomerSelect";
-import { ProductSelect } from "@/components/shared/ProductSelect";
+import { ServiceProductsEditor, type ProductEditorItem } from "@/components/shared/ServiceProductsEditor";
 import { CustomerFormDialog } from "@/components/customers/CustomerFormDialog";
-import { useCreateSale, generateSaleNumber, paymentMethodLabels, type PaymentMethod, type Sale } from "@/hooks/useSales";
+import { useCreateSale, generateSaleNumber, paymentMethodLabels, type PaymentMethod } from "@/hooks/useSales";
 import { useBatchInventoryUpdate } from "@/hooks/useInventoryMovements";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useWarrantyCategorySettings, useCreateWarranty, generateWarrantyCode, calculateWarrantyEndDate } from "@/hooks/useWarranties";
-import { useProducts } from "@/hooks/useProducts";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import type { Customer } from "@/hooks/useCustomers";
 import type { Product } from "@/hooks/useProducts";
 import { cn } from "@/lib/utils";
-
-interface SaleItem {
-  tempId: string;
-  product_id: string | null;
-  product_name: string;
-  quantity: number;
-  unit_price: number;
-  subtotal: number;
-  category_id?: string | null;
-}
 
 interface SaleFormDialogProps {
   open: boolean;
@@ -60,7 +48,6 @@ export function SaleFormDialog({ open, onOpenChange, initialProduct }: SaleFormD
   const { updateForSale } = useBatchInventoryUpdate();
   const { data: settings } = useBusinessSettings();
   const { data: warrantySettings } = useWarrantyCategorySettings();
-  const { data: allProducts } = useProducts();
   const { currentWorkshop } = useWorkshop();
   
   const currencySymbol = settings?.currency_symbol || "$";
@@ -84,11 +71,9 @@ export function SaleFormDialog({ open, onOpenChange, initialProduct }: SaleFormD
     has_warranty: false,
   });
 
-  const [items, setItems] = useState<SaleItem[]>([
-    { tempId: crypto.randomUUID(), product_id: null, product_name: "", quantity: 1, unit_price: 0, subtotal: 0, category_id: null }
-  ]);
+  const [items, setItems] = useState<ProductEditorItem[]>([]);
 
-  const createInitialItem = (product?: Product | null): SaleItem => {
+  const createInitialItem = (product?: Product | null): ProductEditorItem => {
     if (!product) {
       return {
         tempId: crypto.randomUUID(),
@@ -132,7 +117,7 @@ export function SaleFormDialog({ open, onOpenChange, initialProduct }: SaleFormD
         notes: "",
         has_warranty: false,
       }));
-      setItems([createInitialItem(initialProduct)]);
+      setItems(initialProduct ? [createInitialItem(initialProduct)] : []);
     }
   }, [open, initialProduct, currentWorkshop?.id]);
 
@@ -142,49 +127,6 @@ export function SaleFormDialog({ open, onOpenChange, initialProduct }: SaleFormD
       customer_id: customerId,
       customer_name: customer?.name || "",
     }));
-  };
-
-  const addItem = () => {
-    setItems(prev => [...prev, {
-      tempId: crypto.randomUUID(),
-      product_id: null,
-      product_name: "",
-      quantity: 1,
-      unit_price: 0,
-      subtotal: 0,
-      category_id: null,
-    }]);
-  };
-
-  const updateItem = (tempId: string, field: keyof SaleItem, value: any) => {
-    setItems(prev => prev.map(item => {
-      if (item.tempId !== tempId) return item;
-      const updated = { ...item, [field]: value };
-      if (field === "quantity" || field === "unit_price") {
-        updated.subtotal = updated.quantity * updated.unit_price;
-      }
-      return updated;
-    }));
-  };
-
-  const handleProductSelect = (tempId: string, productId: string | null, product: Product | null) => {
-    setItems(prev => prev.map(item => {
-      if (item.tempId !== tempId) return item;
-      return {
-        ...item,
-        product_id: productId,
-        product_name: product?.name || "",
-        unit_price: product?.sale_price_min || 0,
-        subtotal: item.quantity * (product?.sale_price_min || 0),
-        category_id: product?.category_id || null,
-      };
-    }));
-  };
-
-  const removeItem = (tempId: string) => {
-    if (items.length > 1) {
-      setItems(prev => prev.filter(item => item.tempId !== tempId));
-    }
   };
 
   const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
@@ -424,76 +366,19 @@ export function SaleFormDialog({ open, onOpenChange, initialProduct }: SaleFormD
           </TabsContent>
 
           {/* Tab: Productos */}
-          <TabsContent value="productos" className="space-y-4 mt-4">
-            <div className="flex items-center justify-between">
-              <Label>Productos *</Label>
-              <Button type="button" variant="outline" size="sm" onClick={addItem}>
-                <Plus className="w-4 h-4 mr-1" />
-                Agregar
-              </Button>
-            </div>
-            
-            <div className="space-y-2 max-h-[40vh] overflow-y-auto">
-              {items.map((item) => (
-                <div
-                  key={item.tempId}
-                  className="space-y-2 p-3 bg-muted/50 rounded-lg border"
-                >
-                  <ProductSelect
-                    value={item.product_id}
-                    onValueChange={(id, product) => handleProductSelect(item.tempId, id, product)}
-                    excludeIds={items
-                      .filter(i => i.tempId !== item.tempId && i.product_id)
-                      .map(i => i.product_id!)}
-                    invalid={showProductosInvalid && invalidProductIds.has(item.tempId)}
-                  />
-                  <div className="grid grid-cols-3 gap-2">
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Cantidad</Label>
-                      <UnitNumberInput
-                        min={1}
-                        value={item.quantity}
-                        onValueChange={(value) => updateItem(item.tempId, "quantity", value || 1)}
-                        aria-invalid={showProductosInvalid && invalidQuantityIds.has(item.tempId)}
-                        className={cn("h-9 text-sm", showProductosInvalid && invalidQuantityIds.has(item.tempId) && invalidFieldClass)}
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Precio</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        value={item.unit_price}
-                        onChange={(e) =>
-                          updateItem(item.tempId, "unit_price", parseFloat(e.target.value) || 0)
-                        }
-                        placeholder={showProductosInvalid && invalidUnitPriceIds.has(item.tempId) ? "Debe ser mayor a 0" : "0"}
-                        aria-invalid={showProductosInvalid && invalidUnitPriceIds.has(item.tempId)}
-                        className={cn("h-9 text-sm", showProductosInvalid && invalidUnitPriceIds.has(item.tempId) && invalidFieldClass)}
-                      />
-                    </div>
-                    <div className="flex items-end gap-1">
-                      <div className="flex-1">
-                        <Label className="text-xs text-muted-foreground">Subtotal</Label>
-                        <div className="h-9 px-2 py-1 bg-background rounded text-sm font-medium flex items-center">
-                          {currencySymbol}{item.subtotal.toLocaleString()}
-                        </div>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-9 w-9"
-                        onClick={() => removeItem(item.tempId)}
-                        disabled={items.length === 1}
-                      >
-                        <Trash2 className="w-4 h-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+          <TabsContent value="productos" className="mt-4">
+            <ServiceProductsEditor
+              items={items}
+              onItemsChange={setItems}
+              editable={true}
+              minItems={1}
+              excludeAddedProducts={true}
+              excludeServiceItems={true}
+              showInvalid={showProductosInvalid}
+              invalidQuantityIds={invalidQuantityIds}
+              invalidPriceIds={invalidUnitPriceIds}
+              currencySymbol={currencySymbol}
+            />
           </TabsContent>
 
           {/* Tab: Resumen */}

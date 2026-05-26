@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Check, ChevronsUpDown, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -28,8 +28,18 @@ interface ProductSelectProps {
 
 export function ProductSelect({ value, onValueChange, excludeIds = [], excludeServiceItems = false, invalid = false }: ProductSelectProps) {
   const [open, setOpen] = useState(false);
+  const [inputReady, setInputReady] = useState(false);
   const { data: products, isLoading } = useProducts();
   const { data: settings } = useBusinessSettings();
+
+  useEffect(() => {
+    if (open) {
+      const t = setTimeout(() => setInputReady(true), 120);
+      return () => clearTimeout(t);
+    } else {
+      setInputReady(false);
+    }
+  }, [open]);
   
   const currencySymbol = settings?.currency_symbol || "$";
 
@@ -77,13 +87,19 @@ export function ProductSelect({ value, onValueChange, excludeIds = [], excludeSe
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-[350px] p-0"
+        className="w-[min(350px,90vw)] p-0"
         align="start"
+        side="bottom"
+        avoidCollisions={false}
         onOpenAutoFocus={(event) => event.preventDefault()}
       >
         <Command>
-          <CommandInput placeholder="Buscar producto..." />
-          <CommandList>
+          <CommandInput
+            placeholder="Buscar producto..."
+            autoFocus={false}
+            readOnly={!inputReady}
+          />
+          <CommandList className="max-h-[160px]">
             <CommandEmpty>
               {isLoading ? "Cargando..." : "No se encontraron productos."}
             </CommandEmpty>

@@ -288,31 +288,31 @@ const DialogContent = React.forwardRef<
   const SHEET_EXIT_EASE = "cubic-bezier(0.3, 0, 0.8, 0.15)";
   const RUBBER_BAND_FACTOR = 0.15;
 
-  if (mode === "sheet") {
-    const closeRef = React.useRef<HTMLButtonElement | null>(null);
-    const contentRef = React.useRef<HTMLDivElement | null>(null);
-    const bodyRef = React.useRef<HTMLDivElement | null>(null);
-    const dragHandleRef = React.useRef<HTMLDivElement | null>(null);
-    const dragStartedFromHandleRef = React.useRef(false);
-    const pointerIdRef = React.useRef<number | null>(null);
-    const tabSwipeStartRef = React.useRef<{ x: number; y: number } | null>(null);
-    const touchActiveRef = React.useRef(false);
-    const lastClientYRef = React.useRef(0);
-    const startYRef = React.useRef(0);
-    const startXRef = React.useRef(0);
-    const canDragRef = React.useRef(false);
-    const isDraggingRef = React.useRef(false);
-    const overlayElRef = React.useRef<HTMLElement | null>(null);
-    const sheetHeightRef = React.useRef(0);
-    const [dragY, setDragY] = React.useState(0);
-    const [isDragging, setIsDragging] = React.useState(false);
-    const [isGestureClosing, setIsGestureClosing] = React.useState(false);
+  const closeRef = React.useRef<HTMLButtonElement | null>(null);
+  const contentRef = React.useRef<HTMLDivElement | null>(null);
+  const bodyRef = React.useRef<HTMLDivElement | null>(null);
+  const dragHandleRef = React.useRef<HTMLDivElement | null>(null);
+  const dragStartedFromHandleRef = React.useRef(false);
+  const pointerIdRef = React.useRef<number | null>(null);
+  const tabSwipeStartRef = React.useRef<{ x: number; y: number } | null>(null);
+  const touchActiveRef = React.useRef(false);
+  const lastClientYRef = React.useRef(0);
+  const startYRef = React.useRef(0);
+  const startXRef = React.useRef(0);
+  const canDragRef = React.useRef(false);
+  const isDraggingRef = React.useRef(false);
+  const overlayElRef = React.useRef<HTMLElement | null>(null);
+  const sheetHeightRef = React.useRef(0);
+  const [dragY, setDragY] = React.useState(0);
+  const [isDragging, setIsDragging] = React.useState(false);
+  const [isGestureClosing, setIsGestureClosing] = React.useState(false);
 
-    React.useEffect(() => {
-      return registerCloseAction(() => {
-        closeRef.current?.click();
-      });
-    }, [registerCloseAction]);
+  React.useEffect(() => {
+    if (mode !== "sheet") return;
+    return registerCloseAction(() => {
+      closeRef.current?.click();
+    });
+  }, [mode, registerCloseAction]);
 
     const setDragging = React.useCallback((value: boolean) => {
       isDraggingRef.current = value;
@@ -605,6 +605,7 @@ const DialogContent = React.forwardRef<
       switchTabFromSwipe(event.currentTarget, deltaX, deltaY);
     };
 
+  if (mode === "sheet") {
     // Recursively extract DialogHeader and DialogFooter from anywhere in the tree
     // (they may be nested inside <form>, <Tabs>, etc.).
     // We rebuild the body without those nodes so the footer stays pinned.
