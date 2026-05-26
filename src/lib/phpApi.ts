@@ -23,7 +23,7 @@ const STORAGE_BASE = API_BASE.replace(/\/api(\/.*)?$/, "");
 
 // ===== KEYLUNE FALLBACK START =====
 // ...
-apiBaseCandidates.push("https://keylune.app/api");
+apiBaseCandidates.push("https://keylune.com/api");
 // ===== KEYLUNE FALLBACK END =====
 
 
