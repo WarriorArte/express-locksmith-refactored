@@ -9,12 +9,6 @@ const envApiBase = import.meta.env.VITE_PHP_API_BASE as string | undefined;
 const localApiBase = `${import.meta.env.BASE_URL}api`;
 const apiBaseCandidates = [runtimeApiBase, envApiBase, localApiBase];
 
-// ===== KEYLUNE FALLBACK START =====
-// Fallback temporal: solo se intenta si window.__PHP_API_BASE__, VITE_PHP_API_BASE
-// y la ruta local /api no responden como API. Para quitarlo, borra este bloque completo.
-apiBaseCandidates.push("https://keylune.com/api");
-// ===== KEYLUNE FALLBACK END =====
-
 const API_BASES = Array.from(
   new Set(apiBaseCandidates.filter(Boolean).map((base) => base!.replace(/\/$/, ""))),
 );
