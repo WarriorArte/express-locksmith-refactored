@@ -1,4 +1,4 @@
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+﻿import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   Home, Wrench, Package, Grid3x3, Plus,
   ShoppingCart, FileText, Users, Shield, Construction, Settings, LogOut,
@@ -95,7 +95,7 @@ export function BottomNav() {
   const leftItems = filteredNavItems.slice(0, 2);
   const rightItems = filteredNavItems.slice(2, 3);
 
-  // Map current route → direct create action; dashboard ("/") opens the action menu
+  // Map current route -> direct create action; dashboard ("/") opens the action menu
   const directActionMap: Record<string, string> = {
     "/inventario": "product",
     "/cotizaciones": "quote",
@@ -288,3 +288,4 @@ function NavBtn({
     </NavLink>
   );
 }
+

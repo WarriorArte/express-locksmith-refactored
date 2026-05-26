@@ -1,5 +1,6 @@
 .qd .page {
   width: 8.5in;
+  height: 11in;
   min-height: 11in;
   flex: none;
   background: var(--paper);
@@ -15,6 +16,7 @@
 .qd .page-inner {
   position: relative;
   z-index: 2;
+  height: 11in;
   min-height: 11in;
   display: flex; flex-direction: column;
 }
@@ -145,6 +147,13 @@
   letter-spacing: .04em;
 }
 .qd .payment .grid .v { color: var(--ink); font-weight: 600; }
+.qd .layout-bold,
+.qd .layout-banner {
+  display: flex;
+  flex-direction: column;
+  height: 11in;
+  min-height: 11in;
+}
 .qd .layout-bold .hero {
   position: relative;
   background: var(--paper);
@@ -185,6 +194,15 @@
   display: grid; place-items: center;
   font-family: "Archivo", sans-serif; font-weight: 800;
   font-size: 22px; line-height: 1;
+  flex: 0 0 auto;
+}
+.qd .layout-bold .brand-logo {
+  height: 46px;
+  width: auto;
+  max-width: 150px;
+  object-fit: contain;
+  display: block;
+  flex: 0 0 auto;
 }
 .qd .layout-bold .brand-name {
   font-family: "Archivo", sans-serif; font-weight: 800;
@@ -194,6 +212,15 @@
 .qd .layout-bold .brand-slogan {
   font-size: 11px; color: var(--muted);
   margin-top: 4px; letter-spacing: .04em;
+}
+.qd .layout-bold .brand-contact {
+  margin-top: 8px;
+  max-width: 360px;
+  font-size: 10.5px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  line-height: 1.55;
+  font-family: "JetBrains Mono", monospace;
 }
 .qd .layout-bold .doc-id { text-align: right; }
 .qd .layout-bold .doc-id .eyebrow {
@@ -265,67 +292,40 @@
   font-size: 13px; letter-spacing: .04em;
   text-transform: uppercase; margin-top: 2px;
 }
-.qd .layout-bold .items-wrap { padding: 36px 52px 0; }
+.qd .layout-bold .items-wrap {
+  padding: 36px 52px 0;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+}
 .qd .layout-bold .bottom {
-  padding: 28px 52px 0;
+  padding: 28px 52px 34px;
   display: grid;
   grid-template-columns: 1.2fr 1fr;
   gap: 36px;
-}
-.qd .layout-bold .foot {
-  position: relative;
   margin-top: auto;
-  padding: 36px 52px 28px;
-  border-top: 1px solid var(--rule);
-  background: var(--paper);
-  color: var(--ink);
-  overflow: hidden;
+  flex: 0 0 auto;
 }
-.qd .layout-bold .foot::before {
-  content: "";
-  position: absolute;
-  left: -100px; bottom: -120px;
-  width: 320px; height: 320px;
-  border-radius: 50%;
-  background: var(--accent);
-  opacity: .06;
-  pointer-events: none;
+.qd .page.has-bg-image .layout-bold .hero {
+  background: transparent;
 }
-.qd .layout-bold .foot-curve {
+.qd .page.has-bg-image .layout-bold .hero {
+  border-bottom-color: color-mix(in srgb, var(--ink) 16%, transparent);
+}
+.qd .page.has-bg-image .layout-bold .hero::after,
+.qd .page.has-bg-image .layout-bold .hero-curve {
   display: none;
 }
-.qd .layout-bold .foot-grid {
-  position: relative; z-index: 2;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: end;
-  gap: 24px;
+.qd .page.has-bg-image .layout-bold .items-table tbody td {
+  background: color-mix(in srgb, var(--paper) 78%, transparent);
 }
-.qd .layout-bold .foot .thanks {
-  font-family: "Archivo", sans-serif; font-weight: 800;
-  font-size: 18px; color: var(--ink); letter-spacing: -0.005em;
+.qd .page.has-bg-image .layout-bold .items-table tbody tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--paper) 68%, transparent);
 }
-.qd .layout-bold .foot .thanks .accent { color: var(--accent); }
-.qd .layout-bold .foot .contact {
-  margin-top: 10px;
-  font-size: 11px; color: var(--muted);
-  letter-spacing: 0.04em; line-height: 1.7;
-  font-family: "JetBrains Mono", monospace;
-}
-.qd .layout-bold .foot .signature { text-align: right; min-width: 220px; }
-.qd .layout-bold .foot .signature .line {
-  width: 220px; height: 1px;
-  background: var(--ink);
-  margin: 0 0 8px auto;
-}
-.qd .layout-bold .foot .signature .sig-label {
-  font-family: "Archivo", sans-serif; font-weight: 700;
-  font-size: 11px; letter-spacing: 0.16em;
-  text-transform: uppercase; color: var(--ink);
-}
-.qd .layout-bold .foot .signature .sig-name {
-  font-size: 11px; color: var(--muted); margin-top: 2px;
-  font-family: "JetBrains Mono", monospace;
+.qd .page.has-bg-image .layout-bold .notes p,
+.qd .page.has-bg-image .layout-bold .tot-row,
+.qd .page.has-bg-image .layout-bold .brand-contact {
+  color: color-mix(in srgb, var(--ink) 72%, transparent);
 }
 .qd .layout-banner .b-head {
   padding: 44px 52px 28px;
@@ -342,6 +342,15 @@
   display: grid; place-items: center;
   font-family: "Archivo", sans-serif; font-weight: 800;
   font-size: 20px; line-height: 1;
+  flex: 0 0 auto;
+}
+.qd .layout-banner .brand-logo {
+  height: 44px;
+  width: auto;
+  max-width: 160px;
+  object-fit: contain;
+  display: block;
+  flex: 0 0 auto;
 }
 .qd .layout-banner .brand-name {
   font-family: "Archivo", sans-serif; font-weight: 800;
@@ -351,6 +360,15 @@
 .qd .layout-banner .brand-slogan {
   font-size: 11px; color: var(--muted);
   margin-top: 4px; letter-spacing: .04em;
+}
+.qd .layout-banner .brand-contact {
+  margin-top: 8px;
+  max-width: 390px;
+  font-size: 10.5px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  line-height: 1.55;
+  font-family: "JetBrains Mono", monospace;
 }
 .qd .layout-banner .b-head .meta {
   text-align: right;
@@ -413,60 +431,24 @@
   color: var(--ink); font-weight: 600; font-size: 12.5px;
   font-family: "JetBrains Mono", monospace;
 }
-.qd .layout-banner .items-wrap { padding: 24px 52px 0; }
+.qd .layout-banner .items-wrap {
+  padding: 24px 52px 0;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+}
 .qd .layout-banner .bottom {
-  padding: 28px 52px 0;
+  padding: 28px 52px 34px;
   display: grid;
   grid-template-columns: 1.2fr 1fr;
   gap: 36px;
-}
-.qd .layout-banner .foot {
   margin-top: auto;
-  padding: 28px 52px 36px;
-  position: relative;
-}
-.qd .layout-banner .foot::before {
-  content: "";
-  position: absolute;
-  left: 52px; right: 52px; top: 0;
-  height: 4px;
-  background: var(--accent);
-}
-.qd .layout-banner .foot-grid {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: end;
-  gap: 24px;
-  padding-top: 22px;
-}
-.qd .layout-banner .foot .thanks {
-  font-family: "Archivo", sans-serif; font-weight: 800;
-  font-size: 16px; color: var(--ink);
-}
-.qd .layout-banner .foot .thanks .accent { color: var(--ink); border-bottom: 3px solid var(--accent); }
-.qd .layout-banner .foot .contact {
-  margin-top: 8px;
-  font-size: 11px; color: var(--muted);
-  letter-spacing: 0.04em; line-height: 1.7;
-  font-family: "JetBrains Mono", monospace;
-}
-.qd .layout-banner .foot .signature { text-align: right; min-width: 220px; }
-.qd .layout-banner .foot .signature .line {
-  width: 220px; height: 1px;
-  background: var(--ink); margin: 0 0 8px auto;
-}
-.qd .layout-banner .foot .signature .sig-label {
-  font-family: "Archivo", sans-serif; font-weight: 700;
-  font-size: 11px; letter-spacing: 0.16em;
-  text-transform: uppercase; color: var(--ink);
-}
-.qd .layout-banner .foot .signature .sig-name {
-  font-size: 11px; color: var(--muted); margin-top: 2px;
-  font-family: "JetBrains Mono", monospace;
+  flex: 0 0 auto;
 }
 .qd .layout-classic {
   padding: 36px 44px 28px;
   display: flex; flex-direction: column;
+  height: 11in;
   min-height: 11in;
   color: var(--ink);
 }
@@ -488,6 +470,14 @@
   font-weight: 800; font-size: 26px;
   flex: 0 0 auto;
   border: 2px solid var(--ink);
+}
+.qd .layout-classic .c-brand-logo {
+  height: 60px;
+  width: auto;
+  max-width: 170px;
+  object-fit: contain;
+  display: block;
+  flex: 0 0 auto;
 }
 .qd .layout-classic .c-brand-info { font-size: 11px; line-height: 1.55; color: var(--ink); }
 .qd .layout-classic .c-brand-info .name {
@@ -647,12 +637,19 @@
   margin-top: 3px;
   line-height: 1.5;
 }
+.qd .layout-classic .c-items {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+}
 .qd .layout-classic .c-bottom {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 30px;
-  margin-top: 18px;
+  margin-top: auto;
+  padding-top: 18px;
   align-items: start;
+  flex: 0 0 auto;
 }
 .qd .layout-classic .c-notes {
   font-size: 11.5px;
@@ -710,65 +707,6 @@
   background: var(--accent);
   color: var(--accent-ink);
 }
-.qd .layout-classic .c-sigs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 40px;
-  margin-top: auto;
-  padding-top: 40px;
-}
-.qd .layout-classic .c-sigs .sig {
-  position: relative;
-  font-size: 12px;
-}
-.qd .layout-classic .c-sigs .sig .lbl {
-  font-family: "Archivo", sans-serif;
-  font-weight: 800;
-  font-size: 12px;
-  color: var(--ink);
-}
-.qd .layout-classic .c-sigs .sig .line {
-  height: 1px;
-  background: var(--ink);
-  margin-top: 38px;
-  margin-bottom: 6px;
-}
-.qd .layout-classic .c-sigs .sig .name {
-  font-size: 10.5px;
-  color: var(--muted);
-  font-family: "JetBrains Mono", monospace;
-}
-.qd .layout-classic .c-sigs .stamp {
-  position: absolute;
-  right: -10px;
-  top: -8px;
-  width: 96px; height: 96px;
-  border-radius: 50%;
-  border: 3px solid var(--accent);
-  display: grid; place-items: center;
-  transform: rotate(-14deg);
-  opacity: 0.85;
-  pointer-events: none;
-}
-.qd .layout-classic .c-sigs .stamp::after {
-  content: "";
-  position: absolute;
-  inset: 5px;
-  border: 1px solid var(--accent);
-  border-radius: 50%;
-}
-.qd .layout-classic .c-sigs .stamp span {
-  font-family: "Archivo", sans-serif;
-  font-weight: 900;
-  font-size: 14px;
-  letter-spacing: 0.18em;
-  color: var(--accent);
-  position: relative;
-  z-index: 2;
-}
-
-
-
 @media print {
   @page { size: letter; margin: 0; }
   html, body {

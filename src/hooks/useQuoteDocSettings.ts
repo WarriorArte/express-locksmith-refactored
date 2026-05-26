@@ -3,8 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { phpApiRequest } from "@/lib/phpApi";
 import { useToast } from "@/hooks/use-toast";
 import { useWorkshop } from "@/hooks/useWorkshop";
+import type { QuoteLayoutId } from "@/components/quotes/templates";
 
-export type QuoteLayoutId = "bold" | "banner" | "classic";
 export type QuoteBlendMode = "normal" | "multiply" | "luminosity";
 
 export type QuoteDocSettings = {

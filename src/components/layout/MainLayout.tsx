@@ -1,7 +1,6 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
-import { FAB } from "./FAB";
 import { BottomNav } from "./BottomNav";
 import { Bell, LogOut, User, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -42,8 +41,8 @@ export function MainLayout() {
       />
 
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Desktop top bar only — mobile uses PageHeader for avatar/notifications */}
-        <header className="sticky top-0 z-20 bg-background/85 backdrop-blur-md hidden lg:block">
+        {/* Desktop top bar only - mobile uses PageHeader for avatar/notifications */}
+        <header className="sticky top-0 z-50 bg-background border-b border-border/60 hidden lg:block">
           <div className="flex items-center justify-between h-14 px-6">
             <div className="flex flex-col leading-tight">
               <span className="text-xs text-muted-foreground font-medium">
@@ -111,8 +110,7 @@ export function MainLayout() {
       {/* Bottom Navigation - Mobile Only */}
       <BottomNav />
 
-      {/* FAB - Desktop Only */}
-      <FAB />
     </div>
   );
 }
+

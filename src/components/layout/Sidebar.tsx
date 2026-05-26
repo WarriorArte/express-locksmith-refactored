@@ -1,4 +1,4 @@
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+﻿import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { m as motion, AnimatePresence } from "framer-motion";
 import { 
   LayoutDashboard, 
@@ -306,7 +306,7 @@ export function Sidebar({
 
   return (
     <>
-      {/* Desktop Sidebar only — mobile uses BottomNav + Más sheet */}
+      {/* Desktop Sidebar only - mobile uses BottomNav + Más sheet */}
       <motion.aside
         initial={false}
         animate={{ width: collapsed ? 72 : 256 }}
@@ -318,3 +318,4 @@ export function Sidebar({
     </>
   );
 }
+

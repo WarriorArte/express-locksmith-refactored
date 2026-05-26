@@ -11,20 +11,23 @@ import {
   QUOTE_PRESETS,
   autoAccentInk,
   darken,
-  type QuoteLayoutId,
 } from "@/hooks/useQuoteDocSettings";
 import { createSampleQuote } from "@/components/quotes/QuoteDocumentPage";
 import { QuotePreviewFrame } from "@/components/quotes/QuotePreviewFrame";
+import { QUOTE_TEMPLATES, getQuoteTemplate } from "@/components/quotes/templates";
 import "@/styles/quote-doc.css";
 
-const LAYOUTS: Array<{ id: QuoteLayoutId; name: string }> = [
-  { id: "bold", name: "Hero" },
-  { id: "banner", name: "Banda" },
-  { id: "classic", name: "Clásica" },
-];
+type QuoteDocSettingsState = ReturnType<typeof useQuoteDocSettings>;
 
-export function QuoteDocSettingsPanel({ compact = false }: { compact?: boolean }) {
-  const { settings, update, save, isLoading, isSaving, hasUnsavedChanges } = useQuoteDocSettings();
+export function QuoteDocSettingsPanel({
+  compact = false,
+  state,
+}: {
+  compact?: boolean;
+  state?: QuoteDocSettingsState;
+}) {
+  const localState = useQuoteDocSettings();
+  const { settings, update, save, isLoading, isSaving, hasUnsavedChanges } = state ?? localState;
   const { data: biz } = useBusinessSettings();
   const fileRef = useRef<HTMLInputElement>(null);
   const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
@@ -48,7 +51,7 @@ export function QuoteDocSettingsPanel({ compact = false }: { compact?: boolean }
     r.readAsDataURL(f);
   };
 
-  const preview = <QuotePreview settings={settings} compact={compact} />;
+  const mobilePreview = <QuotePreview settings={settings} compact={compact} />;
 
   if (isLoading) {
     return (
@@ -60,7 +63,7 @@ export function QuoteDocSettingsPanel({ compact = false }: { compact?: boolean }
   }
 
   return (
-    <div className={cn("grid gap-6", !compact && "xl:grid-cols-[minmax(0,560px)_minmax(360px,1fr)] xl:items-start")}>
+    <div>
       <div className={cn("space-y-6", compact && "space-y-4")}>
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -84,7 +87,7 @@ export function QuoteDocSettingsPanel({ compact = false }: { compact?: boolean }
       <section>
         <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-2 block">Disposición</Label>
         <div className="grid grid-cols-3 gap-2">
-          {LAYOUTS.map(L => (
+          {QUOTE_TEMPLATES.map(L => (
             <button
               key={L.id}
               type="button"
@@ -94,7 +97,7 @@ export function QuoteDocSettingsPanel({ compact = false }: { compact?: boolean }
                 settings.layout === L.id ? "border-primary shadow-[0_0_16px_hsl(var(--primary)/0.25)]" : "border-border hover:border-muted-foreground/40",
               )}
             >
-              <LayoutThumb id={L.id} accent={settings.accent} ink={settings.ink} />
+              <L.Thumb accent={settings.accent} ink={settings.ink} />
               <div className="text-xs font-semibold mt-2">{L.name}</div>
             </button>
           ))}
@@ -233,7 +236,7 @@ export function QuoteDocSettingsPanel({ compact = false }: { compact?: boolean }
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-border">
       <p className="text-[11px] text-muted-foreground font-mono">
         <FileText className="w-3 h-3 inline mr-1" />
-        Tamaño Carta 8.5 × 11 in · {LAYOUTS.find(l => l.id === settings.layout)?.name.toLowerCase()} · {settings.presetId}
+        Tamaño Carta 8.5 × 11 in · {getQuoteTemplate(settings.layout)?.name.toLowerCase()} · {settings.presetId}
       </p>
       <Button type="button" onClick={() => void save(settings)} disabled={isSaving || !hasUnsavedChanges} className="gap-2">
         {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
@@ -241,12 +244,6 @@ export function QuoteDocSettingsPanel({ compact = false }: { compact?: boolean }
       </Button>
       </div>
       </div>
-
-      {!compact && (
-        <aside className="hidden xl:block sticky top-4">
-          {preview}
-        </aside>
-      )}
 
       {mobilePreviewOpen && (
         <div className="fixed inset-0 z-[120] bg-background/95 backdrop-blur-sm p-3 overflow-auto xl:hidden">
@@ -256,14 +253,38 @@ export function QuoteDocSettingsPanel({ compact = false }: { compact?: boolean }
               <X className="w-4 h-4" />
             </Button>
           </div>
-          {preview}
+          {mobilePreview}
         </div>
       )}
     </div>
   );
 }
 
-function QuotePreview({ settings, compact }: { settings: ReturnType<typeof useQuoteDocSettings>["settings"]; compact?: boolean }) {
+export function QuoteDocSettingsPreview({ state }: { state?: QuoteDocSettingsState }) {
+  const localState = useQuoteDocSettings();
+  const { settings, isLoading } = state ?? localState;
+
+  if (isLoading) {
+    return (
+      <div className="h-[calc(100vh-2rem)] rounded-xl border border-border bg-[hsl(var(--surface-2))] flex items-center justify-center text-muted-foreground">
+        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+        Cargando preview
+      </div>
+    );
+  }
+
+  return <QuotePreview settings={settings} fillViewport />;
+}
+
+function QuotePreview({
+  settings,
+  compact,
+  fillViewport = false,
+}: {
+  settings: ReturnType<typeof useQuoteDocSettings>["settings"];
+  compact?: boolean;
+  fillViewport?: boolean;
+}) {
   const { data: biz } = useBusinessSettings();
   const sampleQuote = useMemo(() => createSampleQuote(), []);
 
@@ -273,8 +294,8 @@ function QuotePreview({ settings, compact }: { settings: ReturnType<typeof useQu
       biz={biz ?? null}
       settings={settings}
       zoom={compact ? 0.44 : 0.44}
-      fillHeight={compact}
-      className={compact ? "h-[calc(100vh-5rem)]" : undefined}
+      fillHeight={compact || fillViewport}
+      className={compact ? "h-[calc(100vh-5rem)]" : fillViewport ? "h-[calc(100vh-2rem)]" : undefined}
     />
   );
 }
@@ -296,47 +317,3 @@ function ColorPick({ label, value, onChange }: { label: string; value: string; o
   );
 }
 
-function LayoutThumb({ id, accent, ink }: { id: QuoteLayoutId; accent: string; ink: string }) {
-  if (id === "bold") {
-    return (
-      <svg width="40" height="52" viewBox="0 0 40 52" className="mx-auto">
-        <rect width="40" height="52" rx="2" fill="hsl(var(--muted))" />
-        <rect width="40" height="18" fill={ink} />
-        <rect x="22" y="14" width="14" height="6" rx="1" fill={accent} />
-        <rect x="4" y="24" width="32" height="3" rx="1" fill={ink} opacity=".35" />
-        <rect x="4" y="29" width="32" height="2" rx="1" fill={ink} opacity=".2" />
-        <rect x="4" y="33" width="32" height="2" rx="1" fill={ink} opacity=".2" />
-        <rect x="4" y="37" width="32" height="2" rx="1" fill={ink} opacity=".2" />
-        <rect y="44" width="40" height="8" fill={ink} />
-      </svg>
-    );
-  }
-  if (id === "banner") {
-    return (
-      <svg width="40" height="52" viewBox="0 0 40 52" className="mx-auto">
-        <rect width="40" height="52" rx="2" fill="hsl(var(--muted))" />
-        <rect x="4" y="4" width="14" height="3" rx="1" fill={ink} />
-        <rect x="22" y="4" width="14" height="2" rx="1" fill={ink} opacity=".4" />
-        <rect y="14" width="40" height="9" fill={accent} />
-        <rect x="4" y="27" width="32" height="3" rx="1" fill={ink} opacity=".35" />
-        <rect x="4" y="32" width="32" height="2" rx="1" fill={ink} opacity=".2" />
-        <rect x="4" y="36" width="32" height="2" rx="1" fill={ink} opacity=".2" />
-        <rect x="22" y="44" width="14" height="4" rx="1" fill={accent} />
-      </svg>
-    );
-  }
-  return (
-    <svg width="40" height="52" viewBox="0 0 40 52" className="mx-auto">
-      <rect width="40" height="52" rx="2" fill="hsl(var(--muted))" />
-      <circle cx="8" cy="8" r="3" fill={accent} />
-      <rect x="24" y="4" width="12" height="4" rx="1" fill={ink} />
-      <rect x="26" y="10" width="10" height="3" rx=".5" fill="none" stroke={ink} strokeWidth=".5" />
-      <line x1="4" y1="18" x2="18" y2="18" stroke={ink} strokeWidth=".8" />
-      <line x1="22" y1="18" x2="36" y2="18" stroke={ink} strokeWidth=".8" />
-      <line x1="4" y1="22" x2="36" y2="22" stroke={ink} strokeWidth=".8" />
-      <rect x="4" y="26" width="32" height="14" rx=".5" fill="none" stroke={ink} strokeWidth=".5" />
-      <line x1="4" y1="48" x2="16" y2="48" stroke={ink} strokeWidth=".8" />
-      <circle cx="32" cy="47" r="4" fill="none" stroke={accent} strokeWidth=".8" />
-    </svg>
-  );
-}

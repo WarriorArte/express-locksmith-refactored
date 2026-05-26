@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { m as motion } from "framer-motion";
 import { 
@@ -50,7 +50,8 @@ import { useWorkshop } from "@/hooks/useWorkshop";
 import { ImageUploader } from "@/components/shared/ImageUploader";
 import { phpApiUpload } from "@/lib/phpApi";
 import { BackupManager } from "@/components/settings/BackupManager";
-import { QuoteDocSettingsPanel } from "@/components/settings/QuoteDocSettingsPanel";
+import { QuoteDocSettingsPanel, QuoteDocSettingsPreview } from "@/components/settings/QuoteDocSettingsPanel";
+import { useQuoteDocSettings } from "@/hooks/useQuoteDocSettings";
 
 import { COUNTRIES, getCountryByCode, inferCountryCode } from "@/lib/countries";
 
@@ -65,6 +66,7 @@ export default function Configuracion() {
   // Business settings
   const { data: settings, isLoading: loadingSettings } = useBusinessSettings();
   const updateSettings = useUpdateBusinessSettings();
+  const quoteDocSettings = useQuoteDocSettings();
   
   // Users
   const { data: users, isLoading: loadingUsers } = useProfiles();
@@ -143,14 +145,15 @@ export default function Configuracion() {
 
 
   return (
-    <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain pt-10 lg:pt-2 px-5 lg:px-6 pb-24 md:pb-6 space-y-6 no-scrollbar">
+    <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain pt-10 lg:pt-0 px-5 lg:px-6 pb-24 md:pb-6 space-y-6 lg:space-y-0 no-scrollbar">
       {/* Header */}
       <PageHeader
         title="Configuración"
         subtitle="Administra tu negocio y personaliza la app"
+        className="lg:hidden"
       />
 
-      {/* MOBILE: v2 prototype layout — profile card + tabs in single screen */}
+      {/* MOBILE: v2 prototype layout - profile card + tabs in single screen */}
       <div className="lg:hidden -mt-2">
         {/* Profile card (green hero) */}
         <div className="rounded-[18px] bg-primary text-primary-foreground p-3.5 flex items-center gap-3 mb-4 shadow-[0_0_24px_hsl(var(--primary)/0.30)]">
@@ -192,6 +195,12 @@ export default function Configuracion() {
         className="hidden lg:block"
       >
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <div className="sticky top-0 z-40 -mx-6 px-6 pt-4 pb-4 bg-background border-b border-border/60 shadow-[0_8px_24px_hsl(var(--background))]">
+          <PageHeader
+            title="Configuración"
+            subtitle="Administra tu negocio y personaliza la app"
+            className="mb-5"
+          />
           <TabsList className="grid grid-cols-6 gap-2 h-auto p-1 bg-muted">
             <TabsTrigger value="perfil" className="gap-2 py-3">
               <User className="w-4 h-4" />
@@ -222,6 +231,7 @@ export default function Configuracion() {
               </>
             )}
           </TabsList>
+          </div>
 
 
 
@@ -375,7 +385,7 @@ export default function Configuracion() {
                 </div>
               </div>
 
-              {/* País → autocompleta moneda y prefijo telefónico */}
+              {/* País -> autocompleta moneda y prefijo telefónico */}
               <div className="lg:col-span-2 pt-4 border-t">
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2">
@@ -435,6 +445,7 @@ export default function Configuracion() {
 
           {/* Cotización Tab */}
           <TabsContent value="cotizacion" className="space-y-6">
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,620px)_minmax(420px,1fr)] xl:items-start">
             <div className="card-elevated p-6">
               <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
                 <FileText className="w-5 h-5 text-primary" />
@@ -443,7 +454,13 @@ export default function Configuracion() {
               <p className="text-sm text-muted-foreground mb-6">
                 Personaliza cómo se imprimen tus cotizaciones. Los cambios se aplican a todas las cotizaciones.
               </p>
-              <QuoteDocSettingsPanel />
+              <QuoteDocSettingsPanel state={quoteDocSettings} />
+            </div>
+            <aside className="hidden xl:block sticky top-[11.5rem] self-start h-[calc(100vh-12.5rem)]">
+              <div className="h-full">
+                <QuoteDocSettingsPreview state={quoteDocSettings} />
+              </div>
+            </aside>
             </div>
           </TabsContent>
 
@@ -532,7 +549,7 @@ export default function Configuracion() {
   );
 }
 
-/* ───────── MOBILE: v2-style tabs ───────── */
+/* MOBILE: v2-style tabs */
 function MobileConfigTabs({
   isAdmin,
   theme,
@@ -737,4 +754,6 @@ function SystemRow({ icon: Icon, label, sub, onClick, divider }: any) {
     </button>
   );
 }
+
+
 

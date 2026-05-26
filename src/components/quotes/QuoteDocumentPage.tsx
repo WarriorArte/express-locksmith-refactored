@@ -4,7 +4,7 @@ import type { QuoteDocSettings } from "@/hooks/useQuoteDocSettings";
 import { autoAccentInk, darken } from "@/hooks/useQuoteDocSettings";
 import type { Quote } from "@/hooks/useQuotes";
 import { cn } from "@/lib/utils";
-import { LayoutBanner, LayoutBold, LayoutClassic, buildLayoutData } from "./QuoteLayouts";
+import { buildLayoutData, getQuoteTemplate } from "./templates";
 import "@/styles/quote-doc.css";
 
 interface QuoteDocumentPageProps {
@@ -31,13 +31,15 @@ export const QuoteDocumentPage = forwardRef<HTMLDivElement, QuoteDocumentPagePro
       zoom,
     } as React.CSSProperties), [settings.ink, settings.accent, settings.paper, zoom]);
 
-    const Layout =
-      settings.layout === "banner" ? LayoutBanner :
-      settings.layout === "classic" ? LayoutClassic :
-      LayoutBold;
+    const template = getQuoteTemplate(settings.layout);
+    const Layout = template.Component;
 
     return (
-      <div ref={ref} className={cn("page qd-page-screen", className)} style={pageStyle}>
+      <div
+        ref={ref}
+        className={cn("page qd-page-screen", settings.bgUrl && "has-bg-image", className)}
+        style={pageStyle}
+      >
         {settings.bgUrl && (
           <div
             className="bg-image"

@@ -1,5 +1,5 @@
-/**
- * PageHeader — Cerrajería Express Redesign
+﻿/**
+ * PageHeader - Cerrajería Express Redesign
  *
  * Mobile (Redesign.html style): big bold title on the left + avatar
  * with notification dot on the right. The desktop topbar already
@@ -117,4 +117,5 @@ export function PageHeader({
     </div>
   );
 }
+
 
