@@ -456,7 +456,7 @@ export default function Configuracion() {
               </p>
               <QuoteDocSettingsPanel state={quoteDocSettings} />
             </div>
-            <aside className="hidden xl:block sticky top-[11.5rem] self-start h-[calc(100vh-12.5rem)]">
+            <aside className="hidden xl:block sticky top-[11.5rem] self-start h-[calc(100dvh-12.5rem)]">
               <div className="h-full">
                 <QuoteDocSettingsPreview state={quoteDocSettings} />
               </div>

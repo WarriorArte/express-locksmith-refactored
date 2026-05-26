@@ -295,7 +295,7 @@ function QuotePreview({
       settings={settings}
       zoom={compact ? 0.44 : 0.44}
       fillHeight={compact || fillViewport}
-      className={compact ? "h-[calc(100vh-5rem)]" : fillViewport ? "h-[calc(100vh-2rem)]" : undefined}
+      className={compact ? "h-[calc(100vh-5rem)]" : fillViewport ? "h-full" : undefined}
     />
   );
 }
