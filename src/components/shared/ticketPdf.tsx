@@ -1,6 +1,6 @@
 import html2canvas from "html2canvas-pro";
 import { jsPDF } from "jspdf";
-import { getPhpAuthToken } from "@/lib/phpApi";
+import { getPhpAuthToken, resolveUploadFileUrl } from "@/lib/phpApi";
 
 /**
  * Renders a ticket DOM node to a PDF blob using html2canvas + jsPDF.
@@ -59,11 +59,18 @@ async function inlineImages(node: HTMLElement) {
   );
 }
 
-async function fetchAsDataUrl(url: string): Promise<string | null> {
+async function fetchAsDataUrl(originalUrl: string): Promise<string | null> {
+  // Route /uploads/* through the API proxy which sends proper CORS headers.
+  const proxied = resolveUploadFileUrl(originalUrl) || originalUrl;
   const headers = new Headers();
   const token = getPhpAuthToken();
   if (token) headers.set("Authorization", `Bearer ${token}`);
-  const res = await fetch(url, { headers, credentials: "include" }).catch(() => null);
+
+  let res = await fetch(proxied, { headers }).catch(() => null);
+  if (!res || !res.ok) {
+    // Fallback: try the raw URL without auth (in case the static host has CORS).
+    res = await fetch(originalUrl, { mode: "cors" }).catch(() => null);
+  }
   if (!res || !res.ok) return null;
   const blob = await res.blob();
   return await new Promise<string | null>((resolve) => {
