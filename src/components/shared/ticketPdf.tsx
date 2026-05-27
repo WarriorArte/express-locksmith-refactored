@@ -60,10 +60,15 @@ async function inlineImages(node: HTMLElement) {
 }
 
 async function fetchAsDataUrl(url: string): Promise<string | null> {
-  const headers = new Headers();
-  const token = getPhpAuthToken();
-  if (token) headers.set("Authorization", `Bearer ${token}`);
-  const res = await fetch(url, { headers, credentials: "include" }).catch(() => null);
+  // Try plain fetch first — uploads endpoint is usually public and sending
+  // Authorization would trigger a CORS preflight that static-file servers reject.
+  let res = await fetch(url, { mode: "cors" }).catch(() => null);
+  if (!res || !res.ok) {
+    const headers = new Headers();
+    const token = getPhpAuthToken();
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    res = await fetch(url, { headers, mode: "cors" }).catch(() => null);
+  }
   if (!res || !res.ok) return null;
   const blob = await res.blob();
   return await new Promise<string | null>((resolve) => {
