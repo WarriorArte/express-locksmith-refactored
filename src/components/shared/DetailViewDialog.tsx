@@ -20,6 +20,7 @@ import {
   statusLabels,
   paymentMethodLabels,
 } from "./detail-view/types";
+import type { DialogAction } from "@/components/shared/DialogActionBar";
 import { DetailViewCustomer } from "./detail-view/DetailViewCustomer";
 import { DetailViewImages } from "./detail-view/DetailViewImages";
 import { DetailViewItems } from "./detail-view/DetailViewItems";
@@ -27,12 +28,14 @@ import { DetailViewTotals } from "./detail-view/DetailViewTotals";
 import { DetailViewFooter } from "./detail-view/DetailViewFooter";
 
 export type { OverflowAction } from "./detail-view/types";
+export type { DialogAction } from "@/components/shared/DialogActionBar";
 
 interface DetailViewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   data: DetailData | null;
   onEdit?: () => void;
+  actions?: DialogAction[];
   overflowActions?: OverflowAction[];
   onDelete?: () => void;
 }
@@ -42,6 +45,7 @@ export function DetailViewDialog({
   onOpenChange,
   data,
   onEdit,
+  actions,
   overflowActions,
   onDelete,
 }: DetailViewDialogProps) {
@@ -164,6 +168,7 @@ export function DetailViewDialog({
             <DetailViewFooter
               onEdit={onEdit}
               onDelete={onDelete}
+              actions={actions}
               overflowItems={overflowItems}
             />
           </DialogFooter>

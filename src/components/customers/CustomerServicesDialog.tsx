@@ -7,15 +7,8 @@ import {
   DialogFooter,
 } from "@/components/ui/responsive-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Wrench, Eye, Loader2, Edit, Trash2, Phone, Mail, MapPin, AlertCircle, MoreHorizontal } from "lucide-react";
+import { DialogActionBar, type DialogAction } from "@/components/shared/DialogActionBar";
+import { Wrench, Eye, Loader2, Edit, Trash2, Phone, Mail, MapPin, AlertCircle } from "lucide-react";
 import { useServices, type Service } from "@/hooks/useServices";
 import type { Customer } from "@/hooks/useCustomers";
 import { ServiceDetailSheet } from "@/components/services/ServiceDetailSheet";
@@ -72,6 +65,10 @@ export function CustomerServicesDialog({
   const [selectedService, setSelectedService] = useState<Service | null>(null);
 
   const customerServices = allServices?.filter(s => s.customer_id === customer?.id) || [];
+  const footerActions: DialogAction[] = [
+    ...(onEdit ? [{ icon: Edit, label: "Editar", onClick: onEdit }] : []),
+    ...(onDelete ? [{ icon: Trash2, label: "Eliminar", onClick: onDelete, tone: "destructive" as const }] : []),
+  ];
 
   const handleViewDetail = (service: Service) => {
     setSelectedService(service);
@@ -195,51 +192,10 @@ export function CustomerServicesDialog({
             )}
           </div>
 
-          {/* Footer: Eliminar + Editar + ⋮ */}
+          {/* Footer: Editar + Eliminar */}
           {(onEdit || onDelete) && (
             <DialogFooter>
-              <div className="flex items-center gap-2 w-full">
-                {onDelete && (
-                  <button
-                    type="button"
-                    onClick={onDelete}
-                    className="flex-1 h-12 rounded-2xl bg-destructive/10 text-destructive font-semibold text-[13px] flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform"
-                  >
-                    <Trash2 className="w-4 h-4" /> Eliminar
-                  </button>
-                )}
-                {onEdit && (
-                  <Button
-                    variant="outline"
-                    className="flex-1 h-12 rounded-2xl font-semibold"
-                    onClick={onEdit}
-                  >
-                    <Edit className="w-4 h-4 mr-1.5" /> Editar
-                  </Button>
-                )}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl flex-shrink-0">
-                      <MoreHorizontal className="w-5 h-5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" side="top">
-                    {onEdit && (
-                      <DropdownMenuItem onClick={onEdit}>
-                        <Edit className="w-4 h-4 mr-2" /> Editar
-                      </DropdownMenuItem>
-                    )}
-                    {onDelete && (
-                      <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive" onClick={onDelete}>
-                          <Trash2 className="w-4 h-4 mr-2" /> Eliminar
-                        </DropdownMenuItem>
-                      </>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+              <DialogActionBar actions={footerActions} />
             </DialogFooter>
           )}
         </DialogContent>

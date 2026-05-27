@@ -429,7 +429,6 @@ export default function Garantias() {
             kind: "warranty",
             number: viewingWarranty.warranty_code,
             date: viewingWarranty.created_at,
-            status: viewingWarranty.is_voided ? "cancelled" : undefined,
             customer_name: viewingWarranty.customer_name,
             customer_phone: viewingWarranty.customer?.phone,
             customer_email: viewingWarranty.customer?.email,

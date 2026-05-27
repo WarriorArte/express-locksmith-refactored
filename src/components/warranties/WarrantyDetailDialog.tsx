@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/responsive-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { DialogActionBar, type DialogAction } from "@/components/shared/DialogActionBar";
 import { cn } from "@/lib/utils";
 import { format, parseISO, isPast, differenceInDays } from "date-fns";
 import { es } from "date-fns/locale";
@@ -59,6 +59,10 @@ export function WarrantyDetailDialog({
   const TypeIcon = warranty.warranty_type === "sale" ? Package : Wrench;
 
   const showVoid = !!onVoid && !warranty.is_voided;
+  const footerActions: DialogAction[] = [
+    ...(onPrint ? [{ icon: Printer, label: "Ticket", onClick: onPrint }] : []),
+    ...(showVoid ? [{ icon: XCircle, label: "Anular", onClick: onVoid, tone: "destructive" as const }] : []),
+  ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -151,24 +155,7 @@ export function WarrantyDetailDialog({
 
         {(showVoid || onPrint) && (
           <DialogFooter className="pt-1 gap-2">
-            {onPrint && (
-              <Button
-                variant="outline"
-                className="h-12 flex-1 rounded-2xl font-semibold"
-                onClick={onPrint}
-              >
-                <Printer className="w-4 h-4 mr-1.5" /> Imprimir
-              </Button>
-            )}
-            {showVoid && (
-              <Button
-                variant="outline"
-                className="h-12 flex-1 rounded-2xl font-semibold text-destructive hover:text-destructive"
-                onClick={onVoid}
-              >
-                <XCircle className="w-4 h-4 mr-1.5" /> Anular
-              </Button>
-            )}
+            <DialogActionBar actions={footerActions} />
           </DialogFooter>
         )}
       </DialogContent>

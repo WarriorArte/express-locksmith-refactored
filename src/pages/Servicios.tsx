@@ -30,6 +30,7 @@ import { ServiceFormDialog } from "@/components/services/ServiceFormDialog";
 
 import { ServiceImagesDialog } from "@/components/services/ServiceImagesDialog";
 import { DetailViewDialog } from "@/components/shared/DetailViewDialog";
+import type { DialogAction } from "@/components/shared/DialogActionBar";
 import { TicketDialog, type TicketData } from "@/components/shared/TicketDialog";
 import { UnifiedSearchInput } from "@/components/shared/UnifiedSearchInput";
 import { Button } from "@/components/ui/button";
@@ -311,6 +312,97 @@ export default function Servicios() {
       images: service.service_images,
     };
   };
+
+  const openServiceTicket = (service: Service) => {
+    const serviceProducts = service.service_products ?? [];
+    const productsSubtotal = serviceProducts.reduce((acc, p) => acc + Number(p.subtotal || 0), 0);
+    setTicketData({
+      kind: "service",
+      number: service.service_number,
+      date: service.created_at,
+      status: service.status,
+      customer_name: service.customer_name || service.customer?.name,
+      customer_phone: service.customer?.phone,
+      customer_email: service.customer?.email,
+      description: service.description,
+      problem: service.problem,
+      items: serviceProducts.map((it) => ({
+        name: it.product_name,
+        quantity: Number(it.quantity),
+        unit_price: Number(it.unit_price),
+        subtotal: Number(it.subtotal),
+      })),
+      labor_cost: Number(service.labor_cost || 0),
+      subtotal: productsSubtotal,
+      discount: Number(service.discount || 0),
+      deposit: Number(service.deposit || 0),
+      total: Number(service.final_price || service.estimated_price || 0),
+      notes: service.internal_notes,
+    });
+    setDetailDialogOpen(false);
+    setTicketOpen(true);
+  };
+
+  const serviceStatusAction: DialogAction | null =
+    viewingService?.status === "pending"
+      ? { icon: Wrench, label: "Iniciar servicio", desktopLabel: "Estado", onClick: () => handleStatusChange(viewingService, "in_progress"), tone: "primary" }
+      : viewingService?.status === "in_progress"
+      ? { icon: CheckCircle, label: "Marcar completado", desktopLabel: "Estado", onClick: () => handleStatusChange(viewingService, "completed"), tone: "primary" }
+      : viewingService?.status === "completed"
+      ? { icon: Truck, label: "Marcar entregado", desktopLabel: "Estado", onClick: () => handleStatusChange(viewingService, "delivered"), tone: "primary" }
+      : null;
+
+  const serviceCanCancel =
+    viewingService?.status === "pending" || viewingService?.status === "in_progress";
+  const detailActions: DialogAction[] = viewingService
+    ? [
+        ...(serviceStatusAction ? [serviceStatusAction] : []),
+        {
+          icon: Edit,
+          label: "Editar",
+          onClick: () => {
+            setDetailDialogOpen(false);
+            setEditingService(viewingService);
+            setFormDialogOpen(true);
+          },
+        },
+        { icon: Printer, label: "Ticket", onClick: () => openServiceTicket(viewingService) },
+        {
+          icon: ImagePlus,
+          label: "Imágenes",
+          desktopLabel: "Imágenes",
+          onClick: () => {
+            setImagesService(viewingService);
+            setImagesDialogOpen(true);
+          },
+        },
+      ]
+    : [];
+  const detailMenuActions: DialogAction[] = viewingService
+    ? [
+        ...(serviceCanCancel
+          ? [
+              {
+                icon: XCircle,
+                label: "Cancelar servicio",
+                onClick: () => handleStatusChange(viewingService, "cancelled"),
+                tone: "warning" as const,
+              },
+            ]
+          : []),
+        ...(isAdmin
+          ? [
+              {
+                icon: Trash2,
+                label: "Eliminar",
+                onClick: () => handleDelete(viewingService),
+                tone: "destructive" as const,
+                separator: serviceCanCancel,
+              },
+            ]
+          : []),
+      ]
+    : [];
 
   if (isLoading) {
     return (
@@ -610,70 +702,8 @@ export default function Servicios() {
         open={detailDialogOpen}
         onOpenChange={setDetailDialogOpen}
         data={viewingService ? getDetailData(viewingService) : null}
-        onEdit={() => {
-          setDetailDialogOpen(false);
-          setEditingService(viewingService);
-          setFormDialogOpen(true);
-        }}
-        overflowActions={[
-          { icon: ImagePlus, label: "Agregar imágenes", onClick: () => {
-            if (viewingService) setImagesService(viewingService);
-            setImagesDialogOpen(true);
-          } },
-          { icon: Printer, label: "Imprimir ticket", onClick: () => {
-            if (!viewingService) return;
-            const serviceProducts = viewingService.service_products ?? [];
-            const productsSubtotal = serviceProducts.reduce((acc, p) => acc + Number(p.subtotal || 0), 0);
-            setTicketData({
-              kind: "service",
-              number: viewingService.service_number,
-              date: viewingService.created_at,
-              status: viewingService.status,
-              customer_name: viewingService.customer_name || viewingService.customer?.name,
-              customer_phone: viewingService.customer?.phone,
-              customer_email: viewingService.customer?.email,
-              description: viewingService.description,
-              problem: viewingService.problem,
-              items: serviceProducts.map((it) => ({
-                name: it.product_name,
-                quantity: Number(it.quantity),
-                unit_price: Number(it.unit_price),
-                subtotal: Number(it.subtotal),
-              })),
-              labor_cost: Number(viewingService.labor_cost || 0),
-              subtotal: productsSubtotal,
-              discount: Number(viewingService.discount || 0),
-              deposit: Number(viewingService.deposit || 0),
-              total: Number(viewingService.final_price || viewingService.estimated_price || 0),
-              notes: viewingService.internal_notes,
-            });
-            setDetailDialogOpen(false);
-            setTicketOpen(true);
-          } },
-          ...(viewingService?.status === "pending" ? [
-            { icon: Wrench, label: "Iniciar servicio", onClick: () => {
-              if (viewingService) handleStatusChange(viewingService, "in_progress");
-            }, className: "text-info", separator: true },
-          ] : []),
-          ...(viewingService?.status === "in_progress" ? [
-            { icon: CheckCircle, label: "Marcar completado", onClick: () => {
-              if (viewingService) handleStatusChange(viewingService, "completed");
-            }, className: "text-foreground dark:text-success", separator: true },
-          ] : []),
-          ...(viewingService?.status === "completed" ? [
-            { icon: Truck, label: "Marcar entregado", onClick: () => {
-              if (viewingService) handleStatusChange(viewingService, "delivered");
-            }, className: "text-foreground dark:text-primary", separator: true },
-          ] : []),
-          ...((viewingService?.status === "pending" || viewingService?.status === "in_progress") ? [
-            { icon: XCircle, label: "Cancelar servicio", onClick: () => {
-              if (viewingService) handleStatusChange(viewingService, "cancelled");
-            }, className: "text-warning" },
-          ] : []),
-        ]}
-        onDelete={isAdmin ? () => {
-          if (viewingService) handleDelete(viewingService);
-        } : undefined}
+        actions={detailActions}
+        overflowActions={detailMenuActions}
       />
 
 

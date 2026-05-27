@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react";
+import type { DialogAction } from "@/components/shared/DialogActionBar";
 
 export interface DetailItem {
   id: string;
@@ -42,13 +42,7 @@ export interface DetailData {
   images?: ServiceImage[];
 }
 
-export interface OverflowAction {
-  icon: LucideIcon | React.ElementType;
-  label: string;
-  onClick: () => void;
-  className?: string;
-  separator?: boolean;
-}
+export type OverflowAction = DialogAction;
 
 import { ShoppingCart, Wrench, FileText } from "lucide-react";
 

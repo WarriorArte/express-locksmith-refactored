@@ -12,9 +12,11 @@ import {
   DollarSign,
   Loader2,
   Printer,
+  Trash2,
 } from "lucide-react";
 import { SaleFormDialog } from "@/components/sales/SaleFormDialog";
 import { DetailViewDialog } from "@/components/shared/DetailViewDialog";
+import type { DialogAction } from "@/components/shared/DialogActionBar";
 import { TicketDialog, type TicketData } from "@/components/shared/TicketDialog";
 import { UnifiedSearchInput } from "@/components/shared/UnifiedSearchInput";
 import { Button } from "@/components/ui/button";
@@ -171,6 +173,39 @@ export default function Ventas() {
     notes: sale.notes,
     payment_method: sale.payment_method,
   });
+
+  const openSaleTicket = (sale: Sale) => {
+    setTicketData({
+      kind: "sale",
+      number: sale.sale_number,
+      date: sale.created_at,
+      customer_name: sale.customer_name || sale.customer?.name,
+      customer_phone: sale.customer?.phone,
+      customer_email: sale.customer?.email,
+      items: (sale.sale_items || []).map(it => ({
+        name: it.product_name,
+        quantity: it.quantity,
+        unit_price: Number(it.unit_price),
+        subtotal: Number(it.subtotal),
+      })),
+      subtotal: Number(sale.subtotal),
+      discount: Number(sale.discount || 0),
+      total: Number(sale.total),
+      payment_method: sale.payment_method,
+      notes: sale.notes,
+    });
+    setDetailDialogOpen(false);
+    setTicketOpen(true);
+  };
+
+  const detailActions: DialogAction[] = viewingSale
+    ? [
+        { icon: Printer, label: "Ticket", onClick: () => openSaleTicket(viewingSale) },
+        ...(isAdmin
+          ? [{ icon: Trash2, label: "Eliminar", onClick: () => handleDelete(viewingSale), tone: "destructive" as const }]
+          : []),
+      ]
+    : [];
 
   if (isLoading) {
     return (
@@ -354,37 +389,7 @@ export default function Ventas() {
         open={detailDialogOpen}
         onOpenChange={setDetailDialogOpen}
         data={viewingSale ? getDetailData(viewingSale) : null}
-        onDelete={isAdmin ? () => viewingSale && handleDelete(viewingSale) : undefined}
-        overflowActions={viewingSale ? [
-          {
-            icon: Printer,
-            label: "Imprimir ticket",
-            onClick: () => {
-              if (!viewingSale) return;
-              setTicketData({
-                kind: "sale",
-                number: viewingSale.sale_number,
-                date: viewingSale.created_at,
-                customer_name: viewingSale.customer_name || viewingSale.customer?.name,
-                customer_phone: viewingSale.customer?.phone,
-                customer_email: viewingSale.customer?.email,
-                items: (viewingSale.sale_items || []).map(it => ({
-                  name: it.product_name,
-                  quantity: it.quantity,
-                  unit_price: Number(it.unit_price),
-                  subtotal: Number(it.subtotal),
-                })),
-                subtotal: Number(viewingSale.subtotal),
-                discount: Number(viewingSale.discount || 0),
-                total: Number(viewingSale.total),
-                payment_method: viewingSale.payment_method,
-                notes: viewingSale.notes,
-              });
-              setDetailDialogOpen(false);
-              setTicketOpen(true);
-            },
-          },
-        ] : []}
+        actions={detailActions}
       />
 
       <TicketDialog open={ticketOpen} onOpenChange={setTicketOpen} data={ticketData} />

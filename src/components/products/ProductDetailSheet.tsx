@@ -8,14 +8,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/responsive-dialog";
-import { Button } from "@/components/ui/button";
+import { DialogActionBar, type DialogAction } from "@/components/shared/DialogActionBar";
 import { resolveStorageUrl } from "@/lib/phpApi";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import {
   Package,
@@ -27,7 +21,6 @@ import {
   Warehouse,
   AlertTriangle,
   ZoomIn,
-  MoreHorizontal,
 } from "lucide-react";
 import type { Product } from "@/hooks/useProducts";
 
@@ -89,6 +82,19 @@ export function ProductDetailSheet({
     { l: "Tienda", v: product.stock_store, i: Store },
     { l: "Bodega", v: product.stock_warehouse, i: Warehouse },
     { l: "Mínimo", v: product.min_stock, i: AlertTriangle, alert: true },
+  ];
+
+  const footerActions: DialogAction[] = [
+    { icon: Edit, label: "Editar", onClick: () => onEdit(product) },
+    ...(!isService
+      ? [
+          { icon: Move, label: "Movimientos", onClick: () => onMovement(product) },
+          { icon: History, label: "Historial", onClick: () => onHistory(product) },
+        ]
+      : []),
+    ...(onDelete
+      ? [{ icon: Trash2, label: "Eliminar", onClick: () => onDelete(product), tone: "destructive" as const }]
+      : []),
   ];
 
   return (
@@ -221,49 +227,7 @@ export function ProductDetailSheet({
         </div>
 
         <DialogFooter className="pt-1">
-          {/* Fila principal: Eliminar · Editar · ··· */}
-          <div className="flex items-center gap-2 w-full">
-            {onDelete && (
-              <button
-                type="button"
-                onClick={() => onDelete(product)}
-                className="flex-1 h-12 rounded-2xl bg-destructive/10 text-destructive font-semibold text-[13px] flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform"
-              >
-                <Trash2 className="w-4 h-4" /> Eliminar
-              </button>
-            )}
-            <Button
-              variant="outline"
-              className="flex-1 h-12 rounded-2xl font-semibold"
-              onClick={() => onEdit(product)}
-            >
-              <Edit className="w-4 h-4 mr-1.5" /> Editar
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl flex-shrink-0">
-                  <MoreHorizontal className="w-5 h-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" side="top">
-                {onZoomImage && (
-                  <DropdownMenuItem onClick={() => onZoomImage(product)}>
-                    <ZoomIn className="w-4 h-4 mr-2" /> Ver Imagen
-                  </DropdownMenuItem>
-                )}
-                {!isService && (
-                  <>
-                    <DropdownMenuItem onClick={() => onMovement(product)}>
-                      <Move className="w-4 h-4 mr-2" /> Movimiento de Inventario
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onHistory(product)}>
-                      <History className="w-4 h-4 mr-2" /> Historial de movimientos
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <DialogActionBar actions={footerActions} />
         </DialogFooter>
       </DialogContent>
     </Dialog>

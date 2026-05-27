@@ -183,7 +183,7 @@ export function TicketDialog({ open, onOpenChange, data }: Props) {
               <div className="text-[10px]">
                 {format(parseISO(data.date), "dd MMM yyyy · HH:mm", { locale: es })}
               </div>
-              {statusConfig && data.kind !== "service" && (
+              {statusConfig && data.kind === "sale" && (
                 <div className="text-[10px] mt-1 inline-block border border-black/40 px-2 py-0.5 rounded">
                   {statusConfig.label}
                 </div>

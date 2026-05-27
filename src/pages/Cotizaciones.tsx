@@ -23,6 +23,7 @@ import { QuotePrintDialog } from "@/components/quotes/QuotePrintDialog";
 import { QuoteFormDialog } from "@/components/quotes/QuoteFormDialog";
 import { ConvertQuoteDialog } from "@/components/quotes/ConvertQuoteDialog";
 import { DetailViewDialog } from "@/components/shared/DetailViewDialog";
+import type { DialogAction } from "@/components/shared/DialogActionBar";
 import { UnifiedSearchInput } from "@/components/shared/UnifiedSearchInput";
 import { Button } from "@/components/ui/button";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
@@ -208,6 +209,62 @@ export default function Cotizaciones() {
     description: quote.description,
     location: quote.location,
   });
+
+  const detailActions: DialogAction[] = viewingQuote
+    ? [
+        {
+          icon: Edit,
+          label: "Editar",
+          onClick: () => {
+            setDetailDialogOpen(false);
+            setEditingQuote(viewingQuote);
+            setFormDialogOpen(true);
+          },
+        },
+        {
+          icon: Printer,
+          label: "PDF",
+          tooltip: "Imprimir / PDF",
+          onClick: () => {
+            setDetailDialogOpen(false);
+            setPrintingQuote(viewingQuote);
+            setPrintDialogOpen(true);
+          },
+        },
+        { icon: Copy, label: "Duplicar", onClick: () => handleDuplicate(viewingQuote) },
+        ...(isAdmin
+          ? [{ icon: Trash2, label: "Eliminar", onClick: () => handleDelete(viewingQuote), tone: "destructive" as const }]
+          : []),
+      ]
+    : [];
+
+  const detailMenuActions: DialogAction[] =
+    viewingQuote?.status === "pending"
+      ? [
+          {
+            icon: CheckCircle,
+            label: "Marcar aceptada",
+            onClick: () => handleStatusChange(viewingQuote, "accepted"),
+            tone: "primary",
+          },
+          {
+            icon: XCircle,
+            label: "Marcar rechazada",
+            onClick: () => handleStatusChange(viewingQuote, "rejected"),
+            tone: "destructive",
+          },
+          {
+            icon: ArrowRight,
+            label: "Convertir a venta",
+            onClick: () => {
+              setDetailDialogOpen(false);
+              setConvertingQuote(viewingQuote);
+              setConvertDialogOpen(true);
+            },
+            tone: "primary",
+          },
+        ]
+      : [];
 
   if (isLoading) {
     return (
@@ -459,30 +516,8 @@ export default function Cotizaciones() {
         open={detailDialogOpen}
         onOpenChange={setDetailDialogOpen}
         data={viewingQuote ? getDetailData(viewingQuote) : null}
-        onEdit={() => {
-          setDetailDialogOpen(false);
-          setEditingQuote(viewingQuote);
-          setFormDialogOpen(true);
-        }}
-        
-        overflowActions={[
-          { icon: Printer, label: "Imprimir / PDF", onClick: () => { if (viewingQuote) { setDetailDialogOpen(false); setPrintingQuote(viewingQuote); setPrintDialogOpen(true); } } },
-          { icon: Copy, label: "Duplicar", onClick: () => {
-            if (viewingQuote) handleDuplicate(viewingQuote);
-          } },
-          ...(viewingQuote?.status === "pending" ? [
-            { icon: CheckCircle, label: "Marcar aceptada", onClick: () => {
-              if (viewingQuote) handleStatusChange(viewingQuote, "accepted");
-            }, className: "text-foreground dark:text-success", separator: true },
-            { icon: XCircle, label: "Marcar rechazada", onClick: () => {
-              if (viewingQuote) handleStatusChange(viewingQuote, "rejected");
-            }, className: "text-destructive" },
-            { icon: ArrowRight, label: "Convertir a venta", onClick: () => { setDetailDialogOpen(false); setConvertingQuote(viewingQuote); setConvertDialogOpen(true); }, className: "text-foreground dark:text-primary" },
-          ] : []),
-        ]}
-        onDelete={isAdmin ? () => {
-          if (viewingQuote) handleDelete(viewingQuote);
-        } : undefined}
+        actions={detailActions}
+        overflowActions={detailMenuActions}
       />
 
       <QuotePrintDialog
