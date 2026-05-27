@@ -343,7 +343,6 @@ async function waitForTicketImages(ticket: HTMLElement) {
   await Promise.all(
     images.map((img) => {
       if (img.complete) return Promise.resolve();
-      if ("decode" in img) return img.decode().catch(() => undefined);
       return new Promise<void>((resolve) => {
         img.addEventListener("load", () => resolve(), { once: true });
         img.addEventListener("error", () => resolve(), { once: true });
