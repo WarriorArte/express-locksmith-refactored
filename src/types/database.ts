@@ -32,6 +32,11 @@ export interface BusinessSettingsRow extends BaseRow {
   phone_country_code?: string | null;
   country_code?: string | null;
   auto_cut?: boolean | number;
+  ticket_show_logo?: boolean | number | null;
+  ticket_paper_size?: string | null;
+  ticket_footer_sale?: string | null;
+  ticket_footer_service?: string | null;
+  ticket_footer_warranty?: string | null;
 }
 
 export interface Customer extends BaseRow {
@@ -131,6 +136,7 @@ export interface Service extends BaseRow {
   final_price?: number | null;
   labor_cost?: number | null;
   discount?: number | null;
+  deposit?: number | null;
   internal_notes?: string | null;
   started_at?: string | null;
   completed_at?: string | null;

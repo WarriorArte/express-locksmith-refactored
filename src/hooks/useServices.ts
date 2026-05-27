@@ -47,6 +47,7 @@ type ServiceMutationData = {
   final_price?: number | null;
   labor_cost?: number;
   discount?: number;
+  deposit?: number;
   internal_notes?: string | null;
   policies?: string | null;
   custom_fields?: unknown;

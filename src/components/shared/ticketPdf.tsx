@@ -1,37 +1,32 @@
-import html2canvas from "html2canvas-pro";
+import { toPng } from "html-to-image";
 import { jsPDF } from "jspdf";
 import { getPhpAuthToken, resolveUploadFileUrl } from "@/lib/phpApi";
 
-/**
- * Renders a ticket DOM node to a PDF blob using html2canvas + jsPDF.
- * The logo is fetched through the authenticated /api/uploads.php?action=file
- * proxy (same auth flow the rest of the app uses) and inlined as a data URL,
- * so html2canvas can read it without CORS tainting the canvas.
- */
-export async function createTicketPdfBlob(node: HTMLElement): Promise<Blob> {
+export async function createTicketPdfBlob(node: HTMLElement, paperSize?: string): Promise<Blob> {
+  // Pre-inline authenticated images as data URLs so html-to-image
+  // doesn't try to fetch them (which fails due to auth/CORS).
   await inlineImages(node);
 
-  const canvas = await html2canvas(node, {
-    scale: 2,
+  const imgData = await toPng(node, {
+    pixelRatio: 4,
     backgroundColor: "#ffffff",
-    useCORS: true,
-    allowTaint: false,
-    logging: false,
+    skipFonts: true,
+    style: { margin: "0" },
   });
 
-  const imgData = canvas.toDataURL("image/png");
-
-  const pageWidthMm = 80;
-  const pageHeightMm = (canvas.height / canvas.width) * pageWidthMm;
+  const rect = node.getBoundingClientRect();
+  const pageW = paperSize === "104mm" ? 104 : paperSize === "80mm" ? 80 : 58;
+  const pageH = (rect.height * pageW) / rect.width;
 
   const pdf = new jsPDF({
     orientation: "portrait",
     unit: "mm",
-    format: [pageWidthMm, pageHeightMm],
+    format: [pageW, pageH],
     compress: true,
   });
 
-  pdf.addImage(imgData, "PNG", 0, 0, pageWidthMm, pageHeightMm, undefined, "FAST");
+  pdf.addImage(imgData, "PNG", 0, 0, pageW, pageH);
+
   return pdf.output("blob");
 }
 
@@ -41,7 +36,7 @@ async function inlineImages(node: HTMLElement) {
     imgs.map(async (img) => {
       const src = img.getAttribute("src");
       if (!src || src.startsWith("data:")) return;
-      const dataUrl = await imageToDataUrl(src);
+      const dataUrl = await fetchAsDataUrl(src);
       if (dataUrl) {
         img.setAttribute("src", dataUrl);
         img.removeAttribute("crossorigin");
@@ -51,22 +46,13 @@ async function inlineImages(node: HTMLElement) {
           img.addEventListener("error", () => resolve(), { once: true });
         });
       } else {
-        // If we couldn't inline it, hide it so html2canvas doesn't taint the canvas
         img.style.visibility = "hidden";
       }
     }),
   );
 }
 
-/**
- * Converts an image URL to a base64 data URL.
- * Primary strategy: route /uploads/* through the authenticated API proxy
- * (/api/uploads.php?action=file) using the same Bearer token the rest of
- * the app uses. This is the only path that works reliably across browsers
- * because the static /uploads/ host doesn't expose CORS headers.
- */
-async function imageToDataUrl(url: string): Promise<string | null> {
-  // 1) Authenticated proxy fetch (works because /api has CORS + auth)
+async function fetchAsDataUrl(url: string): Promise<string | null> {
   const proxied = resolveUploadFileUrl(url);
   if (proxied && proxied !== url) {
     const token = getPhpAuthToken();
@@ -74,27 +60,14 @@ async function imageToDataUrl(url: string): Promise<string | null> {
     if (token) headers.Authorization = `Bearer ${token}`;
     try {
       const res = await fetch(proxied, { headers });
-      if (res.ok) {
-        const blob = await res.blob();
-        const dataUrl = await blobToDataUrl(blob);
-        if (dataUrl) return dataUrl;
-      }
-    } catch {
-      // fall through
-    }
+      if (res.ok) return blobToDataUrl(await res.blob());
+    } catch { /* fall through */ }
   }
 
-  // 2) Direct fetch as fallback (works for fully public CORS-enabled URLs)
   try {
     const res = await fetch(url, { mode: "cors", credentials: "omit" });
-    if (res.ok) {
-      const blob = await res.blob();
-      const dataUrl = await blobToDataUrl(blob);
-      if (dataUrl) return dataUrl;
-    }
-  } catch {
-    // fall through
-  }
+    if (res.ok) return blobToDataUrl(await res.blob());
+  } catch { /* fall through */ }
 
   return null;
 }

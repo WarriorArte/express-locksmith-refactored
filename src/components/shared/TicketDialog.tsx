@@ -32,6 +32,7 @@ export interface TicketData {
   subtotal?: number;
   discount?: number | null;
   labor_cost?: number | null;
+  deposit?: number | null;
   total?: number;
   payment_method?: string | null;
   notes?: string | null;
@@ -70,13 +71,20 @@ export function TicketDialog({ open, onOpenChange, data }: Props) {
   const money = (v: number | null | undefined) =>
     `${currency}${Number(v || 0).toFixed(2)}`;
   const statusConfig = data.status ? statusLabels[data.status] : null;
-  const logoUrl = resolveStorageUrl(settings?.logo_url);
+  const showLogo = settings?.ticket_show_logo !== false;
+  const logoUrl = showLogo ? resolveStorageUrl(settings?.logo_url) : null;
+  const paperSize = settings?.ticket_paper_size || "58mm";
+  const ticketWidth = paperSize === "104mm" ? 400 : paperSize === "80mm" ? 320 : 272;
+  const footerMessage =
+    (data.kind === "sale" ? settings?.ticket_footer_sale :
+     data.kind === "service" ? settings?.ticket_footer_service :
+     settings?.ticket_footer_warranty) || "¡Gracias por su preferencia!";
   const pdfFileName = `ticket-${sanitizeFileName(data.number)}.pdf`;
 
   const createTicketPdf = async () => {
     if (!ticketRef.current) throw new Error("Ticket no listo");
     const { createTicketPdfBlob } = await import("./ticketPdf");
-    const blob = await createTicketPdfBlob(ticketRef.current);
+    const blob = await createTicketPdfBlob(ticketRef.current, paperSize);
     return new File([blob], pdfFileName, { type: "application/pdf" });
   };
 
@@ -149,7 +157,7 @@ export function TicketDialog({ open, onOpenChange, data }: Props) {
             ref={ticketRef}
             id="ticket-print-area"
             className="ticket-paper mx-auto bg-white text-black p-4 rounded-sm shadow-sm"
-            style={{ width: 320, maxWidth: "100%", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}
+            style={{ width: ticketWidth, maxWidth: "100%", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}
           >
             {/* Header negocio */}
             <div className="text-center border-b border-dashed border-black/40 pb-2 mb-2">
@@ -175,7 +183,7 @@ export function TicketDialog({ open, onOpenChange, data }: Props) {
               <div className="text-[10px]">
                 {format(parseISO(data.date), "dd MMM yyyy · HH:mm", { locale: es })}
               </div>
-              {statusConfig && (
+              {statusConfig && data.kind !== "service" && (
                 <div className="text-[10px] mt-1 inline-block border border-black/40 px-2 py-0.5 rounded">
                   {statusConfig.label}
                 </div>
@@ -234,10 +242,18 @@ export function TicketDialog({ open, onOpenChange, data }: Props) {
             {/* Totales venta/servicio */}
             {(data.kind === "sale" || data.kind === "service") && (
               <div className="border-t border-dashed border-black/40 pt-2 mb-2 text-[11px]">
+                {data.kind === "service" && data.subtotal !== undefined && Number(data.subtotal) > 0 && (
+                  <Row label="Productos" value={money(data.subtotal)} />
+                )}
                 {data.kind === "service" && data.labor_cost && Number(data.labor_cost) > 0 && (
                   <Row label="Mano de obra" value={money(data.labor_cost)} />
                 )}
-                {data.subtotal !== undefined && <Row label="Subtotal" value={money(data.subtotal)} />}
+                {data.kind === "sale" && data.subtotal !== undefined && (
+                  <Row label="Subtotal" value={money(data.subtotal)} />
+                )}
+                {(Number(data.subtotal) > 0 || Number(data.labor_cost) > 0) && (
+                  <div className="border-t border-dashed border-black/30 my-1" />
+                )}
                 {data.discount && Number(data.discount) > 0 && (
                   <Row label="Descuento" value={`-${money(data.discount)}`} />
                 )}
@@ -245,6 +261,18 @@ export function TicketDialog({ open, onOpenChange, data }: Props) {
                   <span>TOTAL</span>
                   <span>{money(data.total)}</span>
                 </div>
+                {data.deposit && Number(data.deposit) > 0 && (
+                  <div className="grid grid-cols-2 gap-1 mt-2 pt-2 border-t border-dashed border-black/40">
+                    <div style={{ border: "1px solid #00000020", borderRadius: 4, padding: "4px 6px", textAlign: "center" }}>
+                      <div className="text-[8px] uppercase tracking-wide text-black/50 mb-0.5">Anticipo</div>
+                      <div className="text-[11px] font-bold">{money(data.deposit)}</div>
+                    </div>
+                    <div style={{ border: "1px solid #00000020", borderRadius: 4, padding: "4px 6px", textAlign: "center" }}>
+                      <div className="text-[8px] uppercase tracking-wide text-black/50 mb-0.5">Saldo pendiente</div>
+                      <div className="text-[11px] font-bold">{money((data.total ?? 0) - Number(data.deposit))}</div>
+                    </div>
+                  </div>
+                )}
                 {data.payment_method && (
                   <div className="text-[10px] mt-1 text-center">
                     Pago: {paymentMethodLabels[data.payment_method] || data.payment_method}
@@ -299,7 +327,7 @@ export function TicketDialog({ open, onOpenChange, data }: Props) {
             </div>
 
             <div className="text-center text-[10px] mt-2 pt-2 border-t border-dashed border-black/40">
-              ¡Gracias por su preferencia!
+              {footerMessage}
             </div>
           </div>
         </div>

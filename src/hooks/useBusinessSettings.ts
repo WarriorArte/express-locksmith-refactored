@@ -16,6 +16,7 @@ function normalizeBusinessSettings(raw: BusinessSettingsRow): BusinessSettings {
   return {
     ...raw,
     auto_cut: typeof raw.auto_cut === "boolean" ? raw.auto_cut : !!raw.auto_cut,
+    ticket_show_logo: raw.ticket_show_logo !== 0 && raw.ticket_show_logo !== false,
   };
 }
 

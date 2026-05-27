@@ -26,11 +26,17 @@ final class BusinessSetting extends Model
         'printer_size',
         'currency_symbol',
         'auto_cut',
+        'ticket_show_logo',
+        'ticket_paper_size',
+        'ticket_footer_sale',
+        'ticket_footer_service',
+        'ticket_footer_warranty',
         'storage_endpoint',
         'storage_secret_key',
     ];
 
     protected $casts = [
         'auto_cut' => 'boolean',
+        'ticket_show_logo' => 'boolean',
     ];
 }

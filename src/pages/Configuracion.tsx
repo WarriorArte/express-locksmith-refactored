@@ -1,7 +1,7 @@
 ﻿import { useState, useEffect, type Dispatch, type SetStateAction } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { m as motion } from "framer-motion";
-import { 
+import {
   Building2,
   Printer,
   Users,
@@ -20,6 +20,7 @@ import {
   LogOut,
   type LucideIcon,
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,6 +69,11 @@ type BusinessFormState = {
   currency_symbol: string;
   phone_country_code: string;
   country_code: string;
+  ticket_show_logo: boolean;
+  ticket_paper_size: string;
+  ticket_footer_sale: string;
+  ticket_footer_service: string;
+  ticket_footer_warranty: string;
 };
 
 export default function Configuracion() {
@@ -101,6 +107,11 @@ export default function Configuracion() {
     currency_symbol: "$",
     phone_country_code: "+52",
     country_code: "MX",
+    ticket_show_logo: true,
+    ticket_paper_size: "58mm",
+    ticket_footer_sale: "",
+    ticket_footer_service: "",
+    ticket_footer_warranty: "",
   });
 
 
@@ -122,6 +133,11 @@ export default function Configuracion() {
         currency_symbol: settings.currency_symbol || info?.currencySymbol || "$",
         phone_country_code: settings.phone_country_code || info?.dial || "+52",
         country_code: inferred,
+        ticket_show_logo: settings.ticket_show_logo !== false,
+        ticket_paper_size: settings.ticket_paper_size || "58mm",
+        ticket_footer_sale: settings.ticket_footer_sale || "",
+        ticket_footer_service: settings.ticket_footer_service || "",
+        ticket_footer_warranty: settings.ticket_footer_warranty || "",
       });
     }
   }, [settings]);
@@ -143,6 +159,10 @@ export default function Configuracion() {
       id: settings.id,
       ...businessForm,
       logo_url: logoUrl,
+      ticket_show_logo: businessForm.ticket_show_logo ? 1 : 0,
+      ticket_footer_sale: businessForm.ticket_footer_sale || null,
+      ticket_footer_service: businessForm.ticket_footer_service || null,
+      ticket_footer_warranty: businessForm.ticket_footer_warranty || null,
     });
   };
 
@@ -216,7 +236,7 @@ export default function Configuracion() {
             subtitle="Administra tu negocio y personaliza la app"
             className="mb-5"
           />
-          <TabsList className="grid grid-cols-6 gap-2 h-auto p-1 bg-muted">
+          <TabsList className={cn("grid gap-2 h-auto p-1 bg-muted", isAdmin ? "grid-cols-7" : "grid-cols-5")}>
             <TabsTrigger value="perfil" className="gap-2 py-3">
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">Perfil</span>
@@ -228,6 +248,10 @@ export default function Configuracion() {
             <TabsTrigger value="negocio" className="gap-2 py-3">
               <Building2 className="w-4 h-4" />
               <span className="hidden sm:inline">Negocio</span>
+            </TabsTrigger>
+            <TabsTrigger value="ticket" className="gap-2 py-3">
+              <Printer className="w-4 h-4" />
+              <span className="hidden sm:inline">Ticket</span>
             </TabsTrigger>
             <TabsTrigger value="cotizacion" className="gap-2 py-3">
               <FileText className="w-4 h-4" />
@@ -458,6 +482,107 @@ export default function Configuracion() {
             </div>
           </TabsContent>
 
+          {/* Ticket Tab */}
+          <TabsContent value="ticket" className="space-y-6">
+            <div className="card-elevated p-6">
+              <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                <Printer className="w-5 h-5 text-primary" />
+                Configuración de Ticket
+              </h3>
+
+              <div className="space-y-6">
+                {/* Logo y tamaño de papel */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="flex items-center justify-between p-4 rounded-xl border border-border">
+                    <div>
+                      <div className="text-sm font-semibold">Incluir logo</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">Mostrar el logo del negocio en el ticket</div>
+                    </div>
+                    <Switch
+                      checked={businessForm.ticket_show_logo}
+                      onCheckedChange={(v) => setBusinessForm((p) => ({ ...p, ticket_show_logo: v }))}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Tamaño de papel</Label>
+                    <Select
+                      value={businessForm.ticket_paper_size}
+                      onValueChange={(v) => setBusinessForm((p) => ({ ...p, ticket_paper_size: v }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="58mm">58 mm (impresora pequeña)</SelectItem>
+                        <SelectItem value="80mm">80 mm (estándar)</SelectItem>
+                        <SelectItem value="104mm">104 mm (ancho)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Ancho del papel de tu impresora térmica
+                    </p>
+                  </div>
+                </div>
+
+                {/* Mensajes personalizados */}
+                <div className="border-t border-border pt-6">
+                  <div className="text-sm font-semibold mb-1">Mensajes de pie de ticket</div>
+                  <p className="text-xs text-muted-foreground mb-4">
+                    Personaliza el mensaje final que aparece en cada tipo de ticket. Si lo dejas vacío, se usará "¡Gracias por su preferencia!"
+                  </p>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="footer_sale">Venta</Label>
+                      <Textarea
+                        id="footer_sale"
+                        rows={2}
+                        placeholder="¡Gracias por su preferencia!"
+                        value={businessForm.ticket_footer_sale}
+                        onChange={(e) => setBusinessForm((p) => ({ ...p, ticket_footer_sale: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="footer_service">Servicio</Label>
+                      <Textarea
+                        id="footer_service"
+                        rows={2}
+                        placeholder="¡Gracias por su preferencia!"
+                        value={businessForm.ticket_footer_service}
+                        onChange={(e) => setBusinessForm((p) => ({ ...p, ticket_footer_service: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="footer_warranty">Garantía</Label>
+                      <Textarea
+                        id="footer_warranty"
+                        rows={2}
+                        placeholder="¡Gracias por su preferencia!"
+                        value={businessForm.ticket_footer_warranty}
+                        onChange={(e) => setBusinessForm((p) => ({ ...p, ticket_footer_warranty: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end mt-6 pt-6 border-t">
+                <Button
+                  className="gap-2"
+                  onClick={handleSaveSettings}
+                  disabled={updateSettings.isPending}
+                >
+                  {updateSettings.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                  Guardar Cambios
+                </Button>
+              </div>
+            </div>
+          </TabsContent>
+
           {/* Cotización Tab */}
           <TabsContent value="cotizacion" className="space-y-6">
             <div className="grid gap-6 xl:grid-cols-[minmax(0,620px)_minmax(420px,1fr)] xl:items-start">
@@ -590,9 +715,10 @@ function MobileConfigTabs({
   onPendingLogoFile,
   signOut,
 }: MobileConfigTabsProps) {
-  const [tab, setTab] = useState<"negocio" | "cotizacion" | "usuarios" | "sistema">("negocio");
+  const [tab, setTab] = useState<"negocio" | "ticket" | "cotizacion" | "usuarios" | "sistema">("negocio");
   const tabs = [
     { id: "negocio" as const, icon: Building2, label: "Negocio" },
+    { id: "ticket" as const, icon: Printer, label: "Ticket" },
     { id: "cotizacion" as const, icon: FileText, label: "Cotización" },
     ...(isAdmin ? [{ id: "usuarios" as const, icon: Users, label: "Usuarios" }] : []),
     { id: "sistema" as const, icon: Palette, label: "Sistema" },
@@ -701,6 +827,78 @@ function MobileConfigTabs({
               </div>
             </div>
           )}
+          <Button onClick={handleSaveSettings} disabled={updatePending} className="w-full mt-2">
+            {updatePending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+            Guardar cambios
+          </Button>
+        </div>
+      )}
+
+      {/* Ticket */}
+      {tab === "ticket" && (
+        <div className="space-y-4">
+          {/* Logo toggle */}
+          <div className="flex items-center justify-between p-3.5 rounded-xl border border-border">
+            <div>
+              <div className="text-[13px] font-semibold">Incluir logo</div>
+              <div className="text-[11px] text-muted-foreground">Mostrar logo en el ticket</div>
+            </div>
+            <Switch
+              checked={businessForm.ticket_show_logo}
+              onCheckedChange={(v) => setBusinessForm((p) => ({ ...p, ticket_show_logo: v }))}
+            />
+          </div>
+
+          {/* Paper size */}
+          <div className="space-y-1.5">
+            <Label>Tamaño de papel</Label>
+            <Select
+              value={businessForm.ticket_paper_size}
+              onValueChange={(v) => setBusinessForm((p) => ({ ...p, ticket_paper_size: v }))}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="58mm">58 mm (impresora pequeña)</SelectItem>
+                <SelectItem value="80mm">80 mm (estándar)</SelectItem>
+                <SelectItem value="104mm">104 mm (ancho)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Footer messages */}
+          <div className="space-y-3">
+            <div className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider">Mensajes de pie</div>
+            <div className="space-y-1.5">
+              <Label>Venta</Label>
+              <Textarea
+                rows={2}
+                placeholder="¡Gracias por su preferencia!"
+                value={businessForm.ticket_footer_sale}
+                onChange={(e) => setBusinessForm((p) => ({ ...p, ticket_footer_sale: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Servicio</Label>
+              <Textarea
+                rows={2}
+                placeholder="¡Gracias por su preferencia!"
+                value={businessForm.ticket_footer_service}
+                onChange={(e) => setBusinessForm((p) => ({ ...p, ticket_footer_service: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Garantía</Label>
+              <Textarea
+                rows={2}
+                placeholder="¡Gracias por su preferencia!"
+                value={businessForm.ticket_footer_warranty}
+                onChange={(e) => setBusinessForm((p) => ({ ...p, ticket_footer_warranty: e.target.value }))}
+              />
+            </div>
+          </div>
+
           <Button onClick={handleSaveSettings} disabled={updatePending} className="w-full mt-2">
             {updatePending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
             Guardar cambios

@@ -85,6 +85,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
     estimated_price: 0,
     labor_cost: 0,
     discount: 0,
+    deposit: 0,
     internal_notes: "",
     scheduled_start_at: null as string | null,
     has_warranty: false,
@@ -141,6 +142,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
           estimated_price: Number(service.estimated_price),
           labor_cost: Number(service.labor_cost) || 0,
           discount: Number(service.discount) || 0,
+          deposit: Number(service.deposit) || 0,
           internal_notes: service.internal_notes || "",
           scheduled_start_at: service.scheduled_start_at || null,
           has_warranty: service.has_warranty || false,
@@ -293,6 +295,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
 
   const productsTotal = items.reduce((sum, item) => sum + item.subtotal, 0);
   const totalEstimated = productsTotal + form.labor_cost - form.discount;
+  const saldoPendiente = totalEstimated - form.deposit;
   const invalidFieldClass = "border-destructive placeholder:text-destructive focus-visible:border-destructive";
   const isValidServiceNumber = form.service_number.trim().length > 0;
   const isValidDescription = form.description.trim().length > 0;
@@ -390,6 +393,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
       estimated_price: totalEstimated,
       labor_cost: form.labor_cost,
       discount: form.discount,
+      deposit: form.deposit,
       internal_notes: form.internal_notes || null,
       scheduled_start_at: form.scheduled_start_at || null,
       has_warranty: form.has_warranty,
@@ -735,6 +739,16 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
                   className={cn(showCostosInvalid && form.discount < 0 && invalidFieldClass)}
                 />
               </div>
+              <div className="space-y-2">
+                <Label>Anticipo recibido</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={form.deposit}
+                  onChange={(e) => setForm(prev => ({ ...prev, deposit: parseFloat(e.target.value) || 0 }))}
+                  placeholder="0"
+                />
+              </div>
             </div>
 
             {/* Totals */}
@@ -755,6 +769,18 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
                 <span>Total Estimado:</span>
                 <span className="text-foreground dark:text-primary">{currencySymbol}{totalEstimated.toLocaleString()}</span>
               </div>
+              {form.deposit > 0 && (
+                <>
+                  <div className="flex justify-between text-sm text-emerald-600 dark:text-emerald-400">
+                    <span>Anticipo recibido:</span>
+                    <span>-{currencySymbol}{form.deposit.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-sm font-semibold pt-1 border-t">
+                    <span>Saldo pendiente:</span>
+                    <span>{currencySymbol}{saldoPendiente.toLocaleString()}</span>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Schedule Service Option */}

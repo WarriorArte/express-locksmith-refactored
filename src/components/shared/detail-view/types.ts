@@ -30,6 +30,7 @@ export interface DetailData {
   items: DetailItem[];
   subtotal: number;
   discount?: number | null;
+  deposit?: number | null;
   total: number;
   notes?: string | null;
   payment_method?: string | null;

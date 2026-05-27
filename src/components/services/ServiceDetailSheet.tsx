@@ -114,6 +114,7 @@ export function ServiceDetailSheet({
     products.reduce((acc, p) => acc + Number(p.subtotal), 0) || 0;
   const labor = Number(service.labor_cost || 0);
   const discount = Number(service.discount || 0);
+  const deposit = Number(service.deposit || 0);
   const total = Number(service.final_price ?? service.estimated_price ?? 0);
   const notes = service.internal_notes?.trim() || "";
 
@@ -237,27 +238,46 @@ export function ServiceDetailSheet({
             <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
               Desglose de costos
             </div>
-            {productsSubtotal > 0 && (
-              <Row label="Productos" value={`${currencySymbol}${productsSubtotal.toLocaleString()}`} />
-            )}
-            <Row label="Mano de obra" value={`${currencySymbol}${labor.toLocaleString()}`} />
-            {discount > 0 && (
-              <Row label="Descuento" value={`-${currencySymbol}${discount.toLocaleString()}`} negative />
-            )}
-            <div className="flex justify-between items-center pt-2 mt-2 border-t border-border">
-              <span className="text-[13px] font-bold text-foreground">Total estimado</span>
-              <span className="text-base font-extrabold text-foreground dark:text-primary">
-                {currencySymbol}{total.toLocaleString()}
-              </span>
-            </div>
-            {service.estimated_price && Number(service.estimated_price) > 0 && (
-              <div className="flex justify-between items-center pt-1">
-                <span className="text-[12px] text-muted-foreground">Presupuesto</span>
-                <span className="text-[12px] text-muted-foreground">
-                  {currencySymbol}{Number(service.estimated_price).toLocaleString()}
+            <div className="flex flex-col gap-1">
+              {productsSubtotal > 0 && (
+                <Row label="Productos" value={`${currencySymbol}${productsSubtotal.toLocaleString()}`} />
+              )}
+              {labor > 0 && (
+                <Row label="Mano de obra" value={`${currencySymbol}${labor.toLocaleString()}`} />
+              )}
+              {(productsSubtotal > 0 || labor > 0) && (
+                <div className="border-t border-border my-1" />
+              )}
+              {discount > 0 && (
+                <Row label="Descuento" value={`-${currencySymbol}${discount.toLocaleString()}`} negative />
+              )}
+              <div className="flex justify-between items-center py-1">
+                <span className="text-[13px] font-bold text-foreground">Total</span>
+                <span className="text-base font-extrabold text-foreground dark:text-primary">
+                  {currencySymbol}{total.toLocaleString()}
                 </span>
               </div>
-            )}
+              {deposit > 0 && (
+                <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-border">
+                  <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-2 text-center">
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">
+                      Anticipo
+                    </div>
+                    <div className="text-[13px] font-bold text-emerald-600 dark:text-emerald-400">
+                      {currencySymbol}{deposit.toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="bg-muted/50 rounded-lg p-2 text-center">
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">
+                      Saldo pendiente
+                    </div>
+                    <div className="text-[13px] font-bold text-foreground">
+                      {currencySymbol}{(total - deposit).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Notes */}

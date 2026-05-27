@@ -302,6 +302,7 @@ export default function Servicios() {
       })) || [],
       subtotal: productsSubtotal,
       discount: service.discount,
+      deposit: service.deposit,
       total: service.final_price || service.estimated_price,
       notes: service.internal_notes,
       estimated_price: service.estimated_price,
@@ -642,6 +643,7 @@ export default function Servicios() {
               labor_cost: Number(viewingService.labor_cost || 0),
               subtotal: productsSubtotal,
               discount: Number(viewingService.discount || 0),
+              deposit: Number(viewingService.deposit || 0),
               total: Number(viewingService.final_price || viewingService.estimated_price || 0),
               notes: viewingService.internal_notes,
             });

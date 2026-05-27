@@ -28,6 +28,11 @@ final class BusinessSettingsController
         'printer_size',
         'currency_symbol',
         'auto_cut',
+        'ticket_show_logo',
+        'ticket_paper_size',
+        'ticket_footer_sale',
+        'ticket_footer_service',
+        'ticket_footer_warranty',
         'storage_endpoint',
         'storage_secret_key',
     ];
@@ -83,6 +88,11 @@ final class BusinessSettingsController
             'printer_size' => $data['printer_size'] ?? '80mm',
             'currency_symbol' => $data['currency_symbol'] ?? '$',
             'auto_cut' => (int) ($data['auto_cut'] ?? 1),
+            'ticket_show_logo' => (int) ($data['ticket_show_logo'] ?? 1),
+            'ticket_paper_size' => $data['ticket_paper_size'] ?? '58mm',
+            'ticket_footer_sale' => $data['ticket_footer_sale'] ?? null,
+            'ticket_footer_service' => $data['ticket_footer_service'] ?? null,
+            'ticket_footer_warranty' => $data['ticket_footer_warranty'] ?? null,
             'storage_endpoint' => $data['storage_endpoint'] ?? null,
             'storage_secret_key' => $data['storage_secret_key'] ?? null,
         ]);

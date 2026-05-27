@@ -14,7 +14,7 @@ final class ServiceController
     private const FIELDS = [
         'customer_id', 'quote_id', 'service_type', 'status', 'description',
         'problem', 'location', 'address', 'estimated_price', 'final_price',
-        'labor_cost', 'discount', 'internal_notes', 'policies',
+        'labor_cost', 'discount', 'deposit', 'internal_notes', 'policies',
         'assigned_to', 'started_at', 'completed_at', 'delivered_at', 'scheduled_start_at',
         'has_warranty', 'warranty_days',
     ];
@@ -146,6 +146,7 @@ final class ServiceController
                 'final_price' => isset($data['final_price']) ? (float) $data['final_price'] : null,
                 'labor_cost' => (float) ($data['labor_cost'] ?? 0),
                 'discount' => (float) ($data['discount'] ?? 0),
+                'deposit' => (float) ($data['deposit'] ?? 0),
                 'internal_notes' => $data['internal_notes'] ?? null,
                 'policies' => $data['policies'] ?? null,
                 'custom_fields' => json_encode($data['custom_fields'] ?? []),
