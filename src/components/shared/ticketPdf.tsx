@@ -59,15 +59,17 @@ async function inlineImages(node: HTMLElement) {
   );
 }
 
-async function fetchAsDataUrl(url: string): Promise<string | null> {
-  // Try plain fetch first — uploads endpoint is usually public and sending
-  // Authorization would trigger a CORS preflight that static-file servers reject.
-  let res = await fetch(url, { mode: "cors" }).catch(() => null);
+async function fetchAsDataUrl(originalUrl: string): Promise<string | null> {
+  // Route /uploads/* through the API proxy which sends proper CORS headers.
+  const proxied = resolveUploadFileUrl(originalUrl) || originalUrl;
+  const headers = new Headers();
+  const token = getPhpAuthToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+
+  let res = await fetch(proxied, { headers }).catch(() => null);
   if (!res || !res.ok) {
-    const headers = new Headers();
-    const token = getPhpAuthToken();
-    if (token) headers.set("Authorization", `Bearer ${token}`);
-    res = await fetch(url, { headers, mode: "cors" }).catch(() => null);
+    // Fallback: try the raw URL without auth (in case the static host has CORS).
+    res = await fetch(originalUrl, { mode: "cors" }).catch(() => null);
   }
   if (!res || !res.ok) return null;
   const blob = await res.blob();
