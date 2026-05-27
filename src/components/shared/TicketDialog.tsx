@@ -74,13 +74,9 @@ export function TicketDialog({ open, onOpenChange, data }: Props) {
   const pdfFileName = `ticket-${sanitizeFileName(data.number)}.pdf`;
 
   const createTicketPdf = async () => {
+    if (!ticketRef.current) throw new Error("Ticket no listo");
     const { createTicketPdfBlob } = await import("./ticketPdf");
-    const blob = await createTicketPdfBlob({
-      data,
-      settings,
-      logoUrl: resolveUploadFileUrl(settings?.logo_url),
-    });
-
+    const blob = await createTicketPdfBlob(ticketRef.current);
     return new File([blob], pdfFileName, { type: "application/pdf" });
   };
 
