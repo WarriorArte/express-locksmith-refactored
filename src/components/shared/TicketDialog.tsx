@@ -1,11 +1,13 @@
 import { useRef } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/responsive-dialog";
+import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/responsive-dialog";
 import { Button } from "@/components/ui/button";
-import { Printer, X } from "lucide-react";
+import { Download, Printer, Share2, X } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { useToast } from "@/hooks/use-toast";
+import { resolveStorageUrl, resolveUploadFileUrl } from "@/lib/phpApi";
 import { paymentMethodLabels, statusLabels } from "./detail-view/types";
 
 export type TicketKind = "sale" | "service" | "warranty";
@@ -59,6 +61,7 @@ const kindTitle: Record<TicketKind, string> = {
 
 export function TicketDialog({ open, onOpenChange, data }: Props) {
   const { data: settings } = useBusinessSettings();
+  const { toast } = useToast();
   const ticketRef = useRef<HTMLDivElement>(null);
 
   if (!data) return null;
@@ -67,30 +70,96 @@ export function TicketDialog({ open, onOpenChange, data }: Props) {
   const money = (v: number | null | undefined) =>
     `${currency}${Number(v || 0).toFixed(2)}`;
   const statusConfig = data.status ? statusLabels[data.status] : null;
+  const logoUrl = resolveStorageUrl(settings?.logo_url);
+  const pdfFileName = `ticket-${sanitizeFileName(data.number)}.pdf`;
 
-  const handlePrint = () => {
+  const createTicketPdf = async () => {
+    const { createTicketPdfBlob } = await import("./ticketPdf");
+    const blob = await createTicketPdfBlob({
+      data,
+      settings,
+      logoUrl: resolveUploadFileUrl(settings?.logo_url),
+    });
+
+    return new File([blob], pdfFileName, { type: "application/pdf" });
+  };
+
+  const handleDownload = async () => {
+    try {
+      const file = await createTicketPdf();
+      downloadFile(file);
+    } catch (error) {
+      toast({
+        title: "No se pudo descargar",
+        description: error instanceof Error ? error.message : "Intenta nuevamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      const file = await createTicketPdf();
+      const shareData = {
+        title: kindTitle[data.kind],
+        text: `${kindTitle[data.kind]} ${data.number}`,
+        files: [file],
+      };
+
+      if (navigator.canShare?.(shareData)) {
+        await navigator.share(shareData);
+        return;
+      }
+
+      downloadFile(file);
+      toast({
+        title: "PDF descargado",
+        description: "Este navegador no permite compartir archivos directamente.",
+      });
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      toast({
+        title: "No se pudo compartir",
+        description: error instanceof Error ? error.message : "Intenta nuevamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handlePrint = async () => {
+    if (ticketRef.current) {
+      await waitForTicketImages(ticketRef.current);
+    }
+
     window.print();
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm p-0" fixedHeight>
-        <DialogHeader className="px-4 pt-4">
-          <DialogTitle className="text-base">{kindTitle[data.kind]}</DialogTitle>
+      <DialogContent
+        className="max-w-sm md:max-w-[430px] h-[90dvh] md:h-[min(92vh,760px)] p-0"
+        fixedHeight
+      >
+        <DialogHeader className="px-4 pt-3 md:px-5 md:pt-5 !flex-row items-center justify-between space-y-0">
+          <DialogTitle className="text-base md:text-lg">{kindTitle[data.kind]}</DialogTitle>
+          <DialogClose className="md:hidden rounded-sm p-2 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+            <X className="h-4 w-4" />
+            <span className="sr-only">Cerrar</span>
+          </DialogClose>
         </DialogHeader>
 
-        <div className="px-4 pb-2 overflow-auto">
+        <div className="px-2 pb-2 md:px-4 overflow-auto">
           <div
             ref={ticketRef}
             id="ticket-print-area"
-            className="ticket-paper mx-auto bg-white text-black p-4 rounded-lg shadow-sm"
-            style={{ width: "100%", maxWidth: 320, fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}
+            className="ticket-paper mx-auto bg-white text-black p-4 rounded-sm shadow-sm"
+            style={{ width: 320, maxWidth: "100%", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}
           >
             {/* Header negocio */}
             <div className="text-center border-b border-dashed border-black/40 pb-2 mb-2">
-              {settings?.logo_url && (
+              {logoUrl && (
                 <img
-                  src={settings.logo_url}
+                  src={logoUrl}
                   alt="logo"
                   className="mx-auto mb-1 h-12 w-12 object-contain"
                 />
@@ -239,26 +308,63 @@ export function TicketDialog({ open, onOpenChange, data }: Props) {
           </div>
         </div>
 
-        <DialogFooter className="px-4 pb-4 pt-2 gap-2">
+        <DialogFooter className="!grid grid-cols-3 px-3 md:px-5 pb-3 md:pb-5 pt-2 gap-2 [&>button]:min-w-0 [&>button]:flex-1 [&>button:last-child]:flex-1">
           <Button
             variant="outline"
-            className="flex-1 h-12 rounded-2xl"
-            onClick={() => onOpenChange(false)}
+            className="h-11 rounded-sm px-2 text-[11px] sm:text-sm gap-1.5"
+            onClick={handleDownload}
           >
-            <X className="w-4 h-4 mr-1.5" />
-            Cerrar
+            <Download className="w-4 h-4 shrink-0" />
+            <span className="truncate">Descargar</span>
           </Button>
           <Button
-            className="flex-1 h-12 rounded-2xl bg-primary text-primary-foreground"
+            variant="outline"
+            className="h-11 rounded-sm px-2 text-[11px] sm:text-sm gap-1.5"
+            onClick={handleShare}
+          >
+            <Share2 className="w-4 h-4 shrink-0" />
+            <span className="truncate">Compartir</span>
+          </Button>
+          <Button
+            className="h-11 rounded-sm bg-primary text-primary-foreground px-2 text-[11px] sm:text-sm gap-1.5"
             onClick={handlePrint}
           >
-            <Printer className="w-4 h-4 mr-1.5" />
-            Imprimir
+            <Printer className="w-4 h-4 shrink-0" />
+            <span className="truncate">Imprimir</span>
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
+}
+
+async function waitForTicketImages(ticket: HTMLElement) {
+  const images = Array.from(ticket.querySelectorAll("img"));
+  await Promise.all(
+    images.map((img) => {
+      if (img.complete) return Promise.resolve();
+      if ("decode" in img) return img.decode().catch(() => undefined);
+      return new Promise<void>((resolve) => {
+        img.addEventListener("load", () => resolve(), { once: true });
+        img.addEventListener("error", () => resolve(), { once: true });
+      });
+    }),
+  );
+}
+
+function downloadFile(file: File) {
+  const url = URL.createObjectURL(file);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = file.name;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function sanitizeFileName(value: string) {
+  return value.replace(/[^a-z0-9_-]+/gi, "-").replace(/^-+|-+$/g, "") || "ticket";
 }
 
 function Row({ label, value }: { label: string; value: string }) {

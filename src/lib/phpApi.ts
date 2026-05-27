@@ -88,6 +88,19 @@ export function resolveStorageUrl(path: string | null | undefined): string | nul
   }
 }
 
+export function resolveUploadFileUrl(path: string | null | undefined): string | null {
+  if (!path) return null;
+  const resolved = resolveStorageUrl(path);
+  if (!resolved) return null;
+
+  const marker = "/uploads/";
+  const markerIndex = resolved.indexOf(marker);
+  if (markerIndex === -1) return resolved;
+
+  const relativePath = resolved.slice(markerIndex + marker.length);
+  return `${activeApiBase}/uploads.php?action=file&f=${encodeURIComponent(relativePath)}`;
+}
+
 export function getStorableUrl(url: string): string {
   if (!url) return "";
   try {

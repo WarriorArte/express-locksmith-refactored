@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
@@ -31,8 +32,12 @@ final class UploadController
         'avatars'  => ['table' => 'profiles',          'column' => 'avatar_url'],
     ];
 
-    public function handle(Request $request): JsonResponse
+    public function handle(Request $request): JsonResponse|Response
     {
+        if ($request->isMethod('GET') && $request->query('action') === 'file') {
+            return $this->file($request);
+        }
+
         if ($request->isMethod('GET') && $request->query('action') === 'list') {
             return $this->index($request);
         }
@@ -50,6 +55,23 @@ final class UploadController
         }
 
         return ApiResponse::error('Metodo no permitido', 405);
+    }
+
+    private function file(Request $request): Response
+    {
+        $file = str_replace(['..', '\\'], '', (string) $request->query('f', ''));
+        $file = ltrim(rawurldecode($file), '/');
+        $path = public_path("uploads/{$file}");
+
+        if ($file === '' || !is_file($path)) {
+            return response('', 404);
+        }
+
+        $mime = mime_content_type($path) ?: 'application/octet-stream';
+        return response()->file($path, [
+            'Content-Type' => $mime,
+            'Cache-Control' => 'public, max-age=31536000',
+        ]);
     }
 
     private function index(Request $request): JsonResponse

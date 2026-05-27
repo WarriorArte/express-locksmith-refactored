@@ -9,13 +9,13 @@
   position: relative;
   flex: 0 0 auto;
   padding: 22px 52px 16px;
-  color: var(--accent-ink);
+  color: var(--header-ink);
   overflow: hidden;
   background:
     linear-gradient(135deg,
-      color-mix(in srgb, var(--accent) 84%, var(--ink)) 0%,
-      var(--accent) 58%,
-      color-mix(in srgb, var(--accent) 78%, #fff) 100%);
+      color-mix(in srgb, var(--header) 86%, #000) 0%,
+      var(--header) 58%,
+      color-mix(in srgb, var(--header) 86%, #fff) 100%);
 }
 
 .qd .layout-banner .b-header::after {
@@ -44,33 +44,33 @@
 }
 
 .qd .layout-banner .brand {
-  width: 210px;
-  height: 130px;
+  width: calc(var(--logo-size) * 1.72);
+  height: calc(var(--logo-size) + 8px);
   flex: 0 0 auto;
   display: grid;
   place-items: center start;
 }
 
 .qd .layout-banner .logo-mark {
-  width: 112px;
-  height: 112px;
+  width: var(--logo-size);
+  height: var(--logo-size);
   border-radius: 12px;
   background: rgba(255,255,255,0.16);
-  color: #fff;
+  color: var(--header-ink);
   display: grid;
   place-items: center;
   font-family: "Archivo", sans-serif;
   font-weight: 900;
-  font-size: 46px;
+  font-size: calc(var(--logo-size) * 0.38);
   line-height: 1;
-  border: 1px solid rgba(255,255,255,0.32);
+  border: 1px solid color-mix(in srgb, var(--header-ink) 32%, transparent);
 }
 
 .qd .layout-banner .brand-logo {
   width: auto;
-  height: 122px;
-  max-width: 320px;
-  max-height: 122px;
+  height: var(--logo-size);
+  max-width: calc(var(--logo-size) * 2.65);
+  max-height: var(--logo-size);
   object-fit: contain;
   display: block;
   filter: drop-shadow(0 5px 12px rgba(0,0,0,0.16));
@@ -82,8 +82,8 @@
 }
 
 .qd .layout-banner .q-id {
-  border: 1px solid rgba(255,255,255,0.22);
-  background: rgba(255,255,255,0.12);
+  border: 1px solid color-mix(in srgb, var(--header-ink) 22%, transparent);
+  background: color-mix(in srgb, var(--header-ink) 12%, transparent);
   backdrop-filter: blur(3px);
   border-radius: 8px;
   padding: 10px 14px;
@@ -99,7 +99,7 @@
   font-size: 8.5px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.66);
+  color: color-mix(in srgb, var(--header-ink) 66%, transparent);
   margin-bottom: 5px;
 }
 
@@ -107,14 +107,14 @@
   font-family: "Archivo", sans-serif;
   font-weight: 900;
   font-size: 21px;
-  color: #fff;
+  color: var(--header-ink);
   line-height: 1.05;
 }
 
 .qd .layout-banner .q-date {
   font-family: "JetBrains Mono", monospace;
   font-size: 10px;
-  color: rgba(255,255,255,0.72);
+  color: color-mix(in srgb, var(--header-ink) 72%, transparent);
   margin-top: 5px;
 }
 
@@ -124,14 +124,14 @@
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 18px;
-  border-top: 1px solid rgba(255,255,255,0.18);
+  border-top: 1px solid color-mix(in srgb, var(--header-ink) 18%, transparent);
 }
 
 .qd .layout-banner .brand-contact,
 .qd .layout-banner .brand-site {
   font-family: "JetBrains Mono", monospace;
   font-size: 9.5px;
-  color: rgba(255,255,255,0.76);
+  color: color-mix(in srgb, var(--header-ink) 76%, transparent);
   line-height: 1.45;
 }
 
@@ -200,8 +200,8 @@
 }
 
 .qd .layout-banner .items-table thead th {
-  background: var(--ink);
-  color: #fff;
+  background: var(--table-head);
+  color: var(--table-head-ink);
   border: 0;
   padding: 12px 14px;
   font-family: "Archivo", sans-serif;
@@ -328,7 +328,7 @@
 }
 
 .qd .page.has-bg-image .layout-banner .b-header {
-  background: color-mix(in srgb, var(--accent) 86%, transparent);
+  background: color-mix(in srgb, var(--header) 86%, transparent);
 }
 
 .qd .page.has-bg-image .layout-banner .banner-meta .bm-card,

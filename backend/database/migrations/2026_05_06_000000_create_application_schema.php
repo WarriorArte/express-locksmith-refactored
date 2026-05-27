@@ -400,7 +400,16 @@ return new class extends Migration
             $table->string('preset_id', 60)->default('navy-yellow');
             $table->string('ink', 20)->default('#1a1f2e');
             $table->string('accent', 20)->default('#f4c430');
+            $table->string('accent_ink', 20)->default('#1a1f2e');
+            $table->string('header', 20)->default('#1a1f2e');
+            $table->string('header_ink', 20)->default('#ffffff');
+            $table->string('table_head', 20)->default('#1a1f2e');
+            $table->string('table_head_ink', 20)->default('#ffffff');
+            $table->string('muted', 20)->default('#7c7c74');
+            $table->string('soft', 20)->default('#f5f5f3');
+            $table->string('rule', 20)->default('#e6e4dd');
             $table->string('paper', 20)->default('#ffffff');
+            $table->unsignedSmallInteger('logo_size')->default(110);
             $table->text('notes')->nullable();
             $table->string('payment_account')->nullable();
             $table->string('payment_name')->nullable();

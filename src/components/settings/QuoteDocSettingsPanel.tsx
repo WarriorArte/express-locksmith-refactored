@@ -9,7 +9,7 @@ import {
   useQuoteDocSettings,
   QUOTE_PRESETS,
   autoAccentInk,
-  darken,
+  resolveQuotePreset,
 } from "@/hooks/useQuoteDocSettings";
 import { createSampleQuote } from "@/components/quotes/QuoteDocumentPage";
 import { QuotePreviewFrame } from "@/components/quotes/QuotePreviewFrame";
@@ -30,15 +30,19 @@ export function QuoteDocSettingsPanel({
   const fileRef = useRef<HTMLInputElement>(null);
   const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
 
-  const accentInk = useMemo(() => autoAccentInk(settings.accent), [settings.accent]);
-  const ink2 = useMemo(() => darken(settings.ink, 0.35), [settings.ink]);
-
   const applyPreset = (p: typeof QUOTE_PRESETS[number]) => {
-    update({ presetId: p.id, ink: p.ink, accent: p.accent, paper: p.paper });
+    update({ presetId: p.id, ...resolveQuotePreset(p, settings.layout) });
   };
 
-  const setColor = (key: "ink" | "accent" | "paper", val: string) => {
-    update({ presetId: "custom", [key]: val } as any);
+  const setColor = (
+    key: "ink" | "accent" | "accentInk" | "header" | "headerInk" | "tableHead" | "tableHeadInk" | "muted" | "soft" | "rule" | "paper",
+    val: string,
+  ) => {
+    const patch: Partial<typeof settings> = { presetId: "custom", [key]: val };
+    if (key === "accent") patch.accentInk = autoAccentInk(val);
+    if (key === "header") patch.headerInk = autoAccentInk(val);
+    if (key === "tableHead") patch.tableHeadInk = autoAccentInk(val);
+    update(patch);
   };
 
   const onUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,7 +93,13 @@ export function QuoteDocSettingsPanel({
             <button
               key={L.id}
               type="button"
-              onClick={() => update({ layout: L.id })}
+              onClick={() => {
+                const activePreset = QUOTE_PRESETS.find(p => p.id === settings.presetId);
+                update({
+                  layout: L.id,
+                  ...(activePreset ? resolveQuotePreset(activePreset, L.id) : {}),
+                });
+              }}
               className={cn(
                 "rounded-xl border-2 p-3 text-center transition-all bg-card",
                 settings.layout === L.id ? "border-primary shadow-[0_0_16px_hsl(var(--primary)/0.25)]" : "border-border hover:border-muted-foreground/40",
@@ -108,30 +118,38 @@ export function QuoteDocSettingsPanel({
         <div className="grid grid-cols-3 gap-2.5">
           {QUOTE_PRESETS.map(p => {
             const active = settings.presetId === p.id;
+            const preview = resolveQuotePreset(p, settings.layout);
             return (
               <button
                 key={p.id}
                 type="button"
                 onClick={() => applyPreset(p)}
                 className={cn(
-                  "rounded-xl border-2 overflow-hidden transition-all text-left",
+                  "rounded-xl border-2 overflow-hidden transition-all text-left group",
                   active ? "border-foreground shadow-[0_0_0_1px_hsl(var(--foreground))]" : "border-border hover:border-muted-foreground/50",
                 )}
-                style={{ background: p.paper }}
+                style={{ background: preview.paper }}
               >
-                <div className="flex items-center gap-2 px-3 pt-3 pb-2">
-                  <span
-                    className="w-8 h-8 rounded-full ring-1 ring-black/5"
-                    style={{ background: p.accent }}
-                  />
-                  <span
-                    className="w-4 h-4 rounded-full ring-1 ring-black/5"
-                    style={{ background: p.ink }}
-                  />
+                <div className="p-2.5">
+                  <div className="grid grid-cols-5 gap-1.5">
+                    {[
+                      preview.header,
+                      preview.accent,
+                      preview.tableHead,
+                      preview.soft,
+                      preview.ink,
+                    ].map((color, i) => (
+                      <span
+                        key={`${p.id}-${i}`}
+                        className="h-9 rounded-md border border-black/10 shadow-sm transition-transform group-hover:-translate-y-0.5"
+                        style={{ background: color }}
+                      />
+                    ))}
+                  </div>
                 </div>
                 <div
-                  className="text-[11px] font-semibold py-1.5 px-3 border-t"
-                  style={{ color: p.ink, borderColor: "rgba(0,0,0,0.08)" }}
+                  className="text-[11px] font-semibold py-1.5 px-3 border-t truncate"
+                  style={{ color: preview.ink, borderColor: preview.rule }}
                 >
                   {p.name}
                 </div>
@@ -147,14 +165,44 @@ export function QuoteDocSettingsPanel({
           Colores personalizados {settings.presetId === "custom" && <span className="text-primary">· custom</span>}
         </Label>
         <div className="grid grid-cols-2 gap-2">
-          <ColorPick label="Base" value={settings.ink} onChange={v => setColor("ink", v)} />
+          <ColorPick label="Texto principal" value={settings.ink} onChange={v => setColor("ink", v)} />
+          <ColorPick label="Texto secundario" value={settings.muted} onChange={v => setColor("muted", v)} />
           <ColorPick label="Acento" value={settings.accent} onChange={v => setColor("accent", v)} />
+          <ColorPick label="Texto en acento" value={settings.accentInk} onChange={v => setColor("accentInk", v)} />
+          <ColorPick label="Header" value={settings.header} onChange={v => setColor("header", v)} />
+          <ColorPick label="Texto header" value={settings.headerInk} onChange={v => setColor("headerInk", v)} />
+          <ColorPick label="Encabezado tabla" value={settings.tableHead} onChange={v => setColor("tableHead", v)} />
+          <ColorPick label="Texto tabla" value={settings.tableHeadInk} onChange={v => setColor("tableHeadInk", v)} />
+          <ColorPick label="Lineas" value={settings.rule} onChange={v => setColor("rule", v)} />
+          <ColorPick label="Fondos suaves" value={settings.soft} onChange={v => setColor("soft", v)} />
           <div className="col-span-2">
             <ColorPick label="Papel (fondo de página)" value={settings.paper} onChange={v => setColor("paper", v)} />
           </div>
         </div>
-        <div className="mt-2 text-[11px] text-muted-foreground font-mono">
-          Tinta secundaria: <span style={{ color: ink2 }}>{ink2}</span> · Texto sobre acento: <span style={{ color: accentInk }}>{accentInk}</span>
+        <div className="mt-2 text-[11px] text-muted-foreground">
+          Colores automaticos de contraste activos para mantener los textos legibles.
+        </div>
+      </section>
+
+      <section>
+        <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-2 flex justify-between">
+          Logo <span className="font-mono normal-case">{settings.logoSize}px</span>
+        </Label>
+        <div className="rounded-xl border border-border bg-card p-3">
+          <input
+            type="range"
+            min={48}
+            max={150}
+            step={1}
+            value={settings.logoSize}
+            onChange={e => update({ logoSize: Number(e.target.value) })}
+            className="w-full accent-primary"
+          />
+          <div className="mt-2 grid grid-cols-3 text-[10px] text-muted-foreground">
+            <span>Pequeno</span>
+            <span className="text-center">Medio</span>
+            <span className="text-right">Grande</span>
+          </div>
         </div>
       </section>
 
@@ -269,8 +317,8 @@ function ColorPick({ label, value, onChange }: { label: string; value: string; o
         className="w-9 h-7 border-0 p-0 cursor-pointer bg-transparent rounded"
       />
       <div className="flex flex-col min-w-0">
-        <span className="text-[10px] text-muted-foreground">{label}</span>
-        <span className="font-mono text-xs uppercase truncate">{value}</span>
+        <span className="text-[11px] font-medium text-foreground truncate">{label}</span>
+        <span className="text-[10px] text-muted-foreground">Cambiar color</span>
       </div>
     </label>
   );

@@ -26,10 +26,18 @@ export const QuoteDocumentPage = forwardRef<HTMLDivElement, QuoteDocumentPagePro
       "--ink": settings.ink,
       "--ink-2": darken(settings.ink, 0.35),
       "--accent": settings.accent,
-      "--accent-ink": autoAccentInk(settings.accent),
+      "--accent-ink": settings.accentInk || autoAccentInk(settings.accent),
+      "--header": settings.header,
+      "--header-ink": settings.headerInk,
+      "--table-head": settings.tableHead,
+      "--table-head-ink": settings.tableHeadInk,
       "--paper": settings.paper,
+      "--muted": settings.muted,
+      "--soft": settings.soft,
+      "--rule": settings.rule,
+      "--logo-size": `${settings.logoSize}px`,
       zoom,
-    } as React.CSSProperties), [settings.ink, settings.accent, settings.paper, zoom]);
+    } as React.CSSProperties), [settings, zoom]);
 
     const template = getQuoteTemplate(settings.layout);
     const Layout = template.Component;

@@ -17,7 +17,16 @@ final class QuoteDocSetting extends Model
         'preset_id',
         'ink',
         'accent',
+        'accent_ink',
+        'header',
+        'header_ink',
+        'table_head',
+        'table_head_ink',
+        'muted',
+        'soft',
+        'rule',
         'paper',
+        'logo_size',
         'notes',
         'payment_account',
         'payment_name',
@@ -29,5 +38,6 @@ final class QuoteDocSetting extends Model
 
     protected $casts = [
         'bg_opacity' => 'float',
+        'logo_size' => 'integer',
     ];
 }

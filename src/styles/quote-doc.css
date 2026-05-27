@@ -13,6 +13,11 @@
   --rule: #e6e4dd;
   --soft: #f5f5f3;
   --muted: #7c7c74;
+  --header: #1a1f2e;
+  --header-ink: #ffffff;
+  --table-head: #1a1f2e;
+  --table-head-ink: #ffffff;
+  --logo-size: 110px;
 }
 .qd .page-inner {
   position: relative;
@@ -44,8 +49,8 @@
   overflow: hidden;
 }
 .qd .items-table thead th {
-  background: var(--ink);
-  color: #fff;
+  background: var(--table-head);
+  color: var(--table-head-ink);
   text-align: left;
   font-family: "Archivo", sans-serif;
   font-weight: 700;

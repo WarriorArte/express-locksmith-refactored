@@ -6,6 +6,7 @@ use App\Models\QuoteDocSetting;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 final class QuoteDocSettingsController
 {
@@ -14,7 +15,16 @@ final class QuoteDocSettingsController
         'preset_id',
         'ink',
         'accent',
+        'accent_ink',
+        'header',
+        'header_ink',
+        'table_head',
+        'table_head_ink',
+        'muted',
+        'soft',
+        'rule',
         'paper',
+        'logo_size',
         'notes',
         'payment_account',
         'payment_name',
@@ -55,21 +65,33 @@ final class QuoteDocSettingsController
             return ApiResponse::error($workshopId ? 'Se requiere rol de administrador en este taller' : 'workshop_id es requerido', $workshopId ? 403 : 400);
         }
 
-        $updates = array_intersect_key($data, array_flip(self::FIELDS));
+        $columns = array_filter(self::FIELDS, fn ($field) => Schema::hasColumn('quote_doc_settings', $field));
+        $updates = array_intersect_key($data, array_flip($columns));
 
         if ($updates === []) {
             return ApiResponse::error('No hay campos para actualizar');
         }
 
+        $defaults = [
+            'layout' => 'bold',
+            'preset_id' => 'navy-yellow',
+            'ink' => '#1a1f2e',
+            'accent' => '#f4c430',
+            'accent_ink' => '#1a1f2e',
+            'header' => '#1a1f2e',
+            'header_ink' => '#ffffff',
+            'table_head' => '#1a1f2e',
+            'table_head_ink' => '#ffffff',
+            'muted' => '#7c7c74',
+            'soft' => '#f5f5f3',
+            'rule' => '#e6e4dd',
+            'paper' => '#ffffff',
+            'logo_size' => 110,
+        ];
+
         $settings = QuoteDocSetting::query()->firstOrCreate(
             ['workshop_id' => $workshopId],
-            [
-                'layout' => 'bold',
-                'preset_id' => 'navy-yellow',
-                'ink' => '#1a1f2e',
-                'accent' => '#f4c430',
-                'paper' => '#ffffff',
-            ],
+            array_intersect_key($defaults, array_flip($columns)),
         );
 
         $settings->fill($updates)->save();
