@@ -7,7 +7,7 @@ import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useToast } from "@/hooks/use-toast";
-import { resolveStorageUrl, resolveUploadFileUrl } from "@/lib/phpApi";
+import { resolveStorageUrl } from "@/lib/phpApi";
 import { paymentMethodLabels, statusLabels } from "./detail-view/types";
 
 export type TicketKind = "sale" | "service" | "warranty";
