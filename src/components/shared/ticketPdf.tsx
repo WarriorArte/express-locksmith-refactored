@@ -1,10 +1,12 @@
 import html2canvas from "html2canvas-pro";
 import { jsPDF } from "jspdf";
+import { getPhpAuthToken, resolveUploadFileUrl } from "@/lib/phpApi";
 
 /**
  * Renders a ticket DOM node to a PDF blob using html2canvas + jsPDF.
- * Inlines all <img> sources as data URLs first so cross-origin logos render
- * without tainting the canvas.
+ * The logo is fetched through the authenticated /api/uploads.php?action=file
+ * proxy (same auth flow the rest of the app uses) and inlined as a data URL,
+ * so html2canvas can read it without CORS tainting the canvas.
  */
 export async function createTicketPdfBlob(node: HTMLElement): Promise<Blob> {
   await inlineImages(node);
@@ -48,20 +50,41 @@ async function inlineImages(node: HTMLElement) {
           img.addEventListener("load", () => resolve(), { once: true });
           img.addEventListener("error", () => resolve(), { once: true });
         });
+      } else {
+        // If we couldn't inline it, hide it so html2canvas doesn't taint the canvas
+        img.style.visibility = "hidden";
       }
     }),
   );
 }
 
 /**
- * Converts a remote image URL to a base64 data URL.
- * Strategy:
- *  1. Try fetch() with CORS (works once the server sends Access-Control-Allow-Origin).
- *  2. Fall back to loading the image via <Image crossOrigin="anonymous"> and drawing it
- *     to a canvas — this also requires CORS headers but uses a different code path.
+ * Converts an image URL to a base64 data URL.
+ * Primary strategy: route /uploads/* through the authenticated API proxy
+ * (/api/uploads.php?action=file) using the same Bearer token the rest of
+ * the app uses. This is the only path that works reliably across browsers
+ * because the static /uploads/ host doesn't expose CORS headers.
  */
 async function imageToDataUrl(url: string): Promise<string | null> {
-  // 1) Plain fetch (no Authorization → no preflight)
+  // 1) Authenticated proxy fetch (works because /api has CORS + auth)
+  const proxied = resolveUploadFileUrl(url);
+  if (proxied && proxied !== url) {
+    const token = getPhpAuthToken();
+    const headers: Record<string, string> = { Accept: "image/*" };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    try {
+      const res = await fetch(proxied, { headers });
+      if (res.ok) {
+        const blob = await res.blob();
+        const dataUrl = await blobToDataUrl(blob);
+        if (dataUrl) return dataUrl;
+      }
+    } catch {
+      // fall through
+    }
+  }
+
+  // 2) Direct fetch as fallback (works for fully public CORS-enabled URLs)
   try {
     const res = await fetch(url, { mode: "cors", credentials: "omit" });
     if (res.ok) {
@@ -70,15 +93,10 @@ async function imageToDataUrl(url: string): Promise<string | null> {
       if (dataUrl) return dataUrl;
     }
   } catch {
-    // continue to next strategy
+    // fall through
   }
 
-  // 2) Image element + canvas
-  try {
-    return await loadImageAsDataUrl(url);
-  } catch {
-    return null;
-  }
+  return null;
 }
 
 function blobToDataUrl(blob: Blob): Promise<string | null> {
@@ -87,28 +105,5 @@ function blobToDataUrl(blob: Blob): Promise<string | null> {
     reader.onloadend = () => resolve(typeof reader.result === "string" ? reader.result : null);
     reader.onerror = () => resolve(null);
     reader.readAsDataURL(blob);
-  });
-}
-
-function loadImageAsDataUrl(url: string): Promise<string | null> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      try {
-        const canvas = document.createElement("canvas");
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return resolve(null);
-        ctx.drawImage(img, 0, 0);
-        resolve(canvas.toDataURL("image/png"));
-      } catch {
-        resolve(null);
-      }
-    };
-    img.onerror = () => resolve(null);
-    // Cache buster avoids reusing a cached response that was loaded without CORS headers
-    img.src = url + (url.includes("?") ? "&" : "?") + "_cors=1";
   });
 }
