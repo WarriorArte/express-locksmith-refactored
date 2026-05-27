@@ -256,7 +256,7 @@ async function fetchAsDataUrl(url: string): Promise<string | null> {
 function blobToPngDataUrl(blob: Blob): Promise<string | null> {
   return new Promise((resolve) => {
     const objectUrl = URL.createObjectURL(blob);
-    const img = new Image();
+    const img = new window.Image();
     img.onload = () => {
       try {
         const canvas = document.createElement("canvas");
