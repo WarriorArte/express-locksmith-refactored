@@ -9,6 +9,7 @@ import { useWorkshop } from "@/hooks/useWorkshop";
 import { ImageUploader } from "@/components/shared/ImageUploader";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { phpApiRequest, phpApiUpload } from "@/lib/phpApi";
+import type { Profile } from "@/types/database";
 
 export function ProfileSettings() {
   const { user, profile } = useAuth();
@@ -27,7 +28,7 @@ export function ProfileSettings() {
     queryKey: ["profiles", profile?.id],
     enabled: !!user && !!profile?.id,
     queryFn: () =>
-      phpApiRequest<any>(`/profiles.php?id=${encodeURIComponent(profile!.id)}`, {
+      phpApiRequest<Profile>(`/profiles.php?id=${encodeURIComponent(profile!.id)}`, {
         method: "GET",
       }),
   });
@@ -71,10 +72,10 @@ export function ProfileSettings() {
         title: "Perfil actualizado",
         description: "Tus datos han sido guardados correctamente",
       });
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Error",
-        description: error.message || "No se pudo actualizar el perfil",
+        description: error instanceof Error ? error.message : "No se pudo actualizar el perfil",
         variant: "destructive",
       });
     } finally {

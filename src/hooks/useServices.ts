@@ -22,6 +22,17 @@ export type Service = ServiceRow & {
   service_images?: ServiceImage[];
 };
 
+type RawServiceProduct = ServiceProduct & {
+  p_name?: string | null;
+  product?: Product | null;
+};
+
+type RawService = ServiceRow & {
+  customer?: Customer | null;
+  service_products?: RawServiceProduct[] | null;
+  service_images?: ServiceImage[] | null;
+};
+
 type ServiceMutationData = {
   service_number?: string;
   customer_id?: string | null;
@@ -55,19 +66,23 @@ type ServiceMutationData = {
   }>;
 };
 
-function normalizeService(raw: any): Service {
+function normalizeService(raw: RawService): Service {
   const normalizedCustomer = raw.customer ?? null;
   const normalizedProducts = Array.isArray(raw.service_products)
-    ? raw.service_products.map((item: any) => ({
-        ...item,
-        product_name: item.product_name || item.p_name || item.product?.name || "",
-        product: item.product ?? (item.product_id
-          ? {
-              id: item.product_id,
-              name: item.product_name || item.p_name,
-            }
-          : null),
-      }))
+    ? raw.service_products.map((item) => {
+        const productName = item.product_name || item.p_name || item.product?.name || "";
+
+        return {
+          ...item,
+          product_name: productName,
+          product: item.product ?? (item.product_id
+            ? {
+                id: item.product_id,
+                name: productName,
+              }
+            : null),
+        };
+      })
     : [];
 
   return {
@@ -86,7 +101,7 @@ export function useServices() {
     queryFn: async () => {
       if (!currentWorkshop?.id) return [];
 
-      const data = await phpApiRequest<any[]>(`/services.php?workshop_id=${encodeURIComponent(currentWorkshop.id)}`, {
+      const data = await phpApiRequest<RawService[]>(`/services.php?workshop_id=${encodeURIComponent(currentWorkshop.id)}`, {
         method: "GET",
       });
 
@@ -102,7 +117,7 @@ export function useService(id: string | undefined) {
     queryFn: async () => {
       if (!id) return null;
 
-      const data = await phpApiRequest<any>(`/services.php?id=${encodeURIComponent(id)}`, {
+      const data = await phpApiRequest<RawService>(`/services.php?id=${encodeURIComponent(id)}`, {
         method: "GET",
       });
 
@@ -121,7 +136,7 @@ export function useCreateService() {
     mutationFn: async (service: ServiceMutationData & { service_number: string; description: string }) => {
       if (!currentWorkshop?.id) throw new Error("No hay taller seleccionado");
 
-      const data = await phpApiRequest<any>("/services.php", {
+      const data = await phpApiRequest<RawService>("/services.php", {
         method: "POST",
         body: JSON.stringify({
           ...service,
@@ -158,7 +173,7 @@ export function useUpdateService() {
 
   return useMutation({
     mutationFn: async ({ id, ...service }: ServiceMutationData & { id: string }) => {
-      const data = await phpApiRequest<any>(`/services.php?id=${encodeURIComponent(id)}`, {
+      const data = await phpApiRequest<RawService>(`/services.php?id=${encodeURIComponent(id)}`, {
         method: "PUT",
         body: JSON.stringify(service),
       });
@@ -224,7 +239,7 @@ export function useCreateServiceImage() {
       image_url: string;
       description?: string | null;
     }) => {
-      const data = await phpApiRequest<any>("/service-images.php", {
+      const data = await phpApiRequest<ServiceImage>("/service-images.php", {
         method: "POST",
         body: JSON.stringify(image),
       });

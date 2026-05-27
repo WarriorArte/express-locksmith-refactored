@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { phpApiRequest } from "@/lib/phpApi";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import { useToast } from "@/hooks/use-toast";
-import { addDays, addYears, format } from "date-fns";
+import { addDays, addYears } from "date-fns";
 
 export interface Warranty {
   id: string;
@@ -69,10 +69,39 @@ export interface WarrantySettings {
 
 type WarrantySettingsResponse = {
   warranty_settings: WarrantySettings | null;
-  warranty_category_settings: any[];
+  warranty_category_settings: RawWarrantyCategorySetting[];
 };
 
-function normalizeWarranty(raw: any): Warranty {
+type RawWarrantyCustomer = {
+  id?: string | null;
+  name?: string | null;
+  phone?: string | null;
+  email?: string | null;
+};
+
+type RawWarrantySale = {
+  id?: string | null;
+  sale_number?: string | null;
+};
+
+type RawWarrantyService = {
+  id?: string | null;
+  service_number?: string | null;
+};
+
+type RawWarranty = Warranty & {
+  customer?: RawWarrantyCustomer | null;
+  sale?: RawWarrantySale | null;
+  service?: RawWarrantyService | null;
+};
+
+type RawWarrantyCategorySetting = WarrantyCategorySetting & {
+  category?: WarrantyCategorySetting["category"] | null;
+  category_name?: string | null;
+  category_color?: string | null;
+};
+
+function normalizeWarranty(raw: RawWarranty): Warranty {
   return {
     ...raw,
     is_voided: !!raw.is_voided,
@@ -96,10 +125,10 @@ function normalizeWarranty(raw: any): Warranty {
           service_number: raw.service.service_number || "",
         }
       : null,
-  } as Warranty;
+  };
 }
 
-function normalizeCategorySetting(raw: any): WarrantyCategorySetting {
+function normalizeCategorySetting(raw: RawWarrantyCategorySetting): WarrantyCategorySetting {
   return {
     ...raw,
     category: raw.category
@@ -109,7 +138,7 @@ function normalizeCategorySetting(raw: any): WarrantyCategorySetting {
           name: raw.category_name || "",
           color: raw.category_color || "#6b7280",
         },
-  } as WarrantyCategorySetting;
+  };
 }
 
 // Fetch global warranty settings (one per workshop)
@@ -144,7 +173,7 @@ export function useUpsertWarrantySettings() {
     ) => {
       if (!currentWorkshop?.id) throw new Error("Sin taller");
 
-      const data = await phpApiRequest<any>("/warranty-settings.php", {
+      const data = await phpApiRequest<WarrantySettings>("/warranty-settings.php", {
         method: "PUT",
         body: JSON.stringify({
           workshop_id: currentWorkshop.id,
@@ -158,7 +187,7 @@ export function useUpsertWarrantySettings() {
       queryClient.invalidateQueries({ queryKey: ["warranty_settings"] });
       toast({ title: "Configuración guardada", description: "Se actualizó la configuración de garantías." });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
@@ -173,7 +202,7 @@ export function useWarranties() {
     queryFn: async () => {
       if (!currentWorkshop?.id) return [];
 
-      const data = await phpApiRequest<any[]>(`/warranties.php?workshop_id=${encodeURIComponent(currentWorkshop.id)}`, {
+      const data = await phpApiRequest<RawWarranty[]>(`/warranties.php?workshop_id=${encodeURIComponent(currentWorkshop.id)}`, {
         method: "GET",
       });
 
@@ -214,7 +243,7 @@ export function useCreateWarranty() {
     mutationFn: async (warranty: Omit<Warranty, "id" | "created_at" | "updated_at" | "customer" | "sale" | "service">) => {
       if (!currentWorkshop?.id) throw new Error("No hay taller seleccionado");
 
-      const data = await phpApiRequest<any>("/warranties.php", {
+      const data = await phpApiRequest<RawWarranty>("/warranties.php", {
         method: "POST",
         body: JSON.stringify({
           ...warranty,
@@ -249,7 +278,7 @@ export function useVoidWarranty() {
 
   return useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
-      const data = await phpApiRequest<any>(`/warranties.php?id=${encodeURIComponent(id)}`, {
+      const data = await phpApiRequest<RawWarranty>(`/warranties.php?id=${encodeURIComponent(id)}`, {
         method: "PUT",
         body: JSON.stringify({
           void: true,
@@ -286,7 +315,7 @@ export function useUpsertWarrantyCategorySetting() {
     mutationFn: async ({ category_id, warranty_days }: { category_id: string; warranty_days: number }) => {
       if (!currentWorkshop?.id) throw new Error("No hay taller seleccionado");
 
-      const data = await phpApiRequest<any>("/warranty-settings.php?action=category", {
+      const data = await phpApiRequest<WarrantyCategorySetting>("/warranty-settings.php?action=category", {
         method: "POST",
         body: JSON.stringify({
           category_id,

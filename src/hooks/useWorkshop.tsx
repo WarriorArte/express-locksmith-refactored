@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { phpApiRequest } from "@/lib/phpApi";
 import { useAuth } from "./useAuth";
@@ -225,7 +226,7 @@ export function WorkshopProvider({ children }: { children: ReactNode }) {
     }, REVALIDATION_INTERVAL);
 
     return () => clearInterval(interval);
-  }, [user, currentWorkshop, isSuperAdmin, refreshWorkshops]);
+  }, [user, currentWorkshop, isSuperAdmin, refreshWorkshops, refreshProfile]);
 
   // ============================================================
   // RENDER

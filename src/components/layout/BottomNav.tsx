@@ -2,6 +2,7 @@
 import {
   Home, Wrench, Package, Grid3x3, Plus,
   ShoppingCart, FileText, Users, Shield, Construction, Settings, LogOut,
+  type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWorkshopFeatures } from "@/hooks/useWorkshopFeatures";
@@ -22,19 +23,22 @@ import { CustomerFormDialog } from "@/components/customers/CustomerFormDialog";
 import { ServiceFormDialog } from "@/components/services/ServiceFormDialog";
 import { SaleFormDialog } from "@/components/sales/SaleFormDialog";
 
-const navItems = [
-  { to: "/", icon: Home, label: "Inicio", featureKey: null as string | null },
-  { to: "/servicios", icon: Wrench, label: "Servicios", featureKey: "services" as string | null },
-  { to: "/inventario", icon: Package, label: "Inventario", featureKey: "inventory" as string | null },
+type FeatureKey = string | null;
+type NavItem = { to: string; icon: LucideIcon; label: string; featureKey: FeatureKey };
+
+const navItems: NavItem[] = [
+  { to: "/", icon: Home, label: "Inicio", featureKey: null },
+  { to: "/servicios", icon: Wrench, label: "Servicios", featureKey: "services" },
+  { to: "/inventario", icon: Package, label: "Inventario", featureKey: "inventory" },
 ];
 
-const moreItems = [
+const moreItems: NavItem[] = [
   { to: "/clientes", icon: Users, label: "Clientes", featureKey: "customers" },
   { to: "/cotizaciones", icon: FileText, label: "Cotizaciones", featureKey: "quotes" },
   { to: "/ventas", icon: ShoppingCart, label: "Ventas", featureKey: "sales" },
   { to: "/garantias", icon: Shield, label: "Garantías", featureKey: "warranties" },
-  { to: "/herramientas", icon: Construction, label: "Herramientas", featureKey: null as any },
-  { to: "/configuracion", icon: Settings, label: "Configuración", featureKey: null as any },
+  { to: "/herramientas", icon: Construction, label: "Herramientas", featureKey: null },
+  { to: "/configuracion", icon: Settings, label: "Configuración", featureKey: null },
 ];
 
 const quickActions = [
@@ -257,7 +261,7 @@ function NavBtn({
   item,
   active,
 }: {
-  item: { to: string; icon: any; label: string };
+  item: Pick<NavItem, "to" | "icon" | "label">;
   active: boolean;
 }) {
   const Icon = item.icon;

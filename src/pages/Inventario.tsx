@@ -242,7 +242,7 @@ export default function Inventario() {
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
-                aria-label="CategorÃas"
+                aria-label="Categorías"
                 onClick={() => setCategoryDialogOpen(true)}
                 className="h-10 w-10 rounded-xl bg-muted text-muted-foreground flex items-center justify-center border border-border shadow-sm active:scale-95 transition-transform"
               >
@@ -262,7 +262,7 @@ export default function Inventario() {
             <div className="flex gap-2">
               <Button size="sm" variant="outline" className="rounded-[14px]" onClick={() => setCategoryDialogOpen(true)}>
                 <Palette className="w-4 h-4 mr-1" />
-                CategorÃas
+                Categorías
               </Button>
               <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary-hover rounded-[14px]" onClick={handleNewProduct}>
                 <Plus className="w-4 h-4 mr-1" />
@@ -298,7 +298,7 @@ export default function Inventario() {
               <button
                 type="button"
                 onClick={() => setViewMode("grid")}
-                aria-label="CuadrÃcula"
+                aria-label="Cuadrícula"
                 className={cn(
                   "h-9 w-9 rounded-lg flex items-center justify-center transition-colors",
                   viewMode === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground"

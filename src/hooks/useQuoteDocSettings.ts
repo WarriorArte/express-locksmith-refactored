@@ -281,7 +281,11 @@ export function useQuoteDocSettings() {
     },
     onSuccess: (saved) => {
       queryClient.setQueryData(["quote-doc-settings", wid], { exists: true, settings: saved });
-      try { localStorage.removeItem(key(wid)); } catch {}
+      try {
+        localStorage.removeItem(key(wid));
+      } catch (error) {
+        console.warn("No se pudo limpiar la copia local de cotización", error);
+      }
       toast({
         title: "Cotización guardada",
         description: "Los cambios del documento se guardaron en la base de datos",

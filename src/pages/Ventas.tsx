@@ -11,12 +11,11 @@ import {
   TrendingUp,
   DollarSign,
   Loader2,
-  Trash2,
+  Printer,
 } from "lucide-react";
 import { SaleFormDialog } from "@/components/sales/SaleFormDialog";
 import { DetailViewDialog } from "@/components/shared/DetailViewDialog";
 import { TicketDialog, type TicketData } from "@/components/shared/TicketDialog";
-import { Printer } from "lucide-react";
 import { UnifiedSearchInput } from "@/components/shared/UnifiedSearchInput";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +33,6 @@ import { cn } from "@/lib/utils";
 import { useSales, useDeleteSale, paymentMethodLabels, type Sale, type PaymentMethod } from "@/hooks/useSales";
 import { useAuth } from "@/hooks/useAuth";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
-import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, isToday, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -56,7 +54,6 @@ export default function Ventas() {
   const [ticketData, setTicketData] = useState<TicketData | null>(null);
   
   const { isAdmin } = useAuth();
-  const { toast } = useToast();
   const { data: sales, isLoading } = useSales();
   const { data: settings } = useBusinessSettings();
   const deleteSale = useDeleteSale();
@@ -152,28 +149,6 @@ export default function Ventas() {
     setViewingSale(sale);
     setDetailDialogOpen(true);
   };
-
-
-
-  const getPrintData = (sale: Sale) => ({
-    type: "sale" as const,
-    number: sale.sale_number,
-    date: sale.created_at,
-    customer_name: sale.customer_name || sale.customer?.name,
-    customer_phone: sale.customer?.phone,
-    items: sale.sale_items?.map(item => ({
-      id: item.id,
-      product_name: item.product_name,
-      quantity: item.quantity,
-      unit_price: item.unit_price,
-      subtotal: item.subtotal,
-    })) || [],
-    subtotal: sale.subtotal,
-    discount: sale.discount,
-    total: sale.total,
-    notes: sale.notes,
-    payment_method: sale.payment_method,
-  });
 
   const getDetailData = (sale: Sale) => ({
     type: "sale" as const,

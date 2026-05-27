@@ -14,13 +14,20 @@ export interface UserWithRole extends Profile {
   is_active?: boolean;
 }
 
-function normalizeUserWithRole(raw: any): UserWithRole {
+type RawUserWithRole = ProfileRow & {
+  role?: string | null;
+  workshop_role?: string | null;
+  workshop_id?: string | null;
+  is_active?: boolean | number | null;
+};
+
+function normalizeUserWithRole(raw: RawUserWithRole): UserWithRole {
   return {
     ...raw,
     role: raw.role || raw.workshop_role || "employee",
     workshop_id: raw.workshop_id,
     is_active: typeof raw.is_active === "boolean" ? raw.is_active : !!raw.is_active,
-  } as UserWithRole;
+  };
 }
 
 // Fetches users for the current workshop only
@@ -33,7 +40,7 @@ export function useProfiles() {
     queryFn: async () => {
       if (!workshopId) return [];
 
-      const data = await phpApiRequest<any[]>(`/profiles.php?workshop_id=${encodeURIComponent(workshopId)}`, {
+      const data = await phpApiRequest<RawUserWithRole[]>(`/profiles.php?workshop_id=${encodeURIComponent(workshopId)}`, {
         method: "GET",
       });
 

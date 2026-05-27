@@ -18,6 +18,17 @@ import { useToast } from "@/hooks/use-toast";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import { phpApiRequest } from "@/lib/phpApi";
 
+type BackupTableData = unknown[] | Record<string, unknown> | null;
+type BackupFile = {
+  timestamp: string;
+  version: string;
+  workshop_id?: string | null;
+  tables: Record<string, BackupTableData>;
+};
+
+const getErrorMessage = (error: unknown, fallback: string) =>
+  error instanceof Error ? error.message : fallback;
+
 interface ResetLog {
   message: string;
   type: "info" | "success" | "error";
@@ -102,7 +113,7 @@ export function BackupManager() {
     try {
       const workshopQuery = getWorkshopQuery();
 
-      const backup: Record<string, any> = {
+      const backup: BackupFile = {
         timestamp: new Date().toISOString(),
         version: "php-hosting-1.0",
         workshop_id: currentWorkshop?.id,
@@ -110,7 +121,7 @@ export function BackupManager() {
       };
 
       for (const item of exportEndpoints) {
-        const data = await phpApiRequest<any>(`${item.endpoint}?${workshopQuery}`, {
+        const data = await phpApiRequest<BackupTableData>(`${item.endpoint}?${workshopQuery}`, {
           method: "GET",
         });
         backup.tables[item.key] = data ?? [];
@@ -130,10 +141,10 @@ export function BackupManager() {
         title: "Backup creado",
         description: "La copia de seguridad se descargó correctamente",
       });
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Error al crear backup",
-        description: error.message || "No se pudo crear el backup",
+        description: getErrorMessage(error, "No se pudo crear el backup"),
         variant: "destructive",
       });
     }
@@ -168,10 +179,10 @@ export function BackupManager() {
       });
 
       window.location.reload();
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Error al restaurar backup",
-        description: error.message || "No se pudo restaurar el backup",
+        description: getErrorMessage(error, "No se pudo restaurar el backup"),
         variant: "destructive",
       });
     }
@@ -220,8 +231,8 @@ export function BackupManager() {
           }
 
           addLog(`✓ ${resource.label}: ${deletedCount} registros eliminados`, "success");
-        } catch (error: any) {
-          addLog(`⚠️ Error en ${resource.label}: ${error.message || "desconocido"}`, "error");
+        } catch (error) {
+          addLog(`⚠️ Error en ${resource.label}: ${getErrorMessage(error, "desconocido")}`, "error");
         }
       }
 
@@ -255,11 +266,11 @@ export function BackupManager() {
         title: "Sistema restaurado",
         description: `Los datos principales del taller han sido eliminados. ${totalDeleted} archivos multimedia eliminados.`,
       });
-    } catch (error: any) {
-      addLog(`❌ Error crítico: ${error.message}`, "error");
+    } catch (error) {
+      addLog(`Error cr�tico: ${getErrorMessage(error, "Error desconocido")}`, "error");
       toast({
         title: "Error al restaurar sistema",
-        description: error.message,
+        description: getErrorMessage(error, "Error desconocido"),
         variant: "destructive",
       });
     }

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import "./classic.css";
 import type { LayoutData, QuoteTemplateDefinition, QuoteTemplateThumbProps } from "../types";
 import { fmtDate, fmtMoney } from "../shared";

@@ -43,7 +43,7 @@ export function useUpdateAppAdminSettings() {
     mutationFn: async (settings: {
       storage_endpoint?: string | null;
     }) => {
-      const updateData: Record<string, any> = {};
+      const updateData: Partial<Pick<AppAdminSettings, "storage_endpoint">> = {};
 
       if (settings.storage_endpoint !== undefined) {
         updateData.storage_endpoint = settings.storage_endpoint;

@@ -121,7 +121,7 @@ const hasDialogDescription = (node: React.ReactNode): boolean => {
     return false;
   }
 
-  const displayName = (node.type as any)?.displayName;
+  const displayName = (node.type as { displayName?: string })?.displayName;
   if (displayName === DialogPrimitive.Description.displayName || displayName === "DialogDescription") {
     return true;
   }

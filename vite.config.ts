@@ -79,9 +79,6 @@ export default defineConfig(({ mode }) => ({
       }
     })
   ].filter(Boolean),
-  optimizeDeps: {
-    include: ["@react-pdf/renderer"],
-  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

@@ -1,6 +1,10 @@
 (() => {
-  const g = globalThis as any;
-  const cryptoObj = g.crypto as any;
+  type CryptoWithMutableRandomUUID = Crypto & {
+    randomUUID?: () => `${string}-${string}-${string}-${string}-${string}`;
+  };
+
+  const g = globalThis as typeof globalThis & { crypto?: CryptoWithMutableRandomUUID };
+  const cryptoObj = g.crypto;
 
   if (typeof cryptoObj?.randomUUID === "function") {
     return;

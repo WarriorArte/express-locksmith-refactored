@@ -24,10 +24,10 @@ import { Loader2, UserPlus, Shield, User, Package, FileText } from "lucide-react
 import { CustomerSelect } from "@/components/shared/CustomerSelect";
 import { ServiceProductsEditor, type ProductEditorItem } from "@/components/shared/ServiceProductsEditor";
 import { CustomerFormDialog } from "@/components/customers/CustomerFormDialog";
-import { useCreateSale, generateSaleNumber, paymentMethodLabels, type PaymentMethod } from "@/hooks/useSales";
+import { useCreateSale, generateSaleNumber, paymentMethodLabels, type PaymentMethod, type Sale, type SaleItem } from "@/hooks/useSales";
 import { useBatchInventoryUpdate } from "@/hooks/useInventoryMovements";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
-import { useWarrantyCategorySettings, useCreateWarranty, generateWarrantyCode, calculateWarrantyEndDate } from "@/hooks/useWarranties";
+import { useWarrantyCategorySettings, useCreateWarranty, generateWarrantyCode, calculateWarrantyEndDate, type Warranty } from "@/hooks/useWarranties";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import type { Customer } from "@/hooks/useCustomers";
 import type { Product } from "@/hooks/useProducts";
@@ -41,6 +41,17 @@ interface SaleFormDialogProps {
 
 const paymentMethods: PaymentMethod[] = ["cash", "card", "transfer", "credit"];
 type SaleFormTab = "productos" | "cliente" | "resumen";
+type SalePreview = Sale & {
+  items: Array<Pick<SaleItem, "id" | "product_name" | "quantity" | "unit_price" | "subtotal">>;
+};
+type SaleItemDraft = {
+  product_id: string | null;
+  product_name: string;
+  category_id: string | null;
+  quantity: number;
+  unit_price: number;
+  subtotal: number;
+};
 
 export function SaleFormDialog({ open, onOpenChange, initialProduct }: SaleFormDialogProps) {
   const createSale = useCreateSale();
@@ -58,8 +69,8 @@ export function SaleFormDialog({ open, onOpenChange, initialProduct }: SaleFormD
   const [customerFormOpen, setCustomerFormOpen] = useState(false);
   const [printPreviewOpen, setPrintPreviewOpen] = useState(false);
   const [warrantyPrintOpen, setWarrantyPrintOpen] = useState(false);
-  const [completedSale, setCompletedSale] = useState<any>(null);
-  const [createdWarranty, setCreatedWarranty] = useState<any>(null);
+  const [completedSale, setCompletedSale] = useState<SalePreview | null>(null);
+  const [createdWarranty, setCreatedWarranty] = useState<Warranty | null>(null);
 
   const [form, setForm] = useState({
     sale_number: "",
@@ -200,7 +211,7 @@ export function SaleFormDialog({ open, onOpenChange, initialProduct }: SaleFormD
     const newSale = await createSale.mutateAsync(saleData);
     
     const itemsWithProducts: { product_id: string | null; quantity: number }[] = [];
-    const saleItems: any[] = [];
+    const saleItems: SaleItemDraft[] = [];
 
     for (const item of validItems) {
       saleItems.push({

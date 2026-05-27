@@ -9,7 +9,6 @@ import {
   User,
   MoreVertical,
   Eye,
-  Filter,
   Loader2,
   XCircle,
   CheckCircle,
@@ -35,12 +34,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/responsive-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -74,8 +67,6 @@ export default function Garantias() {
   const [voidDialogOpen, setVoidDialogOpen] = useState(false);
   const [selectedWarranty, setSelectedWarranty] = useState<Warranty | null>(null);
   const [voidReason, setVoidReason] = useState("");
-  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
-  const [previewWarranty, setPreviewWarranty] = useState<Warranty | null>(null);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [viewingWarranty, setViewingWarranty] = useState<Warranty | null>(null);
@@ -193,13 +184,13 @@ export default function Garantias() {
           action={
             <Button className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-[14px]" onClick={() => setSettingsDialogOpen(true)}>
               <Clock className="w-4 h-4 mr-1" />
-              DuraciÃ³n
+              Duración
             </Button>
           }
           mobileAction={
             <button
               type="button"
-              aria-label="Ajustar duraciÃ³n"
+              aria-label="Ajustar duración"
               onClick={() => setSettingsDialogOpen(true)}
               className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-[0_0_16px_hsl(var(--primary)/0.40)] active:scale-95 transition-transform"
             >

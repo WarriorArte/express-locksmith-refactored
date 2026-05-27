@@ -183,29 +183,6 @@ export default function Cotizaciones() {
     await duplicateQuote.mutateAsync(quote);
   };
 
-
-
-  const getPrintData = (quote: Quote) => ({
-    type: "quote" as const,
-    number: quote.quote_number,
-    date: quote.created_at,
-    customer_name: quote.customer_name || quote.customer?.name,
-    customer_phone: quote.customer_phone || quote.customer?.phone,
-    items: quote.quote_items?.map(item => ({
-      id: item.id,
-      product_name: item.description,
-      quantity: item.quantity,
-      unit_price: item.unit_price,
-      subtotal: item.subtotal,
-    })) || [],
-    subtotal: quote.subtotal,
-    discount: quote.discount,
-    total: quote.total,
-    notes: quote.notes,
-    valid_until: quote.valid_until,
-    policies: quote.policies,
-  });
-
   const getDetailData = (quote: Quote) => ({
     type: "quote" as const,
     number: quote.quote_number,
@@ -256,7 +233,7 @@ export default function Cotizaciones() {
           mobileAction={
             <button
               type="button"
-              aria-label="Nueva cotizaciÃ³n"
+              aria-label="Nueva cotización"
               onClick={() => { setEditingQuote(null); setFormDialogOpen(true); }}
               className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-[0_0_16px_hsl(var(--primary)/0.40)] active:scale-95 transition-transform"
             >
@@ -490,14 +467,22 @@ export default function Cotizaciones() {
         
         overflowActions={[
           { icon: Printer, label: "Imprimir / PDF", onClick: () => { if (viewingQuote) { setDetailDialogOpen(false); setPrintingQuote(viewingQuote); setPrintDialogOpen(true); } } },
-          { icon: Copy, label: "Duplicar", onClick: () => { viewingQuote && handleDuplicate(viewingQuote); } },
+          { icon: Copy, label: "Duplicar", onClick: () => {
+            if (viewingQuote) handleDuplicate(viewingQuote);
+          } },
           ...(viewingQuote?.status === "pending" ? [
-            { icon: CheckCircle, label: "Marcar aceptada", onClick: () => { viewingQuote && handleStatusChange(viewingQuote, "accepted"); }, className: "text-foreground dark:text-success", separator: true },
-            { icon: XCircle, label: "Marcar rechazada", onClick: () => { viewingQuote && handleStatusChange(viewingQuote, "rejected"); }, className: "text-destructive" },
+            { icon: CheckCircle, label: "Marcar aceptada", onClick: () => {
+              if (viewingQuote) handleStatusChange(viewingQuote, "accepted");
+            }, className: "text-foreground dark:text-success", separator: true },
+            { icon: XCircle, label: "Marcar rechazada", onClick: () => {
+              if (viewingQuote) handleStatusChange(viewingQuote, "rejected");
+            }, className: "text-destructive" },
             { icon: ArrowRight, label: "Convertir a venta", onClick: () => { setDetailDialogOpen(false); setConvertingQuote(viewingQuote); setConvertDialogOpen(true); }, className: "text-foreground dark:text-primary" },
           ] : []),
         ]}
-        onDelete={isAdmin ? () => { viewingQuote && handleDelete(viewingQuote); } : undefined}
+        onDelete={isAdmin ? () => {
+          if (viewingQuote) handleDelete(viewingQuote);
+        } : undefined}
       />
 
       <QuotePrintDialog

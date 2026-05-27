@@ -253,8 +253,12 @@ export function StorageTab() {
                   title: "Limpieza completada",
                   description: `${result.deleted} archivo(s) eliminado(s), ${result.kept} en uso`,
                 });
-              } catch (err: any) {
-                toast({ title: "Error", description: err.message, variant: "destructive" });
+              } catch (err) {
+                toast({
+                  title: "Error",
+                  description: err instanceof Error ? err.message : "No se pudo completar la limpieza",
+                  variant: "destructive",
+                });
               } finally {
                 setIsCleaning(false);
               }

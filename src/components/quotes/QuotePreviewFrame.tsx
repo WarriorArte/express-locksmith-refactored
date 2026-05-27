@@ -53,7 +53,7 @@ export const QuotePreviewFrame = forwardRef<HTMLDivElement, QuotePreviewFramePro
       const observer = new ResizeObserver(updateFit);
       observer.observe(frameRef.current);
       return () => observer.disconnect();
-    }, [fillHeight, isMobile]);
+    }, [fillHeight, isMobile, pageHeight, pageWidth]);
 
     const effectiveZoom = isMobile ? Math.min(zoom, 0.36) : fitZoom ?? zoom;
     const previewWidth = isMobile ? 300 : Math.ceil(8.5 * 96 * effectiveZoom);

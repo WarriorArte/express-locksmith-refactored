@@ -13,6 +13,18 @@ export type Quote = QuoteRow & {
 
 export type QuoteItem = QuoteItemRow;
 
+type RawQuoteItem = QuoteItemRow & {
+  product?: Product | null;
+  product_name?: string | null;
+  sale_price_min?: number | null;
+  sale_price_max?: number | null;
+};
+
+type RawQuote = QuoteRow & {
+  customer?: Customer | null;
+  quote_items?: RawQuoteItem[] | null;
+};
+
 type QuoteMutationData = {
   quote_number?: string;
   customer_id?: string | null;
@@ -40,15 +52,15 @@ type QuoteMutationData = {
   }>;
 };
 
-function normalizeQuote(raw: any): Quote {
+function normalizeQuote(raw: RawQuote): Quote {
   const normalizedCustomer = raw.customer ?? null;
   const normalizedItems = Array.isArray(raw.quote_items)
-    ? raw.quote_items.map((item: any) => ({
+    ? raw.quote_items.map((item) => ({
         ...item,
         product: item.product ?? (item.product_id
           ? {
               id: item.product_id,
-              name: item.product_name,
+              name: item.product_name || item.description || "",
               sale_price_min: item.sale_price_min,
               sale_price_max: item.sale_price_max,
             }
@@ -71,7 +83,7 @@ export function useQuotes() {
     queryFn: async () => {
       if (!currentWorkshop?.id) return [];
 
-      const data = await phpApiRequest<any[]>(`/quotes.php?workshop_id=${encodeURIComponent(currentWorkshop.id)}`, {
+      const data = await phpApiRequest<RawQuote[]>(`/quotes.php?workshop_id=${encodeURIComponent(currentWorkshop.id)}`, {
         method: "GET",
       });
 
@@ -91,7 +103,7 @@ export function useCreateQuote() {
     mutationFn: async (quote: QuoteMutationData & { quote_number: string }) => {
       if (!currentWorkshop?.id) throw new Error("No hay taller seleccionado");
 
-      const data = await phpApiRequest<any>("/quotes.php", {
+      const data = await phpApiRequest<RawQuote>("/quotes.php", {
         method: "POST",
         body: JSON.stringify({
           ...quote,
@@ -127,7 +139,7 @@ export function useUpdateQuote() {
 
   return useMutation({
     mutationFn: async ({ id, ...quote }: QuoteMutationData & { id: string }) => {
-      const data = await phpApiRequest<any>(`/quotes.php?id=${encodeURIComponent(id)}`, {
+      const data = await phpApiRequest<RawQuote>(`/quotes.php?id=${encodeURIComponent(id)}`, {
         method: "PUT",
         body: JSON.stringify(quote),
       });
@@ -195,7 +207,7 @@ export function useDuplicateQuote() {
       // Generate new quote number
       const newNumber = await generateQuoteNumber(currentWorkshop.id);
 
-      const data = await phpApiRequest<any>("/quotes.php", {
+      const data = await phpApiRequest<RawQuote>("/quotes.php", {
         method: "POST",
         body: JSON.stringify({
           workshop_id: currentWorkshop.id,

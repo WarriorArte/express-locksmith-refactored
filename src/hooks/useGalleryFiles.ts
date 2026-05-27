@@ -27,6 +27,15 @@ interface UseGalleryFilesResult {
   deleteFile: (file: GalleryFile) => Promise<void>;
 }
 
+type UploadsApiFile = {
+  filename: string;
+  secure_url: string;
+  size: number;
+  mimeType: string;
+  created_at: string;
+  folder?: string | null;
+};
+
 /**
  * Loads and manages files for a given upload folder via /uploads.php.
  * Extracted from ImageGalleryDialog so it can be reused elsewhere.
@@ -46,12 +55,12 @@ export function useGalleryFiles({
     try {
       const params = new URLSearchParams({ action: "list", folder });
       if (workshopCode) params.set("workshop_code", workshopCode);
-      const data = await phpApiRequest<any[]>(`/uploads.php?${params}`, { method: "GET" });
+      const data = await phpApiRequest<UploadsApiFile[]>(`/uploads.php?${params}`, { method: "GET" });
 
       if (Array.isArray(data)) {
         const now = Date.now();
         setFiles(
-          data.map((file: any) => ({
+          data.map((file) => ({
             filename: file.filename,
             url: file.secure_url,
             previewUrl: file.secure_url,

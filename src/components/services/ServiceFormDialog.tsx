@@ -200,7 +200,9 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
         }
       }
     }
-  }, [open, service, currentWorkshop?.id, templateServiceId]);
+  // Template import is intentionally triggered only when the dialog is initialized.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, service, currentWorkshop?.id, templateServiceId, tabsOrder.length]);
 
   const handleTemplateImport = (templateId: string) => {
     if (templateId === MANUAL_TEMPLATE) {
@@ -259,6 +261,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
     if (!exists) return;
 
     handleTemplateImport(templateServiceId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, isEditing, templateServiceId, selectedTemplateId, serviceTemplates]);
 
   const handleCustomerChange = (customerId: string | null, customer: Customer | null) => {

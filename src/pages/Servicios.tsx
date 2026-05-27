@@ -280,33 +280,6 @@ export default function Servicios() {
     setDetailDialogOpen(true);
   };
 
-
-
-  const getPrintData = (service: Service) => {
-    const productsSubtotal = service.service_products?.reduce((acc, p) => acc + Number(p.subtotal), 0) || 0;
-    return {
-      type: "service" as const,
-      number: service.service_number,
-      date: getServiceDisplayDate(service),
-      customer_name: service.customer?.name,
-      customer_phone: service.customer?.phone,
-      customer_address: service.address || service.customer?.address,
-      description: service.description,
-      items: service.service_products?.map(item => ({
-        id: item.id,
-        product_name: item.product_name,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        subtotal: item.subtotal,
-      })) || [],
-      subtotal: productsSubtotal + Number(service.labor_cost || 0),
-      discount: service.discount,
-      total: service.final_price || service.estimated_price,
-      notes: service.internal_notes,
-      status: statusConfig[service.status].label,
-    };
-  };
-
   const getDetailData = (service: Service) => {
     const productsSubtotal = service.service_products?.reduce((acc, p) => acc + Number(p.subtotal), 0) || 0;
     return {
@@ -550,7 +523,7 @@ export default function Servicios() {
                   {/* Imágenes */}
                   {imgs.length > 0 && (
                     <div className="flex gap-1.5 mt-3 pt-3 border-t">
-                      {imgs.slice(0, 4).map((img: any) => (
+                      {imgs.slice(0, 4).map((img) => (
                         <div key={img.id} className="w-11 h-11 rounded-xl overflow-hidden bg-muted flex-shrink-0 flex items-center justify-center">
                           {img.image_url ? (
                             <img src={resolveStorageUrl(img.image_url) ?? undefined} alt="" className="w-full h-full object-cover" />
@@ -642,10 +615,14 @@ export default function Servicios() {
           setFormDialogOpen(true);
         }}
         overflowActions={[
-          { icon: ImagePlus, label: "Agregar imágenes", onClick: () => { viewingService && setImagesService(viewingService); setImagesDialogOpen(true); } },
+          { icon: ImagePlus, label: "Agregar imágenes", onClick: () => {
+            if (viewingService) setImagesService(viewingService);
+            setImagesDialogOpen(true);
+          } },
           { icon: Printer, label: "Imprimir ticket", onClick: () => {
             if (!viewingService) return;
-            const productsSubtotal = viewingService.service_products?.reduce((acc: number, p: any) => acc + Number(p.subtotal || 0), 0) || 0;
+            const serviceProducts = viewingService.service_products ?? [];
+            const productsSubtotal = serviceProducts.reduce((acc, p) => acc + Number(p.subtotal || 0), 0);
             setTicketData({
               kind: "service",
               number: viewingService.service_number,
@@ -656,7 +633,7 @@ export default function Servicios() {
               customer_email: viewingService.customer?.email,
               description: viewingService.description,
               problem: viewingService.problem,
-              items: (viewingService.service_products || []).map((it: any) => ({
+              items: serviceProducts.map((it) => ({
                 name: it.product_name,
                 quantity: Number(it.quantity),
                 unit_price: Number(it.unit_price),
@@ -672,19 +649,29 @@ export default function Servicios() {
             setTicketOpen(true);
           } },
           ...(viewingService?.status === "pending" ? [
-            { icon: Wrench, label: "Iniciar servicio", onClick: () => { viewingService && handleStatusChange(viewingService, "in_progress"); }, className: "text-info", separator: true },
+            { icon: Wrench, label: "Iniciar servicio", onClick: () => {
+              if (viewingService) handleStatusChange(viewingService, "in_progress");
+            }, className: "text-info", separator: true },
           ] : []),
           ...(viewingService?.status === "in_progress" ? [
-            { icon: CheckCircle, label: "Marcar completado", onClick: () => { viewingService && handleStatusChange(viewingService, "completed"); }, className: "text-foreground dark:text-success", separator: true },
+            { icon: CheckCircle, label: "Marcar completado", onClick: () => {
+              if (viewingService) handleStatusChange(viewingService, "completed");
+            }, className: "text-foreground dark:text-success", separator: true },
           ] : []),
           ...(viewingService?.status === "completed" ? [
-            { icon: Truck, label: "Marcar entregado", onClick: () => { viewingService && handleStatusChange(viewingService, "delivered"); }, className: "text-foreground dark:text-primary", separator: true },
+            { icon: Truck, label: "Marcar entregado", onClick: () => {
+              if (viewingService) handleStatusChange(viewingService, "delivered");
+            }, className: "text-foreground dark:text-primary", separator: true },
           ] : []),
           ...((viewingService?.status === "pending" || viewingService?.status === "in_progress") ? [
-            { icon: XCircle, label: "Cancelar servicio", onClick: () => { viewingService && handleStatusChange(viewingService, "cancelled"); }, className: "text-warning" },
+            { icon: XCircle, label: "Cancelar servicio", onClick: () => {
+              if (viewingService) handleStatusChange(viewingService, "cancelled");
+            }, className: "text-warning" },
           ] : []),
         ]}
-        onDelete={isAdmin ? () => { viewingService && handleDelete(viewingService); } : undefined}
+        onDelete={isAdmin ? () => {
+          if (viewingService) handleDelete(viewingService);
+        } : undefined}
       />
 
 

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { forwardRef, useMemo } from "react";
 import type { BusinessSettings } from "@/hooks/useBusinessSettings";
 import type { QuoteDocSettings } from "@/hooks/useQuoteDocSettings";

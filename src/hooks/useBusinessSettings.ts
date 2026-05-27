@@ -12,11 +12,11 @@ type BusinessSettingsMutationData = Partial<Omit<BusinessSettings, "id" | "works
   id?: string;
 };
 
-function normalizeBusinessSettings(raw: any): BusinessSettings {
+function normalizeBusinessSettings(raw: BusinessSettingsRow): BusinessSettings {
   return {
     ...raw,
     auto_cut: typeof raw.auto_cut === "boolean" ? raw.auto_cut : !!raw.auto_cut,
-  } as BusinessSettings;
+  };
 }
 
 export function useBusinessSettings() {
@@ -27,7 +27,7 @@ export function useBusinessSettings() {
     queryFn: async () => {
       if (!currentWorkshop?.id) return null;
 
-      const data = await phpApiRequest<any>(`/business-settings.php?workshop_id=${encodeURIComponent(currentWorkshop.id)}`, {
+      const data = await phpApiRequest<BusinessSettingsRow>(`/business-settings.php?workshop_id=${encodeURIComponent(currentWorkshop.id)}`, {
         method: "GET",
       });
 
@@ -48,7 +48,7 @@ export function useUpdateBusinessSettings() {
 
       const { id: _id, ...payload } = settings;
 
-      const data = await phpApiRequest<any>("/business-settings.php", {
+      const data = await phpApiRequest<BusinessSettingsRow>("/business-settings.php", {
         method: "PUT",
         body: JSON.stringify({
           workshop_id: currentWorkshop.id,

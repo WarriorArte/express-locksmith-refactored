@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import "./hero.css";
 import type { LayoutData, QuoteTemplateDefinition, QuoteTemplateThumbProps } from "../types";
 import { fmtDate, ItemsTable, NotesBlock, PaymentBlock, TotalsBlock } from "../shared";

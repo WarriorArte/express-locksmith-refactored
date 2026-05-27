@@ -5,7 +5,7 @@ export interface BaseRow {
   updated_at?: string | null;
   // Permitir cualquier otra columna del backend sin forzar typings estrictos por ahora.
   // Las columnas críticas se tipan explícitamente en cada interfaz.
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface Category extends BaseRow {

@@ -87,7 +87,7 @@ export function ServiceDetailSheet({
   onCancel,
   onDelete,
 }: Props) {
-  const images = service?.service_images ?? [];
+  const images = useMemo(() => service?.service_images ?? [], [service?.service_images]);
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [imageViewerIndex, setImageViewerIndex] = useState(0);
   const [actionsOpen, setActionsOpen] = useState(false);

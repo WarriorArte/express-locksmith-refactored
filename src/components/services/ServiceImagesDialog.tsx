@@ -87,10 +87,10 @@ export function ServiceImagesDialog({ open, onOpenChange, service: initialServic
       
       setNewImageUrl("");
       setNewImageDescription("");
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Error",
-        description: error.message,
+        description: error instanceof Error ? error.message : "No se pudo agregar la imagen",
         variant: "destructive",
       });
     } finally {
@@ -130,10 +130,10 @@ export function ServiceImagesDialog({ open, onOpenChange, service: initialServic
         
         setNewImageUrl("");
         setNewImageDescription("");
-      } catch (error: any) {
+      } catch (error) {
         toast({
           title: "Error",
-          description: error.message,
+          description: error instanceof Error ? error.message : "No se pudo subir la imagen",
           variant: "destructive",
         });
       } finally {
@@ -150,10 +150,10 @@ export function ServiceImagesDialog({ open, onOpenChange, service: initialServic
         title: "Imagen eliminada",
         description: "La imagen ha sido eliminada del servicio",
       });
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Error",
-        description: error.message,
+        description: error instanceof Error ? error.message : "No se pudo eliminar la imagen",
         variant: "destructive",
       });
     }

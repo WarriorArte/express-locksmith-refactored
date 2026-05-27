@@ -69,6 +69,7 @@ interface ProductFormDialogProps {
 
 type InventoryItemType = "product" | "service";
 type ProductFormTab = "general" | "productos" | "precios" | "inventario" | "notas";
+type ProductFormWatchValues = Partial<Record<KeysOfUnion<ProductFormValues>, unknown>>;
 
 export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDialogProps) {
   const { data: categories } = useCategories();
@@ -113,7 +114,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
       }),
       instructions: "",
       notes: "",
-    } as any,
+    } as ProductFormValues,
   });
 
   useEffect(() => {
@@ -141,7 +142,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
         image_url: "",
         instructions: "",
         notes: "",
-      } as any);
+      } as ProductFormValues);
       return;
     }
 
@@ -172,7 +173,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
         stock_store: "",
         stock_warehouse: "",
         min_stock: "",
-      } as any);
+      } as ProductFormValues);
     } else {
       form.reset({
         ...defaultValues,
@@ -181,7 +182,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
         labor_cost: "",
         discount: "",
         service_products: [],
-      } as any);
+      } as ProductFormValues);
     }
   }, [inventoryItemType, form, isEditing]);
 
@@ -190,7 +191,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
     if (!product) return;
 
     const incomingItemType = (product?.item_type === "service" ? "service" : "product") as InventoryItemType;
-    const baseValues: any = {
+    const baseValues = {
       item_type: incomingItemType,
       name: product.name,
       description: product.description || "",
@@ -211,7 +212,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
         stock_store: product.stock_store ?? "",
         stock_warehouse: product.stock_warehouse ?? "",
         min_stock: product.min_stock ?? "",
-      } as any);
+      } as ProductFormValues);
     } else {
       form.reset({
         ...baseValues,
@@ -220,7 +221,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
         labor_cost: product.labor_cost ?? "",
         discount: product.discount ?? "",
         service_products: product.service_products || [],
-      } as any);
+      } as ProductFormValues);
       if (product.service_products) {
         setServiceProductsList(
           product.service_products.map((sp) => ({
@@ -307,9 +308,9 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
       };
 
       if (isEditing && product) {
-        await updateProduct.mutateAsync({ id: product.id, ...serviceData } as any);
+        await updateProduct.mutateAsync({ id: product.id, ...serviceData });
       } else {
-        await createProduct.mutateAsync(serviceData as any);
+        await createProduct.mutateAsync(serviceData);
       }
     }
 
@@ -320,7 +321,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
   const isInventoryItemTypeSelected = inventoryItemType === "product" || inventoryItemType === "service";
   const isServiceMode = inventoryItemType === "service";
   const invalidFieldClass = "border-destructive placeholder:text-destructive focus-visible:border-destructive";
-  const values = form.watch() as any;
+  const values = form.watch() as ProductFormWatchValues;
 
 
   const tabValidationFields: Record<string, KeysOfUnion<ProductFormValues>[]> = isServiceMode
@@ -391,7 +392,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
     }
 
     const fields = tabValidationFields[activeTab] || [];
-    const valid = await form.trigger(fields as any);
+    const valid = await form.trigger(fields as Parameters<typeof form.trigger>[0]);
     if (!valid || !activeTabIsValid) {
       setAttemptedTabs((current) => new Set([...current, activeTab]));
       return;
@@ -437,7 +438,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
             labor_cost: "",
             discount: "",
             service_products: [],
-          } as any,
+          } as ProductFormValues,
     );
     setActiveTab("general");
     setMaxUnlockedTabIndex(0);

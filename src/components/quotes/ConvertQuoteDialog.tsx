@@ -145,7 +145,7 @@ export function ConvertQuoteDialog({ open, onOpenChange, quote }: ConvertQuoteDi
       });
       
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Error",
         description: error.message || "Error al convertir la cotización",

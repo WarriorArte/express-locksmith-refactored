@@ -2,11 +2,33 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { phpApiRequest } from "@/lib/phpApi";
 import { useToast } from "@/hooks/use-toast";
 import { useWorkshop } from "@/hooks/useWorkshop";
-import type { Product as ProductRow, Category, Tag } from "@/types/database";
+import type { Product as ProductRow, Category, ServiceProduct, Tag } from "@/types/database";
+
+type ProductTag = {
+  tag_id: string;
+  tags: Tag;
+};
 
 export type Product = ProductRow & {
   category?: Category | null;
-  product_tags?: { tag_id: string; tags: Tag }[];
+  product_tags?: ProductTag[];
+};
+
+type RawProductTag = {
+  tag_id?: string;
+  id?: string;
+  tag_name?: string | null;
+  name?: string | null;
+  tag_color?: string | null;
+  color?: string | null;
+  tags?: Tag | null;
+};
+
+type RawProduct = ProductRow & {
+  category?: Category | null;
+  category_name?: string | null;
+  category_color?: string | null;
+  product_tags?: RawProductTag[] | null;
 };
 
 type ProductMutationData = {
@@ -24,22 +46,34 @@ type ProductMutationData = {
   purchase_price_local?: number;
   sale_price_min?: number;
   sale_price_max?: number;
+  service_type?: ProductRow["service_type"];
+  labor_cost?: number;
+  discount?: number;
+  service_products?: ServiceProduct[];
   is_active?: boolean | number;
   tag_ids?: string[];
 };
 
-function normalizeProduct(raw: any): Product {
+function normalizeProduct(raw: RawProduct): Product {
   const normalizedCategory = raw.category
     ? raw.category
     : raw.category_id && (raw.category_name || raw.category_color)
-      ? { id: raw.category_id, name: raw.category_name, color: raw.category_color }
+      ? { id: raw.category_id, name: raw.category_name || "Sin categoría", color: raw.category_color }
       : null;
 
   const normalizedTags = Array.isArray(raw.product_tags)
-    ? raw.product_tags.map((t: any) => ({
-        tag_id: t.tag_id,
-        tags: { id: t.tag_id || t.id, name: t.tag_name || t.name || t.tags?.name, color: t.tag_color || t.color || t.tags?.color },
-      }))
+    ? raw.product_tags.map((tag) => {
+        const tagId = tag.tag_id || tag.id || "";
+
+        return {
+          tag_id: tagId,
+          tags: {
+            id: tagId,
+            name: tag.tag_name || tag.name || tag.tags?.name || "",
+            color: tag.tag_color || tag.color || tag.tags?.color,
+          },
+        };
+      })
     : [];
 
   return { ...raw, category: normalizedCategory, product_tags: normalizedTags } as Product;
@@ -52,7 +86,7 @@ export function useProducts() {
     queryKey: ["products", currentWorkshop?.id],
     queryFn: async () => {
       if (!currentWorkshop?.id) return [];
-      const data = await phpApiRequest<any[]>(`/products?workshop_id=${encodeURIComponent(currentWorkshop.id)}`);
+      const data = await phpApiRequest<RawProduct[]>(`/products?workshop_id=${encodeURIComponent(currentWorkshop.id)}`);
       return (data || []).map(normalizeProduct);
     },
     enabled: !!currentWorkshop?.id,
@@ -67,7 +101,7 @@ export function useCreateProduct() {
   return useMutation({
     mutationFn: async (product: ProductMutationData & { name: string }) => {
       if (!currentWorkshop?.id) throw new Error("No hay taller seleccionado");
-      const data = await phpApiRequest<any>("/products", {
+      const data = await phpApiRequest<RawProduct>("/products", {
         method: "POST",
         body: JSON.stringify({ ...product, workshop_id: currentWorkshop.id }),
       });
@@ -120,7 +154,7 @@ export function useUpdateProduct() {
 
   return useMutation({
     mutationFn: async ({ id, ...product }: ProductMutationData & { id: string }) => {
-      const data = await phpApiRequest<any>(`/products/${encodeURIComponent(id)}`, {
+      const data = await phpApiRequest<RawProduct>(`/products/${encodeURIComponent(id)}`, {
         method: "PUT",
         body: JSON.stringify(product),
       });

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import type { BusinessSettings } from "@/hooks/useBusinessSettings";
 import type { QuoteDocSettings } from "@/hooks/useQuoteDocSettings";
 import type { Quote } from "@/hooks/useQuotes";

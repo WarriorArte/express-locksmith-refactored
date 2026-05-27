@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+﻿import { useState, useEffect, type Dispatch, type SetStateAction } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { m as motion } from "framer-motion";
 import { 
@@ -18,6 +18,7 @@ import {
   Moon,
   Bell,
   LogOut,
+  type LucideIcon,
 } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,20 @@ import { useQuoteDocSettings } from "@/hooks/useQuoteDocSettings";
 
 import { COUNTRIES, getCountryByCode, inferCountryCode } from "@/lib/countries";
 
+type BusinessFormState = {
+  name: string;
+  phone: string;
+  address: string;
+  email: string;
+  website: string;
+  facebook: string;
+  instagram: string;
+  logo_url: string;
+  currency_symbol: string;
+  phone_country_code: string;
+  country_code: string;
+};
+
 export default function Configuracion() {
   const [activeTab, setActiveTab] = useState<string>(
     typeof window !== "undefined" && window.innerWidth >= 1024 ? "perfil" : "",
@@ -74,7 +89,7 @@ export default function Configuracion() {
 
   // Form state
   const [pendingLogoFile, setPendingLogoFile] = useState<File | null>(null);
-  const [businessForm, setBusinessForm] = useState({
+  const [businessForm, setBusinessForm] = useState<BusinessFormState>({
     name: "",
     phone: "",
     address: "",
@@ -91,7 +106,7 @@ export default function Configuracion() {
 
   useEffect(() => {
     if (settings) {
-      const inferred = (settings as any).country_code
+      const inferred = settings.country_code
         || inferCountryCode(settings.phone_country_code, settings.currency_symbol)
         || "MX";
       const info = getCountryByCode(inferred);
@@ -549,6 +564,19 @@ export default function Configuracion() {
   );
 }
 
+type MobileConfigTabsProps = {
+  isAdmin: boolean;
+  theme: string;
+  setTheme: (theme: "light" | "dark" | "system") => void;
+  businessForm: BusinessFormState;
+  setBusinessForm: Dispatch<SetStateAction<BusinessFormState>>;
+  handleSaveSettings: () => Promise<void>;
+  updatePending: boolean;
+  workshopCode?: string;
+  onPendingLogoFile: (file: File | null) => void;
+  signOut: () => Promise<void> | void;
+};
+
 /* MOBILE: v2-style tabs */
 function MobileConfigTabs({
   isAdmin,
@@ -561,7 +589,7 @@ function MobileConfigTabs({
   workshopCode,
   onPendingLogoFile,
   signOut,
-}: any) {
+}: MobileConfigTabsProps) {
   const [tab, setTab] = useState<"negocio" | "cotizacion" | "usuarios" | "sistema">("negocio");
   const tabs = [
     { id: "negocio" as const, icon: Building2, label: "Negocio" },
@@ -601,7 +629,7 @@ function MobileConfigTabs({
             <Label>Logo</Label>
             <ImageUploader
               value={businessForm.logo_url}
-              onChange={(url: string) => setBusinessForm((p: any) => ({ ...p, logo_url: url }))}
+              onChange={(url: string) => setBusinessForm((p) => ({ ...p, logo_url: url }))}
               onPendingFile={(file: File | null) => onPendingLogoFile?.(file)}
               folder="logos"
               workshopCode={workshopCode}
@@ -610,12 +638,12 @@ function MobileConfigTabs({
           </div>
           <div>
             <Label>Nombre del negocio</Label>
-            <Input value={businessForm.name} onChange={(e) => setBusinessForm((p: any) => ({ ...p, name: e.target.value }))} />
+            <Input value={businessForm.name} onChange={(e) => setBusinessForm((p) => ({ ...p, name: e.target.value }))} />
           </div>
           <div className="grid grid-cols-2 gap-2.5">
             <div>
               <Label>Teléfono</Label>
-              <Input value={businessForm.phone} onChange={(e) => setBusinessForm((p: any) => ({ ...p, phone: e.target.value }))} />
+              <Input value={businessForm.phone} onChange={(e) => setBusinessForm((p) => ({ ...p, phone: e.target.value }))} />
             </div>
             <div>
               <Label>País</Label>
@@ -623,7 +651,7 @@ function MobileConfigTabs({
                 value={businessForm.country_code}
                 onValueChange={(value) => {
                   const info = getCountryByCode(value);
-                  setBusinessForm((p: any) => ({
+                  setBusinessForm((p) => ({
                     ...p,
                     country_code: value,
                     currency_symbol: info?.currencySymbol ?? p.currency_symbol,
@@ -651,11 +679,11 @@ function MobileConfigTabs({
           </div>
           <div>
             <Label>Dirección</Label>
-            <Input value={businessForm.address} onChange={(e) => setBusinessForm((p: any) => ({ ...p, address: e.target.value }))} />
+            <Input value={businessForm.address} onChange={(e) => setBusinessForm((p) => ({ ...p, address: e.target.value }))} />
           </div>
           <div>
             <Label>Correo</Label>
-            <Input type="email" value={businessForm.email} onChange={(e) => setBusinessForm((p: any) => ({ ...p, email: e.target.value }))} />
+            <Input type="email" value={businessForm.email} onChange={(e) => setBusinessForm((p) => ({ ...p, email: e.target.value }))} />
           </div>
           {workshopCode && (
             <div>
@@ -733,7 +761,19 @@ function MobileConfigTabs({
   );
 }
 
-function SystemRow({ icon: Icon, label, sub, onClick, divider }: any) {
+function SystemRow({
+  icon: Icon,
+  label,
+  sub,
+  onClick,
+  divider,
+}: {
+  icon: LucideIcon;
+  label: string;
+  sub?: string;
+  onClick?: () => void;
+  divider?: boolean;
+}) {
   return (
     <button
       type="button"

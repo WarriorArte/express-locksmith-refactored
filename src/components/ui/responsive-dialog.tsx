@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * ResponsiveDialog
  *
@@ -190,8 +191,9 @@ const Dialog = ({
 
   React.useEffect(() => {
     if (!isMobile) return;
+    const scopeId = scopeIdRef.current;
     return () => {
-      clearScopeEntries(scopeIdRef.current);
+      clearScopeEntries(scopeId);
       if (modalEntryIdRef.current) {
         removeBackEntry(modalEntryIdRef.current, { consumeHistory: false });
         modalEntryIdRef.current = null;
@@ -248,7 +250,7 @@ const hasDialogDescription = (node: React.ReactNode): boolean => {
     return false;
   }
 
-  const displayName = (node.type as any)?.displayName;
+  const displayName = (node.type as { displayName?: string })?.displayName;
   if (displayName === DialogPrimitive.Description.displayName || displayName === "DialogDescription") {
     return true;
   }
@@ -612,8 +614,8 @@ const DialogContent = React.forwardRef<
     const header: React.ReactNode[] = [];
     const footer: React.ReactNode[] = [];
 
-    const isNamed = (el: any, name: string) =>
-      React.isValidElement(el) && (el.type as any)?.displayName === name;
+    const isNamed = (el: React.ReactNode, name: string) =>
+      React.isValidElement(el) && (el.type as { displayName?: string })?.displayName === name;
 
     const stripAndCollect = (node: React.ReactNode): React.ReactNode => {
       if (Array.isArray(node)) {
@@ -633,10 +635,10 @@ const DialogContent = React.forwardRef<
         footer.push(node);
         return null;
       }
-      const props: any = node.props;
+      const props = node.props as { children?: React.ReactNode };
       if (props && props.children !== undefined) {
         const newChildren = stripAndCollect(props.children);
-        return React.cloneElement(node, props, newChildren);
+        return React.cloneElement(node, undefined, newChildren);
       }
       return node;
     };

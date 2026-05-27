@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
 import { clearPhpAuthToken, getPhpAuthToken, PhpApiError, phpApiRequest, setPhpAuthToken } from "@/lib/phpApi";
 

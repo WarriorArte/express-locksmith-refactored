@@ -52,7 +52,15 @@ export function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
   // Consistency diagnosis
   const [isConsistencyOpen, setIsConsistencyOpen] = useState(false);
   const [consistencyEmail, setConsistencyEmail] = useState("");
-  const [consistencyResult, setConsistencyResult] = useState<any>(null);
+  const [consistencyResult, setConsistencyResult] = useState<{
+    matches: boolean | null;
+    profile_user_id?: string | null;
+    auth_user?: {
+      id?: string | null;
+      updated_at?: string | null;
+      last_sign_in_at?: string | null;
+    } | null;
+  } | null>(null);
   const [isCheckingConsistency, setIsCheckingConsistency] = useState(false);
   const [isRepairingAccount, setIsRepairingAccount] = useState(false);
 

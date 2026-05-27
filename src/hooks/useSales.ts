@@ -9,10 +9,22 @@ export type Sale = SaleRow & {
   sale_items?: (SaleItemRow & {
     product?: Product | null;
   })[];
+  payment_method?: PaymentMethod;
 };
 
 export type SaleItem = SaleItemRow;
 export type PaymentMethod = "cash" | "card" | "transfer" | "credit";
+
+type RawSaleItem = SaleItemRow & {
+  p_name?: string | null;
+  product?: Product | null;
+};
+
+type RawSale = SaleRow & {
+  customer?: Customer | null;
+  sale_items?: RawSaleItem[] | null;
+  payment_method?: PaymentMethod;
+};
 
 type SaleMutationData = {
   sale_number?: string;
@@ -33,19 +45,23 @@ type SaleMutationData = {
   }>;
 };
 
-function normalizeSale(raw: any): Sale {
+function normalizeSale(raw: RawSale): Sale {
   const normalizedCustomer = raw.customer ?? null;
   const normalizedItems = Array.isArray(raw.sale_items)
-    ? raw.sale_items.map((item: any) => ({
-        ...item,
-        product_name: item.product_name || item.p_name || item.product?.name || "",
-        product: item.product ?? (item.product_id
-          ? {
-              id: item.product_id,
-              name: item.product_name || item.p_name,
-            }
-          : null),
-      }))
+    ? raw.sale_items.map((item) => {
+        const productName = item.product_name || item.p_name || item.product?.name || "";
+
+        return {
+          ...item,
+          product_name: productName,
+          product: item.product ?? (item.product_id
+            ? {
+                id: item.product_id,
+                name: productName,
+              }
+            : null),
+        };
+      })
     : [];
 
   return {
@@ -63,7 +79,7 @@ export function useSales() {
     queryFn: async () => {
       if (!currentWorkshop?.id) return [];
 
-      const data = await phpApiRequest<any[]>(`/sales.php?workshop_id=${encodeURIComponent(currentWorkshop.id)}`, {
+      const data = await phpApiRequest<RawSale[]>(`/sales.php?workshop_id=${encodeURIComponent(currentWorkshop.id)}`, {
         method: "GET",
       });
 
@@ -83,7 +99,7 @@ export function useCreateSale() {
     mutationFn: async (sale: SaleMutationData & { sale_number: string }) => {
       if (!currentWorkshop?.id) throw new Error("No hay taller seleccionado");
 
-      const data = await phpApiRequest<any>("/sales.php", {
+      const data = await phpApiRequest<RawSale>("/sales.php", {
         method: "POST",
         body: JSON.stringify({
           ...sale,

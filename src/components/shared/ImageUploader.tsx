@@ -53,7 +53,7 @@ export function ImageUploader({
     setUrlInput(value || '');
   }, [value]);
 
-  const handleFileSelect = async (file: File) => {
+  const handleFileSelect = useCallback(async (file: File) => {
     if (!file) return;
     setIsProcessing(true);
     try {
@@ -71,7 +71,7 @@ export function ImageUploader({
     } finally {
       setIsProcessing(false);
     }
-  };
+  }, [onChange, onPendingFile, preserveObjectUrls]);
 
   const handleUrlSubmit = () => {
     if (urlInput.trim()) {
@@ -115,7 +115,7 @@ export function ImageUploader({
     setIsDragging(false);
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith('image/')) handleFileSelect(file);
-  }, []);
+  }, [handleFileSelect]);
 
   const effectivePreviewUrl = resolveStorageUrl(previewUrl || value) ?? undefined;
 

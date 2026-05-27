@@ -60,6 +60,22 @@ const customerSchema = z.object({
 
 type CustomerFormValues = z.infer<typeof customerSchema>;
 
+type CustomerFormPayload = {
+  name: string;
+  customer_type: "person" | "company";
+  email: string | null;
+  phone: string | null;
+  phone_secondary: string | null;
+  address: string | null;
+  notes: string | null;
+  is_normal: boolean;
+  is_vip: boolean;
+  is_frequent: boolean;
+  has_debt: boolean;
+  no_work_again: boolean;
+  no_work_reason: string | null;
+};
+
 interface CustomerFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -117,7 +133,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
         email: customer.email || "",
         address: customer.address || "",
         notes: customer.notes || "",
-        is_normal: (customer as any).is_normal || false,
+        is_normal: !!customer.is_normal,
         is_vip: customer.is_vip || false,
         is_frequent: !!customer.is_frequent,
         has_debt: customer.has_debt || false,
@@ -141,10 +157,10 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
         no_work_reason: "",
       });
     }
-  }, [customer, form]);
+  }, [customer, form, open]);
 
   const onSubmit = async (values: CustomerFormValues) => {
-    const customerData: any = {
+    const customerData: CustomerFormPayload = {
       name: values.name,
       customer_type: values.customer_type,
       email: values.email || null,
