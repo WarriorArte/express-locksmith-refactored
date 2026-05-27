@@ -10,7 +10,6 @@ import {
   Edit,
   Trash2,
   AlertCircle,
-  Loader2,
   Users,
   Eye,
 } from "lucide-react";
@@ -84,14 +83,6 @@ export default function Clientes() {
     setServicesDialogOpen(true);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* Header bar - ya NO es sticky */}
@@ -124,22 +115,48 @@ export default function Clientes() {
       </div>
 
       <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain px-5 lg:px-6 pb-24 md:pb-6 no-scrollbar">
-      {/* Empty State */}
-      {filteredClients.length === 0 && (
-        <div className="card-elevated p-12 text-center">
-          <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No hay clientes</h3>
-          <p className="text-muted-foreground mb-4">
-            {searchQuery ? "No se encontraron clientes con esa búsqueda" : "Comienza agregando tu primer cliente"}
-          </p>
-          <Button onClick={handleNewCustomer}>
-            <Plus className="w-4 h-4 mr-2" />
-            Agregar Cliente
-          </Button>
+      {isLoading ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-pulse">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="card-elevated p-4 space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="w-11 h-11 rounded-xl bg-muted/60 shrink-0" />
+                <div className="flex-1 space-y-2 pt-0.5">
+                  <div className="h-3.5 w-36 rounded bg-muted/60" />
+                  <div className="flex gap-1.5">
+                    <div className="h-4 w-14 rounded-full bg-muted/60" />
+                    <div className="h-4 w-16 rounded-full bg-muted/60" />
+                  </div>
+                </div>
+                <div className="h-6 w-20 rounded bg-muted/60 shrink-0" />
+              </div>
+              <div className="h-3 w-3/4 rounded bg-muted/60" />
+              <div className="h-3 w-1/2 rounded bg-muted/60" />
+            </div>
+          ))}
         </div>
-      )}
+      ) : filteredClients.length === 0 ? (
+        <div className="card-elevated p-10 text-center">
+          <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold mb-2">
+            {searchQuery ? "Sin resultados" : "Sin clientes registrados"}
+          </h3>
+          <p className="text-muted-foreground mb-5 max-w-xs mx-auto">
+            {searchQuery
+              ? "Intenta con otro nombre, email o teléfono."
+              : "Agrega clientes para llevar el historial de servicios y ventas."}
+          </p>
+          {!searchQuery && (
+            <Button onClick={handleNewCustomer}>
+              <Plus className="w-4 h-4 mr-1.5" />
+              Agregar cliente
+            </Button>
+          )}
+        </div>
+      ) : null}
 
       {/* Clients List */}
+      {!isLoading && filteredClients.length > 0 && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {filteredClients.map((client, index) => (
           <motion.div
@@ -244,6 +261,7 @@ export default function Clientes() {
           </motion.div>
         ))}
       </div>
+      )}
       </div>
 
       {/* Customer Form Dialog */}

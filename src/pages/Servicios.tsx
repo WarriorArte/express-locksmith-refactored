@@ -22,7 +22,6 @@ import {
   Truck,
   Filter,
   MapPin,
-  Loader2,
   ImagePlus,
   Printer,
 } from "lucide-react";
@@ -404,14 +403,6 @@ export default function Servicios() {
       ]
     : [];
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   const statusOptions: { key: "all" | ServiceStatus; label: string }[] = [
     { key: "all", label: "Todos" },
     { key: "pending", label: "Pendientes" },
@@ -478,64 +469,131 @@ export default function Servicios() {
       </div>
 
       <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain px-5 lg:px-6 pb-24 md:pb-6 no-scrollbar">
-      {filteredServices.length === 0 ? (
-        <div className="card-elevated p-8 text-center">
+      {isLoading ? (
+        <>
+          {/* Mobile skeleton */}
+          <div className="md:hidden space-y-3 animate-pulse">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="card-elevated p-4 space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-muted/60 shrink-0" />
+                  <div className="flex-1 space-y-2 pt-0.5">
+                    <div className="h-3 w-28 rounded bg-muted/60" />
+                    <div className="flex gap-1.5">
+                      <div className="h-5 w-16 rounded-full bg-muted/60" />
+                      <div className="h-5 w-20 rounded-full bg-muted/60" />
+                    </div>
+                  </div>
+                  <div className="h-6 w-20 rounded bg-muted/60 shrink-0" />
+                </div>
+                <div className="h-3 w-3/4 rounded bg-muted/60" />
+                <div className="h-3 w-1/2 rounded bg-muted/60" />
+              </div>
+            ))}
+          </div>
+          {/* Desktop skeleton */}
+          <div className="hidden md:block card-elevated overflow-hidden animate-pulse">
+            <div className="h-10 bg-muted/30 border-b border-border" />
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center gap-4 px-4 py-3.5 border-b border-border last:border-0">
+                <div className="w-7 h-7 rounded-lg bg-muted/60 shrink-0" />
+                <div className="w-24 h-3 rounded bg-muted/60" />
+                <div className="w-20 h-5 rounded-full bg-muted/60" />
+                <div className="flex-1 h-3 rounded bg-muted/60 max-w-[180px]" />
+                <div className="w-24 h-3 rounded bg-muted/60" />
+                <div className="w-24 h-3 rounded bg-muted/60" />
+                <div className="w-14 h-3 rounded bg-muted/60 ml-auto" />
+                <div className="w-8 h-8 rounded bg-muted/60 shrink-0" />
+              </div>
+            ))}
+          </div>
+        </>
+      ) : filteredServices.length === 0 ? (
+        <div className="card-elevated p-10 text-center">
           <Wrench className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="font-semibold text-lg mb-2">No hay servicios</h3>
-          <p className="text-muted-foreground">
-            {searchQuery ? "No se encontraron resultados" : "Registra tu primer servicio"}
+          <h3 className="font-semibold text-lg mb-2">
+            {searchQuery ? "Sin resultados" : "Sin servicios registrados"}
+          </h3>
+          <p className="text-muted-foreground mb-5 max-w-xs mx-auto">
+            {searchQuery
+              ? "Intenta con otro folio, cliente o descripción."
+              : "Registra el primer servicio para comenzar a gestionar tu operación."}
           </p>
+          {!searchQuery && (
+            <Button onClick={() => { setEditingService(null); setFormDialogOpen(true); }}>
+              <Plus className="w-4 h-4 mr-1.5" />
+              Nuevo servicio
+            </Button>
+          )}
         </div>
       ) : (
-        <div className="space-y-3">
-          {filteredServices.map((service, index) => {
-            const status = getServiceDisplayStatus(service);
-            const type = typeConfig[service.service_type];
-            const StatusIcon = status.icon;
-            const TypeIcon = type.icon;
-            const price = service.final_price ?? service.estimated_price ?? 0;
-            const imgs = service.service_images ?? [];
-
-            return (
-              <motion.div
-                key={service.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.08 }}
-                className="card-elevated overflow-hidden cursor-pointer active:scale-[0.99] transition-transform"
-                onClick={() => handleViewDetail(service)}
-              >
-                <div className="p-4">
-                  {/* Header: icono + número + badges | precio + menú */}
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className={cn("p-2.5 rounded-xl flex-shrink-0", type.bgColor)}>
-                        <TypeIcon className={cn("w-5 h-5", type.iconColor)} />
-                      </div>
-                      <div>
-                        <p className="font-mono text-sm text-foreground dark:text-primary font-semibold leading-tight">{service.service_number}</p>
-                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                          <Badge className={cn("text-xs", status.color)}>
-                            <StatusIcon className="w-3 h-3 mr-1" />
-                            {status.label}
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">{type.label}</Badge>
+        <>
+          {/* Desktop table */}
+          <div className="hidden md:block card-elevated overflow-hidden">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border bg-muted/30">
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide w-10" />
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Folio</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Estado</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Descripción</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Cliente</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Fecha</th>
+                  <th className="px-4 py-3 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Precio</th>
+                  <th className="w-12" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filteredServices.map((service) => {
+                  const status = getServiceDisplayStatus(service);
+                  const type = typeConfig[service.service_type];
+                  const StatusIcon = status.icon;
+                  const TypeIcon = type.icon;
+                  const price = service.final_price ?? service.estimated_price ?? 0;
+                  return (
+                    <tr
+                      key={service.id}
+                      className="hover:bg-muted/30 transition-colors cursor-pointer"
+                      onClick={() => handleViewDetail(service)}
+                    >
+                      <td className="px-4 py-3">
+                        <div className={cn("p-1.5 rounded-lg w-fit", type.bgColor)}>
+                          <TypeIcon className={cn("w-3.5 h-3.5", type.iconColor)} />
                         </div>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-1 flex-shrink-0">
-                      <div className="text-right">
-                        <p className="text-[11px] text-muted-foreground uppercase tracking-wide leading-tight">
-                          {service.final_price ? "Final" : "Estimado"}
-                        </p>
-                        <p className={cn("text-xl font-bold", service.final_price ? "text-foreground dark:text-success" : "text-foreground")}>
-                          {currencySymbol}{Number(price).toLocaleString()}
-                        </p>
-                      </div>
-                      <div onClick={(e) => e.stopPropagation()} className="hidden md:block">
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="font-mono text-xs text-foreground dark:text-primary font-semibold whitespace-nowrap">{service.service_number}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge className={cn("text-xs whitespace-nowrap", status.color)}>
+                          <StatusIcon className="w-3 h-3 mr-1" />
+                          {status.label}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 max-w-[200px]">
+                        <p className="text-sm text-foreground truncate">{service.description}</p>
+                        {service.address && (
+                          <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
+                            <MapPin className="w-3 h-3 shrink-0" />{service.address}
+                          </p>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-sm text-foreground whitespace-nowrap">{service.customer?.name || "Sin cliente"}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          {format(parseISO(getServiceDisplayDate(service)), "dd MMM · HH:mm", { locale: es })}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                        <p className="text-sm font-bold text-foreground">{currencySymbol}{Number(price).toLocaleString()}</p>
+                        <p className="text-[10px] text-muted-foreground">{service.final_price ? "Final" : "Estimado"}</p>
+                      </td>
+                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 -mt-1">
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
                               <MoreVertical className="w-4 h-4" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -550,7 +608,6 @@ export default function Servicios() {
                               <Edit className="w-4 h-4 mr-2" /> Editar
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-
                             {service.status === "pending" && (
                               <DropdownMenuItem className="text-info" onClick={() => handleStatusChange(service, "in_progress")}>
                                 <Wrench className="w-4 h-4 mr-2" /> Iniciar servicio
@@ -581,63 +638,109 @@ export default function Servicios() {
                             )}
                           </DropdownMenuContent>
                         </DropdownMenu>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-3">
+            {filteredServices.map((service) => {
+              const status = getServiceDisplayStatus(service);
+              const type = typeConfig[service.service_type];
+              const StatusIcon = status.icon;
+              const TypeIcon = type.icon;
+              const price = service.final_price ?? service.estimated_price ?? 0;
+              const imgs = service.service_images ?? [];
+
+              return (
+                <motion.div
+                  key={service.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.08 }}
+                  className="card-elevated overflow-hidden cursor-pointer active:scale-[0.99] transition-transform"
+                  onClick={() => handleViewDetail(service)}
+                >
+                  <div className="p-4">
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={cn("p-2.5 rounded-xl flex-shrink-0", type.bgColor)}>
+                          <TypeIcon className={cn("w-5 h-5", type.iconColor)} />
+                        </div>
+                        <div>
+                          <p className="font-mono text-sm text-foreground dark:text-primary font-semibold leading-tight">{service.service_number}</p>
+                          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                            <Badge className={cn("text-xs", status.color)}>
+                              <StatusIcon className="w-3 h-3 mr-1" />
+                              {status.label}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">{type.label}</Badge>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-[11px] text-muted-foreground uppercase tracking-wide leading-tight">
+                          {service.final_price ? "Final" : "Estimado"}
+                        </p>
+                        <p className={cn("text-xl font-bold", service.final_price ? "text-foreground dark:text-success" : "text-foreground")}>
+                          {currencySymbol}{Number(price).toLocaleString()}
+                        </p>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Descripción */}
-                  <p className="text-sm font-medium text-foreground truncate mb-1">{service.description}</p>
-                  {service.problem && (
-                    <p className="text-xs text-muted-foreground line-clamp-1 mb-2">{service.problem}</p>
-                  )}
+                    <p className="text-sm font-medium text-foreground truncate mb-1">{service.description}</p>
+                    {service.problem && (
+                      <p className="text-xs text-muted-foreground line-clamp-1 mb-2">{service.problem}</p>
+                    )}
 
-                  {/* Cliente + fecha */}
-                  <div className="flex items-center justify-between gap-2 text-sm">
-                    <span className="flex items-center gap-1.5 min-w-0">
-                      <User className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                      <span className="truncate text-foreground font-medium">
-                        {service.customer?.name || "Sin cliente"}
+                    <div className="flex items-center justify-between gap-2 text-sm">
+                      <span className="flex items-center gap-1.5 min-w-0">
+                        <User className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                        <span className="truncate text-foreground font-medium">
+                          {service.customer?.name || "Sin cliente"}
+                        </span>
                       </span>
-                    </span>
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
-                      <Calendar className="w-3 h-3" />
-                      {format(parseISO(getServiceDisplayDate(service)), "dd MMM · HH:mm", { locale: es })}
-                    </span>
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
+                        <Calendar className="w-3 h-3" />
+                        {format(parseISO(getServiceDisplayDate(service)), "dd MMM · HH:mm", { locale: es })}
+                      </span>
+                    </div>
+
+                    {service.address && (
+                      <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
+                        <MapPin className="w-3 h-3 flex-shrink-0" />
+                        <span className="truncate">{service.address}</span>
+                      </div>
+                    )}
+
+                    {imgs.length > 0 && (
+                      <div className="flex gap-1.5 mt-3 pt-3 border-t">
+                        {imgs.slice(0, 4).map((img) => (
+                          <div key={img.id} className="w-11 h-11 rounded-xl overflow-hidden bg-muted flex-shrink-0 flex items-center justify-center">
+                            {img.image_url ? (
+                              <img src={resolveStorageUrl(img.image_url) ?? undefined} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <Package className="w-4 h-4 text-muted-foreground" />
+                            )}
+                          </div>
+                        ))}
+                        {imgs.length > 4 && (
+                          <div className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground flex-shrink-0">
+                            +{imgs.length - 4}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-
-                  {/* Dirección */}
-                  {service.address && (
-                    <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
-                      <MapPin className="w-3 h-3 flex-shrink-0" />
-                      <span className="truncate">{service.address}</span>
-                    </div>
-                  )}
-
-                  {/* Imágenes */}
-                  {imgs.length > 0 && (
-                    <div className="flex gap-1.5 mt-3 pt-3 border-t">
-                      {imgs.slice(0, 4).map((img) => (
-                        <div key={img.id} className="w-11 h-11 rounded-xl overflow-hidden bg-muted flex-shrink-0 flex items-center justify-center">
-                          {img.image_url ? (
-                            <img src={resolveStorageUrl(img.image_url) ?? undefined} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <Package className="w-4 h-4 text-muted-foreground" />
-                          )}
-                        </div>
-                      ))}
-                      {imgs.length > 4 && (
-                        <div className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground flex-shrink-0">
-                          +{imgs.length - 4}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-              </motion.div>
-            );
-          })}
-        </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </>
       )}
       </div>
 

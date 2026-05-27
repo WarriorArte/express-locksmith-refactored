@@ -15,7 +15,6 @@ import {
   ArrowUpDown,
   Store,
   Warehouse,
-  Loader2,
   History,
   Move,
   ZoomIn,
@@ -196,14 +195,6 @@ export default function Inventario() {
     setSaleFormOpen(true);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   const lowStockCount =
     products?.filter((p) => (p.item_type ?? "product") !== "service" && p.stock_store + p.stock_warehouse < p.min_stock).length || 0;
 
@@ -381,23 +372,60 @@ export default function Inventario() {
       </div>
 
       <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain px-5 lg:px-6 pb-24 md:pb-6 no-scrollbar">
+      {/* Skeleton */}
+      {isLoading && viewMode === "grid" && (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 animate-pulse">
+          {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+            <div key={i} className="card-elevated overflow-hidden">
+              <div className="aspect-[4/3] bg-muted/60" />
+              <div className="p-3 space-y-2">
+                <div className="h-3 w-3/4 rounded bg-muted/60" />
+                <div className="h-3 w-1/2 rounded bg-muted/60" />
+                <div className="h-6 w-full rounded-xl bg-muted/60 mt-2" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {isLoading && viewMode === "list" && (
+        <div className="card-elevated overflow-hidden animate-pulse">
+          <div className="h-10 bg-muted/30 border-b border-border" />
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="flex items-center gap-4 px-4 py-3.5 border-b border-border last:border-0">
+              <div className="w-10 h-10 rounded-xl bg-muted/60 shrink-0" />
+              <div className="flex-1 h-3 rounded bg-muted/60 max-w-[200px]" />
+              <div className="w-16 h-5 rounded-full bg-muted/60" />
+              <div className="w-16 h-3 rounded bg-muted/60" />
+              <div className="w-20 h-3 rounded bg-muted/60 ml-auto" />
+              <div className="w-20 h-8 rounded-lg bg-muted/60" />
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Empty State */}
-      {filteredProducts.length === 0 && (
-        <div className="card-elevated p-12 text-center">
+      {!isLoading && filteredProducts.length === 0 && (
+        <div className="card-elevated p-10 text-center">
           <Package className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No hay productos</h3>
-          <p className="text-muted-foreground mb-4">
-            {searchQuery ? "No se encontraron productos con esa búsqueda" : "Comienza agregando tu primer producto"}
+          <h3 className="text-lg font-semibold mb-2">
+            {searchQuery ? "Sin resultados" : "Sin productos registrados"}
+          </h3>
+          <p className="text-muted-foreground mb-5 max-w-xs mx-auto">
+            {searchQuery
+              ? "Intenta con otro nombre o cambia el filtro de categoría."
+              : "Agrega productos o servicios para gestionar tu inventario y precios."}
           </p>
-          <Button onClick={handleNewProduct}>
-            <Plus className="w-4 h-4 mr-2" />
-            Agregar Producto
-          </Button>
+          {!searchQuery && (
+            <Button onClick={handleNewProduct}>
+              <Plus className="w-4 h-4 mr-1.5" />
+              Agregar producto
+            </Button>
+          )}
         </div>
       )}
 
       {/* MOBILE products view (Redesign v2) */}
-      <div className="lg:hidden">
+      {!isLoading && filteredProducts.length > 0 && <div className="lg:hidden">
         {viewMode === "grid" ? (
           <div className="grid grid-cols-2 gap-3">
             {filteredProducts.map((product, index) => {
@@ -581,10 +609,10 @@ export default function Inventario() {
             })}
           </div>
         )}
-      </div>
+      </div>}
 
       {/* DESKTOP products view (legacy) */}
-      <div className="hidden lg:block">
+      {!isLoading && filteredProducts.length > 0 && <div className="hidden lg:block">
       {viewMode === "grid" ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4">
           {filteredProducts.map((product, index) => {
@@ -894,7 +922,7 @@ export default function Inventario() {
           </div>
         </motion.div>
       )}
-      </div>
+      </div>}
       </div>
 
       {/* Mobile detail sheet (Redesign v2) */}
