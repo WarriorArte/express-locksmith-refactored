@@ -1,6 +1,6 @@
 import html2canvas from "html2canvas-pro";
 import { jsPDF } from "jspdf";
-import { getPhpAuthToken } from "@/lib/phpApi";
+import { getPhpAuthToken, resolveUploadFileUrl } from "@/lib/phpApi";
 
 /**
  * Renders a ticket DOM node to a PDF blob using html2canvas + jsPDF.
