@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Plus, MapPin, Shield, Package, User, Wrench, FileText, Image } from "lucide-react";
+import { Loader2, Plus, MapPin, Shield, Package, User, Wrench, FileText, Image, Trash2 } from "lucide-react";
 import { CustomerSelect } from "@/components/shared/CustomerSelect";
 import { ServiceProductsEditor } from "@/components/shared/ServiceProductsEditor";
 import { ImageUploader } from "@/components/shared/ImageUploader";
