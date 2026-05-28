@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  html, body { margin:0; padding:0; background:var(--card); color:var(--fg); }
+  body { font-family: var(--font-sans); padding: 22px 24px; }
+  .row { display:flex; align-items:center; gap: 16px; margin-bottom: 10px; }
+  .name { width: 28px; font: 600 11px/1 var(--font-sans); color: var(--fg); letter-spacing: -0.01em; }
+  .px { width: 48px; font: 500 11px/1 var(--font-sans); color: var(--fg-muted); font-variant-numeric: tabular-nums; }
+  .bar { height: 14px; background: var(--primary); border-radius: 2px; }
+</style>
+</head>
+<body>
+  <div class="row"><div class="name">xs</div><div class="px">4 px</div><div class="bar" style="width:4px"></div></div>
+  <div class="row"><div class="name">sm</div><div class="px">8 px</div><div class="bar" style="width:8px"></div></div>
+  <div class="row"><div class="name">md</div><div class="px">16 px</div><div class="bar" style="width:16px"></div></div>
+  <div class="row"><div class="name">lg</div><div class="px">24 px</div><div class="bar" style="width:24px"></div></div>
+  <div class="row"><div class="name">xl</div><div class="px">32 px</div><div class="bar" style="width:32px"></div></div>
+  <div class="row"><div class="name">2xl</div><div class="px">48 px</div><div class="bar" style="width:48px"></div></div>
+</body>
+</html>

@@ -3,9 +3,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle,
   DialogFooter,
-  DialogDescription,
 } from "@/components/ui/responsive-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +24,7 @@ import { Loader2, Plus, MapPin, Shield, Package, User, Wrench, FileText, Image, 
 import { CustomerSelect } from "@/components/shared/CustomerSelect";
 import { ServiceProductsEditor } from "@/components/shared/ServiceProductsEditor";
 import { ImageUploader } from "@/components/shared/ImageUploader";
+import { CreationDialogHeader } from "@/components/shared/CreationDialogHeader";
 import { CustomerFormDialog } from "@/components/customers/CustomerFormDialog";
 import { useCreateService, useUpdateService, generateServiceNumber, type Service, type ServiceType } from "@/hooks/useServices";
 import { useCreateServiceImage, useDeleteServiceImage } from "@/hooks/useServices";
@@ -518,10 +517,12 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent fixedHeight className="max-w-[95vw] sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-base sm:text-lg">{isEditing ? "Editar Servicio" : "Nuevo Servicio"}</DialogTitle>
-          <DialogDescription className="sr-only">
-            Formulario para crear o editar un servicio
-          </DialogDescription>
+          <CreationDialogHeader
+            icon={Wrench}
+            title={isEditing ? "Editar servicio" : "Nuevo servicio"}
+            description="Trabajo de taller con cliente, productos, garantía e imágenes"
+            meta={form.service_number || undefined}
+          />
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">

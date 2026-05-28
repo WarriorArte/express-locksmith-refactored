@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  html, body { margin:0; padding:0; background:var(--card); color:var(--fg); }
+  body { font-family: var(--font-sans); padding: 22px 24px; }
+  .row { display:flex; align-items:center; gap: 8px; margin-bottom: 10px; flex-wrap:wrap; }
+  .label { font: 600 10px/1 var(--font-sans); color: var(--fg-muted); letter-spacing: 0.06em; text-transform: uppercase; width: 92px; }
+  .status-pill { display:inline-flex; align-items:center; gap: 6px; padding: 4px 10px; border-radius: var(--radius); font: 700 11px/1 var(--font-sans); }
+  .dot { width: 6px; height: 6px; border-radius:99px; }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="label">badges</div>
+    <span class="ds-pill ds-pill--success-on">En vivo</span>
+    <span class="ds-pill ds-pill--success">Activo</span>
+    <span class="ds-pill ds-pill--warning">Por vencer</span>
+    <span class="ds-pill ds-pill--danger">Vencida</span>
+    <span class="ds-pill ds-pill--info">En curso</span>
+    <span class="ds-pill ds-pill--neutral">Borrador</span>
+  </div>
+  <div class="row">
+    <div class="label">servicios</div>
+    <span class="status-pill" style="background:hsl(36 100% 94%); color:hsl(28 80% 35%)"><span class="dot" style="background:#FFB830"></span>Pendiente</span>
+    <span class="status-pill" style="background:hsl(240 30% 94%); color:hsl(240 40% 40%)"><span class="dot" style="background:#9898D0"></span>En curso</span>
+    <span class="status-pill" style="background:hsl(159 100% 94%); color:#0D0D12"><span class="dot" style="background:#00E5A0"></span>Finalizado</span>
+    <span class="status-pill" style="background:hsl(159 100% 45%); color:#0D0D12"><span class="dot" style="background:#0D0D12"></span>Entregado</span>
+    <span class="status-pill" style="background:hsl(350 100% 95%); color:#FF4D6A"><span class="dot" style="background:#FF4D6A"></span>Cancelado</span>
+  </div>
+  <div class="row">
+    <div class="label">inventario</div>
+    <span class="ds-pill ds-pill--warning">Stock bajo</span>
+    <span class="ds-pill ds-pill--success">En stock</span>
+    <span class="ds-pill" style="background:#9898D0; color:white;">Automotriz</span>
+    <span class="ds-pill" style="background:#FF6B9D; color:white;">Residencial</span>
+    <span class="ds-pill" style="background:#22D3EE; color:#0D0D12;">Comercial</span>
+  </div>
+</body>
+</html>

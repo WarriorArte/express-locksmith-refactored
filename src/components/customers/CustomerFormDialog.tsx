@@ -6,7 +6,6 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle,
   DialogFooter,
 } from "@/components/ui/responsive-dialog";
 import {
@@ -31,8 +30,9 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useCreateCustomer, useUpdateCustomer, type Customer } from "@/hooks/useCustomers";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
-import { Loader2 } from "lucide-react";
+import { Loader2, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CreationDialogHeader } from "@/components/shared/CreationDialogHeader";
 
 const customerSchema = z.object({
   name: z.string().min(1, "El nombre es requerido"),
@@ -190,9 +190,12 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent fixedHeight className="max-w-[95vw] sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>
-            {isEditing ? "Editar Cliente" : "Nuevo Cliente"}
-          </DialogTitle>
+          <CreationDialogHeader
+            icon={UserPlus}
+            title={isEditing ? "Editar cliente" : "Nuevo cliente"}
+            description="Ficha de contacto con historial, etiquetas y notas de atención"
+            meta={phoneCountryCode}
+          />
         </DialogHeader>
 
         <Form {...form}>

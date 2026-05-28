@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  html, body { margin:0; padding:0; background:var(--card); color:var(--fg); }
+  body { font-family: var(--font-sans); padding: 24px 24px 18px; }
+  .stack > * + * { margin-top: 10px; }
+  .meta { font: 500 10px/1 var(--font-sans); color: var(--fg-muted); margin-left: 10px; font-variant-numeric: tabular-nums; }
+  .row { display:flex; align-items:baseline; }
+</style>
+</head>
+<body>
+  <div class="stack">
+    <div class="row"><h1 class="t-hero" style="margin:0">Panel Principal</h1><span class="meta">.t-hero · 800 / clamp(2–3rem) / -0.03em</span></div>
+    <div class="row"><h1 class="t-display" style="margin:0">Inventario</h1><span class="meta">.t-display · 800 / clamp(1.75–2.25rem) / -0.02em</span></div>
+    <div class="row"><h2 class="t-headline" style="margin:0">Estado de Servicios</h2><span class="meta">.t-headline · 700 / 1.5rem</span></div>
+    <div class="row"><h3 class="t-title" style="margin:0">Cotizaciones por vencer</h3><span class="meta">.t-title · 600 / 1.125rem</span></div>
+    <div class="row"><p class="t-body" style="margin:0">Bienvenido, Joshua. Tu taller registró 12 servicios hoy.</p><span class="meta">.t-body · 400 / 0.875rem</span></div>
+    <div class="row"><span class="t-label">ventas del mes</span><span class="meta">.t-label · 600 / 0.75rem · lowercase</span></div>
+  </div>
+</body>
+</html>

@@ -3,7 +3,6 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle,
   DialogFooter,
 } from "@/components/ui/responsive-dialog";
 import { Button } from "@/components/ui/button";
@@ -17,6 +16,7 @@ import { Loader2, Plus, User, Package, FileText } from "lucide-react";
 import { CustomerSelect } from "@/components/shared/CustomerSelect";
 import { CustomerFormDialog } from "@/components/customers/CustomerFormDialog";
 import { ServiceProductsEditor, type ProductEditorItem } from "@/components/shared/ServiceProductsEditor";
+import { CreationDialogHeader } from "@/components/shared/CreationDialogHeader";
 import { useCreateQuote, useUpdateQuote, generateQuoteNumber, type Quote } from "@/hooks/useQuotes";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useWorkshop } from "@/hooks/useWorkshop";
@@ -224,7 +224,12 @@ export function QuoteFormDialog({ open, onOpenChange, quote }: QuoteFormDialogPr
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent fixedHeight className="max-w-[95vw] sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-base sm:text-lg">{isEditing ? "Editar Cotización" : "Nueva Cotización"}</DialogTitle>
+          <CreationDialogHeader
+            icon={FileText}
+            title={isEditing ? "Editar cotización" : "Nueva cotización"}
+            description="Propuesta con cliente, ítems, vigencia y resumen comercial"
+            meta={form.quote_number || undefined}
+          />
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">

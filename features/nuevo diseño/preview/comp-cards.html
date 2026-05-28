@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../colors_and_type.css" />
+<script src="https://unpkg.com/lucide@0.378.0/dist/umd/lucide.min.js"></script>
+<style>
+  html, body { margin:0; padding:0; }
+  body { font-family: var(--font-sans); padding: 22px 24px; background: var(--bg); background-image: var(--texture-dots); background-size: var(--texture-dots-size); }
+  .row { display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .ds-card, .ds-card--primary, .ds-card--hero { padding: 14px 16px; }
+  .label { font: 600 10px/1 var(--font-sans); letter-spacing: 0.06em; text-transform: uppercase; opacity:.7; }
+  .value { font: 800 24px/1.05 var(--font-sans); letter-spacing: -0.02em; margin-top: 6px; }
+  .row2 { display:flex; align-items:center; justify-content:space-between; }
+  .ico { width: 36px; height: 36px; border-radius: var(--radius); display:flex; align-items:center; justify-content:center; background: hsl(159 100% 95%); color: #0D0D12; }
+  .ds-card--primary .ico { background: hsl(159 100% 38% / .35); color: #0D0D12; }
+  .ds-card--hero    .ico { background: hsl(159 100% 45% / .14); color: #00E5A0; }
+  i.lucide { width:18px; height:18px; }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="ds-card">
+      <div class="row2"><div class="ico"><i data-lucide="shopping-cart"></i></div></div>
+      <div class="label" style="margin-top:14px; color:var(--fg-muted)">ventas del mes</div>
+      <div class="value">$ 1.250.000</div>
+    </div>
+    <div class="ds-card--primary">
+      <div class="row2"><div class="ico"><i data-lucide="wrench"></i></div><span class="ds-pill" style="background:hsl(159 100% 38% / .35); color:#0D0D12">↑ 12%</span></div>
+      <div class="label" style="margin-top:14px">servicios hoy</div>
+      <div class="value">24</div>
+    </div>
+    <div class="ds-card--hero">
+      <div class="row2"><div class="ico"><i data-lucide="file-text"></i></div></div>
+      <div class="label" style="margin-top:14px; color:#7878A0">cotizaciones</div>
+      <div class="value" style="color:#F0F0F8">142</div>
+    </div>
+  </div>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

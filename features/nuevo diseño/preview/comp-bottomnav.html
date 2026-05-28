@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../colors_and_type.css" />
+<script src="https://unpkg.com/lucide@0.378.0/dist/umd/lucide.min.js"></script>
+<style>
+  html, body { margin:0; padding:0; background:var(--bg); color:var(--fg); }
+  body { font-family: var(--font-sans); padding: 24px; background-image: var(--texture-dots); background-size: var(--texture-dots-size); }
+  .phone { width: 360px; margin: 0 auto; }
+  .nav { display:flex; align-items:center; justify-content:space-around; height: 72px; padding: 0 10px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-lg); }
+  .item { flex:1; display:flex; flex-direction:column; align-items:center; gap: 4px; color: var(--fg-muted); }
+  .item.active { color: var(--primary); }
+  .item i { width: 22px; height: 22px; }
+  .item span { font: 500 10px/1 var(--font-sans); }
+  .fab { width: 52px; height: 52px; border-radius: var(--radius-xl); background: var(--primary); color: var(--primary-fg); display:flex; align-items:center; justify-content:center; box-shadow: 0 0 24px hsl(159 100% 45% / .45), 0 8px 24px hsl(159 100% 45% / .30); margin-top: -10px; }
+  .fab i { width: 24px; height: 24px; stroke-width: 2.5; }
+</style>
+</head>
+<body>
+  <div class="phone">
+    <div class="nav">
+      <div class="item active"><i data-lucide="home"></i><span>Inicio</span></div>
+      <div class="item"><i data-lucide="wrench"></i><span>Servicios</span></div>
+      <div class="fab"><i data-lucide="plus"></i></div>
+      <div class="item"><i data-lucide="package"></i><span>Inventario</span></div>
+      <div class="item"><i data-lucide="grid-3x3"></i><span>Más</span></div>
+    </div>
+  </div>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

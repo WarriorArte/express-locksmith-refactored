@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  html, body { margin:0; padding:0; background:var(--bg); color:var(--fg); }
+  body { font-family: var(--font-sans); padding: 28px 24px; background-image: var(--texture-dots); background-size: var(--texture-dots-size); }
+  .row { display:flex; gap: 22px; align-items: flex-end; }
+  .item { text-align:center; }
+  .box { width: 96px; height: 64px; background:#fff; border-radius: var(--radius); border: 1px solid var(--border); }
+  .name { margin-top: 10px; font: 600 11px/1.2 var(--font-sans); color:var(--fg); }
+  .desc { font: 500 10px/1.4 var(--font-sans); color:var(--fg-muted); }
+  .glow { background: var(--primary); }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="item"><div class="box" style="box-shadow:var(--shadow-sm)"></div><div class="name">shadow-sm</div><div class="desc">card · at rest</div></div>
+    <div class="item"><div class="box" style="box-shadow:var(--shadow-md)"></div><div class="name">shadow-md</div><div class="desc">card · hover</div></div>
+    <div class="item"><div class="box" style="box-shadow:var(--shadow-lg)"></div><div class="name">shadow-lg</div><div class="desc">sheets, menus</div></div>
+    <div class="item"><div class="box" style="box-shadow:var(--shadow-xl)"></div><div class="name">shadow-xl</div><div class="desc">modal · top of stack</div></div>
+    <div class="item"><div class="box glow" style="box-shadow:var(--shadow-glow)"></div><div class="name">shadow-glow</div><div class="desc">primary only</div></div>
+    <div class="item"><div class="box glow" style="box-shadow:var(--shadow-gold)"></div><div class="name">shadow-gold</div><div class="desc">FAB, hero CTA</div></div>
+  </div>
+</body>
+</html>

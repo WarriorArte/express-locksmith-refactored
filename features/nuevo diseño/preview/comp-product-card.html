@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../colors_and_type.css" />
+<script src="https://unpkg.com/lucide@0.378.0/dist/umd/lucide.min.js"></script>
+<style>
+  html, body { margin:0; padding:0; background:var(--bg); color:var(--fg); }
+  body { font-family: var(--font-sans); padding: 18px 24px; background-image: var(--texture-dots); background-size: var(--texture-dots-size); }
+  .grid { display:grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .pc { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow:hidden; box-shadow: var(--shadow-sm); }
+  .thumb { position:relative; padding-bottom: 70%; background: var(--surface-2); }
+  .thumb i.lucide { width: 36px; height: 36px; color: hsl(240 12% 55%); position:absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+  .cat { position:absolute; top: 8px; left: 8px; padding: 3px 8px; border-radius: 99px; font: 700 10px/1 var(--font-sans); }
+  .stk { position:absolute; bottom: 8px; right: 8px; padding: 3px 8px; border-radius: 99px; font: 700 10px/1 var(--font-sans); }
+  .body { padding: 10px 12px 12px; }
+  .name { font: 700 13px/1.25 var(--font-sans); color: var(--fg); }
+  .row { display:flex; gap: 12px; margin-top: 6px; align-items:center; }
+  .row i { width: 14px; height: 14px; color: var(--fg-muted); }
+  .row span { font: 600 12px/1 var(--font-sans); color: var(--fg-muted); display:flex; gap: 4px; align-items:center; }
+  .price { font: 800 16px/1.1 var(--font-sans); color: var(--fg); margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .btn { width: 100%; margin-top: 10px; height: 32px; border-radius: 12px; background: var(--primary); color: var(--primary-fg); border: none; font: 600 11px/1 var(--font-sans); display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; }
+</style>
+</head>
+<body>
+<div class="grid">
+  <div class="pc"><div class="thumb"><i data-lucide="package"></i><span class="cat" style="background:#9898D0;color:white">Automotriz</span><span class="stk" style="background:hsl(159 100% 45% / .2); color:#0D0D12">En stock</span></div>
+    <div class="body"><div class="name">Cerradura Yale 5-pin</div>
+      <div class="row"><span><i data-lucide="store"></i>T:12</span><span><i data-lucide="warehouse"></i>B:34</span></div>
+      <div class="price">$ 28.500</div>
+      <button class="btn"><i data-lucide="shopping-cart" style="width:12px;height:12px;color:inherit"></i> Vender</button>
+    </div></div>
+  <div class="pc"><div class="thumb"><i data-lucide="key-round"></i><span class="cat" style="background:#FF6B9D;color:white">Residencial</span><span class="stk" style="background:hsl(36 100% 94%); color:#FFB830">Stock bajo</span></div>
+    <div class="body"><div class="name">Llave automotriz Chip 4D</div>
+      <div class="row"><span><i data-lucide="store"></i>T:1</span><span><i data-lucide="warehouse"></i>B:2</span></div>
+      <div class="price">$ 145.000</div>
+      <button class="btn"><i data-lucide="shopping-cart" style="width:12px;height:12px;color:inherit"></i> Vender</button>
+    </div></div>
+  <div class="pc"><div class="thumb"><i data-lucide="wrench"></i><span class="cat" style="background:#22D3EE;color:#0D0D12">Servicio</span></div>
+    <div class="body"><div class="name">Apertura puerta residencial</div>
+      <div class="row"><span><i data-lucide="wrench"></i>$45.000</span><span><i data-lucide="package"></i>$0</span></div>
+      <div class="price">$ 45.000</div>
+      <button class="btn"><i data-lucide="shopping-cart" style="width:12px;height:12px;color:inherit"></i> Usar</button>
+    </div></div>
+</div>
+<script>lucide.createIcons();</script>
+</body>
+</html>

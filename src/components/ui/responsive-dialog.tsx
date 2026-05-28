@@ -674,7 +674,7 @@ const DialogContent = React.forwardRef<
             "fixed inset-x-0 bottom-0 left-0 right-0 z-50 flex flex-col w-full max-w-none",
             fixedHeight ? "h-[85dvh]" : "max-h-[92dvh]",
             "bg-popover text-popover-foreground",
-            "rounded-t-sm outline-none shadow-2xl",
+            "rounded-t-[16px] outline-none shadow-2xl",
             // Native-feel slide animation
             "data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom data-[state=open]:duration-500 data-[state=open]:ease-sheet",
             !isGestureClosing && "data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=closed]:duration-320 data-[state=closed]:ease-in",
@@ -710,6 +710,10 @@ const DialogContent = React.forwardRef<
 
           <DialogPrimitive.Close ref={closeRef} className="hidden" aria-hidden="true" tabIndex={-1}>
             close
+          </DialogPrimitive.Close>
+          <DialogPrimitive.Close className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-muted/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground/30 focus-visible:ring-offset-2">
+            <X className="h-4 w-4" />
+            <span className="sr-only">Cerrar</span>
           </DialogPrimitive.Close>
 
           {/* Header (sticky top) — no divider, prototype style */}

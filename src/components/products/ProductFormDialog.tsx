@@ -15,19 +15,11 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/responsive-dialog";
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import {
   Form,
   FormControl,
@@ -51,15 +43,28 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { useCategories } from "@/hooks/useCategories";
+import { useCategories, type Category } from "@/hooks/useCategories";
 import { useCreateProduct, useUpdateProduct, type Product } from "@/hooks/useProducts";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
-import { Loader2, Package, DollarSign, Warehouse, FileText, Wrench } from "lucide-react";
+import { Check, ChevronsUpDown, Loader2, Package, DollarSign, Warehouse, FileText, Wrench, Plus } from "lucide-react";
 import { ImageUploader } from "@/components/shared/ImageUploader";
 import { ServiceProductsEditor, type ProductEditorItem } from "@/components/shared/ServiceProductsEditor";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import { phpApiUpload } from "@/lib/phpApi";
 import { cn } from "@/lib/utils";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface ProductFormDialogProps {
   open: boolean;
@@ -447,50 +452,86 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
 
   return (
     <>
-    <AlertDialog
+    <Dialog
       open={open && !isEditing && !isInventoryItemTypeSelected}
       onOpenChange={(nextOpen) => {
         if (!nextOpen) onOpenChange(false);
       }}
     >
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>¿Qué deseas crear?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Elige el tipo de item que vas a agregar al inventario.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader className="pr-10">
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-primary/10 text-primary">
+              <Plus className="h-5 w-5" strokeWidth={2.4} />
+            </div>
+            <div className="min-w-0 pt-0.5">
+              <DialogTitle className="text-[1.55rem] font-extrabold leading-[1.05] tracking-[-0.03em]">
+                ¿Qué deseas crear?
+              </DialogTitle>
+              <DialogDescription className="mt-2 text-[13px] leading-snug">
+                Selecciona el tipo de ítem para agregarlo al inventario.
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
 
-        <AlertDialogFooter className="gap-2 sm:gap-2 sm:space-x-0">
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <Button
+        <div className="grid grid-cols-2 gap-3 pb-1 pt-1">
+          <button
             type="button"
             onClick={() => selectInventoryItemType("product")}
-            className="bg-secondary text-secondary-foreground hover:bg-secondary/80"
+            className="group flex min-h-[136px] flex-col rounded-[14px] border border-border bg-card p-4 text-left transition-all active:scale-[0.98] hover:border-primary/35 hover:bg-primary/[0.03]"
           >
-            <Package className="w-4 h-4 mr-2" />
-            Producto
-          </Button>
-          <Button
+            <span className="mb-5 flex h-11 w-11 items-center justify-center rounded-[13px] bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+              <Package className="h-5 w-5" />
+            </span>
+            <span className="text-base font-extrabold leading-tight text-foreground">Producto</span>
+            <span className="mt-2 text-xs font-medium leading-snug text-muted-foreground">
+              Stock en tienda y bodega
+            </span>
+            <span className="mt-auto pt-3 text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+              4 pasos
+            </span>
+          </button>
+          <button
             type="button"
             onClick={() => selectInventoryItemType("service")}
-            className="bg-primary text-primary-foreground hover:bg-primary-hover"
+            className="group flex min-h-[136px] flex-col rounded-[14px] border border-border bg-card p-4 text-left transition-all active:scale-[0.98] hover:border-primary/35 hover:bg-primary/[0.03]"
           >
-            <Wrench className="w-4 h-4 mr-2" />
-            Servicio
-          </Button>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+            <span className="mb-5 flex h-11 w-11 items-center justify-center rounded-[13px] bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+              <Wrench className="h-5 w-5" />
+            </span>
+            <span className="text-base font-extrabold leading-tight text-foreground">Servicio</span>
+            <span className="mt-2 text-xs font-medium leading-snug text-muted-foreground">
+              Mano de obra y productos
+            </span>
+            <span className="mt-auto pt-3 text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+              4 pasos
+            </span>
+          </button>
+        </div>
+      </DialogContent>
+    </Dialog>
 
     <Dialog open={open && (isEditing || isInventoryItemTypeSelected)} onOpenChange={onOpenChange}>
       <DialogContent fixedHeight className="max-w-[95vw] sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-base sm:text-lg">
-            {isEditing
-              ? (isServiceMode ? "Editar Servicio" : "Editar Producto")
-              : "Nuevo Producto"}
-          </DialogTitle>
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-primary/10 text-primary">
+              {isServiceMode ? <Wrench className="h-5 w-5" /> : <Package className="h-5 w-5" />}
+            </div>
+            <div className="min-w-0">
+              <DialogTitle className="text-xl font-extrabold tracking-tight">
+                {isEditing
+                  ? (isServiceMode ? "Editar servicio" : "Editar producto")
+                  : (isServiceMode ? "Nuevo servicio" : "Nuevo producto")}
+              </DialogTitle>
+              <DialogDescription className="mt-1">
+                {isServiceMode
+                  ? "Mano de obra, productos consumidos y notas"
+                  : "Inventario con stock por tienda y bodega"}
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
 
         <Form {...form}>
@@ -548,23 +589,14 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Categoría *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value || ""}>
-                            <FormControl>
-                              <SelectTrigger
-                                aria-invalid={showGeneralInvalid && !hasText(field.value)}
-                                className={cn(showGeneralInvalid && !hasText(field.value) && "border-destructive text-destructive")}
-                              >
-                                <SelectValue placeholder={showGeneralInvalid && !hasText(field.value) ? "Campo obligatorio" : "Seleccionar categoría"} />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {categories?.map((cat) => (
-                                <SelectItem key={cat.id} value={cat.id}>
-                                  {cat.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <FormControl>
+                            <CategoryCombobox
+                              categories={categories || []}
+                              value={field.value || ""}
+                              onValueChange={field.onChange}
+                              invalid={showGeneralInvalid && !hasText(field.value)}
+                            />
+                          </FormControl>
                         </FormItem>
                       )}
                     />
@@ -951,5 +983,106 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
       </DialogContent>
     </Dialog>
     </>
+  );
+}
+
+function CategoryCombobox({
+  categories,
+  value,
+  onValueChange,
+  invalid,
+}: {
+  categories: Category[];
+  value: string;
+  onValueChange: (value: string) => void;
+  invalid: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [inputReady, setInputReady] = useState(false);
+  const selectedCategory = categories.find((category) => category.id === value);
+
+  useEffect(() => {
+    if (open) {
+      const timeoutId = setTimeout(() => setInputReady(true), 120);
+      return () => clearTimeout(timeoutId);
+    }
+
+    setInputReady(false);
+    return undefined;
+  }, [open]);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          aria-invalid={invalid}
+          className={cn(
+            "h-11 w-full justify-between rounded-sm px-3 font-medium",
+            invalid && "border-destructive text-destructive hover:text-destructive",
+          )}
+        >
+          {selectedCategory ? (
+            <span className="flex min-w-0 items-center gap-2">
+              <span
+                className="h-3 w-3 shrink-0 rounded-[3px]"
+                style={{ backgroundColor: selectedCategory.color || "#9898D0" }}
+              />
+              <span className="truncate">{selectedCategory.name}</span>
+            </span>
+          ) : (
+            <span className={cn(invalid ? "text-destructive" : "text-muted-foreground")}>
+              {invalid ? "Selecciona una categoría" : "Seleccionar categoría..."}
+            </span>
+          )}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-[min(350px,90vw)] p-0"
+        align="start"
+        side="bottom"
+        avoidCollisions={false}
+        onOpenAutoFocus={(event) => event.preventDefault()}
+      >
+        <Command>
+          <CommandInput
+            placeholder="Buscar categoría..."
+            autoFocus={false}
+            readOnly={!inputReady}
+          />
+          <CommandList className="max-h-[180px]">
+            <CommandEmpty>No se encontraron categorías.</CommandEmpty>
+            <CommandGroup>
+              {categories.map((category) => (
+                <CommandItem
+                  key={category.id}
+                  value={category.name}
+                  onSelect={() => {
+                    onValueChange(category.id);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4 shrink-0",
+                      value === category.id ? "opacity-100" : "opacity-0",
+                    )}
+                  />
+                  <span
+                    className="mr-2 h-3 w-3 shrink-0 rounded-[3px]"
+                    style={{ backgroundColor: category.color || "#9898D0" }}
+                  />
+                  <span className="truncate">{category.name}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }

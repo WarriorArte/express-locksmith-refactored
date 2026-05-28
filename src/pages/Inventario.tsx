@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { resolveStorageUrl } from "@/lib/phpApi";
-import { PageHeader } from "@/components/layout/PageHeader";
+import { AccountMenu } from "@/components/layout/AccountMenu";
 import { m as motion } from "framer-motion";
 import { 
   Plus, 
@@ -19,7 +19,6 @@ import {
   Move,
   ZoomIn,
   Palette,
-  AlertTriangle,
   ShoppingCart,
   Wrench,
 } from "lucide-react";
@@ -107,7 +106,7 @@ export default function Inventario() {
 
   const getCategoryName = (categoryId: string | null) => {
     const category = categories?.find(c => c.id === categoryId);
-    return category?.name || "Sin categoría";
+    return category?.name || "Sin categoria";
   };
 
   const getCategoryTextColor = (backgroundHex: string) => {
@@ -202,11 +201,10 @@ export default function Inventario() {
   const productsCount = (products?.length || 0) - servicesCount;
   const selectedCategoryLabel =
     selectedCategory === "all"
-      ? "Todas las categorías"
+      ? "Todas las categorias"
       : selectedCategory === "__services__"
       ? "Servicios"
-      : (categories?.find((cat) => cat.id === selectedCategory)?.name || "Categoría");
-
+      : (categories?.find((cat) => cat.id === selectedCategory)?.name || "Categoria");
   const openDetail = (p: Product) => {
     setDetailProduct(p);
     setDetailOpen(true);
@@ -216,159 +214,103 @@ export default function Inventario() {
     <div className="flex-1 min-h-0 flex flex-col">
       {/* Header bar - ya NO es sticky */}
       <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-2 pb-4">
-        <PageHeader
-          title="Inventario"
-          subtitle={
-            <>
-              {productsCount} productos · {servicesCount} servicios
-              {lowStockCount > 0 && (
-                <>
-                  {" "}·{" "}
-                  <span className="text-warning font-bold">{lowStockCount} alertas</span>
-                </>
-              )}
-            </>
-          }
-          mobileAction={
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                aria-label="Categorías"
-                onClick={() => setCategoryDialogOpen(true)}
-                className="h-10 w-10 rounded-xl bg-muted text-muted-foreground flex items-center justify-center border border-border shadow-sm active:scale-95 transition-transform"
-              >
-                <Palette className="w-5 h-5" strokeWidth={2} />
-              </button>
-              <button
-                type="button"
-                aria-label="Nuevo item de inventario"
-                onClick={handleNewProduct}
-                className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-[0_0_16px_hsl(var(--primary)/0.40)] active:scale-95 transition-transform"
-              >
-                <Plus className="w-5 h-5" strokeWidth={2.5} />
-              </button>
+        <section className="ce-hero ce-hero-mobile-bleed p-[22px_16px] lg:p-[22px]">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <div className="ce-hero-eyebrow">Inventario</div>
+              <h1 className="ce-hero-title mt-1.5 text-[clamp(1.55rem,5.4vw,2.15rem)] lg:mt-2 lg:text-[clamp(1.75rem,3vw,2.5rem)]">
+                Productos y <span className="text-primary">servicios.</span>
+              </h1>
+              <p className="ce-hero-meta mt-2 max-w-[460px] lg:mt-3">
+                <b className="text-[hsl(240_22%_95%)]">{productsCount} productos</b>
+                {" "}· {servicesCount} servicios
+                {lowStockCount > 0 && (
+                  <>
+                    {" "}·{" "}
+                    <b className="text-warning">{lowStockCount} alertas de stock</b>
+                  </>
+                )}
+              </p>
             </div>
-          }
-          action={
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="rounded-[14px]" onClick={() => setCategoryDialogOpen(true)}>
-                <Palette className="w-4 h-4 mr-1" />
-                Categorías
-              </Button>
-              <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary-hover rounded-[14px]" onClick={handleNewProduct}>
-                <Plus className="w-4 h-4 mr-1" />
-                Nuevo
-              </Button>
+            <div className="flex items-start gap-2">
+              <div className="hidden lg:flex gap-2">
+                <Button size="sm" className="bg-white/[.09] border-white/[.13] text-[hsl(240_22%_95%)] hover:bg-white/[.14] border" onClick={() => setCategoryDialogOpen(true)}>
+                  <Palette className="w-4 h-4 mr-1" />
+                  Categorias
+                </Button>
+                <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary-hover" onClick={handleNewProduct}>
+                  <Plus className="w-4 h-4 mr-1" />
+                  Nuevo
+                </Button>
+              </div>
+              <AccountMenu />
             </div>
-          }
-        />
+          </div>
 
-        {/* MOBILE: search + filter */}
-        <div className="lg:hidden space-y-3">
-          <div className="flex items-center gap-2">
+          <div className="relative z-[1] mt-4 flex flex-row items-center gap-2 animate-hero-search-in lg:mt-5">
             <UnifiedSearchInput
-              className="flex-1"
+              className="flex-1 min-w-0"
               placeholder="Buscar producto..."
               value={searchQuery}
               onChange={setSearchQuery}
             />
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="h-10 w-10 rounded-xl shrink-0 px-0 justify-center" aria-label="Filtrar por categoría">
-                <Filter className="w-4 h-4" />
-                <span className="sr-only">Filtrar por categoría</span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas las categorías</SelectItem>
-                <SelectItem value="__services__">Servicios</SelectItem>
-                {categories?.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="flex bg-card border border-border rounded-xl p-1 shrink-0">
+            <div className="flex shrink-0 items-center gap-2">
               <button
                 type="button"
-                onClick={() => setViewMode("grid")}
-                aria-label="Cuadrícula"
-                className={cn(
-                  "h-9 w-9 rounded-lg flex items-center justify-center transition-colors",
-                  viewMode === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
-                )}
+                aria-label="Gestionar categorias"
+                onClick={() => setCategoryDialogOpen(true)}
+                className="h-10 w-10 shrink-0 flex items-center justify-center rounded-xl bg-white/[.09] border border-white/[.13] text-[hsl(240_22%_95%)] active:scale-95 transition-transform lg:hidden"
               >
-                <Grid3X3 className="w-4 h-4" />
+                <Palette className="w-4 h-4" />
               </button>
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger
+                  className="h-10 w-10 shrink-0 justify-center rounded-xl px-0 bg-white/[.09] border-white/[.13] text-[hsl(240_22%_95%)] hover:bg-white/[.14] focus:ring-0 focus:border-white/30 [&>svg:last-child]:hidden lg:w-56 lg:justify-start lg:px-3 lg:[&>svg:last-child]:block"
+                  aria-label="Filtrar por categoria"
+                >
+                  <div className="flex items-center gap-2">
+                    <Filter className="w-4 h-4" />
+                    <span className="hidden truncate lg:inline">{selectedCategoryLabel}</span>
+                    <span className="sr-only lg:hidden">Filtrar por categoria</span>
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas las categorias</SelectItem>
+                  <SelectItem value="__services__">Servicios</SelectItem>
+                  {categories?.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="hidden border rounded-lg p-1 bg-white/5 lg:flex">
+                <Button
+                  variant={viewMode === "grid" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("grid")}
+                  className="px-3"
+                >
+                  <Grid3X3 className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={viewMode === "list" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("list")}
+                  className="px-3"
+                >
+                  <List className="w-4 h-4" />
+                </Button>
+              </div>
               <button
                 type="button"
-                onClick={() => setViewMode("list")}
-                aria-label="Lista"
-                className={cn(
-                  "h-9 w-9 rounded-lg flex items-center justify-center transition-colors",
-                  viewMode === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
-                )}
+                aria-label="Nuevo item de inventario"
+                onClick={handleNewProduct}
+                className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex shrink-0 items-center justify-center shadow-[0_0_16px_hsl(var(--primary)/0.40)] active:scale-95 transition-transform lg:hidden"
               >
-                <List className="w-4 h-4" />
+                <Plus className="w-5 h-5" strokeWidth={2.5} />
               </button>
             </div>
           </div>
-          {lowStockCount > 0 && (
-            <div className="flex items-center gap-2 rounded-2xl px-3 py-2.5 border border-warning/20 bg-warning/10">
-              <AlertTriangle className="w-4 h-4 text-warning flex-shrink-0" />
-              <span className="text-[12px] font-semibold text-warning">
-                {lowStockCount} producto{lowStockCount === 1 ? "" : "s"} requiere{lowStockCount === 1 ? "" : "n"} atención
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* DESKTOP: filters card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.08 }}
-          className="hidden lg:block card-elevated p-4"
-        >
-          <div className="flex flex-col lg:flex-row gap-4">
-            <UnifiedSearchInput
-              className="flex-1"
-              placeholder="Buscar productos..."
-              value={searchQuery}
-              onChange={setSearchQuery}
-            />
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-full lg:w-56">
-                <div className="flex items-center gap-2">
-                  <Filter className="w-4 h-4" />
-                  <span className="truncate">{selectedCategoryLabel}</span>
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas las categorías</SelectItem>
-                <SelectItem value="__services__">Servicios</SelectItem>
-                {categories?.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="flex border rounded-lg p-1 bg-muted/50">
-              <Button
-                variant={viewMode === "grid" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("grid")}
-                className="px-3"
-              >
-                <Grid3X3 className="w-4 h-4" />
-              </Button>
-              <Button
-                variant={viewMode === "list" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("list")}
-                className="px-3"
-              >
-                <List className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </motion.div>
+        </section>
       </div>
 
       <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain px-5 lg:px-6 pb-24 md:pb-6 no-scrollbar">
@@ -412,7 +354,7 @@ export default function Inventario() {
           </h3>
           <p className="text-muted-foreground mb-5 max-w-xs mx-auto">
             {searchQuery
-              ? "Intenta con otro nombre o cambia el filtro de categoría."
+              ? "Intenta con otro nombre o cambia el filtro de categoria."
               : "Agrega productos o servicios para gestionar tu inventario y precios."}
           </p>
           {!searchQuery && (
@@ -427,8 +369,13 @@ export default function Inventario() {
       {/* MOBILE products view (Redesign v2) */}
       {!isLoading && filteredProducts.length > 0 && <div className="lg:hidden">
         {viewMode === "grid" ? (
-          <div className="grid grid-cols-2 gap-3">
-            {filteredProducts.map((product, index) => {
+          <>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-lg font-extrabold tracking-tight">Resultados</h2>
+              <span className="text-xs font-bold text-muted-foreground">{filteredProducts.length} items</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {filteredProducts.map((product, index) => {
               const status = getStockStatus(product);
               const isService = (product.item_type ?? "product") === "service";
               const cc = getCategoryColor(product.category_id);
@@ -457,12 +404,6 @@ export default function Inventario() {
                         style={isService ? getServiceTypeBadgeStyle() : getCategoryBadgeStyle(product.category_id)}
                       >
                         {isService ? serviceTypeLabel : cn_}
-                      </span>
-                      <span
-                        onClick={(e) => { e.stopPropagation(); handleEdit(product); }}
-                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-lg bg-foreground/40 backdrop-blur flex items-center justify-center z-10"
-                      >
-                        <Edit className="w-3 h-3 text-background" />
                       </span>
                       {!isService && (
                         <span
@@ -529,8 +470,9 @@ export default function Inventario() {
                   </div>
                 </motion.div>
               );
-            })}
-          </div>
+              })}
+            </div>
+          </>
         ) : (
           <div className="bg-card border border-border rounded-2xl overflow-hidden divide-y divide-border">
             {filteredProducts.map((product) => {
@@ -559,7 +501,7 @@ export default function Inventario() {
                         {isService ? serviceTypeLabel : cn_}
                       </span>
                       {!isService && (
-                        <span className="text-sm font-semibold text-muted-foreground">T: {product.stock_store} · B: {product.stock_warehouse}</span>
+                        <span className="text-sm font-semibold text-muted-foreground">T: {product.stock_store} / B: {product.stock_warehouse}</span>
                       )}
                       {isService && (
                         <span className="text-[10px] text-muted-foreground">
@@ -789,7 +731,7 @@ export default function Inventario() {
               <thead className="bg-muted/50">
                 <tr>
                   <th className="px-2 sm:px-4 py-3 text-left text-sm font-medium text-muted-foreground w-[40%] sm:w-auto">Producto</th>
-                  <th className="hidden md:table-cell px-4 py-3 text-left text-sm font-medium text-muted-foreground">Categoría</th>
+                  <th className="hidden md:table-cell px-4 py-3 text-left text-sm font-medium text-muted-foreground">Categoria</th>
                   <th className="px-2 sm:px-4 py-3 text-center text-sm font-medium text-muted-foreground">Stock</th>
                   <th className="hidden sm:table-cell px-4 py-3 text-right text-sm font-medium text-muted-foreground">Precio</th>
                   <th className="hidden lg:table-cell px-4 py-3 text-center text-sm font-medium text-muted-foreground">Estado</th>
@@ -993,7 +935,7 @@ export default function Inventario() {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar producto?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. Se eliminará permanentemente el producto "{deleteProduct?.name}".
+              Esta accion no se puede deshacer. Se eliminara permanentemente el producto "{deleteProduct?.name}".
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -1,8 +1,6 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { StatsLayout } from "@/components/ui/stats-layout";
 import { m as motion } from "framer-motion";
-import gsap from "gsap";
 import { 
   ShieldCheck, 
   Calendar,
@@ -77,60 +75,6 @@ export default function Garantias() {
   const { data: warranties, isLoading } = useWarranties();
   const voidWarranty = useVoidWarranty();
   
-  const statsRef = useRef<HTMLDivElement>(null);
-  const statsHeightRef = useRef(0);
-  const searchActiveRef = useRef(false);
-  const searchFocusedRef = useRef(false);
-  const searchActive = searchQuery.length > 0;
-
-  useEffect(() => {
-    const main = document.querySelector("main") as HTMLElement | null;
-    const el = statsRef.current;
-    if (!main || !el) return;
-
-    const mt = 24;
-    const onScroll = () => {
-      const h = statsHeightRef.current;
-      if (!h || searchActiveRef.current || searchFocusedRef.current) return;
-      const p = Math.min(Math.max((main.scrollTop - 20) / (h + mt), 0), 1);
-      gsap.set(el, { height: h * (1 - p), opacity: 1 - p, marginTop: mt * (1 - p) });
-    };
-
-    const rafId = requestAnimationFrame(() => {
-      statsHeightRef.current = el.scrollHeight;
-      const h = statsHeightRef.current;
-      if (h > 0) {
-        gsap.set(el, { height: h, overflow: "hidden", marginTop: mt });
-        main.addEventListener("scroll", onScroll, { passive: true });
-      }
-    });
-
-    return () => {
-      cancelAnimationFrame(rafId);
-      main.removeEventListener("scroll", onScroll);
-      gsap.set(el, { clearProps: "all" });
-    };
-  }, []);
-
-  useEffect(() => {
-    const el = statsRef.current;
-    const h = statsHeightRef.current;
-    if (!el || !h) return;
-    const mt = 24;
-
-    if (searchActive) {
-      searchActiveRef.current = true;
-      gsap.to(el, { height: 0, opacity: 0, marginTop: 0, duration: 0.25, ease: "power2.in", overwrite: true });
-    } else {
-      const main = document.querySelector("main") as HTMLElement | null;
-      const p = Math.min(Math.max(((main?.scrollTop ?? 0) - 20) / (h + mt), 0), 1);
-      gsap.to(el, {
-        height: h * (1 - p), opacity: 1 - p, marginTop: mt * (1 - p),
-        duration: 0.25, ease: "power2.out", overwrite: true,
-        onComplete: () => { searchActiveRef.current = false; },
-      });
-    }
-  }, [searchActive]);
 
   const filteredWarranties = warranties?.filter((warranty) =>
     warranty.warranty_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -178,70 +122,36 @@ export default function Garantias() {
       {/* Header bar - ya NO es sticky */}
       <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-2 pb-4">
         <PageHeader
-          title="Garantías"
+          eyebrow="Garantías"
+          title={<>Control de <span className="text-primary">garantías.</span></>}
           subtitle={`${warranties?.length || 0} garantías registradas`}
           action={
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-[14px]" onClick={() => setSettingsDialogOpen(true)}>
+            <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary-hover" onClick={() => setSettingsDialogOpen(true)}>
               <Clock className="w-4 h-4 mr-1" />
               Duración
             </Button>
           }
-          mobileAction={
-            <button
-              type="button"
-              aria-label="Ajustar duración"
-              onClick={() => setSettingsDialogOpen(true)}
-              className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-[0_0_16px_hsl(var(--primary)/0.40)] active:scale-95 transition-transform"
-            >
-              <Clock className="w-5 h-5" strokeWidth={2.5} />
-            </button>
-          }
-        />
-        <UnifiedSearchInput
-          placeholder="Buscar por código, cliente o producto..."
-          value={searchQuery}
-          onChange={setSearchQuery}
-          onFocus={() => { searchFocusedRef.current = true; }}
-          onBlur={() => { searchFocusedRef.current = false; }}
-        />
+        >
+        <div className="flex items-center gap-2">
+          <UnifiedSearchInput
+            className="flex-1"
+            placeholder="Buscar por código, cliente o producto..."
+            value={searchQuery}
+            onChange={setSearchQuery}
+          />
+          <button
+            type="button"
+            aria-label="Ajustar duración"
+            onClick={() => setSettingsDialogOpen(true)}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[0_0_16px_hsl(var(--primary)/0.40)] transition-transform active:scale-95 lg:hidden"
+          >
+            <Clock className="w-5 h-5" strokeWidth={2.5} />
+          </button>
+        </div>
+        </PageHeader>
       </div>
 
       <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain px-5 lg:px-6 pb-24 md:pb-6 no-scrollbar">
-      <div ref={statsRef}>
-        <StatsLayout
-          mainStat={{
-            title: "Vigentes",
-            value: stats.active,
-            icon: CheckCircle,
-            className: "bg-success/5",
-            iconClassName: "bg-success text-success-foreground",
-          }}
-          secondaryStats={[
-            {
-              title: "Por Vencer",
-              value: stats.expiringSoon,
-              icon: Clock,
-              className: "bg-warning/5",
-              iconClassName: "bg-warning text-warning-foreground",
-            },
-            {
-              title: "Vencidas",
-              value: stats.expired,
-              icon: AlertCircle,
-              className: "bg-muted",
-              iconClassName: "bg-muted-foreground/20 text-muted-foreground",
-            },
-            {
-              title: "Anuladas",
-              value: stats.voided,
-              icon: XCircle,
-              className: "bg-destructive/5",
-              iconClassName: "bg-destructive text-destructive-foreground",
-            }
-          ]}
-        />
-      </div>
-
       {/* Warranties List */}
       <div className="mt-6">
         {isLoading ? (

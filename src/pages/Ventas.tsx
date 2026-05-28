@@ -1,15 +1,11 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { StatsLayout } from "@/components/ui/stats-layout";
 import { m as motion } from "framer-motion";
-import gsap from "gsap";
 import {
   Plus,
   ShoppingCart,
   Calendar,
   User,
-  TrendingUp,
-  DollarSign,
   Printer,
   Trash2,
   Eye,
@@ -67,60 +63,6 @@ export default function Ventas() {
   const { data: sales, isLoading } = useSales();
   const { data: settings } = useBusinessSettings();
   const deleteSale = useDeleteSale();
-  const statsRef = useRef<HTMLDivElement>(null);
-  const statsHeightRef = useRef(0);
-  const searchActiveRef = useRef(false);
-  const searchFocusedRef = useRef(false);
-  const searchActive = searchQuery.length > 0;
-
-  useEffect(() => {
-    const main = document.querySelector("main") as HTMLElement | null;
-    const el = statsRef.current;
-    if (!main || !el) return;
-
-    const mt = 24;
-    const onScroll = () => {
-      const h = statsHeightRef.current;
-      if (!h || searchActiveRef.current || searchFocusedRef.current) return;
-      const p = Math.min(Math.max((main.scrollTop - 20) / (h + mt), 0), 1);
-      gsap.set(el, { height: h * (1 - p), opacity: 1 - p, marginTop: mt * (1 - p) });
-    };
-
-    const rafId = requestAnimationFrame(() => {
-      statsHeightRef.current = el.scrollHeight;
-      const h = statsHeightRef.current;
-      if (h > 0) {
-        gsap.set(el, { height: h, overflow: "hidden", marginTop: mt });
-        main.addEventListener("scroll", onScroll, { passive: true });
-      }
-    });
-
-    return () => {
-      cancelAnimationFrame(rafId);
-      main.removeEventListener("scroll", onScroll);
-      gsap.set(el, { clearProps: "all" });
-    };
-  }, []);
-
-  useEffect(() => {
-    const el = statsRef.current;
-    const h = statsHeightRef.current;
-    if (!el || !h) return;
-    const mt = 24;
-
-    if (searchActive) {
-      searchActiveRef.current = true;
-      gsap.to(el, { height: 0, opacity: 0, marginTop: 0, duration: 0.25, ease: "power2.in", overwrite: true });
-    } else {
-      const main = document.querySelector("main") as HTMLElement | null;
-      const p = Math.min(Math.max(((main?.scrollTop ?? 0) - 20) / (h + mt), 0), 1);
-      gsap.to(el, {
-        height: h * (1 - p), opacity: 1 - p, marginTop: mt * (1 - p),
-        duration: 0.25, ease: "power2.out", overwrite: true,
-        onComplete: () => { searchActiveRef.current = false; },
-      });
-    }
-  }, [searchActive]);
 
   const currencySymbol = settings?.currency_symbol || "$";
 
@@ -220,63 +162,36 @@ export default function Ventas() {
       {/* Header bar - ya NO es sticky */}
       <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-2 pb-4">
         <PageHeader
-          title="Ventas"
+          eyebrow="Ventas"
+          title={<>Registro de <span className="text-primary">ventas.</span></>}
           subtitle={`${sales?.length || 0} ventas registradas`}
           action={
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-[14px]" onClick={() => setFormDialogOpen(true)}>
+            <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary-hover" onClick={() => setFormDialogOpen(true)}>
               <Plus className="w-4 h-4 mr-1" />
               Nueva
             </Button>
           }
-          mobileAction={
-            <button
-              type="button"
-              aria-label="Nueva venta"
-              onClick={() => setFormDialogOpen(true)}
-              className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-[0_0_16px_hsl(var(--primary)/0.40)] active:scale-95 transition-transform"
-            >
-              <Plus className="w-5 h-5" strokeWidth={2.5} />
-            </button>
-          }
-        />
-        <UnifiedSearchInput
-          placeholder="Buscar por folio o cliente..."
-          value={searchQuery}
-          onChange={setSearchQuery}
-          onFocus={() => { searchFocusedRef.current = true; }}
-          onBlur={() => { searchFocusedRef.current = false; }}
-        />
+        >
+        <div className="flex items-center gap-2">
+          <UnifiedSearchInput
+            className="flex-1"
+            placeholder="Buscar por folio o cliente..."
+            value={searchQuery}
+            onChange={setSearchQuery}
+          />
+          <button
+            type="button"
+            aria-label="Nueva venta"
+            onClick={() => setFormDialogOpen(true)}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[0_0_16px_hsl(var(--primary)/0.40)] transition-transform active:scale-95 lg:hidden"
+          >
+            <Plus className="w-5 h-5" strokeWidth={2.5} />
+          </button>
+        </div>
+        </PageHeader>
       </div>
 
       <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain px-5 lg:px-6 pb-24 md:pb-6 no-scrollbar">
-      <div ref={statsRef}>
-        <StatsLayout
-          mainStat={{
-            title: "Ventas Hoy",
-            value: `${currencySymbol}${todayTotal.toLocaleString()}`,
-            icon: DollarSign,
-            className: "bg-secondary/5",
-            iconClassName: "bg-secondary text-secondary-foreground",
-          }}
-          secondaryStats={[
-            {
-              title: "Ventas del Mes",
-              value: `${currencySymbol}${monthTotal.toLocaleString()}`,
-              icon: TrendingUp,
-              className: "bg-success/5",
-              iconClassName: "bg-success text-success-foreground",
-            },
-            {
-              title: "Transacciones",
-              value: sales?.length || 0,
-              icon: ShoppingCart,
-              className: "bg-primary/5",
-              iconClassName: "bg-primary text-primary-foreground",
-            }
-          ]}
-        />
-      </div>
-
       {/* Sales List */}
       <div className="mt-6">
         {isLoading ? (

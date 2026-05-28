@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  html, body { margin:0; padding:0; background:var(--card); color:var(--fg); }
+  body { font-family: var(--font-sans); padding: 24px; }
+  .swatch-grid { display:grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+  .swatch { border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); display:flex; flex-direction:column; min-height:88px; }
+  .swatch .chip { flex:1; }
+  .swatch .meta { padding: 6px 8px; background: var(--card); }
+  .swatch .name { font: 600 11px/1.2 var(--font-sans); color: var(--fg); letter-spacing: -0.01em; }
+  .swatch .hex  { font: 500 10px/1.4 var(--font-sans); color: var(--fg-muted); font-variant-numeric: tabular-nums; }
+  .dark-meta .name { color: #F0F0F8; }
+  .dark-meta .hex  { color: #7878A0; }
+  .dark-meta { background:#141419 !important; }
+</style>
+</head>
+<body>
+  <div class="swatch-grid">
+    <div class="swatch"><div class="chip" style="background:#F7F8FA;border-bottom:1px solid var(--border)"></div><div class="meta"><div class="name">Surface Pale</div><div class="hex">#F7F8FA · bg</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#FFFFFF;border-bottom:1px solid var(--border)"></div><div class="meta"><div class="name">Surface Card</div><div class="hex">#FFFFFF · card</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#F0F1F5"></div><div class="meta"><div class="name">Surface Tile</div><div class="hex">#F0F1F5 · surface-2</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#E4E4E7"></div><div class="meta"><div class="name">Divider Faint</div><div class="hex">#E4E4E7 · border</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#131318"></div><div class="meta dark-meta"><div class="name">Sidebar Void</div><div class="hex">#131318 · rail</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#0A0A0F"></div><div class="meta dark-meta"><div class="name">Abyss</div><div class="hex">#0A0A0F · dark bg</div></div></div>
+  </div>
+</body>
+</html>

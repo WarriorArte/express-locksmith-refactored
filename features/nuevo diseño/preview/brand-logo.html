@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../colors_and_type.css" />
+<script src="https://unpkg.com/lucide@0.378.0/dist/umd/lucide.min.js"></script>
+<style>
+  html, body { margin:0; padding:0; background:var(--card); color:var(--fg); }
+  body { font-family: var(--font-sans); padding: 22px 24px; display:flex; gap: 24px; align-items:center; }
+  .mark { display:inline-flex; align-items:center; gap: 14px; padding: 14px 18px 14px 14px; border-radius: var(--radius); }
+  .light { background:#FFFFFF; border:1px solid var(--border); }
+  .dark  { background:#131318; color:#F0F0F8; }
+  .tile { width:56px; height:56px; border-radius:14px; background:var(--primary); color:var(--primary-fg); display:flex; align-items:center; justify-content:center; box-shadow: var(--shadow-glow); }
+  .name { font: 800 22px/1.05 var(--font-sans); letter-spacing: -0.02em; }
+  .accent { color: var(--primary); }
+  .sub { font: 600 11px/1 var(--font-sans); opacity:0.6; margin-top:4px; letter-spacing:0.04em; text-transform:uppercase; }
+  .stack { display:flex; flex-direction:column; }
+</style>
+</head>
+<body>
+  <div class="mark light">
+    <div class="tile" aria-hidden="true"><i data-lucide="key" style="width:28px;height:28px;stroke-width:2.5"></i></div>
+    <div class="stack">
+      <div class="name">Cerrajería<br/><span class="accent">Express</span></div>
+      <div class="sub">sistema de gestión</div>
+    </div>
+  </div>
+  <div class="mark dark">
+    <div class="tile" aria-hidden="true"><i data-lucide="key" style="width:28px;height:28px;stroke-width:2.5"></i></div>
+    <div class="stack">
+      <div class="name">Cerrajería<br/><span class="accent">Express</span></div>
+      <div class="sub" style="color:#7878A0">sistema de gestión</div>
+    </div>
+  </div>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

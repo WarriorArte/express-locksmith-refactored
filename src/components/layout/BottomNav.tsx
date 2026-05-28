@@ -2,6 +2,7 @@
 import {
   Home, Wrench, Package, Grid3x3, Plus,
   ShoppingCart, FileText, Users, Shield, Construction, Settings, LogOut,
+  Key, Bell, User, ChevronRight,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -13,6 +14,7 @@ import { m as motion } from "framer-motion";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/responsive-dialog";
@@ -25,6 +27,7 @@ import { SaleFormDialog } from "@/components/sales/SaleFormDialog";
 
 type FeatureKey = string | null;
 type NavItem = { to: string; icon: LucideIcon; label: string; featureKey: FeatureKey };
+type MoreItem = NavItem & { description: string; group: "operacion" | "catalogo" | "cuenta" };
 
 const navItems: NavItem[] = [
   { to: "/", icon: Home, label: "Inicio", featureKey: null },
@@ -32,13 +35,13 @@ const navItems: NavItem[] = [
   { to: "/inventario", icon: Package, label: "Inventario", featureKey: "inventory" },
 ];
 
-const moreItems: NavItem[] = [
-  { to: "/clientes", icon: Users, label: "Clientes", featureKey: "customers" },
-  { to: "/cotizaciones", icon: FileText, label: "Cotizaciones", featureKey: "quotes" },
-  { to: "/ventas", icon: ShoppingCart, label: "Ventas", featureKey: "sales" },
-  { to: "/garantias", icon: Shield, label: "Garantías", featureKey: "warranties" },
-  { to: "/herramientas", icon: Construction, label: "Herramientas", featureKey: null },
-  { to: "/configuracion", icon: Settings, label: "Configuración", featureKey: null },
+const moreItems: MoreItem[] = [
+  { to: "/cotizaciones", icon: FileText, label: "Cotizaciones", description: "Propuestas y conversión a venta", group: "operacion", featureKey: "quotes" },
+  { to: "/ventas", icon: ShoppingCart, label: "Ventas", description: "Caja del día y facturas", group: "operacion", featureKey: "sales" },
+  { to: "/garantias", icon: Shield, label: "Garantías", description: "Cobertura y reclamos", group: "operacion", featureKey: "warranties" },
+  { to: "/clientes", icon: Users, label: "Clientes", description: "Historial por cliente", group: "catalogo", featureKey: "customers" },
+  { to: "/herramientas", icon: Construction, label: "Herramientas", description: "Inventario del taller", group: "catalogo", featureKey: null },
+  { to: "/configuracion", icon: Settings, label: "Configuración", description: "Negocio, usuarios, plantillas", group: "cuenta", featureKey: null },
 ];
 
 const quickActions = [
@@ -54,7 +57,7 @@ export function BottomNav() {
   const navigate = useNavigate();
   const { isFeatureEnabled } = useWorkshopFeatures();
   const { isSuperAdmin, currentWorkshop, isLoading } = useWorkshop();
-  const { signOut } = useAuth();
+  const { profile, signOut } = useAuth();
 
   const [actionsOpen, setActionsOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -75,6 +78,14 @@ export function BottomNav() {
   );
 
   const shouldShowFAB = !isLoading && !(isSuperAdmin && !currentWorkshop);
+  const workshopName = currentWorkshop?.name || "Cerrajería Express";
+  const workshopCode = currentWorkshop?.code || "ELE-2024";
+  const firstName = profile?.full_name?.split(" ")[0] || "Usuario";
+  const moreGroups = [
+    { key: "operacion", label: "Operación", items: enabledMoreItems.filter((item) => item.group === "operacion") },
+    { key: "catalogo", label: "Catálogo", items: enabledMoreItems.filter((item) => item.group === "catalogo") },
+    { key: "cuenta", label: "Cuenta", items: enabledMoreItems.filter((item) => item.group === "cuenta") },
+  ].filter((group) => group.items.length > 0);
 
   const openAction = (dialog: string) => {
     setActionsOpen(false);
@@ -172,21 +183,33 @@ export function BottomNav() {
 
       {/* Quick actions sheet */}
       <Dialog open={actionsOpen} onOpenChange={setActionsOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Crear nuevo</DialogTitle>
+            <div className="flex items-center gap-3">
+              <div className="flex h-[52px] w-[52px] items-center justify-center rounded-[16px] bg-primary/10 text-primary">
+                <Plus className="h-6 w-6" strokeWidth={2.4} />
+              </div>
+              <div className="min-w-0">
+                <DialogTitle className="text-2xl font-extrabold tracking-tight">
+                  Crear nuevo
+                </DialogTitle>
+                <DialogDescription>
+                  Elige qué vas a registrar en el taller.
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-3 pt-2">
             {enabledQuickActions.map((a) => (
               <button
                 key={a.dialog}
                 onClick={() => openAction(a.dialog)}
-                className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-[hsl(var(--surface-2))] hover:bg-muted transition-colors active:scale-95"
+                className="flex min-h-[136px] flex-col items-start justify-end rounded-[14px] border border-border bg-card p-4 text-left transition-transform active:scale-[0.98]"
               >
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <a.icon className="w-5 h-5 text-primary" />
-                </div>
-                <span className="text-xs font-semibold text-foreground text-center">
+                <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-[14px] bg-primary/10 text-primary">
+                  <a.icon className="h-5 w-5" />
+                </span>
+                <span className="text-sm font-extrabold leading-tight text-foreground">
                   {a.label}
                 </span>
               </button>
@@ -197,52 +220,133 @@ export function BottomNav() {
 
       {/* "Más" navigation sheet */}
       <Dialog open={moreOpen} onOpenChange={setMoreOpen}>
-        <DialogContent>
-          <DialogHeader>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="sr-only">
             <DialogTitle>Más opciones</DialogTitle>
+            <DialogDescription>Navegación secundaria y cuenta</DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col gap-2 pt-1">
-            {enabledMoreItems.map((item) => {
-              const Icon = item.icon;
-              const active = location.pathname === item.to;
-              return (
-                <button
-                  key={item.to}
-                  type="button"
-                  onClick={() => {
-                    setMoreOpen(false);
-                    if (!active) {
-                      navigate(item.to);
-                    }
-                  }}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-3 rounded-2xl transition-colors text-left",
-                    active
-                      ? "bg-primary/10 text-primary"
-                      : "bg-[hsl(var(--surface-2))] text-foreground hover:bg-muted",
-                  )}
-                >
-                  <div className={cn(
-                    "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0",
-                    active ? "bg-primary text-primary-foreground" : "bg-card text-primary",
-                  )}>
-                    <Icon className="w-[18px] h-[18px]" />
-                  </div>
-                  <span className="text-sm font-semibold flex-1">{item.label}</span>
-                </button>
-              );
-            })}
 
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="flex items-center gap-3 px-3 py-3 rounded-2xl text-left bg-destructive/10 text-destructive hover:bg-destructive/15 mt-2"
-            >
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-destructive/15">
-                <LogOut className="w-[18px] h-[18px]" />
+          <div className="space-y-5 pb-1">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-primary text-primary-foreground shadow-[0_0_18px_hsl(var(--primary)/0.28)]">
+                <Key className="h-5 w-5" strokeWidth={2.4} />
               </div>
-              <span className="text-sm font-semibold flex-1">Cerrar sesión</span>
-            </button>
+              <div className="min-w-0">
+                <div className="truncate text-base font-extrabold leading-tight tracking-tight text-foreground">
+                  {workshopName}
+                </div>
+                <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                  <span>Más opciones</span>
+                  <span>·</span>
+                  <span>navegación</span>
+                  <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-extrabold text-foreground">
+                    {workshopCode}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setMoreOpen(false);
+                  navigate("/configuracion");
+                }}
+                className="relative flex items-center gap-3 rounded-[14px] bg-muted px-3 py-3 text-left active:scale-[0.98] transition-transform"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-primary/10 text-primary">
+                  <User className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-extrabold leading-tight text-foreground">Mi perfil</div>
+                  <div className="truncate text-xs font-medium text-muted-foreground">{firstName}</div>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMoreOpen(false);
+                  navigate("/configuracion");
+                }}
+                className="relative flex items-center gap-3 rounded-[14px] bg-muted px-3 py-3 text-left active:scale-[0.98] transition-transform"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-primary/10 text-primary">
+                  <Bell className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-extrabold leading-tight text-foreground">Notificaciones</div>
+                  <div className="truncate text-xs font-medium text-muted-foreground">4 sin leer</div>
+                </div>
+                <span className="absolute right-3 top-3 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-extrabold text-destructive-foreground">
+                  4
+                </span>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {moreGroups.map((group) => (
+                <div key={group.key}>
+                  <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+                    {group.label}
+                  </div>
+                  <div className="space-y-1.5">
+                    {group.items.map((item) => {
+                      const Icon = item.icon;
+                      const active = location.pathname === item.to;
+                      return (
+                        <button
+                          key={item.to}
+                          type="button"
+                          onClick={() => {
+                            setMoreOpen(false);
+                            if (!active) {
+                              navigate(item.to);
+                            }
+                          }}
+                          className={cn(
+                            "flex w-full items-center gap-3 rounded-sm px-3 py-2.5 text-left transition-colors active:bg-muted/70",
+                            active && "bg-primary/10 text-primary",
+                          )}
+                        >
+                          <div className={cn(
+                            "flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px]",
+                            active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+                          )}>
+                            <Icon className="h-5 w-5" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className={cn("truncate text-sm font-extrabold leading-tight", active ? "text-primary" : "text-foreground")}>
+                              {item.label}
+                            </div>
+                            <div className="truncate text-xs font-medium text-muted-foreground">
+                              {item.description}
+                            </div>
+                          </div>
+                          <ChevronRight className={cn("h-4 w-4 shrink-0", active ? "text-primary" : "text-muted-foreground")} />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="border-t border-border pt-4">
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="flex w-full items-center gap-3 rounded-sm px-3 py-3 text-left text-destructive active:bg-destructive/10"
+              >
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-destructive/10">
+                  <LogOut className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-extrabold">Cerrar sesión</div>
+                  <div className="text-xs font-medium text-muted-foreground">Volver a la pantalla de acceso</div>
+                </div>
+              </button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../colors_and_type.css" />
+<script src="https://unpkg.com/lucide@0.378.0/dist/umd/lucide.min.js"></script>
+<style>
+  html, body { margin:0; padding:0; background:var(--card); color:var(--fg); }
+  body { font-family: var(--font-sans); padding: 22px 24px; }
+  .row { display:flex; gap: 10px; flex-wrap:wrap; align-items:center; margin-bottom: 12px; }
+  .row:last-child { margin-bottom: 0; }
+  .grp { font: 600 10px/1 var(--font-sans); color: var(--fg-muted); letter-spacing: 0.06em; text-transform: uppercase; width: 86px; }
+  i.lucide { width: 14px; height: 14px; }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="grp">primary</div>
+    <button class="ds-btn ds-btn--primary"><i data-lucide="plus"></i> Nueva venta</button>
+    <button class="ds-btn ds-btn--proto"><i data-lucide="zap"></i> Crear ahora</button>
+    <button class="ds-btn ds-btn--primary ds-btn--lg">Iniciar sesión</button>
+  </div>
+  <div class="row">
+    <div class="grp">secondary</div>
+    <button class="ds-btn ds-btn--secondary"><i data-lucide="filter"></i> Categorías</button>
+    <button class="ds-btn ds-btn--ghost">Ver todos</button>
+    <button class="ds-btn ds-btn--destructive"><i data-lucide="trash-2"></i> Eliminar</button>
+  </div>
+  <div class="row">
+    <div class="grp">icon</div>
+    <button class="ds-btn ds-btn--secondary ds-btn--icon"><i data-lucide="search"></i></button>
+    <button class="ds-btn ds-btn--secondary ds-btn--icon"><i data-lucide="filter"></i></button>
+    <button class="ds-btn ds-btn--primary ds-btn--icon"><i data-lucide="plus"></i></button>
+    <button class="ds-btn ds-btn--ghost ds-btn--icon"><i data-lucide="more-vertical"></i></button>
+  </div>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

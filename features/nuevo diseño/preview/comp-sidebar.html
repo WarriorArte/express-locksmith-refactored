@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../colors_and_type.css" />
+<script src="https://unpkg.com/lucide@0.378.0/dist/umd/lucide.min.js"></script>
+<style>
+  html, body { margin:0; padding:0; background:var(--card); color:var(--fg); }
+  body { font-family: var(--font-sans); padding: 16px 24px; }
+  .rail { width: 256px; background: #131318; color: #F0F0F8; border-radius: var(--radius); padding: 10px; box-shadow: var(--shadow-lg); }
+  .item { display:flex; align-items:center; gap: 12px; padding: 10px 14px; border-radius: var(--radius); font: 500 13px/1 var(--font-sans); color: hsl(240 22% 95% / 0.8); cursor:pointer; }
+  .item:hover { background: hsl(240 14% 14%); color: #F0F0F8; }
+  .item.active { background: var(--primary); color: var(--primary-fg); font-weight: 600; }
+  .item i { width: 18px; height: 18px; }
+  .group { display:flex; gap: 22px; align-items: flex-start; }
+  .preview-meta { font: 500 11px/1.4 var(--font-sans); color: var(--fg-muted); margin-top: 18px; }
+  .preview-meta b { color: var(--fg); font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="group">
+    <div class="rail">
+      <div class="item active"><i data-lucide="layout-dashboard"></i> Dashboard</div>
+      <div class="item"><i data-lucide="package"></i> Inventario</div>
+      <div class="item"><i data-lucide="file-text"></i> Cotizaciones</div>
+      <div class="item"><i data-lucide="users"></i> Clientes</div>
+      <div class="item"><i data-lucide="wrench"></i> Servicios</div>
+    </div>
+    <div>
+      <div class="preview-meta"><b>Sidebar Void</b> · #131318 · always dark<br/>Active item = full neon-green fill</div>
+      <div class="preview-meta"><b>Inactive items</b> · 80% foreground · hover surfaces a 14% accent tile</div>
+      <div class="preview-meta"><b>Item height</b> · 40px · 12px gap icon→label · 13px label</div>
+    </div>
+  </div>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

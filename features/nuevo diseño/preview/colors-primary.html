@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  html, body { margin:0; padding:0; background:var(--card); color:var(--fg); }
+  body { font-family: var(--font-sans); padding: 24px; }
+  .swatch-grid { display:grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .swatch { border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); display:flex; flex-direction:column; min-height:90px; }
+  .swatch .chip { flex:1; }
+  .swatch .meta { padding: 6px 8px; background: var(--card); }
+  .swatch .name { font: 600 11px/1.2 var(--font-sans); color: var(--fg); letter-spacing: -0.01em; }
+  .swatch .hex  { font: 500 10px/1.4 var(--font-sans); color: var(--fg-muted); font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+  <div class="swatch-grid">
+    <div class="swatch"><div class="chip" style="background:#00E5A0"></div><div class="meta"><div class="name">Neon Signal</div><div class="hex">#00E5A0 · primary</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#00C98C"></div><div class="meta"><div class="name">Neon Deep</div><div class="hex">#00C98C · primary-hover</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#9898D0"></div><div class="meta"><div class="name">Purple Iris</div><div class="hex">#9898D0 · accent</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#FF4D6A"></div><div class="meta"><div class="name">Signal Crimson</div><div class="hex">#FF4D6A · destructive</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#FFB830"></div><div class="meta"><div class="name">Amber Caution</div><div class="hex">#FFB830 · warning</div></div></div>
+  </div>
+</body>
+</html>

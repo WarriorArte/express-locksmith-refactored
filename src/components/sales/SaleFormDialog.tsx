@@ -3,7 +3,6 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle,
   DialogFooter,
 } from "@/components/ui/responsive-dialog";
 import { Button } from "@/components/ui/button";
@@ -20,10 +19,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, UserPlus, Shield, User, Package, FileText } from "lucide-react";
+import { Loader2, UserPlus, Shield, User, Package, FileText, ShoppingCart } from "lucide-react";
 import { CustomerSelect } from "@/components/shared/CustomerSelect";
 import { ServiceProductsEditor, type ProductEditorItem } from "@/components/shared/ServiceProductsEditor";
 import { CustomerFormDialog } from "@/components/customers/CustomerFormDialog";
+import { CreationDialogHeader } from "@/components/shared/CreationDialogHeader";
 import { useCreateSale, generateSaleNumber, paymentMethodLabels, type PaymentMethod, type Sale, type SaleItem } from "@/hooks/useSales";
 import { useBatchInventoryUpdate } from "@/hooks/useInventoryMovements";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
@@ -311,7 +311,12 @@ export function SaleFormDialog({ open, onOpenChange, initialProduct }: SaleFormD
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent fixedHeight className="max-w-[95vw] sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-base sm:text-lg">Nueva Venta</DialogTitle>
+          <CreationDialogHeader
+            icon={ShoppingCart}
+            title="Nueva venta"
+            description="Caja del día con productos, cliente, pago y garantía opcional"
+            meta={form.sale_number || undefined}
+          />
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">

@@ -88,30 +88,33 @@ export default function Clientes() {
       {/* Header bar - ya NO es sticky */}
       <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-2 pb-4">
         <PageHeader
-          title="Clientes"
+          eyebrow="Clientes"
+          title={<>Tus <span className="text-primary">clientes.</span></>}
           subtitle={`${customers?.length || 0} clientes registrados`}
           action={
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-[14px]" onClick={handleNewCustomer}>
+            <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary-hover" onClick={handleNewCustomer}>
               <Plus className="w-4 h-4 mr-1" />
               Nuevo
             </Button>
           }
-          mobileAction={
-            <button
-              type="button"
-              aria-label="Nuevo cliente"
-              onClick={handleNewCustomer}
-              className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-[0_0_16px_hsl(var(--primary)/0.40)] active:scale-95 transition-transform"
-            >
-              <Plus className="w-5 h-5" strokeWidth={2.5} />
-            </button>
-          }
-        />
-        <UnifiedSearchInput
-          placeholder="Buscar por nombre, email o teléfono..."
-          value={searchQuery}
-          onChange={setSearchQuery}
-        />
+        >
+        <div className="flex items-center gap-2">
+          <UnifiedSearchInput
+            className="flex-1"
+            placeholder="Buscar por nombre, email o teléfono..."
+            value={searchQuery}
+            onChange={setSearchQuery}
+          />
+          <button
+            type="button"
+            aria-label="Nuevo cliente"
+            onClick={handleNewCustomer}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[0_0_16px_hsl(var(--primary)/0.40)] transition-transform active:scale-95 lg:hidden"
+          >
+            <Plus className="w-5 h-5" strokeWidth={2.5} />
+          </button>
+        </div>
+        </PageHeader>
       </div>
 
       <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain px-5 lg:px-6 pb-24 md:pb-6 no-scrollbar">

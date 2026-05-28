@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  html, body { margin:0; padding:0; background:var(--card); color:var(--fg); }
+  body { font-family: var(--font-sans); padding: 24px; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom: 14px; }
+  .row:last-child { margin-bottom: 0; }
+  .label { font: 600 11px/1 var(--font-sans); color: var(--fg-muted); letter-spacing: 0.04em; text-transform: uppercase; width: 96px; flex-shrink: 0; }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="label">success</div>
+    <span class="ds-pill ds-pill--success">Activo</span>
+    <span class="ds-pill ds-pill--success-on">En vivo</span>
+    <span class="ds-pill ds-pill--success">Entregado</span>
+    <span class="ds-pill ds-pill--success">En stock</span>
+  </div>
+  <div class="row">
+    <div class="label">warning</div>
+    <span class="ds-pill ds-pill--warning">Stock bajo</span>
+    <span class="ds-pill ds-pill--warning">Pendiente</span>
+    <span class="ds-pill ds-pill--warning">Por vencer</span>
+  </div>
+  <div class="row">
+    <div class="label">danger</div>
+    <span class="ds-pill ds-pill--danger">Vencida</span>
+    <span class="ds-pill ds-pill--danger">Cancelado</span>
+  </div>
+  <div class="row">
+    <div class="label">info</div>
+    <span class="ds-pill ds-pill--info">En curso</span>
+    <span class="ds-pill ds-pill--info">Nuevo cliente</span>
+    <span class="ds-pill ds-pill--neutral">Sin categoría</span>
+  </div>
+</body>
+</html>

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../colors_and_type.css" />
+<script src="https://unpkg.com/lucide@0.378.0/dist/umd/lucide.min.js"></script>
+<style>
+  html, body { margin:0; padding:0; background:var(--bg); color:var(--fg); }
+  body { font-family: var(--font-sans); padding: 22px 24px; background-image: var(--texture-dots); background-size: var(--texture-dots-size); }
+  .hero { background: linear-gradient(135deg, #131318 0%, #1E1E26 100%); background-image: linear-gradient(135deg, #131318 0%, #1E1E26 100%), radial-gradient(circle, hsl(0 0% 100% / 0.06) 1px, transparent 1px); background-size: auto, 22px 22px; color: #F0F0F8; border-radius: var(--radius-lg); padding: 22px; display:flex; align-items:flex-start; justify-content:space-between; box-shadow: var(--shadow-lg); }
+  .hero .label { font: 600 11px/1 var(--font-sans); letter-spacing: 0.08em; text-transform: uppercase; color: var(--primary); }
+  .hero h1 { margin: 8px 0 0; font: 800 34px/1.02 var(--font-sans); letter-spacing: -0.03em; color: #F0F0F8; }
+  .hero h1 .accent { color: var(--primary); }
+  .hero .meta { margin-top: 10px; font: 500 13px/1.5 var(--font-sans); color: hsl(240 18% 76%); max-width: 340px; }
+  .hero .avatar { width: 44px; height: 44px; border-radius: 12px; background: var(--primary); color: var(--primary-fg); display:flex; align-items:center; justify-content:center; font: 800 16px/1 var(--font-sans); position:relative; box-shadow: 0 0 18px hsl(159 100% 45% / .35); }
+  .hero .avatar::after { content:''; position:absolute; top:-2px; right:-2px; width:10px; height:10px; border-radius:99px; background:var(--destructive); border:2px solid #131318; }
+</style>
+</head>
+<body>
+  <div class="hero">
+    <div>
+      <div class="label">Panel principal · 18:42</div>
+      <h1>Bienvenido,<br/><span class="accent">Joshua</span></h1>
+      <div class="meta">Tu taller registró <b style="color:#F0F0F8">12 servicios</b> hoy y <b style="color:#F0F0F8">3 cotizaciones</b> están por vencer.</div>
+    </div>
+    <div class="avatar">J</div>
+  </div>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

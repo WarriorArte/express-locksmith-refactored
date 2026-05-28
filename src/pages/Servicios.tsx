@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { resolveStorageUrl } from "@/lib/phpApi";
-import { PageHeader } from "@/components/layout/PageHeader";
+import { AccountMenu } from "@/components/layout/AccountMenu";
 import { m as motion } from "framer-motion";
-import { 
-  Plus, 
-  Wrench, 
+import {
+  Plus,
+  Filter,
+  Wrench,
   Calendar,
   User,
   MoreVertical,
@@ -20,7 +21,6 @@ import {
   XCircle,
   Package,
   Truck,
-  Filter,
   MapPin,
   ImagePlus,
   Printer,
@@ -35,18 +35,18 @@ import { UnifiedSearchInput } from "@/components/shared/UnifiedSearchInput";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -155,13 +155,13 @@ export default function Servicios() {
     const matchesStatus = statusFilter === "all" || service.status === statusFilter;
     return matchesSearch && matchesStatus;
   })?.sort((a, b) => {
-    // Servicios programados primero, ordenados por scheduled_start_at más próximo
+    // Servicios programados primero, ordenados por scheduled_start_at mas proximo
     if (a.scheduled_start_at && !b.scheduled_start_at) return -1;
     if (!a.scheduled_start_at && b.scheduled_start_at) return 1;
     if (a.scheduled_start_at && b.scheduled_start_at) {
       return new Date(a.scheduled_start_at).getTime() - new Date(b.scheduled_start_at).getTime();
     }
-    // Servicios sin programar, ordenados por created_at descendente (más recientes primero)
+    // Servicios sin programar, ordenados por created_at descendente (mas recientes primero)
     return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
   }) || [];
 
@@ -170,6 +170,8 @@ export default function Servicios() {
     inProgress: services?.filter(s => s.status === "in_progress").length || 0,
     completed: services?.filter(s => s.status === "completed").length || 0,
     delivered: services?.filter(s => s.status === "delivered").length || 0,
+    cancelled: services?.filter(s => s.status === "cancelled").length || 0,
+    today: services?.length || 0,
   };
 
   const handleDelete = (service: Service) => {
@@ -238,8 +240,8 @@ export default function Servicios() {
         // Mostrar alerta si hay productos sin stock, pero permitir continuar
         if (outOfStockProducts.length > 0) {
           toast({
-            title: "⚠️ Stock insuficiente",
-            description: `${outOfStockProducts.join(", ")} no tienen suficiente stock en tienda. El servicio se completará igual, pero el stock no será deducido.`,
+            title: "Stock insuficiente",
+            description: `${outOfStockProducts.join(", ")} no tienen suficiente stock en tienda. El servicio se completara igual, pero el stock no sera deducido.`,
             variant: "destructive",
           });
         }
@@ -260,7 +262,7 @@ export default function Servicios() {
         } catch (error) {
           toast({
             title: "Error",
-            description: "No se pudo descontar el inventario, pero el servicio se marcó como completado.",
+            description: "No se pudo descontar el inventario, pero el servicio se marco como completado.",
             variant: "destructive",
           });
         }
@@ -368,8 +370,8 @@ export default function Servicios() {
         { icon: Printer, label: "Ticket", onClick: () => openServiceTicket(viewingService) },
         {
           icon: ImagePlus,
-          label: "Imágenes",
-          desktopLabel: "Imágenes",
+          label: "Imagenes",
+          desktopLabel: "Imagenes",
           onClick: () => {
             setImagesService(viewingService);
             setImagesDialogOpen(true);
@@ -417,55 +419,71 @@ export default function Servicios() {
     <div className="flex-1 min-h-0 flex flex-col">
       {/* Header bar */}
       <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-2 pb-4">
-        <PageHeader
-          title="Servicios"
-          subtitle={
-            <>
-              <span className="text-foreground dark:text-primary font-bold">{stats.inProgress}</span> en curso ·{" "}
-              <span className="text-warning font-bold">{stats.pending}</span> pendientes
-            </>
-          }
-          mobileAction={
-            <button
-              type="button"
-              aria-label="Nuevo servicio"
-              onClick={() => { setEditingService(null); setFormDialogOpen(true); }}
-              className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-[0_0_16px_hsl(var(--primary)/0.40)] active:scale-95 transition-transform"
-            >
-              <Plus className="w-5 h-5" strokeWidth={2.5} />
-            </button>
-          }
-          action={
-            <Button
-              size="sm"
-              className="bg-primary text-primary-foreground hover:bg-primary-hover"
-              onClick={() => { setEditingService(null); setFormDialogOpen(true); }}
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              Nuevo
-            </Button>
-          }
-        />
+        <section className="ce-hero ce-hero-mobile-bleed p-[22px_16px] lg:p-[22px]">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <div className="ce-hero-eyebrow">Servicios</div>
+              <h1 className="ce-hero-title mt-1.5 text-[clamp(1.55rem,5.4vw,2.15rem)] lg:mt-2 lg:text-[clamp(1.75rem,3vw,2.5rem)]">
+                En el <span className="text-primary">taller.</span>
+              </h1>
+              <p className="ce-hero-meta mt-2 max-w-[460px] lg:mt-3">
+                <b className="text-[hsl(240_22%_95%)]">{stats.today} servicios</b>
+                {" "}hoy ·{" "}
+                <b className="text-[hsl(240_22%_95%)]">{stats.inProgress} en curso</b>
+              </p>
+            </div>
+            <div className="flex items-start gap-2">
+              <Button
+                size="sm"
+                className="hidden bg-primary text-primary-foreground hover:bg-primary-hover lg:inline-flex"
+                onClick={() => { setEditingService(null); setFormDialogOpen(true); }}
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Nuevo
+              </Button>
+              <AccountMenu />
+            </div>
+          </div>
 
-        <div className="flex items-center gap-2">
-          <UnifiedSearchInput
-            className="flex-1"
-            placeholder="Buscar folio, cliente..."
-            value={searchQuery}
-            onChange={setSearchQuery}
-          />
-          <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as "all" | ServiceStatus)}>
-            <SelectTrigger className="h-10 w-10 sm:w-auto sm:max-w-[130px] rounded-xl shrink-0 px-0 justify-center sm:px-3 sm:gap-1.5" aria-label="Filtrar por estado">
-              <Filter className="w-4 h-4" />
-              <span className="sr-only sm:hidden">Filtrar por estado</span>
-            </SelectTrigger>
-            <SelectContent>
-              {statusOptions.map((option) => (
-                <SelectItem key={option.key} value={option.key}>{option.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+          <div className="relative z-[1] mt-4 flex flex-row items-center gap-2 animate-hero-search-in lg:mt-5">
+            <UnifiedSearchInput
+              className="flex-1 min-w-0"
+              placeholder="Buscar folio, cliente..."
+              value={searchQuery}
+              onChange={setSearchQuery}
+            />
+            <div className="flex shrink-0 items-center gap-2">
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as "all" | ServiceStatus)}>
+                <SelectTrigger
+                  className="h-10 w-10 shrink-0 justify-center rounded-xl px-0 bg-white/[.09] border-white/[.13] text-[hsl(240_22%_95%)] hover:bg-white/[.14] focus:ring-0 focus:border-white/30 [&>svg:last-child]:hidden lg:w-48 lg:justify-start lg:px-3 lg:[&>svg:last-child]:block"
+                  aria-label="Filtrar por estado"
+                >
+                  <div className="flex items-center gap-2">
+                    <Filter className="w-4 h-4 shrink-0" />
+                    <span className="hidden truncate lg:inline">
+                      {statusOptions.find((o) => o.key === statusFilter)?.label ?? "Todos"}
+                    </span>
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  {statusOptions.map((option) => (
+                    <SelectItem key={option.key} value={option.key}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <button
+                type="button"
+                aria-label="Nuevo servicio"
+                onClick={() => { setEditingService(null); setFormDialogOpen(true); }}
+                className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex shrink-0 items-center justify-center shadow-[0_0_16px_hsl(var(--primary)/0.40)] active:scale-95 transition-transform lg:hidden"
+              >
+                <Plus className="w-5 h-5" strokeWidth={2.5} />
+              </button>
+            </div>
+          </div>
+        </section>
       </div>
 
       <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain px-5 lg:px-6 pb-24 md:pb-6 no-scrollbar">
@@ -516,8 +534,8 @@ export default function Servicios() {
           </h3>
           <p className="text-muted-foreground mb-5 max-w-xs mx-auto">
             {searchQuery
-              ? "Intenta con otro folio, cliente o descripción."
-              : "Registra el primer servicio para comenzar a gestionar tu operación."}
+              ? "Intenta con otro folio, cliente o descripcion."
+              : "Registra el primer servicio para comenzar a gestionar tu operacion."}
           </p>
           {!searchQuery && (
             <Button onClick={() => { setEditingService(null); setFormDialogOpen(true); }}>
@@ -536,7 +554,7 @@ export default function Servicios() {
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide w-10" />
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Folio</th>
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Estado</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Descripción</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Descripcion</th>
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Cliente</th>
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Fecha</th>
                   <th className="px-4 py-3 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Precio</th>
@@ -602,7 +620,7 @@ export default function Servicios() {
                               <Eye className="w-4 h-4 mr-2" /> Ver detalle
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => { setImagesService(service); setImagesDialogOpen(true); }}>
-                              <ImagePlus className="w-4 h-4 mr-2" /> Agregar imágenes
+                              <ImagePlus className="w-4 h-4 mr-2" /> Agregar imagenes
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => { setEditingService(service); setFormDialogOpen(true); }}>
                               <Edit className="w-4 h-4 mr-2" /> Editar
@@ -648,6 +666,7 @@ export default function Servicios() {
 
           {/* Mobile cards */}
           <div className="md:hidden space-y-3">
+            <h2 className="pb-1 text-lg font-extrabold tracking-tight">Cola de trabajo</h2>
             {filteredServices.map((service) => {
               const status = getServiceDisplayStatus(service);
               const type = typeConfig[service.service_type];
@@ -750,7 +769,7 @@ export default function Servicios() {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar servicio?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. Se eliminará permanentemente el servicio {selectedService?.service_number}.
+              Esta accion no se puede deshacer. Se eliminara permanentemente el servicio {selectedService?.service_number}.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -768,7 +787,7 @@ export default function Servicios() {
           <AlertDialogHeader>
             <AlertDialogTitle>No se puede eliminar este servicio</AlertDialogTitle>
             <AlertDialogDescription>
-              Solo se pueden eliminar servicios que estén <strong>Cancelados</strong> o <strong>Entregados</strong>.
+              Solo se pueden eliminar servicios que esten <strong>Cancelados</strong> o <strong>Entregados</strong>.
               {selectedService && (
                 <>
                   <br />

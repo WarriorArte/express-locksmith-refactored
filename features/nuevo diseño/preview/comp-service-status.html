@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  html, body { margin:0; padding:0; background:var(--card); color:var(--fg); }
+  body { font-family: var(--font-sans); padding: 22px 24px; }
+  .card { border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow-sm); }
+  .title { font: 700 16px/1.2 var(--font-sans); letter-spacing: -0.02em; margin-bottom: 14px; }
+  .bar { display:flex; height: 12px; border-radius: var(--radius); overflow: hidden; background: var(--surface-2); margin-bottom: 14px; }
+  .legend { display:grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .leg { display:flex; gap: 8px; align-items: center; }
+  .dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  .lab { font: 600 11px/1 var(--font-sans); color: var(--fg-muted); }
+  .num { font: 800 14px/1 var(--font-sans); color: var(--fg); margin-top: 4px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="title">Estado de Servicios</div>
+    <div class="bar">
+      <div style="width:18%; background:#FFB830"></div>
+      <div style="width:32%; background:#9898D0"></div>
+      <div style="width:24%; background:hsl(159 100% 45% / .55)"></div>
+      <div style="width:22%; background:#00E5A0"></div>
+      <div style="width:4%;  background:#FF4D6A"></div>
+    </div>
+    <div class="legend">
+      <div class="leg"><div class="dot" style="background:#FFB830"></div><div><div class="lab">Pendientes</div><div class="num">8</div></div></div>
+      <div class="leg"><div class="dot" style="background:#9898D0"></div><div><div class="lab">En Curso</div><div class="num">12</div></div></div>
+      <div class="leg"><div class="dot" style="background:hsl(159 100% 45% / .55)"></div><div><div class="lab">Finalizados</div><div class="num">9</div></div></div>
+      <div class="leg"><div class="dot" style="background:#00E5A0"></div><div><div class="lab">Entregados</div><div class="num">11</div></div></div>
+      <div class="leg"><div class="dot" style="background:#FF4D6A"></div><div><div class="lab">Cancelados</div><div class="num">2</div></div></div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../colors_and_type.css" />
+<script src="https://unpkg.com/lucide@0.378.0/dist/umd/lucide.min.js"></script>
+<style>
+  html, body { margin:0; padding:0; background:var(--bg); color:var(--fg); }
+  body { font-family: var(--font-sans); padding: 22px 24px; background-image: var(--texture-dots); background-size: var(--texture-dots-size); }
+  .rail { display:grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 12px; }
+  .stat { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow-sm); }
+  .stat.primary { background: var(--primary); border-color: transparent; color: var(--primary-fg); box-shadow: 0 0 24px hsl(159 100% 45% / .30); }
+  .row { display:flex; align-items:center; justify-content:space-between; }
+  .ico { width: 36px; height: 36px; border-radius: var(--radius); background: hsl(159 100% 95%); color:#0D0D12; display:flex; align-items:center; justify-content:center; }
+  .stat.primary .ico { background: hsl(159 100% 38% / .35); }
+  .trend { font: 700 10px/1 var(--font-sans); padding: 3px 6px; border-radius: var(--radius); background: hsl(159 100% 94%); color: #0D0D12; }
+  .stat.primary .trend { background: hsl(159 100% 38% / .35); }
+  .label { font: 600 11px/1 var(--font-sans); letter-spacing: 0.02em; color: var(--fg-muted); margin-top: 12px; }
+  .stat.primary .label { color: hsl(240 21% 5% / .75); }
+  .value { font: 800 28px/1.05 var(--font-sans); letter-spacing: -0.02em; margin-top: 6px; }
+  .stat .sub { font: 500 11px/1.4 var(--font-sans); color: var(--fg-muted); margin-top: 4px; }
+  .stat.primary .sub { color: hsl(240 21% 5% / .55); }
+</style>
+</head>
+<body>
+  <div class="rail">
+    <div class="stat primary">
+      <div class="row"><div class="ico"><i data-lucide="shopping-cart"></i></div><span class="trend">↑ 18%</span></div>
+      <div class="label">ventas del mes</div>
+      <div class="value">$ 1.250.000</div>
+      <div class="sub">vs $ 1.060.000 mes anterior</div>
+    </div>
+    <div class="stat">
+      <div class="row"><div class="ico" style="background:var(--surface-2); color:var(--fg-muted)"><i data-lucide="wrench"></i></div></div>
+      <div class="label">servicios hoy</div>
+      <div class="value">24</div>
+      <div class="sub">8 pendientes · 12 en curso</div>
+    </div>
+    <div class="stat">
+      <div class="row"><div class="ico" style="background:var(--surface-2); color:var(--fg-muted)"><i data-lucide="file-text"></i></div></div>
+      <div class="label">cotizaciones</div>
+      <div class="value">142</div>
+      <div class="sub">3 vencen esta semana</div>
+    </div>
+  </div>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

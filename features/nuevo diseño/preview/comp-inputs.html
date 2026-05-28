@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../colors_and_type.css" />
+<script src="https://unpkg.com/lucide@0.378.0/dist/umd/lucide.min.js"></script>
+<style>
+  html, body { margin:0; padding:0; background:var(--card); color:var(--fg); }
+  body { font-family: var(--font-sans); padding: 22px 24px; }
+  .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .field { display:flex; flex-direction:column; gap: 6px; }
+  .label { font: 600 11px/1 var(--font-sans); color: var(--fg-muted); letter-spacing: 0.04em; }
+  .wrap { position: relative; }
+  .wrap > i { position:absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--fg-muted); }
+  .wrap > input { padding-left: 38px; }
+  .focused { border-color: var(--primary) !important; }
+  .err     { border-color: var(--destructive) !important; }
+  .help-err { font: 500 11px/1 var(--font-sans); color: var(--destructive); }
+</style>
+</head>
+<body>
+  <div class="grid">
+    <div class="field">
+      <span class="label">Correo electrónico</span>
+      <div class="wrap"><i data-lucide="mail"></i><input class="ds-input" placeholder="tu@correo.com" /></div>
+    </div>
+    <div class="field">
+      <span class="label">Contraseña · focused</span>
+      <div class="wrap"><i data-lucide="lock"></i><input class="ds-input focused" type="password" value="••••••••" /></div>
+    </div>
+    <div class="field">
+      <span class="label">Código del taller</span>
+      <div class="wrap"><i data-lucide="building-2"></i><input class="ds-input" style="text-transform:uppercase" value="ELE-2024" /></div>
+    </div>
+    <div class="field">
+      <span class="label">Stock mínimo · error</span>
+      <input class="ds-input err" value="-3" />
+      <span class="help-err">El stock no puede ser negativo</span>
+    </div>
+  </div>
+  <script>lucide.createIcons();</script>
+</body>
+</html>
