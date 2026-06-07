@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { ServiceFormDialog } from "@/components/services/ServiceFormDialog";
 
+import { MobileListCard, MobileListCardSkeleton } from "@/components/shared/MobileListCard";
 import { ServiceImagesDialog } from "@/components/services/ServiceImagesDialog";
 import { DetailViewDialog } from "@/components/shared/DetailViewDialog";
 import type { DialogAction } from "@/components/shared/DialogActionBar";
@@ -418,7 +419,7 @@ export default function Servicios() {
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* Header bar */}
-      <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-2 pb-4">
+      <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-3 pb-4">
         <section className="ce-hero ce-hero-mobile-bleed p-[22px_16px] lg:p-[22px]">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
@@ -434,8 +435,7 @@ export default function Servicios() {
             </div>
             <div className="flex items-start gap-2">
               <Button
-                size="sm"
-                className="hidden bg-primary text-primary-foreground hover:bg-primary-hover lg:inline-flex"
+                className="hidden h-11 rounded-[12px] bg-primary text-primary-foreground hover:bg-primary-hover lg:inline-flex"
                 onClick={() => { setEditingService(null); setFormDialogOpen(true); }}
               >
                 <Plus className="w-4 h-4 mr-1" />
@@ -490,24 +490,8 @@ export default function Servicios() {
       {isLoading ? (
         <>
           {/* Mobile skeleton */}
-          <div className="md:hidden space-y-3 animate-pulse">
-            {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="card-elevated p-4 space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-muted/60 shrink-0" />
-                  <div className="flex-1 space-y-2 pt-0.5">
-                    <div className="h-3 w-28 rounded bg-muted/60" />
-                    <div className="flex gap-1.5">
-                      <div className="h-5 w-16 rounded-full bg-muted/60" />
-                      <div className="h-5 w-20 rounded-full bg-muted/60" />
-                    </div>
-                  </div>
-                  <div className="h-6 w-20 rounded bg-muted/60 shrink-0" />
-                </div>
-                <div className="h-3 w-3/4 rounded bg-muted/60" />
-                <div className="h-3 w-1/2 rounded bg-muted/60" />
-              </div>
-            ))}
+          <div className="md:hidden space-y-2.5">
+            {[0, 1, 2, 3].map((i) => <MobileListCardSkeleton key={i} />)}
           </div>
           {/* Desktop skeleton */}
           <div className="hidden md:block card-elevated overflow-hidden animate-pulse">
@@ -665,97 +649,37 @@ export default function Servicios() {
           </div>
 
           {/* Mobile cards */}
-          <div className="md:hidden space-y-3">
-            <h2 className="pb-1 text-lg font-extrabold tracking-tight">Cola de trabajo</h2>
+          <div className="md:hidden space-y-2.5">
             {filteredServices.map((service) => {
               const status = getServiceDisplayStatus(service);
-              const type = typeConfig[service.service_type];
-              const StatusIcon = status.icon;
-              const TypeIcon = type.icon;
               const price = service.final_price ?? service.estimated_price ?? 0;
-              const imgs = service.service_images ?? [];
-
+              const isScheduled = service.status === "pending" && service.scheduled_start_at;
+              const statusTextClass =
+                service.status === "cancelled" ? "text-destructive" :
+                service.status === "delivered" ? "text-primary" :
+                service.status === "completed" ? "text-success" :
+                service.status === "in_progress" ? "text-info" :
+                isScheduled ? "text-accent" : "text-warning";
+              const statusDotClass =
+                service.status === "cancelled" ? "bg-destructive/70" :
+                service.status === "delivered" ? "bg-primary" :
+                service.status === "completed" ? "bg-success" :
+                service.status === "in_progress" ? "bg-info" :
+                isScheduled ? "bg-accent" : "bg-warning";
               return (
-                <motion.div
+                <MobileListCard
                   key={service.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.08 }}
-                  className="card-elevated overflow-hidden cursor-pointer active:scale-[0.99] transition-transform"
                   onClick={() => handleViewDetail(service)}
-                >
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className={cn("p-2.5 rounded-xl flex-shrink-0", type.bgColor)}>
-                          <TypeIcon className={cn("w-5 h-5", type.iconColor)} />
-                        </div>
-                        <div>
-                          <p className="font-mono text-sm text-foreground dark:text-primary font-semibold leading-tight">{service.service_number}</p>
-                          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                            <Badge className={cn("text-xs", status.color)}>
-                              <StatusIcon className="w-3 h-3 mr-1" />
-                              {status.label}
-                            </Badge>
-                            <Badge variant="outline" className="text-xs">{type.label}</Badge>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className="text-[11px] text-muted-foreground uppercase tracking-wide leading-tight">
-                          {service.final_price ? "Final" : "Estimado"}
-                        </p>
-                        <p className={cn("text-xl font-bold", service.final_price ? "text-foreground dark:text-success" : "text-foreground")}>
-                          {currencySymbol}{Number(price).toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-
-                    <p className="text-sm font-medium text-foreground truncate mb-1">{service.description}</p>
-                    {service.problem && (
-                      <p className="text-xs text-muted-foreground line-clamp-1 mb-2">{service.problem}</p>
-                    )}
-
-                    <div className="flex items-center justify-between gap-2 text-sm">
-                      <span className="flex items-center gap-1.5 min-w-0">
-                        <User className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                        <span className="truncate text-foreground font-medium">
-                          {service.customer?.name || "Sin cliente"}
-                        </span>
-                      </span>
-                      <span className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
-                        <Calendar className="w-3 h-3" />
-                        {format(parseISO(getServiceDisplayDate(service)), "dd MMM · HH:mm", { locale: es })}
-                      </span>
-                    </div>
-
-                    {service.address && (
-                      <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
-                        <MapPin className="w-3 h-3 flex-shrink-0" />
-                        <span className="truncate">{service.address}</span>
-                      </div>
-                    )}
-
-                    {imgs.length > 0 && (
-                      <div className="flex gap-1.5 mt-3 pt-3 border-t">
-                        {imgs.slice(0, 4).map((img) => (
-                          <div key={img.id} className="w-11 h-11 rounded-xl overflow-hidden bg-muted flex-shrink-0 flex items-center justify-center">
-                            {img.image_url ? (
-                              <img src={resolveStorageUrl(img.image_url) ?? undefined} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <Package className="w-4 h-4 text-muted-foreground" />
-                            )}
-                          </div>
-                        ))}
-                        {imgs.length > 4 && (
-                          <div className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground flex-shrink-0">
-                            +{imgs.length - 4}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
+                  code={service.service_number}
+                  statusLabel={status.label}
+                  statusTextClass={statusTextClass}
+                  statusDotClass={statusDotClass}
+                  statusPulse={service.status === "in_progress"}
+                  title={service.description}
+                  subtitle={service.customer?.name ?? "Sin cliente"}
+                  valueText={price > 0 ? `${currencySymbol}${Number(price).toLocaleString()}` : undefined}
+                  valueClass={service.final_price ? "text-success" : "text-foreground/75"}
+                />
               );
             })}
           </div>

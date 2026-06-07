@@ -131,10 +131,9 @@ export function BottomNav() {
   return (
     <>
       <nav
-        className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-card border-t border-border"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 md:hidden"
       >
-        <div className="flex items-center justify-around h-[72px] px-2">
+        <div className="flex h-[68px] items-center justify-around rounded-[24px] border border-border/80 bg-card/95 px-2 shadow-[0_18px_42px_-18px_hsl(var(--foreground)/0.42),0_8px_22px_-14px_hsl(var(--primary)/0.38)] backdrop-blur-xl">
           {leftItems.map((item) => (
             <NavBtn key={item.to} item={item} active={location.pathname === item.to} />
           ))}
@@ -146,7 +145,7 @@ export function BottomNav() {
                 whileTap={{ scale: 0.92 }}
                 onClick={handleFabClick}
                 aria-label={directAction ? "Crear" : "Acciones rápidas"}
-                className="w-[52px] h-[52px] rounded-2xl bg-primary text-primary-foreground flex items-center justify-center -mt-2 shadow-[0_0_24px_hsl(var(--primary)/0.45),0_8px_24px_hsl(var(--primary)/0.30)]"
+                className="flex h-[54px] w-[54px] items-center justify-center rounded-[20px] bg-primary text-primary-foreground shadow-[0_0_24px_hsl(var(--primary)/0.45),0_12px_24px_-8px_hsl(var(--primary)/0.55)]"
               >
                 <Plus className="w-6 h-6" strokeWidth={2.5} />
               </motion.button>
@@ -161,7 +160,7 @@ export function BottomNav() {
           <button
             type="button"
             onClick={() => setMoreOpen(true)}
-            className="flex-1 flex flex-col items-center justify-center gap-1 h-full"
+            className="flex h-full flex-1 flex-col items-center justify-center gap-1 rounded-[18px] transition-colors active:bg-muted/70"
           >
             <Grid3x3
               className={cn(
@@ -377,7 +376,7 @@ function NavBtn({
           e.preventDefault();
         }
       }}
-      className="flex-1 flex flex-col items-center justify-center gap-1 h-full"
+      className="flex h-full flex-1 flex-col items-center justify-center gap-1 rounded-[18px] transition-colors active:bg-muted/70"
     >
       <Icon
         className={cn(

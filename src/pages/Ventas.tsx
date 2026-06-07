@@ -11,6 +11,7 @@ import {
   Eye,
   MoreVertical,
 } from "lucide-react";
+import { MobileListCard, MobileListCardSkeleton } from "@/components/shared/MobileListCard";
 import { SaleFormDialog } from "@/components/sales/SaleFormDialog";
 import { DetailViewDialog } from "@/components/shared/DetailViewDialog";
 import type { DialogAction } from "@/components/shared/DialogActionBar";
@@ -160,13 +161,13 @@ export default function Ventas() {
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* Header bar - ya NO es sticky */}
-      <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-2 pb-4">
+      <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-3 pb-4">
         <PageHeader
           eyebrow="Ventas"
           title={<>Registro de <span className="text-primary">ventas.</span></>}
           subtitle={`${sales?.length || 0} ventas registradas`}
           action={
-            <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary-hover" onClick={() => setFormDialogOpen(true)}>
+            <Button className="h-11 rounded-[12px] bg-primary text-primary-foreground hover:bg-primary-hover" onClick={() => setFormDialogOpen(true)}>
               <Plus className="w-4 h-4 mr-1" />
               Nueva
             </Button>
@@ -196,21 +197,8 @@ export default function Ventas() {
       <div className="mt-6">
         {isLoading ? (
           <>
-            <div className="md:hidden space-y-3 animate-pulse">
-              {[0, 1, 2, 3].map((i) => (
-                <div key={i} className="card-elevated p-4 space-y-3">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-muted/60 shrink-0" />
-                    <div className="flex-1 space-y-2 pt-0.5">
-                      <div className="h-3 w-28 rounded bg-muted/60" />
-                      <div className="h-5 w-16 rounded-full bg-muted/60" />
-                    </div>
-                    <div className="h-6 w-20 rounded bg-muted/60 shrink-0" />
-                  </div>
-                  <div className="h-3 w-1/2 rounded bg-muted/60" />
-                  <div className="h-3 w-3/4 rounded bg-muted/60" />
-                </div>
-              ))}
+            <div className="md:hidden space-y-2.5">
+              {[0, 1, 2, 3].map((i) => <MobileListCardSkeleton key={i} />)}
             </div>
             <div className="hidden md:block card-elevated overflow-hidden animate-pulse">
               <div className="h-10 bg-muted/30 border-b border-border" />
@@ -332,71 +320,36 @@ export default function Ventas() {
             </div>
 
             {/* Mobile cards */}
-            <div className="md:hidden space-y-3">
-              {filteredSales.map((sale) => (
-                <motion.div
-                  key={sale.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.08 }}
-                  className="card-elevated overflow-hidden cursor-pointer active:scale-[0.99] transition-transform"
-                  onClick={() => handleViewDetail(sale)}
-                >
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="p-2.5 rounded-xl bg-primary-light text-primary border border-primary/20 flex-shrink-0">
-                          <ShoppingCart className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <p className="font-mono text-sm text-foreground dark:text-primary font-semibold leading-tight">{sale.sale_number}</p>
-                          <Badge className={cn("text-xs mt-1", paymentMethodColors[sale.payment_method])}>
-                            {paymentMethodLabels[sale.payment_method]}
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className="text-[11px] text-muted-foreground uppercase tracking-wide leading-tight">Total</p>
-                        <p className="text-xl font-bold text-foreground dark:text-success">{currencySymbol}{Number(sale.total).toLocaleString()}</p>
-                        {sale.discount && Number(sale.discount) > 0 && (
-                          <p className="text-[11px] text-destructive">-{currencySymbol}{Number(sale.discount).toLocaleString()} desc.</p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-2 text-sm">
-                      <span className="flex items-center gap-1.5 min-w-0">
-                        <User className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                        <span className="truncate text-foreground font-medium">
-                          {sale.customer_name || sale.customer?.name || "Cliente mostrador"}
-                        </span>
-                      </span>
-                      <span className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
-                        <Calendar className="w-3 h-3" />
-                        {format(parseISO(sale.created_at), "dd MMM · HH:mm", { locale: es })}
-                      </span>
-                    </div>
-
-                    {sale.sale_items && sale.sale_items.length > 0 && (
-                      <div className="mt-3 pt-3 border-t space-y-1.5">
-                        {sale.sale_items.slice(0, 2).map((item) => (
-                          <div key={item.id} className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground truncate pr-2">
-                              <span className="text-foreground font-medium">{item.quantity}×</span> {item.product_name}
-                            </span>
-                            <span className="font-medium flex-shrink-0">{currencySymbol}{Number(item.subtotal).toLocaleString()}</span>
-                          </div>
-                        ))}
-                        {sale.sale_items.length > 2 && (
-                          <p className="text-xs text-muted-foreground pt-0.5">
-                            +{sale.sale_items.length - 2} producto{sale.sale_items.length - 2 > 1 ? "s" : ""} más
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
+            <div className="md:hidden space-y-2.5">
+              {filteredSales.map((sale) => {
+                const statusTextClass =
+                  sale.payment_method === "cash" ? "text-success" :
+                  sale.payment_method === "card" ? "text-info" :
+                  sale.payment_method === "transfer" ? "text-primary" : "text-warning";
+                const statusDotClass =
+                  sale.payment_method === "cash" ? "bg-success" :
+                  sale.payment_method === "card" ? "bg-info" :
+                  sale.payment_method === "transfer" ? "bg-primary" : "bg-warning";
+                const saleTitle = sale.sale_items && sale.sale_items.length > 0
+                  ? sale.sale_items.length === 1
+                    ? sale.sale_items[0].product_name
+                    : `${sale.sale_items[0].product_name} +${sale.sale_items.length - 1} más`
+                  : "Sin artículos";
+                return (
+                  <MobileListCard
+                    key={sale.id}
+                    onClick={() => handleViewDetail(sale)}
+                    code={sale.sale_number}
+                    statusLabel={paymentMethodLabels[sale.payment_method]}
+                    statusTextClass={statusTextClass}
+                    statusDotClass={statusDotClass}
+                    title={saleTitle}
+                    subtitle={sale.customer_name || sale.customer?.name || "Cliente mostrador"}
+                    valueText={`${currencySymbol}${Number(sale.total).toLocaleString()}`}
+                    valueClass="text-success"
+                  />
+                );
+              })}
             </div>
           </>
         )}

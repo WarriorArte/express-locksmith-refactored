@@ -39,6 +39,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, isPast, isFuture, differenceInDays } from "date-fns";
 import { es } from "date-fns/locale";
+import { MobileListCard, MobileListCardSkeleton } from "@/components/shared/MobileListCard";
 import { WarrantySettingsDialog } from "@/components/warranties/WarrantySettingsDialog";
 import { WarrantyDetailDialog } from "@/components/warranties/WarrantyDetailDialog";
 import { TicketDialog, type TicketData } from "@/components/shared/TicketDialog";
@@ -120,13 +121,13 @@ export default function Garantias() {
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* Header bar - ya NO es sticky */}
-      <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-2 pb-4">
+      <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-3 pb-4">
         <PageHeader
           eyebrow="Garantías"
           title={<>Control de <span className="text-primary">garantías.</span></>}
           subtitle={`${warranties?.length || 0} garantías registradas`}
           action={
-            <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary-hover" onClick={() => setSettingsDialogOpen(true)}>
+            <Button className="h-11 rounded-[12px] bg-primary text-primary-foreground hover:bg-primary-hover" onClick={() => setSettingsDialogOpen(true)}>
               <Clock className="w-4 h-4 mr-1" />
               Duración
             </Button>
@@ -156,24 +157,8 @@ export default function Garantias() {
       <div className="mt-6">
         {isLoading ? (
           <>
-            <div className="md:hidden space-y-3 animate-pulse">
-              {[0, 1, 2, 3].map((i) => (
-                <div key={i} className="card-elevated p-4 space-y-3">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-muted/60 shrink-0" />
-                    <div className="flex-1 space-y-2 pt-0.5">
-                      <div className="h-3 w-28 rounded bg-muted/60" />
-                      <div className="flex gap-1.5">
-                        <div className="h-5 w-16 rounded-full bg-muted/60" />
-                        <div className="h-5 w-14 rounded-full bg-muted/60" />
-                      </div>
-                    </div>
-                    <div className="h-6 w-12 rounded bg-muted/60 shrink-0" />
-                  </div>
-                  <div className="h-3 w-1/2 rounded bg-muted/60" />
-                  <div className="h-3 w-3/4 rounded bg-muted/60" />
-                </div>
-              ))}
+            <div className="md:hidden space-y-2.5">
+              {[0, 1, 2, 3].map((i) => <MobileListCardSkeleton key={i} />)}
             </div>
             <div className="hidden md:block card-elevated overflow-hidden animate-pulse">
               <div className="h-10 bg-muted/30 border-b border-border" />
@@ -291,89 +276,41 @@ export default function Garantias() {
             </div>
 
             {/* Mobile cards */}
-            <div className="md:hidden space-y-3">
+            <div className="md:hidden space-y-2.5">
               {filteredWarranties.map((warranty) => {
                 const status = getWarrantyStatus(warranty);
-                const StatusIcon = status.icon;
                 const daysLeft = differenceInDays(parseISO(warranty.end_date), new Date());
                 const isActive = !warranty.is_voided && isFuture(parseISO(warranty.end_date));
+                const statusTextClass =
+                  warranty.is_voided ? "text-destructive" :
+                  isPast(parseISO(warranty.end_date)) ? "text-muted-foreground" :
+                  daysLeft <= 7 ? "text-warning" : "text-success";
+                const statusDotClass =
+                  warranty.is_voided ? "bg-destructive/70" :
+                  isPast(parseISO(warranty.end_date)) ? "bg-muted-foreground/50" :
+                  daysLeft <= 7 ? "bg-warning" : "bg-success";
+                const warrantyTitle = warranty.warranty_type === "sale"
+                  ? (warranty.product_name || "Sin producto")
+                  : (warranty.service_description || "Sin descripción");
                 return (
-                  <motion.div
+                  <MobileListCard
                     key={warranty.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.08 }}
-                    className="card-elevated overflow-hidden cursor-pointer active:scale-[0.99] transition-transform"
                     onClick={() => handleViewDetail(warranty)}
-                  >
-                    <div className="p-4">
-                      <div className="flex items-start justify-between gap-3 mb-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="p-2.5 rounded-xl bg-primary-light flex-shrink-0">
-                            <ShieldCheck className="w-5 h-5 text-primary" />
-                          </div>
-                          <div>
-                            <p className="font-mono text-sm text-foreground dark:text-primary font-semibold leading-tight">{warranty.warranty_code}</p>
-                            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                              <Badge className={cn("text-xs", status.color)}>
-                                <StatusIcon className="w-3 h-3 mr-1" />
-                                {status.label}
-                              </Badge>
-                              <Badge variant="outline" className="text-xs">
-                                {warranty.warranty_type === "sale" ? "Venta" : "Servicio"}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          {isActive ? (
-                            <>
-                              <p className="text-[11px] text-muted-foreground uppercase tracking-wide leading-tight">Restantes</p>
-                              <p className={cn("text-xl font-bold", daysLeft <= 7 ? "text-warning" : "text-foreground dark:text-success")}>
-                                {daysLeft}d
-                              </p>
-                            </>
-                          ) : (
-                            <p className="text-base font-bold text-muted-foreground mt-1">
-                              {warranty.is_voided ? "Anulada" : "Vencida"}
-                            </p>
-                          )}
-                          <p className="text-[11px] text-muted-foreground">{warranty.warranty_days}d garantía</p>
-                        </div>
-                      </div>
-
-                      <p className="text-sm font-medium text-foreground truncate mb-2">
-                        {warranty.warranty_type === "sale" ? warranty.product_name : warranty.service_description}
-                      </p>
-
-                      <div className="flex items-center justify-between gap-2 text-sm">
-                        <span className="flex items-center gap-1.5 min-w-0">
-                          <User className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                          <span className="truncate text-foreground font-medium">
-                            {warranty.customer_name || "Sin cliente"}
-                          </span>
-                        </span>
-                        <span className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
-                          <Calendar className="w-3 h-3" />
-                          {format(parseISO(warranty.start_date), "dd MMM", { locale: es })} → {format(parseISO(warranty.end_date), "dd MMM yy", { locale: es })}
-                        </span>
-                      </div>
-
-                      {(warranty.is_voided || (warranty.warranty_type === "sale" && warranty.sale?.sale_number) || (warranty.warranty_type === "service" && warranty.service?.service_number)) && (
-                        <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
-                          {warranty.is_voided && warranty.voided_reason && (
-                            <span className="text-destructive">Anulada: {warranty.voided_reason}</span>
-                          )}
-                          {!warranty.is_voided && warranty.warranty_type === "sale" && warranty.sale?.sale_number && (
-                            <span>Ref. venta: {warranty.sale.sale_number}</span>
-                          )}
-                          {!warranty.is_voided && warranty.warranty_type === "service" && warranty.service?.service_number && (
-                            <span>Ref. servicio: {warranty.service.service_number}</span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
+                    code={warranty.warranty_code}
+                    statusLabel={status.label}
+                    statusTextClass={statusTextClass}
+                    statusDotClass={statusDotClass}
+                    statusPulse={!warranty.is_voided && isActive && daysLeft <= 7}
+                    statusExtra={
+                      <span className="ml-1 text-[10px] text-muted-foreground/60">
+                        · {warranty.warranty_type === "sale" ? "Venta" : "Servicio"}
+                      </span>
+                    }
+                    title={warrantyTitle}
+                    subtitle={warranty.customer_name || "Sin cliente"}
+                    valueText={isActive ? `${daysLeft}d` : undefined}
+                    valueClass={daysLeft <= 7 ? "text-warning" : "text-success"}
+                  />
                 );
               })}
             </div>

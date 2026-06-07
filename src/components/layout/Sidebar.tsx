@@ -172,7 +172,7 @@ export function Sidebar({
                 collapsed ? "py-3 px-2" : "py-4 px-2",
                 isActive
                   ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                  : "bg-sidebar-accent/50 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
               )}
             >
               <item.icon
@@ -207,7 +207,7 @@ export function Sidebar({
                 collapsed ? "py-3 px-2" : "py-4 px-2",
                 location.pathname === "/superadmin"
                   ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                  : "bg-sidebar-accent/50 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
               )}
             >
               <Shield
@@ -310,7 +310,7 @@ export function Sidebar({
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
         className="hidden lg:flex flex-col h-dvh sticky top-0 z-30 p-3"
       >
-        <div className="flex flex-col flex-1 bg-sidebar rounded-2xl shadow-xl border border-white/[0.06] overflow-hidden min-h-0">
+        <div className="flex flex-col flex-1 bg-sidebar rounded-[16px] shadow-xl border border-white/[0.06] overflow-hidden min-h-0">
           {sidebarContent}
         </div>
       </motion.aside>

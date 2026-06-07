@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { useCustomers, useDeleteCustomer, type Customer } from "@/hooks/useCustomers";
+import { MobileListCard, MobileListCardSkeleton } from "@/components/shared/MobileListCard";
 import { CustomerFormDialog } from "@/components/customers/CustomerFormDialog";
 import { CustomerServicesDialog } from "@/components/customers/CustomerServicesDialog";
 import { CustomerAvatar } from "@/components/customers/CustomerAvatar";
@@ -86,13 +87,13 @@ export default function Clientes() {
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* Header bar - ya NO es sticky */}
-      <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-2 pb-4">
+      <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-3 pb-4">
         <PageHeader
           eyebrow="Clientes"
           title={<>Tus <span className="text-primary">clientes.</span></>}
           subtitle={`${customers?.length || 0} clientes registrados`}
           action={
-            <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary-hover" onClick={handleNewCustomer}>
+            <Button className="h-11 rounded-[12px] bg-primary text-primary-foreground hover:bg-primary-hover" onClick={handleNewCustomer}>
               <Plus className="w-4 h-4 mr-1" />
               Nuevo
             </Button>
@@ -119,25 +120,32 @@ export default function Clientes() {
 
       <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain px-5 lg:px-6 pb-24 md:pb-6 no-scrollbar">
       {isLoading ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-pulse">
-          {[0, 1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="card-elevated p-4 space-y-3">
-              <div className="flex items-start gap-3">
-                <div className="w-11 h-11 rounded-xl bg-muted/60 shrink-0" />
-                <div className="flex-1 space-y-2 pt-0.5">
-                  <div className="h-3.5 w-36 rounded bg-muted/60" />
-                  <div className="flex gap-1.5">
-                    <div className="h-4 w-14 rounded-full bg-muted/60" />
-                    <div className="h-4 w-16 rounded-full bg-muted/60" />
+        <>
+          {/* Mobile skeleton */}
+          <div className="md:hidden space-y-2.5">
+            {[0, 1, 2, 3].map((i) => <MobileListCardSkeleton key={i} />)}
+          </div>
+          {/* Desktop skeleton */}
+          <div className="hidden md:grid grid-cols-1 lg:grid-cols-2 gap-4 animate-pulse">
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="card-elevated p-4 space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-11 h-11 rounded-xl bg-muted/60 shrink-0" />
+                  <div className="flex-1 space-y-2 pt-0.5">
+                    <div className="h-3.5 w-36 rounded bg-muted/60" />
+                    <div className="flex gap-1.5">
+                      <div className="h-4 w-14 rounded-full bg-muted/60" />
+                      <div className="h-4 w-16 rounded-full bg-muted/60" />
+                    </div>
                   </div>
+                  <div className="h-6 w-20 rounded bg-muted/60 shrink-0" />
                 </div>
-                <div className="h-6 w-20 rounded bg-muted/60 shrink-0" />
+                <div className="h-3 w-3/4 rounded bg-muted/60" />
+                <div className="h-3 w-1/2 rounded bg-muted/60" />
               </div>
-              <div className="h-3 w-3/4 rounded bg-muted/60" />
-              <div className="h-3 w-1/2 rounded bg-muted/60" />
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </>
       ) : filteredClients.length === 0 ? (
         <div className="card-elevated p-10 text-center">
           <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
@@ -160,8 +168,45 @@ export default function Clientes() {
 
       {/* Clients List */}
       {!isLoading && filteredClients.length > 0 && (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {filteredClients.map((client, index) => (
+      <>
+        {/* Mobile list */}
+        <div className="md:hidden space-y-2.5">
+          {filteredClients.map((client) => {
+            const statusLabel =
+              client.no_work_again ? "No trabajar" :
+              client.has_debt ? "Con deuda" :
+              client.is_vip ? "Cerrajero Ext." :
+              client.is_frequent ? "Frecuente" :
+              client.customer_type === "company" ? "Empresa" : "Persona";
+            const statusTextClass =
+              client.no_work_again ? "text-destructive" :
+              client.has_debt ? "text-warning" :
+              client.is_vip ? "text-primary" :
+              client.is_frequent ? "text-success" : "text-muted-foreground";
+            const statusDotClass =
+              client.no_work_again ? "bg-destructive/70" :
+              client.has_debt ? "bg-warning" :
+              client.is_vip ? "bg-primary" :
+              client.is_frequent ? "bg-success" : "bg-muted-foreground/40";
+            return (
+              <MobileListCard
+                key={client.id}
+                onClick={() => handleViewServices(client)}
+                code={client.customer_type === "company" ? "Empresa" : "Persona"}
+                statusLabel={statusLabel}
+                statusTextClass={statusTextClass}
+                statusDotClass={statusDotClass}
+                title={client.name}
+                subtitle={client.phone || client.email || "Sin contacto"}
+                valueText={`${currencySymbol}${(client.total_purchases || 0).toLocaleString()}`}
+                valueClass="text-foreground"
+              />
+            );
+          })}
+        </div>
+        {/* Desktop grid */}
+        <div className="hidden md:grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {filteredClients.map((client) => (
           <motion.div
             key={client.id}
             initial={{ opacity: 0, y: 20 }}
@@ -263,7 +308,8 @@ export default function Clientes() {
 
           </motion.div>
         ))}
-      </div>
+        </div>
+      </>
       )}
       </div>
 

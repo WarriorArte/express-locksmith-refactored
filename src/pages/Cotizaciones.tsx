@@ -18,6 +18,7 @@ import {
   Eye,
 } from "lucide-react";
 import { QuotePrintDialog } from "@/components/quotes/QuotePrintDialog";
+import { MobileListCard, MobileListCardSkeleton } from "@/components/shared/MobileListCard";
 import { QuoteFormDialog } from "@/components/quotes/QuoteFormDialog";
 import { ConvertQuoteDialog } from "@/components/quotes/ConvertQuoteDialog";
 import { DetailViewDialog } from "@/components/shared/DetailViewDialog";
@@ -213,13 +214,13 @@ export default function Cotizaciones() {
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* Header bar - ya NO es sticky */}
-      <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-2 pb-4">
+      <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-3 pb-4">
         <PageHeader
           eyebrow="Cotizaciones"
           title={<>Presupuestos al <span className="text-primary">instante.</span></>}
           subtitle={`${stats.pending} pendientes · ${stats.accepted} aceptadas este mes`}
           action={
-            <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary-hover" onClick={() => { setEditingQuote(null); setFormDialogOpen(true); }}>
+            <Button className="h-11 rounded-[12px] bg-primary text-primary-foreground hover:bg-primary-hover" onClick={() => { setEditingQuote(null); setFormDialogOpen(true); }}>
               <Plus className="w-4 h-4 mr-1" />
               Nueva
             </Button>
@@ -249,23 +250,8 @@ export default function Cotizaciones() {
       <div className="mt-6">
         {isLoading ? (
           <>
-            <div className="md:hidden space-y-3 animate-pulse">
-              {[0, 1, 2, 3].map((i) => (
-                <div key={i} className="card-elevated p-4 space-y-3">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-muted/60 shrink-0" />
-                    <div className="flex-1 space-y-2 pt-0.5">
-                      <div className="h-3 w-28 rounded bg-muted/60" />
-                      <div className="flex gap-1.5">
-                        <div className="h-5 w-16 rounded-full bg-muted/60" />
-                      </div>
-                    </div>
-                    <div className="h-6 w-20 rounded bg-muted/60 shrink-0" />
-                  </div>
-                  <div className="h-3 w-1/2 rounded bg-muted/60" />
-                  <div className="h-3 w-3/4 rounded bg-muted/60" />
-                </div>
-              ))}
+            <div className="md:hidden space-y-2.5">
+              {[0, 1, 2, 3].map((i) => <MobileListCardSkeleton key={i} />)}
             </div>
             <div className="hidden md:block card-elevated overflow-hidden animate-pulse">
               <div className="h-10 bg-muted/30 border-b border-border" />
@@ -410,87 +396,38 @@ export default function Cotizaciones() {
             </div>
 
             {/* Mobile cards */}
-            <div className="md:hidden space-y-3">
+            <div className="md:hidden space-y-2.5">
               {filteredQuotes.map((quote) => {
-                const status = statusConfig[quote.status as keyof typeof statusConfig];
-                const StatusIcon = status.icon;
                 const daysLeft = getDaysLeft(quote.valid_until);
+                const statusTextClass =
+                  quote.status === "accepted" ? "text-success" :
+                  quote.status === "rejected" ? "text-destructive" :
+                  quote.status === "converted" ? "text-primary" :
+                  quote.status === "expired" ? "text-muted-foreground" : "text-warning";
+                const statusDotClass =
+                  quote.status === "accepted" ? "bg-success" :
+                  quote.status === "rejected" ? "bg-destructive/70" :
+                  quote.status === "converted" ? "bg-primary" :
+                  quote.status === "expired" ? "bg-muted-foreground/50" : "bg-warning";
+                const quoteTitle = quote.description || quote.customer_name || quote.customer?.name || quote.quote_number;
                 return (
-                  <motion.div
+                  <MobileListCard
                     key={quote.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.08 }}
-                    className="card-elevated overflow-hidden cursor-pointer active:scale-[0.99] transition-transform"
                     onClick={() => handleViewDetail(quote)}
-                  >
-                    <div className="p-4">
-                      <div className="flex items-start justify-between gap-3 mb-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="p-2.5 rounded-xl bg-info-light flex-shrink-0">
-                            <FileText className="w-5 h-5 text-info" />
-                          </div>
-                          <div>
-                            <p className="font-mono text-sm text-foreground dark:text-primary font-semibold leading-tight">{quote.quote_number}</p>
-                            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                              <Badge className={cn("text-xs", status.color)}>
-                                <StatusIcon className="w-3 h-3 mr-1" />
-                                {status.label}
-                              </Badge>
-                              {quote.status === "pending" && daysLeft <= 3 && daysLeft > 0 && (
-                                <Badge className="bg-destructive-light text-destructive text-xs">
-                                  Vence en {daysLeft}d
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <p className="text-[11px] text-muted-foreground uppercase tracking-wide leading-tight">Total</p>
-                          <p className="text-xl font-bold text-foreground">{currencySymbol}{quote.total.toLocaleString()}</p>
-                          {quote.valid_until && (
-                            <p className="text-[11px] text-muted-foreground">
-                              hasta {format(parseISO(quote.valid_until), "dd MMM", { locale: es })}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      {quote.description && (
-                        <p className="text-sm font-medium text-foreground truncate mb-2">{quote.description}</p>
-                      )}
-                      <div className="flex items-center justify-between gap-2 text-sm">
-                        <span className="flex items-center gap-1.5 min-w-0">
-                          <User className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                          <span className="truncate text-foreground font-medium">
-                            {quote.customer_name || quote.customer?.name || "Sin cliente"}
-                          </span>
-                        </span>
-                        <span className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
-                          <Calendar className="w-3 h-3" />
-                          {format(parseISO(quote.created_at), "dd MMM · HH:mm", { locale: es })}
-                        </span>
-                      </div>
-
-                      {quote.quote_items && quote.quote_items.length > 0 && (
-                        <div className="mt-3 pt-3 border-t space-y-1.5">
-                          {quote.quote_items.slice(0, 2).map((item) => (
-                            <div key={item.id} className="flex items-center justify-between text-sm">
-                              <span className="text-muted-foreground truncate pr-2">
-                                <span className="text-foreground font-medium">{item.quantity}×</span> {item.description}
-                              </span>
-                              <span className="font-medium flex-shrink-0">{currencySymbol}{Number(item.subtotal).toLocaleString()}</span>
-                            </div>
-                          ))}
-                          {quote.quote_items.length > 2 && (
-                            <p className="text-xs text-muted-foreground pt-0.5">
-                              +{quote.quote_items.length - 2} producto{quote.quote_items.length - 2 > 1 ? "s" : ""} más
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
+                    code={quote.quote_number}
+                    statusLabel={statusConfig[quote.status as keyof typeof statusConfig].label}
+                    statusTextClass={statusTextClass}
+                    statusDotClass={statusDotClass}
+                    statusExtra={
+                      quote.status === "pending" && daysLeft <= 3 && daysLeft > 0
+                        ? <span className="ml-1 text-[10px] font-bold text-destructive">· {daysLeft}d</span>
+                        : undefined
+                    }
+                    title={quoteTitle}
+                    subtitle={quote.customer_name || quote.customer?.name || "Sin cliente"}
+                    valueText={`${currencySymbol}${quote.total.toLocaleString()}`}
+                    valueClass="text-foreground"
+                  />
                 );
               })}
             </div>

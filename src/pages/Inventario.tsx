@@ -213,7 +213,7 @@ export default function Inventario() {
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* Header bar - ya NO es sticky */}
-      <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-2 pb-4">
+      <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-3 pb-4">
         <section className="ce-hero ce-hero-mobile-bleed p-[22px_16px] lg:p-[22px]">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
@@ -234,11 +234,11 @@ export default function Inventario() {
             </div>
             <div className="flex items-start gap-2">
               <div className="hidden lg:flex gap-2">
-                <Button size="sm" className="bg-white/[.09] border-white/[.13] text-[hsl(240_22%_95%)] hover:bg-white/[.14] border" onClick={() => setCategoryDialogOpen(true)}>
+                <Button className="h-11 rounded-[12px] bg-white/[.09] border border-white/[.13] text-[hsl(240_22%_95%)] hover:bg-white/[.14]" onClick={() => setCategoryDialogOpen(true)}>
                   <Palette className="w-4 h-4 mr-1" />
                   Categorias
                 </Button>
-                <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary-hover" onClick={handleNewProduct}>
+                <Button className="h-11 rounded-[12px] bg-primary text-primary-foreground hover:bg-primary-hover" onClick={handleNewProduct}>
                   <Plus className="w-4 h-4 mr-1" />
                   Nuevo
                 </Button>
@@ -282,20 +282,20 @@ export default function Inventario() {
                   ))}
                 </SelectContent>
               </Select>
-              <div className="hidden border rounded-lg p-1 bg-white/5 lg:flex">
+              <div className="hidden border border-white/[.13] rounded-xl p-1.5 bg-white/[.05] lg:flex gap-1">
                 <Button
                   variant={viewMode === "grid" ? "default" : "ghost"}
-                  size="sm"
+                  size="icon"
                   onClick={() => setViewMode("grid")}
-                  className="px-3"
+                  className="h-9 w-10 rounded-lg"
                 >
                   <Grid3X3 className="w-4 h-4" />
                 </Button>
                 <Button
                   variant={viewMode === "list" ? "default" : "ghost"}
-                  size="sm"
+                  size="icon"
                   onClick={() => setViewMode("list")}
-                  className="px-3"
+                  className="h-9 w-10 rounded-lg"
                 >
                   <List className="w-4 h-4" />
                 </Button>
@@ -318,12 +318,13 @@ export default function Inventario() {
       {isLoading && viewMode === "grid" && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 animate-pulse">
           {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-            <div key={i} className="card-elevated overflow-hidden">
-              <div className="aspect-[4/3] bg-muted/60" />
+            <div key={i} className="bg-card border border-border rounded-2xl overflow-hidden">
+              <div className="aspect-square bg-muted/40" />
               <div className="p-3 space-y-2">
-                <div className="h-3 w-3/4 rounded bg-muted/60" />
-                <div className="h-3 w-1/2 rounded bg-muted/60" />
-                <div className="h-6 w-full rounded-xl bg-muted/60 mt-2" />
+                <div className="h-3 w-3/4 rounded-full bg-muted/60" />
+                <div className="h-4 w-1/2 rounded-full bg-muted/60" />
+                <div className="h-3 w-2/5 rounded-full bg-muted/40" />
+                <div className="h-8 w-full rounded-xl bg-muted/50 mt-3" />
               </div>
             </div>
           ))}
@@ -385,87 +386,72 @@ export default function Inventario() {
               return (
                 <motion.div
                   key={product.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.08 }}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.15, delay: index * 0.03 }}
                   onClick={() => openDetail(product)}
-                  className="flex flex-col h-full bg-card border border-border rounded-2xl overflow-hidden text-left active:scale-[0.98] transition-transform"
+                  className="rounded-2xl overflow-hidden active:scale-[0.96] transition-transform cursor-pointer border border-border/50 shadow-sm"
                 >
-                  {/* Contenedor de la miniatura (cuadrado garantizado) */}
-                  <div className="relative w-full pb-[100%] bg-[hsl(var(--surface-2))] shrink-0">
-                    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-                      {product.image_url ? (
-                        <img src={resolveStorageUrl(product.image_url) ?? undefined} alt={product.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <Package className="w-9 h-9 text-muted-foreground" />
-                      )}
-                      <span
-                        className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold z-10"
-                        style={isService ? getServiceTypeBadgeStyle() : getCategoryBadgeStyle(product.category_id)}
-                      >
-                        {isService ? serviceTypeLabel : cn_}
-                      </span>
-                      {!isService && (
-                        <span
-                          className={cn(
-                            "absolute bottom-1.5 right-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold z-10",
-                            status === "low" ? "bg-warning/20 text-warning" : "bg-success/20 text-foreground dark:text-success",
-                          )}
-                        >
-                          {status === "low" ? "Stock bajo" : "En stock"}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex flex-col flex-1 p-2.5">
-                    <div className="text-[12px] font-bold text-foreground leading-tight line-clamp-2 mb-1.5 min-h-[28px]">
-                      {product.name}
-                    </div>
-                    {isService ? (
-                      <div className="min-h-[72px] space-y-1">
-                        <div className="flex gap-3">
-                          <span className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
-                            <Wrench className="w-4 h-4" />{currencySymbol}{serviceTotals?.labor.toLocaleString()}
-                          </span>
-                          <span className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
-                            <Package className="w-4 h-4" />
-                            {currencySymbol}{serviceTotals?.productsSubtotal.toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="text-[13px] font-extrabold text-foreground dark:text-primary leading-tight">
-                          {currencySymbol}{serviceTotals?.totalWithProducts.toLocaleString()}
-                        </div>
-                        <div className="text-[12px] text-destructive leading-tight">
-                          Descuento: {currencySymbol}{serviceTotals?.discount.toLocaleString()}
-                        </div>
-                      </div>
+                  {/* Full-bleed image con overlay */}
+                  <div className="relative aspect-square">
+                    {product.image_url ? (
+                      <img
+                        src={resolveStorageUrl(product.image_url) ?? undefined}
+                        alt={product.name}
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
                     ) : (
-                      <div className="min-h-[72px] space-y-1">
-                        <div className="flex gap-3">
-                          <span className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
-                            <Store className="w-4 h-4" />T: {product.stock_store}
-                          </span>
-                          <span className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
-                            <Warehouse className="w-4 h-4" />B: {product.stock_warehouse}
-                          </span>
-                        </div>
-                        <div className="text-[13px] font-extrabold text-foreground dark:text-primary leading-tight">
-                          {currencySymbol}{Number(product.sale_price_max).toLocaleString()}
-                        </div>
-                        <div className="text-[12px] text-destructive leading-tight">
-                          Descuento: {currencySymbol}{Number(product.sale_price_min).toLocaleString()}
-                        </div>
+                      <div
+                        className="absolute inset-0 flex items-center justify-center"
+                        style={{ background: `linear-gradient(160deg, ${getCategoryColor(product.category_id)}30 0%, hsl(var(--surface-2)) 70%)` }}
+                      >
+                        <Package className="w-12 h-12 text-muted-foreground/20" />
                       </div>
                     )}
+
+                    {/* Gradient oscuro desde abajo */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+
+                    {/* Badge stock bajo — arriba derecha */}
+                    {!isService && status === "low" && (
+                      <div className="absolute top-2.5 right-2.5 z-10">
+                        <span className="px-2 py-0.5 rounded-full bg-warning text-black text-[9px] font-black leading-tight">
+                          bajo
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Info superpuesta sobre el gradiente */}
+                    <div className="absolute inset-x-0 bottom-0 z-10 px-3 pb-3 pt-10">
+                      <p className="text-white/90 text-[11px] font-medium leading-snug line-clamp-1 mb-1">
+                        {product.name}
+                      </p>
+                      <div className="flex items-end justify-between gap-2">
+                        <span className="text-white text-[17px] font-black leading-none tracking-tight">
+                          {isService
+                            ? `${currencySymbol}${serviceTotals?.totalWithProducts.toLocaleString()}`
+                            : `${currencySymbol}${Number(product.sale_price_max).toLocaleString()}`
+                          }
+                        </span>
+                        <span className="text-white/55 text-[10px] leading-tight pb-0.5 text-right">
+                          {isService
+                            ? `M.O ${currencySymbol}${serviceTotals?.labor.toLocaleString()}`
+                            : `T:${product.stock_store} · B:${product.stock_warehouse}`
+                          }
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Barra de acción */}
+                  <div className="bg-card px-2.5 py-2.5">
                     <Button
                       type="button"
-                      className="w-full h-8 mt-auto rounded-xl bg-primary text-primary-foreground hover:bg-primary-hover text-[11px] font-semibold"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSell(product);
-                      }}
+                      className="w-full h-9 rounded-xl bg-primary text-primary-foreground hover:bg-primary-hover text-[11px] font-bold"
+                      onClick={(e) => { e.stopPropagation(); handleSell(product); }}
                     >
-                      <ShoppingCart className="w-3.5 h-3.5 mr-1" /> {isService ? "Usar" : "Vender"}
+                      <ShoppingCart className="w-3.5 h-3.5 mr-1.5" />
+                      {isService ? "Usar servicio" : "Vender"}
                     </Button>
                   </div>
                 </motion.div>
@@ -478,72 +464,61 @@ export default function Inventario() {
             {filteredProducts.map((product) => {
               const status = getStockStatus(product);
               const isService = (product.item_type ?? "product") === "service";
-              const cc = getCategoryColor(product.category_id);
               const cn_ = getCategoryName(product.category_id);
               const serviceTypeLabel = getServiceTypeLabel(product.service_type);
+              const serviceTotals = isService ? getServiceTotals(product) : null;
               return (
                 <div
                   key={product.id}
                   onClick={() => openDetail(product)}
-                  className="w-full flex items-center gap-3 px-3 py-3 active:bg-muted/50 transition-colors text-left"
+                  className="flex items-center gap-3 px-3 py-2.5 active:bg-muted/40 transition-colors cursor-pointer"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-[hsl(var(--surface-2))] flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  {/* Thumbnail */}
+                  <div className="w-11 h-11 rounded-xl bg-[hsl(var(--surface-2))] flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {product.image_url ? (
                       <img src={resolveStorageUrl(product.image_url) ?? undefined} alt="" className="w-full h-full object-cover" />
                     ) : (
-                      <Package className="w-4 h-4 text-primary" />
+                      <Package className="w-4 h-4 text-muted-foreground/40" />
                     )}
                   </div>
+
+                  {/* Name + meta */}
                   <div className="flex-1 min-w-0">
                     <div className="text-[13px] font-semibold text-foreground truncate">{product.name}</div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={isService ? getServiceTypeBadgeStyle() : getCategoryBadgeStyle(product.category_id)}>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span
+                        className="px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-tight"
+                        style={isService ? getServiceTypeBadgeStyle() : getCategoryBadgeStyle(product.category_id)}
+                      >
                         {isService ? serviceTypeLabel : cn_}
                       </span>
-                      {!isService && (
-                        <span className="text-sm font-semibold text-muted-foreground">T: {product.stock_store} / B: {product.stock_warehouse}</span>
-                      )}
-                      {isService && (
-                        <span className="text-[10px] text-muted-foreground">
-                          M.O: {currencySymbol}{Number(product.labor_cost || 0).toLocaleString()}
-                        </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {isService
+                          ? `M.O: ${currencySymbol}${Number(product.labor_cost || 0).toLocaleString()}`
+                          : `T:${product.stock_store} · B:${product.stock_warehouse}`
+                        }
+                      </span>
+                      {!isService && status === "low" && (
+                        <span className="text-[9px] font-bold text-warning">↓ bajo</span>
                       )}
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                    {isService ? (
-                      <>
-                        <span className="text-[14px] font-extrabold text-foreground dark:text-primary">
-                          {currencySymbol}{Number((Number(product.labor_cost || 0) - Number(product.discount || 0)).toFixed(2)).toLocaleString()}
-                        </span>
-                        {Number(product.discount || 0) > 0 && (
-                          <span className="text-[9px] text-muted-foreground">
-                            -${Number(product.discount).toLocaleString()}
-                          </span>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-[14px] font-extrabold text-foreground dark:text-primary">
-                          {currencySymbol}{Number(product.sale_price_max).toLocaleString()}
-                        </span>
-                        <span className={cn(
-                          "inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold",
-                          status === "low" ? "bg-warning/20 text-warning" : "bg-success/20 text-foreground dark:text-success",
-                        )}>
-                          {status === "low" ? "Stock bajo" : "En stock"}
-                        </span>
-                      </>
-                    )}
+
+                  {/* Price + action */}
+                  <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                    <span className="text-[13px] font-extrabold text-foreground dark:text-primary leading-tight">
+                      {isService
+                        ? `${currencySymbol}${serviceTotals?.totalWithProducts.toLocaleString()}`
+                        : `${currencySymbol}${Number(product.sale_price_max).toLocaleString()}`
+                      }
+                    </span>
                     <Button
                       type="button"
-                      className="h-7 px-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary-hover text-[10px] font-semibold"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSell(product);
-                      }}
+                      className="h-7 px-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary-hover text-[10px] font-semibold"
+                      onClick={(e) => { e.stopPropagation(); handleSell(product); }}
                     >
-                      <ShoppingCart className="w-3 h-3 mr-1" /> {isService ? "Usar" : "Vender"}
+                      <ShoppingCart className="w-3 h-3 mr-1" />
+                      {isService ? "Usar" : "Vender"}
                     </Button>
                   </div>
                 </div>
@@ -565,155 +540,110 @@ export default function Inventario() {
             return (
               <motion.div
                 key={product.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.08 }}
-                className="card-elevated overflow-hidden group h-full flex flex-col"
+                transition={{ duration: 0.1, delay: index * 0.02 }}
+                className="rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-lg border border-border/50 shadow-sm group"
+                onClick={() => { setDetailProduct(product); setDetailOpen(true); }}
               >
-                {/* Product Image */}
-                <div
-                  className="relative aspect-[4/3] max-h-48 bg-[hsl(var(--surface-2))] flex items-center justify-center cursor-pointer overflow-hidden"
-                  onClick={() => { setDetailProduct(product); setDetailOpen(true); }}
-                >
+                {/* Full-bleed image con overlay */}
+                <div className="relative aspect-square">
                   {product.image_url ? (
-                    <img src={resolveStorageUrl(product.image_url) ?? undefined} alt={product.name} className="w-full h-full object-cover" />
+                    <img
+                      src={resolveStorageUrl(product.image_url) ?? undefined}
+                      alt={product.name}
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
                   ) : (
-                    <div className="flex size-20 items-center justify-center rounded-2xl bg-background/70 text-muted-foreground">
-                      <Package className="w-10 h-10" />
+                    <div
+                      className="absolute inset-0 flex items-center justify-center"
+                      style={{ background: `linear-gradient(160deg, ${getCategoryColor(product.category_id)}30 0%, hsl(var(--surface-2)) 70%)` }}
+                    >
+                      <Package className="w-12 h-12 text-muted-foreground/20" />
                     </div>
                   )}
+
+                  {/* Gradient oscuro desde abajo */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-transparent" />
+
+                  {/* Stock bajo — arriba derecha (detrás del ⋯) */}
                   {!isService && status === "low" && (
-                    <Badge className="absolute bottom-2 right-2 bg-warning text-warning-foreground">
-                      Stock bajo
-                    </Badge>
+                    <div className="absolute top-2.5 right-10 z-10">
+                      <span className="px-2 py-0.5 rounded-full bg-warning text-black text-[9px] font-black leading-tight">
+                        bajo
+                      </span>
+                    </div>
                   )}
-                  <div className="absolute bottom-2 left-2">
-                    <Badge 
-                      style={isService ? getServiceTypeBadgeStyle() : getCategoryBadgeStyle(product.category_id)}
-                      className="text-xs"
-                    >
-                      {isService ? serviceTypeLabel : getCategoryName(product.category_id)}
-                    </Badge>
-                  </div>
-                  
-                  {/* Actions overlay - Hidden on mobile, shown on hover for desktop */}
-                  <div className="hidden md:flex absolute inset-0 bg-foreground/60 opacity-0 group-hover:opacity-100 transition-opacity items-center justify-center gap-2">
-                    <Button size="icon" variant="secondary" className="rounded-full" onClick={(e) => { e.stopPropagation(); setImageProduct(product); }} title="Ver imagen">
-                      <ZoomIn className="w-4 h-4" />
-                    </Button>
-                    {!isService && (
-                      <>
-                        <Button size="icon" variant="secondary" className="rounded-full" onClick={(e) => { e.stopPropagation(); setMovementProduct(product); }} title="Movimientos">
-                          <Move className="w-4 h-4" />
-                        </Button>
-                        <Button size="icon" variant="secondary" className="rounded-full" onClick={(e) => { e.stopPropagation(); setHistoryProduct(product); }} title="Historial">
-                          <History className="w-4 h-4" />
-                        </Button>
-                      </>
-                    )}
-                    <Button size="icon" variant="secondary" className="rounded-full" onClick={(e) => { e.stopPropagation(); handleEdit(product); }} title="Editar">
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button size="icon" variant="destructive" className="rounded-full" onClick={(e) => { e.stopPropagation(); setDeleteProduct(product); }} title="Eliminar">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  
-                  {/* Mobile menu button */}
-                  <div className="absolute top-2 right-2 md:hidden z-10">
+
+                  {/* Context menu — hover */}
+                  <div
+                    className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-20"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button size="icon" variant="secondary" className="rounded-full h-8 w-8">
-                          <MoreVertical className="w-4 h-4" />
+                        <Button size="icon" variant="secondary" className="h-7 w-7 rounded-lg shadow-sm cursor-pointer">
+                          <MoreVertical className="w-3.5 h-3.5" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setImageProduct(product); }}>
-                          <ZoomIn className="w-4 h-4 mr-2" /> Ver Imagen
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setImageProduct(product)}>
+                          <ZoomIn className="w-4 h-4 mr-2" /> Ver imagen
                         </DropdownMenuItem>
                         {!isService && (
                           <>
-                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setMovementProduct(product); }}>
+                            <DropdownMenuItem onClick={() => setMovementProduct(product)}>
                               <Move className="w-4 h-4 mr-2" /> Movimientos
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setHistoryProduct(product); }}>
+                            <DropdownMenuItem onClick={() => setHistoryProduct(product)}>
                               <History className="w-4 h-4 mr-2" /> Historial
                             </DropdownMenuItem>
                           </>
                         )}
-                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEdit(product); }}>
+                        <DropdownMenuItem onClick={() => handleEdit(product)}>
                           <Edit className="w-4 h-4 mr-2" /> Editar
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setDeleteProduct(product); }} className="text-destructive">
+                        <DropdownMenuItem
+                          className="text-destructive"
+                          onClick={() => setDeleteProduct(product)}
+                        >
                           <Trash2 className="w-4 h-4 mr-2" /> Eliminar
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
+
+                  {/* Info superpuesta */}
+                  <div className="absolute inset-x-0 bottom-0 z-10 px-3 pb-3 pt-10">
+                    <p className="text-white/90 text-[12px] font-medium leading-snug line-clamp-1 mb-1">
+                      {product.name}
+                    </p>
+                    <div className="flex items-end justify-between gap-2">
+                      <span className="text-white text-[16px] font-black leading-none tracking-tight">
+                        {isService
+                          ? `${currencySymbol}${serviceTotals?.totalWithProducts.toLocaleString()}`
+                          : `${currencySymbol}${Number(product.sale_price_max).toLocaleString()}`
+                        }
+                      </span>
+                      <span className="text-white/55 text-[10px] leading-tight pb-0.5 text-right">
+                        {isService
+                          ? `M.O ${currencySymbol}${serviceTotals?.labor.toLocaleString()}`
+                          : `T:${product.stock_store} · B:${product.stock_warehouse}`
+                        }
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Sell button below thumbnail (desktop) */}
-                <div className="px-3 pt-2.5 flex gap-2">
+                {/* Barra de acción */}
+                <div className="bg-card px-3 py-2.5">
                   <Button
-                    className="flex-1 h-9 rounded-xl bg-primary text-primary-foreground hover:bg-primary-hover font-semibold"
-                    onClick={() => handleSell(product)}
+                    className="w-full h-8 rounded-xl bg-primary text-primary-foreground hover:bg-primary-hover text-xs font-semibold cursor-pointer"
+                    onClick={(e) => { e.stopPropagation(); handleSell(product); }}
                   >
-                    <ShoppingCart className="w-4 h-4 mr-1.5" /> {isService ? "Usar" : "Vender"}
+                    <ShoppingCart className="w-3.5 h-3.5 mr-1.5" />
+                    {isService ? "Usar" : "Vender"}
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-9 w-9 rounded-xl"
-                    onClick={() => { setDetailProduct(product); setDetailOpen(true); }}
-                    title="Ver detalles"
-                  >
-                    <Eye className="w-4 h-4" />
-                  </Button>
-                </div>
-
-                {/* Product Info */}
-                <div className="px-3 pb-3 pt-2.5 space-y-2.5 flex-1">
-                  <h3 className="font-semibold text-foreground line-clamp-2 text-sm sm:text-base min-h-[40px]">{product.name}</h3>
-
-                  {isService ? (
-                    <div className="min-h-[92px] space-y-1.5">
-                      <div className="flex gap-3">
-                        <span className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
-                          <Wrench className="w-4 h-4" />{currencySymbol}{serviceTotals?.labor.toLocaleString()}
-                        </span>
-                        <span className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
-                          <Package className="w-4 h-4" />
-                          {currencySymbol}{serviceTotals?.productsSubtotal.toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="text-[20px] font-extrabold text-foreground dark:text-success leading-tight">
-                        {currencySymbol}{serviceTotals?.totalWithProducts.toLocaleString()}
-                      </div>
-                      <div className="text-[11px] text-destructive leading-tight">
-                        Descuento: {currencySymbol}{serviceTotals?.discount.toLocaleString()}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="min-h-[92px] space-y-1.5">
-                      <div className="flex gap-3">
-                        <span className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
-                          <Store className="w-4 h-4" />T: {product.stock_store}
-                        </span>
-                        <span className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
-                          <Warehouse className="w-4 h-4" />B: {product.stock_warehouse}
-                        </span>
-                      </div>
-                      <div className="text-[20px] font-extrabold text-foreground dark:text-success leading-tight">
-                        {currencySymbol}{Number(product.sale_price_max).toLocaleString()}
-                      </div>
-                      <div className="text-[11px] text-muted-foreground leading-tight">
-                        Costo: {currencySymbol}{Number(product.purchase_price_local || 0).toLocaleString()}
-                      </div>
-                      <div className="text-[11px] text-destructive leading-tight">
-                        Descuento: {currencySymbol}{Number(product.sale_price_min || 0).toLocaleString()}
-                      </div>
-                    </div>
-                  )}
                 </div>
               </motion.div>
             );

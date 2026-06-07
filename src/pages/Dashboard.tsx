@@ -19,7 +19,7 @@ export default function Dashboard() {
   const expiringQuotes = stats?.expiringQuotes?.length || 0;
 
   return (
-    <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain pt-10 lg:pt-2 px-5 lg:px-6 pb-24 md:pb-6 no-scrollbar">
+    <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain pt-10 lg:pt-3 px-5 lg:px-6 pb-24 md:pb-6 no-scrollbar">
       {isLoading ? (
         <DashboardSkeleton />
       ) : (
