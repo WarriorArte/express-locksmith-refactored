@@ -102,11 +102,11 @@ export function Sidebar({
     return (
       <motion.aside
         initial={false}
-        animate={{ width: collapsed ? 72 : 256 }}
+        animate={{ width: collapsed ? 96 : 280 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="hidden lg:flex flex-col bg-sidebar h-screen sticky top-0 z-30"
+        className="hidden lg:flex flex-col h-dvh sticky top-0 z-30 p-3"
       >
-        <div className="flex items-center justify-center h-full">
+        <div className="flex items-center justify-center flex-1 bg-sidebar rounded-2xl shadow-xl">
           <Loader2 className="w-6 h-6 animate-spin text-sidebar-foreground/50" />
         </div>
       </motion.aside>
@@ -116,7 +116,7 @@ export function Sidebar({
   const sidebarContent = (
     <>
       {/* Logo & Header */}
-      <div className="flex items-center gap-3 px-4 py-6 border-b border-sidebar-border shrink-0">
+      <div className="flex items-center gap-3 px-4 py-4 border-b border-sidebar-border shrink-0">
         <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-sidebar-primary text-sidebar-primary-foreground">
           {isSuperAdmin && !currentWorkshop ? (
             <Shield className="w-5 h-5" />
@@ -149,83 +149,80 @@ export function Sidebar({
         </AnimatePresence>
       </div>
 
-      {/* Navigation (scrollable) */}
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto scrollbar-thin">
+      {/* Navigation Grid */}
+      <nav
+        className={cn(
+          "flex-1 p-3 overflow-y-auto scrollbar-thin grid content-start gap-2",
+          collapsed ? "grid-cols-1" : "grid-cols-2",
+        )}
+      >
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
             <NavLink
               key={item.path}
               to={item.path}
+              aria-label={item.label}
               onClick={(e) => {
                 setMobileOpen(false);
-                if (isActive) {
-                  e.preventDefault();
-                }
+                if (isActive) e.preventDefault();
               }}
-              className={cn("sidebar-nav-item group", isActive && "active")}
+              className={cn(
+                "flex flex-col items-center justify-center gap-1.5 rounded-xl transition-all duration-200 cursor-pointer select-none",
+                collapsed ? "py-3 px-2" : "py-4 px-2",
+                isActive
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+              )}
             >
               <item.icon
                 className={cn(
-                  "w-5 h-5 flex-shrink-0 transition-colors",
-                  isActive
-                    ? "text-sidebar-primary-foreground"
-                    : "text-sidebar-foreground/70 group-hover:text-sidebar-foreground",
+                  "flex-shrink-0 transition-colors",
+                  collapsed ? "w-5 h-5" : "w-7 h-7",
                 )}
               />
-              <AnimatePresence>
-                {!collapsed && (
-                  <motion.span
-                    initial={{ opacity: 0, width: 0 }}
-                    animate={{ opacity: 1, width: "auto" }}
-                    exit={{ opacity: 0, width: 0 }}
-                    className="whitespace-nowrap overflow-hidden"
-                  >
-                    {item.label}
-                  </motion.span>
-                )}
-              </AnimatePresence>
+              {!collapsed && (
+                <span className="text-[10px] font-semibold leading-tight text-center w-full truncate">
+                  {item.label}
+                </span>
+              )}
             </NavLink>
           );
         })}
 
         {/* SuperAdmin link when in workshop context */}
         {isSuperAdmin && currentWorkshop && (
-          <NavLink
-            to="/superadmin"
-            onClick={(e) => {
-              setMobileOpen(false);
-              if (location.pathname === "/superadmin") {
-                e.preventDefault();
-              }
-              void setCurrentWorkshop(null);
-            }}
-            className={cn(
-              "sidebar-nav-item group mt-4 border-t border-sidebar-border pt-4",
-              location.pathname === "/superadmin" && "active",
-            )}
-          >
-            <Shield
+          <>
+            <div className="col-span-full border-t border-sidebar-border my-0.5" />
+            <NavLink
+              to="/superadmin"
+              aria-label="Panel SuperAdmin"
+              onClick={(e) => {
+                setMobileOpen(false);
+                if (location.pathname === "/superadmin") e.preventDefault();
+                void setCurrentWorkshop(null);
+              }}
               className={cn(
-                "w-5 h-5 flex-shrink-0 transition-colors",
+                "col-span-full flex flex-col items-center justify-center gap-1.5 rounded-xl transition-all duration-200 cursor-pointer select-none",
+                collapsed ? "py-3 px-2" : "py-4 px-2",
                 location.pathname === "/superadmin"
-                  ? "text-sidebar-primary-foreground"
-                  : "text-sidebar-foreground/70 group-hover:text-sidebar-foreground",
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
               )}
-            />
-            <AnimatePresence>
+            >
+              <Shield
+                className={cn(
+                  "flex-shrink-0 transition-colors",
+                  collapsed ? "w-5 h-5" : "w-7 h-7",
+                )}
+              />
               {!collapsed && (
-                <motion.span
-                  initial={{ opacity: 0, width: 0 }}
-                  animate={{ opacity: 1, width: "auto" }}
-                  exit={{ opacity: 0, width: 0 }}
-                  className="whitespace-nowrap overflow-hidden"
-                >
+                <span className="text-[10px] font-semibold leading-tight text-center w-full truncate">
                   Panel SuperAdmin
-                </motion.span>
+                </span>
               )}
-            </AnimatePresence>
-          </NavLink>
+            </NavLink>
+          </>
         )}
       </nav>
 
@@ -309,11 +306,13 @@ export function Sidebar({
       {/* Desktop Sidebar only - mobile uses BottomNav + Más sheet */}
       <motion.aside
         initial={false}
-        animate={{ width: collapsed ? 72 : 256 }}
+        animate={{ width: collapsed ? 96 : 280 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="hidden lg:flex flex-col bg-sidebar h-screen sticky top-0 z-30"
+        className="hidden lg:flex flex-col h-dvh sticky top-0 z-30 p-3"
       >
-        {sidebarContent}
+        <div className="flex flex-col flex-1 bg-sidebar rounded-2xl shadow-xl border border-white/[0.06] overflow-hidden min-h-0">
+          {sidebarContent}
+        </div>
       </motion.aside>
     </>
   );

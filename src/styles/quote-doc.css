@@ -94,13 +94,14 @@
 }
 .qd .grand-row {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) max-content;
   align-items: center;
   background: var(--accent);
   color: var(--accent-ink);
   padding: 14px 18px;
   border-radius: 6px;
   margin-top: 10px;
+  column-gap: 16px;
 }
 .qd .grand-row .k {
   font-family: "Archivo", sans-serif;
@@ -114,6 +115,9 @@
   font-weight: 900;
   font-size: 22px;
   letter-spacing: -0.01em;
+  line-height: 1;
+  text-align: right;
+  white-space: nowrap;
 }
 .qd .grand-row .v .cur {
   font-family: "JetBrains Mono", monospace;

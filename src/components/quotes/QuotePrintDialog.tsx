@@ -1,9 +1,10 @@
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Printer, X } from "lucide-react";
+import { Download, Printer, Share2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useQuoteDocSettings } from "@/hooks/useQuoteDocSettings";
+import { useToast } from "@/hooks/use-toast";
 import type { Quote } from "@/hooks/useQuotes";
 import { QuotePreviewFrame } from "./QuotePreviewFrame";
 
@@ -16,6 +17,7 @@ interface Props {
 export function QuotePrintDialog({ open, onOpenChange, quote }: Props) {
   const { data: biz } = useBusinessSettings();
   const { settings } = useQuoteDocSettings();
+  const { toast } = useToast();
   const pageRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -33,6 +35,57 @@ export function QuotePrintDialog({ open, onOpenChange, quote }: Props) {
   }, [open, onOpenChange]);
 
   if (!open || !quote) return null;
+
+  const pdfFileName = `cotizacion-${sanitizeFileName(quote.quote_number)}.pdf`;
+
+  const createQuotePdf = async () => {
+    if (!pageRef.current) throw new Error("Vista previa no lista");
+    const { createQuotePdfBlob } = await import("./quotePdf");
+    const blob = await createQuotePdfBlob(pageRef.current);
+    return new File([blob], pdfFileName, { type: "application/pdf" });
+  };
+
+  const handleDownload = async () => {
+    try {
+      const file = await createQuotePdf();
+      downloadFile(file);
+    } catch (error) {
+      toast({
+        title: "No se pudo descargar",
+        description: error instanceof Error ? error.message : "Intenta nuevamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      const file = await createQuotePdf();
+      const shareData = {
+        title: "Cotización",
+        text: `Cotización ${quote.quote_number}`,
+        files: [file],
+      };
+
+      if (navigator.canShare?.(shareData)) {
+        await navigator.share(shareData);
+        return;
+      }
+
+      downloadFile(file);
+      toast({
+        title: "PDF descargado",
+        description: "Este navegador no permite compartir archivos directamente.",
+      });
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      toast({
+        title: "No se pudo compartir",
+        description: error instanceof Error ? error.message : "Intenta nuevamente.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handlePrint = async () => {
     const page = pageRef.current;
@@ -155,14 +208,51 @@ export function QuotePrintDialog({ open, onOpenChange, quote }: Props) {
           />
         </div>
 
-        <div className="px-4 pb-4 pt-1 shrink-0">
-          <Button type="button" onClick={handlePrint} className="w-full gap-2">
+        <div className="grid grid-cols-3 px-4 pb-4 pt-1 shrink-0 gap-2 [&>button]:min-w-0">
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11 rounded-sm px-2 text-[11px] sm:text-sm gap-1.5"
+            onClick={handleDownload}
+          >
+            <Download className="w-4 h-4 shrink-0" />
+            <span className="truncate">Descargar</span>
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11 rounded-sm px-2 text-[11px] sm:text-sm gap-1.5"
+            onClick={handleShare}
+          >
+            <Share2 className="w-4 h-4 shrink-0" />
+            <span className="truncate">Compartir</span>
+          </Button>
+          <Button
+            type="button"
+            onClick={handlePrint}
+            className="h-11 rounded-sm bg-primary text-primary-foreground px-2 text-[11px] sm:text-sm gap-1.5"
+          >
             <Printer className="w-4 h-4" />
-            Imprimir / PDF
+            <span className="truncate">Imprimir</span>
           </Button>
         </div>
       </div>
     </div>,
     document.body,
   );
+}
+
+function downloadFile(file: File) {
+  const url = URL.createObjectURL(file);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = file.name;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function sanitizeFileName(value: string) {
+  return value.replace(/[^a-z0-9_-]+/gi, "-").replace(/^-+|-+$/g, "") || "cotizacion";
 }

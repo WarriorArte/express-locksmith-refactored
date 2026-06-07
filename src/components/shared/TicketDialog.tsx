@@ -1,8 +1,8 @@
 import { useRef } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/responsive-dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/responsive-dialog";
 import { Button } from "@/components/ui/button";
-import { Download, Printer, Share2, X } from "lucide-react";
+import { Download, Printer, Share2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
@@ -146,10 +146,6 @@ export function TicketDialog({ open, onOpenChange, data }: Props) {
       >
         <DialogHeader className="px-4 pt-3 md:px-5 md:pt-5 !flex-row items-center justify-between space-y-0">
           <DialogTitle className="text-base md:text-lg">{kindTitle[data.kind]}</DialogTitle>
-          <DialogClose className="md:hidden rounded-sm p-2 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-            <X className="h-4 w-4" />
-            <span className="sr-only">Cerrar</span>
-          </DialogClose>
         </DialogHeader>
 
         <div className="px-2 pb-2 md:px-4 overflow-auto">

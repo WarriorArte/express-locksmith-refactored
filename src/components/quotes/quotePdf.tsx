@@ -2,6 +2,9 @@ import { toPng } from "html-to-image";
 import { jsPDF } from "jspdf";
 import { getPhpAuthToken, resolveUploadFileUrl } from "@/lib/phpApi";
 
+const LETTER_WIDTH_MM = 215.9;
+const LETTER_HEIGHT_MM = 279.4;
+
 interface TextRun {
   text: string;
   x: number;
@@ -11,34 +14,70 @@ interface TextRun {
   fontStyle: "normal" | "bold" | "italic" | "bolditalic";
 }
 
-export async function createTicketPdfBlob(node: HTMLElement, paperSize?: string): Promise<Blob> {
-  // Pre-inline authenticated images as data URLs so html-to-image
-  // doesn't try to fetch them (which fails due to auth/CORS).
-  await inlineImages(node);
+export async function createQuotePdfBlob(page: HTMLElement): Promise<Blob> {
+  const { container, clone } = createPrintableClone(page);
 
-  const rect = node.getBoundingClientRect();
-  const pageW = paperSize === "104mm" ? 104 : paperSize === "80mm" ? 80 : 58;
-  const pageH = (rect.height * pageW) / rect.width;
-  const textLayer = collectTextLayer(node, rect, pageW, pageH);
+  try {
+    document.body.appendChild(container);
+    await inlineImages(clone);
+    if ("fonts" in document) {
+      await document.fonts.ready.catch(() => undefined);
+    }
 
-  const imgData = await toPng(node, {
-    pixelRatio: 4,
-    backgroundColor: "#ffffff",
-    skipFonts: true,
-    style: { margin: "0" },
-  });
+    const rect = clone.getBoundingClientRect();
+    const textLayer = collectTextLayer(clone, rect, LETTER_WIDTH_MM, LETTER_HEIGHT_MM);
+    const imgData = await toPng(clone, {
+      pixelRatio: 2,
+      backgroundColor: "#ffffff",
+      skipFonts: true,
+      style: {
+        margin: "0",
+        boxShadow: "none",
+        borderRadius: "0",
+        zoom: "1",
+      },
+    });
 
-  const pdf = new jsPDF({
-    orientation: "portrait",
-    unit: "mm",
-    format: [pageW, pageH],
-    compress: true,
-  });
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "letter",
+      compress: true,
+    });
 
-  pdf.addImage(imgData, "PNG", 0, 0, pageW, pageH);
-  addSelectableTextLayer(pdf, textLayer);
+    pdf.addImage(imgData, "PNG", 0, 0, LETTER_WIDTH_MM, LETTER_HEIGHT_MM);
+    addSelectableTextLayer(pdf, textLayer);
 
-  return pdf.output("blob");
+    return pdf.output("blob");
+  } finally {
+    container.remove();
+  }
+}
+
+function createPrintableClone(page: HTMLElement) {
+  const container = document.createElement("div");
+  container.className = "qd";
+  container.style.position = "fixed";
+  container.style.left = "-10000px";
+  container.style.top = "0";
+  container.style.width = "8.5in";
+  container.style.height = "11in";
+  container.style.overflow = "hidden";
+  container.style.background = "#ffffff";
+  container.style.pointerEvents = "none";
+
+  const clone = page.cloneNode(true) as HTMLElement;
+  clone.style.setProperty("zoom", "1");
+  clone.style.width = "8.5in";
+  clone.style.height = "11in";
+  clone.style.minHeight = "11in";
+  clone.style.margin = "0";
+  clone.style.boxShadow = "none";
+  clone.style.borderRadius = "0";
+  clone.style.overflow = "hidden";
+
+  container.appendChild(clone);
+  return { container, clone };
 }
 
 function collectTextLayer(root: HTMLElement, rootRect: DOMRect, pageW: number, pageH: number): TextRun[] {
@@ -74,7 +113,7 @@ function collectTextLayer(root: HTMLElement, rootRect: DOMRect, pageW: number, p
       if (firstRect) {
         const cssFontSize = Number.parseFloat(style.fontSize) || 10;
         const fontSizeMm = cssFontSize * scaleY;
-        const fontSizePt = Math.max(3, fontSizeMm * 72 / 25.4);
+        const fontSizePt = Math.max(4, fontSizeMm * 72 / 25.4);
         const fontWeight = Number.parseInt(style.fontWeight, 10);
         const isBold = Number.isFinite(fontWeight) ? fontWeight >= 600 : /bold/i.test(style.fontWeight);
         const isItalic = /italic|oblique/i.test(style.fontStyle);
@@ -111,23 +150,23 @@ function normalizePdfText(value: string) {
 }
 
 async function inlineImages(node: HTMLElement) {
-  const imgs = Array.from(node.querySelectorAll("img"));
+  const images = Array.from(node.querySelectorAll("img"));
   await Promise.all(
-    imgs.map(async (img) => {
+    images.map(async (img) => {
       const src = img.getAttribute("src");
-      if (!src || src.startsWith("data:")) return;
-      const dataUrl = await fetchAsDataUrl(src);
-      if (dataUrl) {
-        img.setAttribute("src", dataUrl);
-        img.removeAttribute("crossorigin");
-        await new Promise<void>((resolve) => {
-          if (img.complete && img.naturalWidth > 0) return resolve();
-          img.addEventListener("load", () => resolve(), { once: true });
-          img.addEventListener("error", () => resolve(), { once: true });
-        });
-      } else {
-        img.style.visibility = "hidden";
+      if (src && !src.startsWith("data:")) {
+        const dataUrl = await fetchAsDataUrl(src);
+        if (dataUrl) {
+          img.setAttribute("src", dataUrl);
+          img.removeAttribute("crossorigin");
+        }
       }
+
+      await new Promise<void>((resolve) => {
+        if (img.complete && img.naturalWidth > 0) return resolve();
+        img.addEventListener("load", () => resolve(), { once: true });
+        img.addEventListener("error", () => resolve(), { once: true });
+      });
     }),
   );
 }

@@ -361,7 +361,7 @@
 
   /* Sidebar nav item — kept for legacy use in Sidebar.tsx */
   .sidebar-nav-item {
-    @apply flex items-center gap-3 px-4 py-3 rounded-sm text-sidebar-foreground/80 transition-all duration-200;
+    @apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-sidebar-foreground/80 transition-all duration-200;
   }
   .sidebar-nav-item:hover {
     @apply bg-sidebar-accent text-sidebar-foreground;

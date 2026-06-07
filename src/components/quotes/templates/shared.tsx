@@ -7,7 +7,7 @@ import type { LayoutData } from "./types";
 
 export const fmtMoney = (amt: number, sym: string) => {
   const fixed = new Intl.NumberFormat("es-GT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amt);
-  return `${sym} ${fixed}`;
+  return `${sym}\u00a0${fixed}`;
 };
 
 export const fmtNum = (amt: number) =>
