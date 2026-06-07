@@ -33,6 +33,12 @@ import { DetailViewDialog } from "@/components/shared/DetailViewDialog";
 import type { DialogAction } from "@/components/shared/DialogActionBar";
 import { TicketDialog, type TicketData } from "@/components/shared/TicketDialog";
 import { UnifiedSearchInput } from "@/components/shared/UnifiedSearchInput";
+import {
+  DateFilterButton,
+  emptyDateFilter,
+  hasDateFilterValue,
+  isDateInDateFilter,
+} from "@/components/shared/DateFilterButton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -99,6 +105,7 @@ export default function Servicios() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | ServiceStatus>("all");
+  const [dateFilter, setDateFilter] = useState(emptyDateFilter);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [deleteErrorDialogOpen, setDeleteErrorDialogOpen] = useState(false);
@@ -154,7 +161,8 @@ export default function Servicios() {
       service.customer?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       service.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === "all" || service.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesDate = isDateInDateFilter(getServiceDisplayDate(service), dateFilter);
+    return matchesSearch && matchesStatus && matchesDate;
   })?.sort((a, b) => {
     // Servicios programados primero, ordenados por scheduled_start_at mas proximo
     if (a.scheduled_start_at && !b.scheduled_start_at) return -1;
@@ -414,6 +422,10 @@ export default function Servicios() {
     { key: "delivered", label: "Entregados" },
     { key: "cancelled", label: "Cancelados" },
   ];
+  const hasActiveFilters =
+    searchQuery.trim().length > 0 ||
+    statusFilter !== "all" ||
+    hasDateFilterValue(dateFilter);
 
 
   return (
@@ -473,6 +485,11 @@ export default function Servicios() {
                   ))}
                 </SelectContent>
               </Select>
+              <DateFilterButton
+                value={dateFilter}
+                onChange={setDateFilter}
+                ariaLabel="Filtrar servicios por fecha"
+              />
               <button
                 type="button"
                 aria-label="Nuevo servicio"
@@ -514,14 +531,14 @@ export default function Servicios() {
         <div className="card-elevated p-10 text-center">
           <Wrench className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
           <h3 className="font-semibold text-lg mb-2">
-            {searchQuery ? "Sin resultados" : "Sin servicios registrados"}
+            {hasActiveFilters ? "Sin resultados" : "Sin servicios registrados"}
           </h3>
           <p className="text-muted-foreground mb-5 max-w-xs mx-auto">
-            {searchQuery
-              ? "Intenta con otro folio, cliente o descripcion."
+            {hasActiveFilters
+              ? "Intenta con otra busqueda, estado o fecha."
               : "Registra el primer servicio para comenzar a gestionar tu operacion."}
           </p>
-          {!searchQuery && (
+          {!hasActiveFilters && (
             <Button onClick={() => { setEditingService(null); setFormDialogOpen(true); }}>
               <Plus className="w-4 h-4 mr-1.5" />
               Nuevo servicio

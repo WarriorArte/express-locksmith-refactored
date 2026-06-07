@@ -17,6 +17,12 @@ import { DetailViewDialog } from "@/components/shared/DetailViewDialog";
 import type { DialogAction } from "@/components/shared/DialogActionBar";
 import { TicketDialog, type TicketData } from "@/components/shared/TicketDialog";
 import { UnifiedSearchInput } from "@/components/shared/UnifiedSearchInput";
+import {
+  DateFilterButton,
+  emptyDateFilter,
+  hasDateFilterValue,
+  isDateInDateFilter,
+} from "@/components/shared/DateFilterButton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -52,6 +58,7 @@ const paymentMethodColors: Record<PaymentMethod, string> = {
 
 export default function Ventas() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [dateFilter, setDateFilter] = useState(emptyDateFilter);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [formDialogOpen, setFormDialogOpen] = useState(false);
@@ -67,11 +74,17 @@ export default function Ventas() {
 
   const currencySymbol = settings?.currency_symbol || "$";
 
-  const filteredSales = sales?.filter((sale) =>
-    sale.sale_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    sale.customer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    sale.customer?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  const filteredSales = sales?.filter((sale) => {
+    const matchesSearch =
+      sale.sale_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      sale.customer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      sale.customer?.name?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesDate = isDateInDateFilter(sale.created_at, dateFilter);
+
+    return matchesSearch && matchesDate;
+  }) || [];
+  const hasActiveFilters =
+    searchQuery.trim().length > 0 || hasDateFilterValue(dateFilter);
 
   const todayTotal = sales
     ?.filter(s => isToday(parseISO(s.created_at)))
@@ -180,6 +193,11 @@ export default function Ventas() {
             value={searchQuery}
             onChange={setSearchQuery}
           />
+          <DateFilterButton
+            value={dateFilter}
+            onChange={setDateFilter}
+            ariaLabel="Filtrar ventas por fecha"
+          />
           <button
             type="button"
             aria-label="Nueva venta"
@@ -219,14 +237,14 @@ export default function Ventas() {
           <div className="card-elevated p-10 text-center">
             <ShoppingCart className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="font-semibold text-lg mb-2">
-              {searchQuery ? "Sin resultados" : "Sin ventas registradas"}
+              {hasActiveFilters ? "Sin resultados" : "Sin ventas registradas"}
             </h3>
             <p className="text-muted-foreground mb-5 max-w-xs mx-auto">
-              {searchQuery
-                ? "Intenta con otro folio o nombre de cliente."
+              {hasActiveFilters
+                ? "Intenta con otro folio, cliente o fecha."
                 : "Registra la primera venta para ver el historial aquí."}
             </p>
-            {!searchQuery && (
+            {!hasActiveFilters && (
               <Button onClick={() => setFormDialogOpen(true)}>
                 <Plus className="w-4 h-4 mr-1.5" />
                 Nueva venta

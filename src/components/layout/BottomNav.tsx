@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { useWorkshopFeatures } from "@/hooks/useWorkshopFeatures";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import { useAuth } from "@/hooks/useAuth";
-import { useState } from "react";
+import { useState, useRef, useLayoutEffect } from "react";
 import { m as motion } from "framer-motion";
 import {
   Dialog,
@@ -78,6 +78,22 @@ export function BottomNav() {
   );
 
   const shouldShowFAB = !isLoading && !(isSuperAdmin && !currentWorkshop);
+  const isMoreActive = enabledMoreItems.some((item) => item.to === location.pathname);
+
+  const navInnerRef = useRef<HTMLDivElement>(null);
+  const [pillX, setPillX] = useState<number | null>(null);
+  const [pillW, setPillW] = useState(0);
+
+  useLayoutEffect(() => {
+    const container = navInnerRef.current;
+    if (!container) return;
+    const activeEl = container.querySelector<HTMLElement>('[data-nav-active="true"]');
+    if (!activeEl) { setPillX(null); return; }
+    const cRect = container.getBoundingClientRect();
+    const bRect = activeEl.getBoundingClientRect();
+    setPillX(bRect.left - cRect.left + 4);
+    setPillW(bRect.width - 8);
+  }, [location.pathname]);
   const workshopName = currentWorkshop?.name || "Cerrajería Express";
   const workshopCode = currentWorkshop?.code || "ELE-2024";
   const firstName = profile?.full_name?.split(" ")[0] || "Usuario";
@@ -133,7 +149,21 @@ export function BottomNav() {
       <nav
         className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 md:hidden"
       >
-        <div className="flex h-[68px] items-center justify-around rounded-[24px] border border-border/80 bg-card/95 px-2 shadow-[0_18px_42px_-18px_hsl(var(--foreground)/0.42),0_8px_22px_-14px_hsl(var(--primary)/0.38)] backdrop-blur-xl">
+        <div
+          ref={navInnerRef}
+          className="relative flex h-[68px] items-center justify-around rounded-[24px] border border-border/80 bg-card/95 px-2 shadow-[0_18px_42px_-18px_hsl(var(--foreground)/0.42),0_8px_22px_-14px_hsl(var(--primary)/0.38)] backdrop-blur-xl"
+        >
+          {/* Sliding pill — always mounted, animates x */}
+          {pillX !== null && (
+            <motion.div
+              className="absolute top-2 bottom-2 rounded-[16px] bg-primary pointer-events-none shadow-[0_0_20px_hsl(var(--primary)/0.45),0_8px_18px_-6px_hsl(var(--primary)/0.4)]"
+              style={{ left: 0, width: pillW }}
+              animate={{ x: pillX }}
+              initial={false}
+              transition={{ type: "spring", stiffness: 420, damping: 34 }}
+            />
+          )}
+
           {leftItems.map((item) => (
             <NavBtn key={item.to} item={item} active={location.pathname === item.to} />
           ))}
@@ -159,19 +189,20 @@ export function BottomNav() {
           {/* Más button */}
           <button
             type="button"
+            data-nav-active={isMoreActive ? "true" : "false"}
             onClick={() => setMoreOpen(true)}
-            className="flex h-full flex-1 flex-col items-center justify-center gap-1 rounded-[18px] transition-colors active:bg-muted/70"
+            className="flex h-full flex-1 flex-col items-center justify-center gap-1 rounded-[18px] active:bg-muted/70"
           >
             <Grid3x3
               className={cn(
-                "w-[22px] h-[22px] transition-colors",
-                moreOpen ? "text-primary" : "text-muted-foreground",
+                "relative z-10 w-[22px] h-[22px] transition-colors duration-200",
+                isMoreActive ? "text-primary-foreground" : moreOpen ? "text-primary" : "text-muted-foreground",
               )}
             />
             <span
               className={cn(
-                "text-[10px] font-medium transition-colors",
-                moreOpen ? "text-primary" : "text-muted-foreground",
+                "relative z-10 text-[10px] font-medium transition-colors duration-200",
+                isMoreActive ? "text-primary-foreground font-semibold" : moreOpen ? "text-primary" : "text-muted-foreground",
               )}
             >
               Más
@@ -371,23 +402,22 @@ function NavBtn({
   return (
     <NavLink
       to={item.to}
+      data-nav-active={active ? "true" : "false"}
       onClick={(e) => {
-        if (active) {
-          e.preventDefault();
-        }
+        if (active) e.preventDefault();
       }}
-      className="flex h-full flex-1 flex-col items-center justify-center gap-1 rounded-[18px] transition-colors active:bg-muted/70"
+      className="relative flex h-full flex-1 flex-col items-center justify-center gap-1 rounded-[18px] active:bg-muted/70"
     >
       <Icon
         className={cn(
-          "w-[22px] h-[22px] transition-colors",
-          active ? "text-primary" : "text-muted-foreground",
+          "relative z-10 w-[22px] h-[22px] transition-colors duration-200",
+          active ? "text-primary-foreground" : "text-muted-foreground",
         )}
       />
       <span
         className={cn(
-          "text-[10px] font-medium transition-colors",
-          active ? "text-primary" : "text-muted-foreground",
+          "relative z-10 text-[10px] font-medium transition-colors duration-200",
+          active ? "text-primary-foreground font-semibold" : "text-muted-foreground",
         )}
       >
         {item.label}
