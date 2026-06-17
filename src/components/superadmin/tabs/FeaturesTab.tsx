@@ -124,7 +124,7 @@ export function FeaturesTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
           Activa o desactiva módulos generales y herramientas técnicas para cada taller
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 overflow-y-auto max-h-[calc(100vh-260px)]">
         <div className="space-y-2">
           <Label>Seleccionar Taller</Label>
           <Select value={selectedWorkshop || ""} onValueChange={setSelectedWorkshop}>
