@@ -110,10 +110,9 @@ export interface KeycodeProfile {
   decoderConfig?: DecoderConfig;
 }
 
-export interface Workshop {
-  id: string;
-  name: string;
-}
+// Workshop type is defined canonically in @/hooks/useWorkshop.
+// Re-exported here for backward compatibility with the standalone module.
+export type { Workshop } from "@/hooks/useWorkshop";
 
 /** Llaves de cerradura disponibles por asignación de vehículo. */
 export type LockKey = 'ignicion' | 'puerta' | 'guantera' | 'maletero' | 'compuerta' | 'gas';
