@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { carDatabase, type CarRecord, type VehicleCategory } from "@/data/carDatabase";
+import { type CarRecord, type VehicleCategory } from "@/data/carDatabase";
 import { phpApiRequest } from "@/lib/phpApi";
-
-const STORAGE_KEY = "herramientas:vehicle_database";
 
 export interface VehicleImportResult {
   imported: number;
@@ -15,7 +13,6 @@ function normalize(records: CarRecord[]): CarRecord[] {
   for (const record of records) {
     const make = String(record.Make ?? "").trim();
     const model = String(record.Model ?? "").trim();
-    // Allow NaN or 0 if it's just a placeholder for a make/model
     const year = Number(record.Year) || 0;
 
     if (!make) continue;
@@ -39,30 +36,12 @@ function normalize(records: CarRecord[]): CarRecord[] {
   });
 }
 
-function loadInitialRecords(): CarRecord[] {
-  if (typeof window === "undefined") return normalize(carDatabase.results);
-
-  try {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored) as { results?: CarRecord[] };
-      if (Array.isArray(parsed.results)) {
-        return normalize(parsed.results);
-      }
-    }
-  } catch {
-    // Ignore invalid localStorage payloads and fallback to seed files.
-  }
-
-  return normalize(carDatabase.results);
-}
-
 export function useVehicleDatabase() {
-  const [records, setRecords] = useState<CarRecord[]>(loadInitialRecords);
+  const [records, setRecords] = useState<CarRecord[]>([]);
   const hasLoadedFromApi = useRef(false);
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Carga inicial desde la API; si falla, queda el cache de localStorage.
+  // Carga inicial desde la API.
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -72,11 +51,11 @@ export function useVehicleDatabase() {
           { method: "GET" },
         );
         if (cancelled) return;
-        if (Array.isArray(payload?.results) && payload.results.length > 0) {
+        if (Array.isArray(payload?.results)) {
           setRecords(normalize(payload.results));
         }
       } catch {
-        // Backend no disponible: usar cache local.
+        // Backend no disponible: lista vacia.
       } finally {
         hasLoadedFromApi.current = true;
       }
@@ -84,15 +63,8 @@ export function useVehicleDatabase() {
     return () => { cancelled = true; };
   }, []);
 
+  // Empuja al backend (debounced) tras cualquier cambio posterior a la carga.
   useEffect(() => {
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ results: records }));
-    } catch {
-      // Ignore write failures in dev browsers with blocked storage.
-    }
-
-    // Empuja al backend (debounced) solo despues de la primera carga API,
-    // para no sobrescribir el servidor con el seed local antes de leerlo.
     if (!hasLoadedFromApi.current) return;
     if (pushTimer.current) clearTimeout(pushTimer.current);
     pushTimer.current = setTimeout(() => {
@@ -297,7 +269,7 @@ export function useVehicleDatabase() {
   );
 
   const resetToSeed = useCallback(() => {
-    setRecords(normalize(carDatabase.results));
+    setRecords([]);
   }, []);
 
   return {
