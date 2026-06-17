@@ -744,7 +744,7 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, onClose, onConfi
               <span className="font-bold tracking-wider text-sm">Tomar Foto</span>
               <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleCargaImagen} />
             </label>
-            <label className="flex items-center justify-center gap-3 bg-slate-100 border border-border text-foreground p-3.5 rounded-2xl cursor-pointer active:scale-95 transition-transform">
+            <label className="flex items-center justify-center gap-3 bg-muted border border-border text-foreground p-3.5 rounded-2xl cursor-pointer active:scale-95 transition-transform">
               <ImageIcon size={18} />
               <span className="font-bold tracking-wider text-sm">Abrir Galería</span>
               <input type="file" accept="image/*" className="hidden" onChange={handleCargaImagen} />

@@ -648,7 +648,7 @@ export function AlarmasWorkspace({
                   onClick={() => setSelectedDvId(isSelected ? null : dv.id)}
                   className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${
                     isSelected
-                      ? "border-blue-400/70 bg-primary/5"
+                      ? "border-primary/40 bg-primary/5"
                       : "border-border bg-card hover:border-primary/20 hover:bg-muted/40"
                   }`}
                 >
