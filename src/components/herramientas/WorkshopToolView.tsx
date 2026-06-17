@@ -278,15 +278,15 @@ export function WorkshopToolView({
   return (
     <div className="space-y-6">
       {/* Vehicle selector */}
-      <Card className="bg-blue-50 dark:bg-blue-950/20 border-none shadow-sm rounded-[24px] overflow-hidden">
+      <Card className="bg-primary/5 border-none shadow-sm rounded-[24px] overflow-hidden">
         <CardHeader className="pb-4 pt-6 px-6">
           <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm shrink-0">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm shrink-0">
               <Car className="h-6 w-6" />
             </div>
             <div className="flex flex-col gap-0.5">
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Buscador</p>
-              <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100">
+              <p className="text-sm font-medium text-muted-foreground">Buscador</p>
+              <CardTitle className="text-xl font-bold text-foreground">
                 Selección de Vehículo
               </CardTitle>
             </div>
@@ -313,8 +313,8 @@ export function WorkshopToolView({
                   onClick={() => { setSelectedCategory(""); setSelectedYear(""); setSelectedMake(""); setSelectedModel(""); }}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
                     !selectedCategory
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "text-muted-foreground border-border hover:border-blue-300 hover:text-foreground"
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
                   }`}
                 >
                   <Car className="w-3.5 h-3.5" /> Todos
@@ -325,8 +325,8 @@ export function WorkshopToolView({
                     onClick={() => { setSelectedCategory(cat); setSelectedYear(""); setSelectedMake(""); setSelectedModel(""); }}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
                       selectedCategory === cat
-                        ? "bg-blue-600 text-white border-blue-600"
-                        : "text-muted-foreground border-border hover:border-blue-300 hover:text-foreground"
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
                     }`}
                   >
                     {CATEGORY_ICONS_WS[cat]} {VEHICLE_CATEGORY_LABELS[cat]}
@@ -336,7 +336,7 @@ export function WorkshopToolView({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">
+                <label className="text-sm font-semibold text-foreground ml-1">
                   1. Año
                 </label>
                 <select
@@ -355,7 +355,7 @@ export function WorkshopToolView({
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">
+                <label className="text-sm font-semibold text-foreground ml-1">
                   2. Marca
                 </label>
                 <select
@@ -374,7 +374,7 @@ export function WorkshopToolView({
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">
+                <label className="text-sm font-semibold text-foreground ml-1">
                   3. Modelo
                 </label>
                 <select
@@ -532,8 +532,8 @@ export function WorkshopToolView({
                   <Card key="alarmas" className="hover:shadow-md transition-shadow">
                     <CardContent className="p-4 flex flex-col gap-3">
                       <div className="flex items-center gap-2.5">
-                        <div className="p-2 bg-blue-500/10 rounded-lg shrink-0">
-                          <Radio className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        <div className="p-2 bg-primary/10 rounded-lg shrink-0">
+                          <Radio className="w-4 h-4 text-primary" />
                         </div>
                         <h3 className="text-base font-bold text-foreground">Auto Alarmas</h3>
                       </div>
@@ -552,7 +552,7 @@ export function WorkshopToolView({
                               }}
                               className="group flex flex-col gap-2 text-left"
                             >
-                              <div className="aspect-square w-full rounded-xl overflow-hidden border border-border bg-muted/50 group-hover:border-blue-400/70 group-hover:shadow-sm transition-all">
+                              <div className="aspect-square w-full rounded-xl overflow-hidden border border-border bg-muted/50 group-hover:border-primary/40 group-hover:shadow-sm transition-all">
                                 {thumb ? (
                                   <img
                                     src={thumb}
@@ -561,7 +561,7 @@ export function WorkshopToolView({
                                   />
                                 ) : (
                                   <div className="w-full h-full flex items-center justify-center">
-                                    <Radio className="w-8 h-8 text-blue-500/40" />
+                                    <Radio className="w-8 h-8 text-primary/40" />
                                   </div>
                                 )}
                               </div>

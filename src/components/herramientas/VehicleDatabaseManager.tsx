@@ -64,7 +64,7 @@ const CATEGORY_ICONS: Record<VehicleCategory, React.ReactNode> = {
 };
 
 const CATEGORY_COLORS: Record<VehicleCategory, string> = {
-  Vehiculo: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800",
+  Vehiculo: "bg-primary/10 text-primary border-primary/20 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800",
   Camion: "bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-800",
   Motocicleta: "bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-800",
 };
@@ -424,7 +424,7 @@ export function VehicleDatabaseManager({
                 <button
                   onClick={() => { setCategoryFilter(""); setSelectedMake(""); setSelectedModel(""); setSelectedYear(""); }}
                   className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-                    !categoryFilter ? "bg-slate-800 text-white border-slate-800 dark:bg-slate-100 dark:text-slate-900" : "text-muted-foreground border-border hover:border-slate-400"
+                    !categoryFilter ? "bg-primary text-primary-foreground border-primary dark:bg-slate-100 dark:text-slate-900" : "text-muted-foreground border-border hover:border-border"
                   }`}
                 >
                   Todos
@@ -434,7 +434,7 @@ export function VehicleDatabaseManager({
                     key={cat}
                     onClick={() => { setCategoryFilter(cat); setSelectedMake(""); setSelectedModel(""); setSelectedYear(""); }}
                     className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-                      categoryFilter === cat ? CATEGORY_COLORS[cat] + " font-semibold" : "text-muted-foreground border-border hover:border-slate-400"
+                      categoryFilter === cat ? CATEGORY_COLORS[cat] + " font-semibold" : "text-muted-foreground border-border hover:border-border"
                     }`}
                   >
                     {CATEGORY_ICONS[cat]} {VEHICLE_CATEGORY_LABELS[cat]}
