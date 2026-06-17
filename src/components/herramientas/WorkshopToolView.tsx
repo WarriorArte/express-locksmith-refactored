@@ -22,6 +22,7 @@ const CATEGORY_ICONS_WS: Record<VehicleCategory, React.ReactNode> = {
 interface WorkshopToolViewProps {
   assignments: ToolAssignment[];
   keycodeProfiles: KeycodeProfile[];
+  onFetchKeycodes: (id: string) => Promise<KeycodeProfile | null>;
   alarmaProfiles: AlarmaProfile[];
   immoProfiles: ImmoProfile[];
   immoCatalog: ImmoCatalogItem[];
@@ -32,6 +33,7 @@ interface WorkshopToolViewProps {
 export function WorkshopToolView({
   assignments,
   keycodeProfiles,
+  onFetchKeycodes,
   alarmaProfiles,
   immoProfiles,
   immoCatalog,
@@ -219,6 +221,7 @@ export function WorkshopToolView({
       <KeycodeWorkspace
         assignment={activeKeycodeAssignment}
         keycodeProfiles={keycodeProfiles}
+        onFetchCodes={onFetchKeycodes}
         onBack={() => {
           setActiveToolId(null);
           setActiveKeycodeProfileId(null);

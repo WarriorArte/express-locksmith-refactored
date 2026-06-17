@@ -28,7 +28,7 @@ interface HerramientasModuleProps {
 
 export function HerramientasModule({ superAdminView }: HerramientasModuleProps) {
   const { isSuperAdmin } = useWorkshop();
-  const { profiles, addProfile, updateProfile, deleteProfile } = useKeycodeProfiles();
+  const { profiles, addProfile, updateProfile, deleteProfile, fetchProfileWithCodes } = useKeycodeProfiles();
   const { assignments, addAssignment, updateAssignment, deleteAssignment } = useToolAssignments();
   const vehicleDb = useVehicleDatabase();
   const { profiles: alarmaProfiles, addProfile: addAlarmaProfile, updateProfile: updateAlarmaProfile, deleteProfile: deleteAlarmaProfile } = useAlarmaProfiles();
@@ -97,7 +97,7 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
               >
                 <TabsContent value="perfiles" className="flex-1 m-0 min-h-0 overflow-hidden outline-none data-[state=inactive]:hidden flex flex-col border rounded-xl bg-card shadow-sm">
                   <div className="flex-1 overflow-auto p-4 custom-scrollbar">
-                    <KeycodeManager profiles={profiles} onSave={addProfile} onUpdate={updateProfile} onDelete={deleteProfile} />
+                    <KeycodeManager profiles={profiles} onSave={addProfile} onUpdate={updateProfile} onDelete={deleteProfile} onFetchCodes={fetchProfileWithCodes} />
                   </div>
                 </TabsContent>
 
@@ -250,6 +250,7 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
       <WorkshopToolView
         assignments={assignments}
         keycodeProfiles={profiles}
+        onFetchKeycodes={fetchProfileWithCodes}
         alarmaProfiles={alarmaProfiles}
         immoProfiles={immoProfiles}
         immoCatalog={catalog}

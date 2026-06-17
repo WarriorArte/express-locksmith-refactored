@@ -104,6 +104,10 @@ export interface KeycodeProfile {
   series: string;
   bittingConfig: BittingConfig;
   codesData: CodeEntry[];
+  /** Total de códigos en DB (presente en respuestas de lista, donde codesData llega vacío). */
+  codesCount?: number;
+  /** Una entrada de muestra para la vista previa SVG en la lista (presente cuando codesData está vacío). */
+  codeSample?: CodeEntry[];
   dateAdded: string;
   configuracionVisual?: ConfiguracionVisualLlave;
   profileImage?: string;

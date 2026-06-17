@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { m as motion } from "framer-motion";
-import { Key, FileJson, Database, Plus, Trash2, Edit, Check, Search, ChevronLeft, ChevronRight, Upload, ArrowLeft, Eye, Settings2, LayoutList, LayoutGrid, ImageIcon, Camera, Wand2 } from "lucide-react";
+import { Key, FileJson, Database, Plus, Trash2, Edit, Check, Search, ChevronLeft, ChevronRight, Upload, ArrowLeft, Eye, Settings2, LayoutList, LayoutGrid, ImageIcon, Camera, Wand2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ interface KeycodeManagerProps {
   onSave: (profile: KeycodeProfile) => void;
   onUpdate: (profile: KeycodeProfile) => void;
   onDelete: (id: string) => void;
+  onFetchCodes: (id: string) => Promise<KeycodeProfile | null>;
 }
 
 interface VisualRangeFieldProps {
@@ -69,7 +70,8 @@ function VisualRangeField({ label, value, min, max, step = 1, onChange }: Visual
 }
 
 function getProfilePreviewData(profile: KeycodeProfile): { primary: number[]; secondary: number[] | undefined } {
-  const codes = profile.codesData;
+  // En la vista de lista codesData llega vacío; usamos codeSample como fallback.
+  const codes = profile.codesData.length > 0 ? profile.codesData : (profile.codeSample ?? []);
   if (codes.length === 0) return { primary: [3, 2, 4, 1], secondary: undefined };
   const midIdx = Math.floor(codes.length / 2);
   const sample = codes[midIdx];
@@ -90,7 +92,7 @@ function getProfilePreviewData(profile: KeycodeProfile): { primary: number[]; se
   return { primary: flat.map(v => parseInt(v, 10) || 1), secondary: undefined };
 }
 
-export function KeycodeManager({ profiles, onSave, onUpdate, onDelete }: KeycodeManagerProps) {
+export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCodes }: KeycodeManagerProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [view, setView] = useState<View>("list");
@@ -108,6 +110,8 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete }: Keycode
   const [decoderConfig, setDecoderConfig] = useState<DecoderConfig | undefined>(undefined);
   const [decoderHasErrors, setDecoderHasErrors] = useState(false);
   const [editTab, setEditTab] = useState<EditTab>("references");
+  const [icCard, setIcCard] = useState("");
+  const [loadingEdit, setLoadingEdit] = useState(false);
   const itemsPerPage = 50;
 
   // --- List view state ---
@@ -157,15 +161,26 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete }: Keycode
   };
 
   // ── Edit ─────────────────────────────────────────────────────
-  const startEdit = (profile: KeycodeProfile, isNew = false) => {
+  const startEdit = async (profile: KeycodeProfile, isNew = false) => {
+    // Si los códigos no están cargados (vista de lista), los traemos del servidor.
+    let fullProfile = profile;
+    if (!isNew && profile.codesData.length === 0 && (profile.codesCount ?? 0) > 0) {
+      setLoadingEdit(true);
+      const fetched = await onFetchCodes(profile.id);
+      setLoadingEdit(false);
+      if (!fetched) { toast.error("No se pudieron cargar los códigos del perfil."); return; }
+      fullProfile = fetched;
+    }
+
     setIsNewProfile(isNew);
-    setEditingProfile(profile);
-    setReferences([...profile.references]);
-    setBittingConfig({ ...profile.bittingConfig });
-    setCurrentCodes([...profile.codesData]);
-    setConfiguracionVisual(profile.configuracionVisual ? { ...profile.configuracionVisual } : undefined);
-    setProfileImage(profile.profileImage);
-    setDecoderConfig(profile.decoderConfig ? { ...profile.decoderConfig } : undefined);
+    setEditingProfile(fullProfile);
+    setReferences([...fullProfile.references]);
+    setBittingConfig({ ...fullProfile.bittingConfig });
+    setCurrentCodes([...fullProfile.codesData]);
+    setConfiguracionVisual(fullProfile.configuracionVisual ? { ...fullProfile.configuracionVisual } : undefined);
+    setProfileImage(fullProfile.profileImage);
+    setDecoderConfig(fullProfile.decoderConfig ? { ...fullProfile.decoderConfig } : undefined);
+    setIcCard(fullProfile.icCard ?? "");
     setDecoderHasErrors(false);
     setSearchTerm("");
     setCurrentPage(1);
@@ -177,7 +192,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete }: Keycode
   const hasChanges = useMemo(() => {
     if (!editingProfile) return false;
     if (isNewProfile) return true; // nueva serie: siempre puede guardarse
-    const snap = JSON.stringify({ references, bittingConfig, codesData: currentCodes, configuracionVisual, profileImage, decoderConfig });
+    const snap = JSON.stringify({ references, bittingConfig, codesData: currentCodes, configuracionVisual, profileImage, decoderConfig, icCard });
     const orig = JSON.stringify({
       references: editingProfile.references,
       bittingConfig: editingProfile.bittingConfig,
@@ -185,9 +200,10 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete }: Keycode
       configuracionVisual: editingProfile.configuracionVisual,
       profileImage: editingProfile.profileImage,
       decoderConfig: editingProfile.decoderConfig,
+      icCard: editingProfile.icCard ?? "",
     });
     return snap !== orig;
-  }, [editingProfile, isNewProfile, references, bittingConfig, currentCodes, configuracionVisual, profileImage, decoderConfig]);
+  }, [editingProfile, isNewProfile, references, bittingConfig, currentCodes, configuracionVisual, profileImage, decoderConfig, icCard]);
 
   const canSave = hasChanges && !decoderHasErrors;
 
@@ -200,7 +216,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete }: Keycode
       return;
     }
     
-    const finalProfile = { ...editingProfile, references, bittingConfig, codesData: currentCodes, configuracionVisual, profileImage, decoderConfig };
+    const finalProfile = { ...editingProfile, references, bittingConfig, codesData: currentCodes, configuracionVisual, profileImage, decoderConfig, icCard };
     
     if (isNewProfile) {
       onSave(finalProfile);
@@ -404,13 +420,13 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete }: Keycode
                       <Badge variant="outline">IC: {profile.icCard}</Badge>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {profile.codesData.length} códigos · {profile.dateAdded}
+                      {profile.codesCount ?? profile.codesData.length} códigos · {profile.dateAdded}
                       {profile.references.length > 1 && ` · ${profile.references.length - 1} ref. alternativa(s)`}
                     </p>
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => startEdit(profile)}>
-                      <Edit className="w-4 h-4" />
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => startEdit(profile)} disabled={loadingEdit}>
+                      {loadingEdit ? <Loader2 className="w-4 h-4 animate-spin" /> : <Edit className="w-4 h-4" />}
                     </Button>
                     <Button
                       variant="ghost"
@@ -466,16 +482,18 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete }: Keycode
                       <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Serie: {profile.series}</Badge>
                       <Badge variant="outline" className="text-[10px] px-1.5 py-0">IC: {profile.icCard}</Badge>
                     </div>
-                    <p className="text-[10px] text-muted-foreground">{profile.codesData.length} códigos · {profile.dateAdded}</p>
+                    <p className="text-[10px] text-muted-foreground">{profile.codesCount ?? profile.codesData.length} códigos · {profile.dateAdded}</p>
                   </div>
 
                   {/* Actions */}
                   <div className="flex border-t border-border">
                     <button
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors disabled:opacity-50"
                       onClick={() => startEdit(profile)}
+                      disabled={loadingEdit}
                     >
-                      <Edit className="w-3.5 h-3.5" /> Editar
+                      {loadingEdit ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Edit className="w-3.5 h-3.5" />}
+                      Editar
                     </button>
                     <div className="w-px bg-border" />
                     <button
@@ -517,7 +535,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete }: Keycode
             </button>
             <div className="min-w-0">
               <h2 className="text-sm font-bold text-foreground truncate">Serie: {editingProfile.series}</h2>
-              <p className="text-xs text-muted-foreground">IC: {editingProfile.icCard} · {currentCodes.length} códigos</p>
+              <p className="text-xs text-muted-foreground">IC: {icCard || "—"} · {currentCodes.length} códigos</p>
             </div>
           </div>
           <Button onClick={saveEdit} size="sm" className="shrink-0" disabled={!canSave}>
@@ -553,6 +571,16 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete }: Keycode
               {/* ── TAB: Referencias ── */}
               {editTab === "references" && (
                 <div className="space-y-3">
+                  <div className="flex flex-col gap-1">
+                    <Label className="text-xs font-semibold text-muted-foreground">IC (Identificador de Corte)</Label>
+                    <Input
+                      placeholder="Ej. IC-001, A1234..."
+                      value={icCard}
+                      onChange={(e) => setIcCard(e.target.value)}
+                      className="h-8 text-sm font-mono"
+                    />
+                  </div>
+                  <Separator />
                   <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-muted-foreground px-1">
                     <div className="col-span-4">Marca</div>
                     <div className="col-span-4">Referencia</div>

@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useCallback } from "react";
+import { useState, useRef, useMemo, useCallback, useEffect } from "react";
 import { m as motion, AnimatePresence } from "framer-motion";
 import { Key, ArrowLeft, CheckCircle2, Filter, X, Info, Settings2, Loader2, Camera, Lock } from "lucide-react";
 import { toast } from "sonner";
@@ -18,12 +18,31 @@ import { LOCK_LABELS, LOCK_ORDER } from "@/types";
 interface KeycodeWorkspaceProps {
   assignment: ToolAssignment;
   keycodeProfiles: KeycodeProfile[];
+  onFetchCodes: (id: string) => Promise<KeycodeProfile | null>;
   onBack: () => void;
 }
 
-export function KeycodeWorkspace({ assignment, keycodeProfiles, onBack }: KeycodeWorkspaceProps) {
+export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, onBack }: KeycodeWorkspaceProps) {
   const profileId = assignment.keycodeProfileIds?.[0] ?? (assignment as any).keycodeProfileId ?? null;
-  const profile = keycodeProfiles.find((p) => p.id === profileId);
+  const baseProfile = keycodeProfiles.find((p) => p.id === profileId);
+
+  // Carga los códigos completos al montar (la lista llega con codesData vacío)
+  const [loadedProfile, setLoadedProfile] = useState<KeycodeProfile | null>(null);
+  const [loadingCodes, setLoadingCodes] = useState(false);
+
+  useEffect(() => {
+    if (!profileId || !baseProfile) return;
+    if (baseProfile.codesData.length === 0 && (baseProfile.codesCount ?? 0) > 0) {
+      setLoadingCodes(true);
+      onFetchCodes(profileId).then((full) => {
+        if (full) setLoadedProfile(full);
+        setLoadingCodes(false);
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileId]);
+
+  const profile = loadedProfile ?? baseProfile;
 
   const bittingTotalLength = profile
     ? (profile.bittingConfig.axes && profile.bittingConfig.axes.length >= 2
@@ -332,6 +351,22 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onBack }: Keycod
             <p className="text-muted-foreground">
               El perfil asignado a este vehículo ya no existe. Contacte al SuperAdmin.
             </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (loadingCodes) {
+    return (
+      <div className="space-y-6">
+        <Button variant="ghost" onClick={onBack} className="text-primary">
+          <ArrowLeft className="w-4 h-4 mr-2" /> Volver a herramientas
+        </Button>
+        <Card>
+          <CardContent className="py-16 flex flex-col items-center gap-3 text-muted-foreground">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <p className="text-sm font-medium">Cargando códigos de la serie…</p>
           </CardContent>
         </Card>
       </div>
