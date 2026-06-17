@@ -117,14 +117,6 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
             </Tabs>
           ) : (
             <>
-              <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="shrink-0">
-                <h1 className="text-2xl lg:text-3xl font-bold text-foreground flex items-center gap-2">
-                  <Wrench className="w-7 h-7" /> Herramientas Administrativas
-                </h1>
-                <p className="text-muted-foreground">Gestión centralizada de perfiles y vehículos exclusivas del SuperAdmin</p>
-              </motion.div>
-
-
               {activeSuperAdminView === "alarmas" && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
