@@ -1,53 +1,36 @@
-import { useState, useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import type { ImmoCatalogItem } from "@/types";
-
-const LS_KEY = "herramientas:immo_catalog";
+import { useJsonResource } from "./useJsonResource";
 
 const DEFAULT_CATALOG: ImmoCatalogItem[] = [
-  { id: "cat-xt27",    label: "XT27",     category: "transponder" },
-  { id: "cat-kd26",    label: "KD26",     category: "transponder" },
-  { id: "cat-at100",   label: "AT100",    category: "transponder" },
-  { id: "cat-ck100",   label: "CK100",    category: "equipo" },
-  { id: "cat-t300",    label: "T300",     category: "equipo" },
-  { id: "cat-km100",   label: "KM100",    category: "equipo" },
+  { id: "cat-xt27",    label: "XT27",      category: "transponder" },
+  { id: "cat-kd26",    label: "KD26",      category: "transponder" },
+  { id: "cat-at100",   label: "AT100",     category: "transponder" },
+  { id: "cat-ck100",   label: "CK100",     category: "equipo" },
+  { id: "cat-t300",    label: "T300",      category: "equipo" },
+  { id: "cat-km100",   label: "KM100",     category: "equipo" },
   { id: "cat-im508",   label: "IM508/608", category: "equipo" },
-  { id: "cat-ktplus",  label: "KTPLUS",   category: "equipo" },
-  { id: "cat-ktpad",   label: "KTPAD",    category: "equipo" },
+  { id: "cat-ktplus",  label: "KTPLUS",    category: "equipo" },
+  { id: "cat-ktpad",   label: "KTPAD",     category: "equipo" },
 ];
 
-function loadFromStorage(): ImmoCatalogItem[] {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return DEFAULT_CATALOG;
-    const parsed = JSON.parse(raw) as ImmoCatalogItem[];
-    return parsed.length ? parsed : DEFAULT_CATALOG;
-  } catch {
-    return DEFAULT_CATALOG;
-  }
-}
-
 export function useImmoCatalog() {
-  const [catalog, setCatalog] = useState<ImmoCatalogItem[]>(loadFromStorage);
+  const { items, setItems, addItem, updateItem, deleteItem } = useJsonResource<ImmoCatalogItem>({
+    endpoint: "/herramientas/immo-catalog",
+    cacheKey: "herramientas:immo_catalog",
+    fallback: DEFAULT_CATALOG,
+  });
 
-  useEffect(() => {
-    localStorage.setItem(LS_KEY, JSON.stringify(catalog));
-  }, [catalog]);
+  const reorderItems = useCallback((next: ImmoCatalogItem[]) => {
+    setItems(next);
+    // Para reordenamiento no enviamos al backend ítem por ítem; el orden se persiste local.
+  }, [setItems]);
 
-  const addItem = useCallback((item: ImmoCatalogItem) => {
-    setCatalog((prev) => [...prev, item]);
-  }, []);
-
-  const updateItem = useCallback((item: ImmoCatalogItem) => {
-    setCatalog((prev) => prev.map((i) => (i.id === item.id ? item : i)));
-  }, []);
-
-  const deleteItem = useCallback((id: string) => {
-    setCatalog((prev) => prev.filter((i) => i.id !== id));
-  }, []);
-
-  const reorderItems = useCallback((items: ImmoCatalogItem[]) => {
-    setCatalog(items);
-  }, []);
-
-  return { catalog, addItem, updateItem, deleteItem, reorderItems };
+  return {
+    catalog: items.length ? items : DEFAULT_CATALOG,
+    addItem,
+    updateItem,
+    deleteItem,
+    reorderItems,
+  };
 }

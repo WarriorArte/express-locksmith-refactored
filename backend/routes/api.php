@@ -1,6 +1,12 @@
 <?php
 
+use App\Http\Controllers\AlarmaProfileController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ImmoCatalogController;
+use App\Http\Controllers\ImmoProfileController;
+use App\Http\Controllers\KeycodeProfileController;
+use App\Http\Controllers\ToolAssignmentController;
+use App\Http\Controllers\VehicleDatabaseController;
 use App\Http\Controllers\AppAdminSettingsController;
 use App\Http\Controllers\BusinessSettingsController;
 use App\Http\Controllers\CategoryController;
@@ -129,4 +135,12 @@ Route::middleware('legacy.auth')->group(function (): void {
     Route::get('/env-diagnostic.php', [EnvDiagnosticController::class, 'handle']);
     Route::match(['GET', 'POST'], '/uploads.php', [UploadController::class, 'handle']);
     Route::post('/backup-restore.php', [BackupRestoreController::class, 'handle']);
+
+    // ── Modulo Herramientas (SuperAdmin) ─────────────────────────────
+    Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/herramientas/alarma-profiles', [AlarmaProfileController::class, 'handle']);
+    Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/herramientas/immo-profiles', [ImmoProfileController::class, 'handle']);
+    Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/herramientas/immo-catalog', [ImmoCatalogController::class, 'handle']);
+    Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/herramientas/keycode-profiles', [KeycodeProfileController::class, 'handle']);
+    Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/herramientas/tool-assignments', [ToolAssignmentController::class, 'handle']);
+    Route::match(['GET', 'POST', 'DELETE'], '/herramientas/vehicle-database', [VehicleDatabaseController::class, 'handle']);
 });
