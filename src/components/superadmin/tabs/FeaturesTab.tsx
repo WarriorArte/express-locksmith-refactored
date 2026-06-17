@@ -93,12 +93,13 @@ export function FeaturesTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
     const isEnabled = wf?.is_enabled == null ? defaultEnabled : !!wf.is_enabled;
 
     return (
-      <div key={feature.key} className="flex items-center justify-between p-4 border rounded-lg">
-        <div className="pr-4">
-          <p className="font-medium">{feature.label}</p>
-          <p className="text-sm text-muted-foreground">{feature.description}</p>
+      <div key={feature.key} className="flex items-center justify-between py-2 px-3 border-b last:border-b-0">
+        <div className="pr-3 min-w-0">
+          <p className="text-sm font-medium truncate">{feature.label}</p>
+          <p className="text-xs text-muted-foreground truncate">{feature.description}</p>
         </div>
         <Switch
+          className="shrink-0"
           checked={isEnabled}
           onCheckedChange={(checked) =>
             toggleFeature.mutate({
@@ -140,21 +141,21 @@ export function FeaturesTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
         </div>
 
         {selectedWorkshop && (
-          <div className="space-y-6">
-            <section className="space-y-3">
-              <h3 className="text-sm font-semibold flex items-center gap-2 text-muted-foreground">
-                <ToggleLeft className="h-4 w-4" /> Módulos generales
+          <div className="space-y-4">
+            <section className="space-y-1">
+              <h3 className="text-xs font-semibold flex items-center gap-2 text-muted-foreground uppercase tracking-wide">
+                <ToggleLeft className="h-3 w-3" /> Módulos generales
               </h3>
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-0 border rounded-md overflow-hidden md:grid-cols-2">
                 {generalFeatures.map(renderToggle)}
               </div>
             </section>
 
-            <section className="space-y-3">
-              <h3 className="text-sm font-semibold flex items-center gap-2 text-muted-foreground">
-                <Wrench className="h-4 w-4" /> Herramientas técnicas
+            <section className="space-y-1">
+              <h3 className="text-xs font-semibold flex items-center gap-2 text-muted-foreground uppercase tracking-wide">
+                <Wrench className="h-3 w-3" /> Herramientas técnicas
               </h3>
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-0 border rounded-md overflow-hidden md:grid-cols-2">
                 {toolFeatures.map(renderToggle)}
               </div>
             </section>
