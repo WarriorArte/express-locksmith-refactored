@@ -141,21 +141,21 @@ export function FeaturesTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
         </div>
 
         {selectedWorkshop && (
-          <div className="space-y-6">
-            <section className="space-y-3">
-              <h3 className="text-sm font-semibold flex items-center gap-2 text-muted-foreground">
-                <ToggleLeft className="h-4 w-4" /> Módulos generales
+          <div className="space-y-4">
+            <section className="space-y-1">
+              <h3 className="text-xs font-semibold flex items-center gap-2 text-muted-foreground uppercase tracking-wide">
+                <ToggleLeft className="h-3 w-3" /> Módulos generales
               </h3>
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-0 border rounded-md overflow-hidden md:grid-cols-2">
                 {generalFeatures.map(renderToggle)}
               </div>
             </section>
 
-            <section className="space-y-3">
-              <h3 className="text-sm font-semibold flex items-center gap-2 text-muted-foreground">
-                <Wrench className="h-4 w-4" /> Herramientas técnicas
+            <section className="space-y-1">
+              <h3 className="text-xs font-semibold flex items-center gap-2 text-muted-foreground uppercase tracking-wide">
+                <Wrench className="h-3 w-3" /> Herramientas técnicas
               </h3>
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-0 border rounded-md overflow-hidden md:grid-cols-2">
                 {toolFeatures.map(renderToggle)}
               </div>
             </section>
