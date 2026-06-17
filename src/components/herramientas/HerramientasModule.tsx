@@ -35,7 +35,7 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
   const { profiles: immoProfiles, addProfile: addImmoProfile, updateProfile: updateImmoProfile, deleteProfile: deleteImmoProfile } = useImmoProfiles();
   const { catalog, addItem, updateItem, deleteItem, reorderItems } = useImmoCatalog();
   const [toolActive, setToolActive] = useState(false);
-  const [localSuperAdminView, setLocalSuperAdminView] = useState<SuperAdminHerramientasView>("asignacion");
+  const [localSuperAdminView, setLocalSuperAdminView] = useState<SuperAdminHerramientasView>("keycode");
   const activeSuperAdminView = superAdminView ?? localSuperAdminView;
   const showInternalSuperAdminTabs = superAdminView === undefined;
 
