@@ -43,8 +43,16 @@ export interface Customer extends BaseRow {
   name: string;
   customer_type?: "person" | "company" | "business";
   phone?: string | null;
+  phone_secondary?: string | null;
   email?: string | null;
+  address?: string | null;
+  notes?: string | null;
+  is_normal?: boolean | number;
+  is_vip?: boolean | number;
   is_frequent?: boolean | number;
+  has_debt?: boolean | number;
+  no_work_again?: boolean | number;
+  no_work_reason?: string | null;
 }
 
 export interface Profile extends BaseRow {
@@ -112,10 +120,19 @@ export interface Quote extends BaseRow {
   quote_number?: string;
   customer_id?: string | null;
   customer_name?: string | null;
+  customer_phone?: string | null;
+  customer_email?: string | null;
+  customer_address?: string | null;
+  description?: string | null;
+  location?: string | null;
+  validity_days?: number | null;
+  notes?: string | null;
+  policies?: string | null;
   status?: "pending" | "accepted" | "rejected" | "converted" | "expired";
   subtotal?: number;
   discount?: number;
   total?: number;
+  quote_items?: QuoteItem[];
 }
 
 export type ServiceStatus = "pending" | "in_progress" | "completed" | "delivered" | "cancelled";
@@ -144,7 +161,8 @@ export interface Service extends BaseRow {
   scheduled_start_at?: string | null;
 }
 
-export interface ServiceProduct extends BaseRow {
+export interface ServiceProduct extends Omit<BaseRow, "id"> {
+  id?: string;
   service_id?: string;
   product_id?: string | null;
   product_name?: string;
