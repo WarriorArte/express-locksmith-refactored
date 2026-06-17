@@ -424,7 +424,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
     };
 
     form.reset(
-      type === "product"
+      (type === "product"
         ? {
             ...baseValues,
             item_type: "product",
@@ -443,7 +443,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
             labor_cost: "",
             discount: "",
             service_products: [],
-          } as unknown as ProductFormValues,
+          }) as unknown as ProductFormValues,
     );
     setActiveTab("general");
     setMaxUnlockedTabIndex(0);

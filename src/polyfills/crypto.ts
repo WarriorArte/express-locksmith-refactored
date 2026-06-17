@@ -44,9 +44,6 @@
       hex.slice(20)
     );
   }) as unknown as () => `${string}-${string}-${string}-${string}-${string}`;
-  // Wrap as IIFE-style cast: actually we want it as function, fix below.
-  const _randomUUID = randomUUID;
-  void _randomUUID;
 
   if (cryptoObj && typeof cryptoObj === "object") {
     try {
@@ -76,6 +73,7 @@
       configurable: true,
     });
   } catch {
-    g.crypto = replacementCrypto;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (g as any).crypto = replacementCrypto;
   }
 })();
