@@ -132,8 +132,8 @@ export const serviceSchema = z
   });
 
 export type ProductFormValues =
-  | z.input<typeof productSchema>
-  | z.input<typeof serviceSchema>;
+  | z.infer<typeof productSchema>
+  | z.infer<typeof serviceSchema>;
 
 export type KeysOfUnion<T> = T extends T ? keyof T : never;
 
