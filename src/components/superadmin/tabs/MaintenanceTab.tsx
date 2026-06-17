@@ -6,7 +6,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
   AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Loader2, RefreshCw, Trash2, KeyRound, Bell, Shield, Link2 } from "lucide-react";
+import { Loader2, RefreshCw, Trash2, KeyRound, Bell, Shield, Link2, Car } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { phpApiRequest } from "@/lib/phpApi";
 
@@ -15,9 +15,10 @@ type MaintenanceStats = {
   alarmas: { profiles: number };
   immo: { profiles: number; catalogItems: number };
   assignments: number;
+  vehicles: number;
 };
 
-type Module = "keycode" | "alarmas" | "immo" | "assignments";
+type Module = "keycode" | "alarmas" | "immo" | "assignments" | "vehicles";
 
 export function MaintenanceTab() {
   const { toast } = useToast();
@@ -103,6 +104,14 @@ export function MaintenanceTab() {
       icon: <Link2 className="h-5 w-5" />,
       statsLines: (s) => [{ label: "Registros", value: s.assignments }],
       total: (s) => s.assignments,
+    },
+    {
+      id: "vehicles",
+      label: "Base de Vehículos",
+      description: "Registros de la base de datos de vehículos",
+      icon: <Car className="h-5 w-5" />,
+      statsLines: (s) => [{ label: "Vehículos", value: s.vehicles }],
+      total: (s) => s.vehicles,
     },
   ];
 

@@ -30,7 +30,7 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
   const { isSuperAdmin } = useWorkshop();
   const { profiles, addProfile, updateProfile, deleteProfile, fetchProfileWithCodes } = useKeycodeProfiles();
   const { assignments, addAssignment, updateAssignment, deleteAssignment } = useToolAssignments();
-  const vehicleDb = useVehicleDatabase();
+  const vehicleDb = useVehicleDatabase({ readOnly: !isSuperAdmin });
   const { profiles: alarmaProfiles, addProfile: addAlarmaProfile, updateProfile: updateAlarmaProfile, deleteProfile: deleteAlarmaProfile } = useAlarmaProfiles();
   const { profiles: immoProfiles, addProfile: addImmoProfile, updateProfile: updateImmoProfile, deleteProfile: deleteImmoProfile } = useImmoProfiles();
   const { catalog, addItem, updateItem, deleteItem, reorderItems } = useImmoCatalog();

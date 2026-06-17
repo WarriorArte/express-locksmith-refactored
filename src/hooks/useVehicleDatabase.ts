@@ -36,7 +36,7 @@ function normalize(records: CarRecord[]): CarRecord[] {
   });
 }
 
-export function useVehicleDatabase() {
+export function useVehicleDatabase({ readOnly = false }: { readOnly?: boolean } = {}) {
   const [records, setRecords] = useState<CarRecord[]>([]);
   const hasLoadedFromApi = useRef(false);
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -64,7 +64,9 @@ export function useVehicleDatabase() {
   }, []);
 
   // Empuja al backend (debounced) tras cualquier cambio posterior a la carga.
+  // Solo cuando no es readOnly (usuarios de taller solo leen).
   useEffect(() => {
+    if (readOnly) return;
     if (!hasLoadedFromApi.current) return;
     if (pushTimer.current) clearTimeout(pushTimer.current);
     pushTimer.current = setTimeout(() => {
@@ -73,7 +75,7 @@ export function useVehicleDatabase() {
         body: JSON.stringify({ results: records }),
       }).catch(() => { /* offline-safe */ });
     }, 800);
-  }, [records]);
+  }, [records, readOnly]);
 
   const patchRecords = useCallback((updater: (current: CarRecord[]) => CarRecord[]) => {
     setRecords((current) => normalize(updater(current)));

@@ -44,6 +44,7 @@ final class MaintenanceController
                 'catalogItems' => DB::table('immo_catalog_items')->count(),
             ],
             'assignments' => DB::table('tool_assignments')->count(),
+            'vehicles'    => DB::table('vehicle_database_records')->count(),
         ]);
     }
 
@@ -58,7 +59,8 @@ final class MaintenanceController
             'alarmas' => $this->purgeAlarmas(),
             'immo'    => $this->purgeImmo(),
             'assignments' => $this->purgeAssignments(),
-            default   => ApiResponse::error('Módulo inválido. Usa: keycode, alarmas, immo, assignments'),
+            'vehicles'    => $this->purgeVehicles(),
+            default   => ApiResponse::error('Módulo inválido. Usa: keycode, alarmas, immo, assignments, vehicles'),
         };
     }
 
@@ -106,5 +108,15 @@ final class MaintenanceController
         return ApiResponse::success([
             'deleted' => ['assignments' => $count],
         ], "Asignaciones purgadas: {$count} registros eliminados");
+    }
+
+    private function purgeVehicles(): JsonResponse
+    {
+        $count = DB::table('vehicle_database_records')->count();
+        DB::table('vehicle_database_records')->delete();
+
+        return ApiResponse::success([
+            'deleted' => ['records' => $count],
+        ], "Base de vehículos purgada: {$count} registros eliminados");
     }
 }

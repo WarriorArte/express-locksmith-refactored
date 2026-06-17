@@ -5,11 +5,10 @@ import { Car, Key, Radio, Cpu, Truck, Bike } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { AVAILABLE_TOOLS } from "@/data/tools";
-import { useWorkshop } from "@/hooks/useWorkshop";
+import { useWorkshopFeatures } from "@/hooks/useWorkshopFeatures";
 import { KeycodeWorkspace } from "./KeycodeWorkspace";
 import { AlarmasWorkspace } from "./AlarmasWorkspace";
 import { ImmoWorkspace } from "./ImmoWorkspace";
-import { useWorkshopAssignments, WORKSHOP_TOOLS } from "./WorkshopAssignmentManager";
 import type { ToolAssignment, KeycodeProfile, AlarmaProfile, ImmoProfile, ImmoCatalogItem, ImmoAssignmentDetail } from "@/types";
 import { type VehicleCategory, VEHICLE_CATEGORIES, VEHICLE_CATEGORY_LABELS } from "@/data/carDatabase";
 
@@ -40,8 +39,7 @@ export function WorkshopToolView({
   getMakeCategory,
   onToolActive,
 }: WorkshopToolViewProps) {
-  const { currentWorkshop } = useWorkshop();
-  const { workshopAssignments } = useWorkshopAssignments();
+  const { isFeatureEnabled } = useWorkshopFeatures();
 
   const [selectedCategory, setSelectedCategory] = useState<VehicleCategory | "">("");
   const [selectedYear, setSelectedYear] = useState<number | "">("");
@@ -54,15 +52,9 @@ export function WorkshopToolView({
 
   // ── Authorization ──────────────────────────────────────────────────────────
 
-  const authorizedTools = useMemo(() => {
-    if (!currentWorkshop) return [];
-    const assignment = workshopAssignments.find((a) => a.workshopId === currentWorkshop.id);
-    return assignment?.tools || [];
-  }, [workshopAssignments, currentWorkshop]);
-
-  const isKeycodeAuthorized = authorizedTools.includes("keycode");
-  const isAlarmasAuthorized = authorizedTools.includes("alarmas");
-  const isImmoAuthorized = authorizedTools.includes("immo");
+  const isKeycodeAuthorized = isFeatureEnabled("tool_keycode");
+  const isAlarmasAuthorized = isFeatureEnabled("tool_alarmas");
+  const isImmoAuthorized = isFeatureEnabled("tool_immo");
 
   // ── Valid assignments per tool ─────────────────────────────────────────────
   // Each tool's assignment records are INDEPENDENT. The vehicle selector shows
@@ -272,7 +264,7 @@ export function WorkshopToolView({
   const selectClass =
     "flex h-11 w-full rounded-xl border border-primary/20/60 bg-white/70 px-4 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-all disabled:cursor-not-allowed disabled:opacity-50/50 dark:border-foreground";
 
-  const hasAnyTool = authorizedTools.length > 0;
+  const hasAnyTool = isKeycodeAuthorized || isAlarmasAuthorized || isImmoAuthorized;
   const vehicleSelected = selectedYear && selectedMake && selectedModel;
   const hasKeycodeData = availableKeycodeProfileIds.length > 0;
   const hasAlarmaData = availableAlarmaProfileIds.length > 0;
