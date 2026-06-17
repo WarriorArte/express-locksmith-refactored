@@ -1132,14 +1132,7 @@ export function AlarmasManager({
   return (
     <Tabs defaultValue="perfiles" className="flex flex-col h-full min-h-0">
       <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-3 shrink-0 pb-3">
-        <div>
-          <h2 className="text-lg font-bold flex items-center gap-2">
-            <Radio className="w-5 h-5 text-primary" /> Auto Alarmas
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Gestión de perfiles de cableado y asignación a vehículos
-          </p>
-        </div>
+        <div />
         <TabsList className="inline-flex w-full xl:w-auto h-auto p-1 bg-muted/50 border">
           <TabsTrigger value="perfiles" className="flex-1 xl:flex-none py-2 gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <ShieldCheck className="w-4 h-4" /> Perfiles de Alarma
