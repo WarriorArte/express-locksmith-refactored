@@ -59,6 +59,30 @@ function loadInitialRecords(): CarRecord[] {
 
 export function useVehicleDatabase() {
   const [records, setRecords] = useState<CarRecord[]>(loadInitialRecords);
+  const hasLoadedFromApi = useRef(false);
+  const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Carga inicial desde la API; si falla, queda el cache de localStorage.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const payload = await phpApiRequest<{ results?: CarRecord[] }>(
+          "/herramientas/vehicle-database",
+          { method: "GET" },
+        );
+        if (cancelled) return;
+        if (Array.isArray(payload?.results) && payload.results.length > 0) {
+          setRecords(normalize(payload.results));
+        }
+      } catch {
+        // Backend no disponible: usar cache local.
+      } finally {
+        hasLoadedFromApi.current = true;
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     try {
@@ -66,6 +90,17 @@ export function useVehicleDatabase() {
     } catch {
       // Ignore write failures in dev browsers with blocked storage.
     }
+
+    // Empuja al backend (debounced) solo despues de la primera carga API,
+    // para no sobrescribir el servidor con el seed local antes de leerlo.
+    if (!hasLoadedFromApi.current) return;
+    if (pushTimer.current) clearTimeout(pushTimer.current);
+    pushTimer.current = setTimeout(() => {
+      phpApiRequest("/herramientas/vehicle-database", {
+        method: "POST",
+        body: JSON.stringify({ results: records }),
+      }).catch(() => { /* offline-safe */ });
+    }, 800);
   }, [records]);
 
   const patchRecords = useCallback((updater: (current: CarRecord[]) => CarRecord[]) => {
