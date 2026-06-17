@@ -35,10 +35,10 @@ return new class extends Migration {
         if (!Schema::hasTable('vehicle_database_records')) {
             Schema::create('vehicle_database_records', function (Blueprint $t): void {
                 $t->uuid('id')->primary();
-                $t->string('make');
-                $t->string('model')->default('');
+                $t->string('make', 100);
+                $t->string('model', 100)->default('');
                 $t->integer('year')->default(0);
-                $t->string('category')->nullable();
+                $t->string('category', 100)->nullable();
                 $t->timestamp('created_at')->useCurrent();
                 $t->unique(['make', 'model', 'year']);
                 $t->index('make');
