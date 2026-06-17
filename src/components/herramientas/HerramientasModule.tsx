@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Wrench, Key, FileText, Cpu } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
-import { useWorkshop } from "@/hooks/useDevContext";
+import { useWorkshop } from "@/hooks/useWorkshop";
 import { useKeycodeProfiles } from "@/hooks/useKeycodeProfiles";
 import { useToolAssignments } from "@/hooks/useToolAssignments";
 import { useVehicleDatabase } from "@/hooks/useVehicleDatabase";

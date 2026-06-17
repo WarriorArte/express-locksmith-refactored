@@ -5,7 +5,7 @@ import { Car, Key, Radio, Cpu, Truck, Bike } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { AVAILABLE_TOOLS } from "@/data/tools";
-import { useWorkshop } from "@/hooks/useDevContext";
+import { useWorkshop } from "@/hooks/useWorkshop";
 import { KeycodeWorkspace } from "./KeycodeWorkspace";
 import { AlarmasWorkspace } from "./AlarmasWorkspace";
 import { ImmoWorkspace } from "./ImmoWorkspace";

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useWorkshop } from "@/hooks/useDevContext";
+import { useWorkshop } from "@/hooks/useWorkshop";
 
 // Tools available to assign to a workshop
 export const WORKSHOP_TOOLS = [

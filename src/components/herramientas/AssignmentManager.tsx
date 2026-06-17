@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 import { AVAILABLE_TOOLS } from "@/data/tools";
 import type { CarRecord } from "@/data/carDatabase";
-import { useWorkshop } from "@/hooks/useDevContext";
+import { useWorkshop } from "@/hooks/useWorkshop";
 import type { ToolAssignment, KeycodeProfile, LockSelectionsMap, LockKey } from "@/types";
 import { LOCK_LABELS, LOCK_ORDER } from "@/types";
 
