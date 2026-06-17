@@ -15,9 +15,9 @@ function migrate(items: any[]): KeycodeProfile[] {
 export function useKeycodeProfiles() {
   const { items, setItems, addItem, updateItem, deleteItem } = useJsonResource<KeycodeProfile>({
     endpoint: "/herramientas/keycode-profiles",
-    cacheKey: "herramientas:keycode_profiles",
     migrate,
   });
+
 
   const setProfiles = useCallback((updater: KeycodeProfile[] | ((prev: KeycodeProfile[]) => KeycodeProfile[])) => {
     setItems(updater as any);
