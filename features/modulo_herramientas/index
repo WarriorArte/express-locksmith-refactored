@@ -1,0 +1,810 @@
+import React, { useState, useMemo, useEffect } from 'react';
+import { 
+  Settings, Wrench, Car, Users, ShieldCheck, Check, 
+  ChevronRight, Lock, Radio, Key, Search, Plus, 
+  Trash2, FileText, Database, Edit, X, ChevronLeft 
+} from 'lucide-react';
+
+// --- DATOS SIMULADOS ---
+const carDatabase = {
+  "results": [
+    { "Make": "Acura", "Year": 1996, "Model": "Integra" },
+    { "Make": "Acura", "Year": 1998, "Model": "Integra" },
+    { "Make": "Acura", "Year": 2000, "Model": "Integra" },
+    { "Make": "Acura", "Year": 2002, "Model": "RSX" },
+    { "Make": "Toyota", "Year": 1995, "Model": "Corolla" },
+    { "Make": "Toyota", "Year": 2000, "Model": "Corolla" },
+    { "Make": "Toyota", "Year": 2005, "Model": "Corolla" },
+    { "Make": "Honda", "Year": 1997, "Model": "Civic" },
+    { "Make": "Honda", "Year": 2001, "Model": "Civic" },
+    { "Make": "Ford", "Year": 1995, "Model": "Mustang" },
+    { "Make": "Ford", "Year": 2000, "Model": "Mustang" }
+  ]
+};
+
+const AVAILABLE_TOOLS = [
+  { id: 'keycode', name: 'Keycode', icon: Key, description: 'Cálculo de cortes de llave.' },
+  { id: 'diagrama', name: 'Auto Alarma Diagrama', icon: Radio, description: 'Diagramas eléctricos de alarma.' },
+  { id: 'immo', name: 'Immo', icon: Lock, description: 'Programación y cálculo de inmovilizador.' }
+];
+
+const WORKSHOPS = [
+  { id: 'w1', name: 'Taller Norte (Matriz)' },
+  { id: 'w2', name: 'Cerrajería Sur Express' },
+  { id: 'w3', name: 'Llaves y Controles Oriente' }
+];
+
+export default function App() {
+  const [viewMode, setViewMode] = useState('superadmin');
+  const [activeWorkshop, setActiveWorkshop] = useState(WORKSHOPS[0].id);
+  
+  const [assignments, setAssignments] = useState([]);
+  const [keycodeProfiles, setKeycodeProfiles] = useState([]);
+
+  return (
+    <div className="min-h-screen bg-gray-50 font-sans text-slate-800">
+      <nav className="bg-slate-900 text-white p-4 shadow-md flex justify-between items-center">
+        <div className="flex items-center space-x-3">
+          <ShieldCheck className="w-8 h-8 text-blue-400" />
+          <h1 className="text-xl font-bold">LockMaster Pro</h1>
+        </div>
+        <div className="flex space-x-2 bg-slate-800 p-1 rounded-lg">
+          <button onClick={() => setViewMode('superadmin')} className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'superadmin' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-700'}`}>SuperAdmin</button>
+          <button onClick={() => setViewMode('workshop')} className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'workshop' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-700'}`}>Vista Talleres</button>
+        </div>
+      </nav>
+
+      <main className="p-6 max-w-6xl mx-auto">
+        {viewMode === 'superadmin' ? (
+          <SuperAdminView 
+            assignments={assignments} setAssignments={setAssignments} 
+            keycodeProfiles={keycodeProfiles} setKeycodeProfiles={setKeycodeProfiles}
+          />
+        ) : (
+          <WorkshopView 
+            assignments={assignments} 
+            activeWorkshop={activeWorkshop} 
+            setActiveWorkshop={setActiveWorkshop} 
+            keycodeProfiles={keycodeProfiles} 
+          />
+        )}
+      </main>
+    </div>
+  );
+}
+
+// ==========================================
+// VISTA SUPER ADMIN
+// ==========================================
+function SuperAdminView({ assignments, setAssignments, keycodeProfiles, setKeycodeProfiles }) {
+  const [adminTab, setAdminTab] = useState('keycode'); // Cambiado el default a keycode para trabajar más rápido
+
+  return (
+    <div className="space-y-6">
+      <div className="flex space-x-4 border-b border-slate-200 pb-2">
+        <button onClick={() => setAdminTab('assignments')} className={`px-4 py-2 font-bold transition-colors ${adminTab === 'assignments' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-800'}`}>Asignación de Vehículos</button>
+        <button onClick={() => setAdminTab('keycode')} className={`px-4 py-2 font-bold transition-colors ${adminTab === 'keycode' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-800'}`}>Gestión de Herramienta: Keycode</button>
+      </div>
+
+      {adminTab === 'assignments' ? (
+        <AssignmentManager assignments={assignments} setAssignments={setAssignments} keycodeProfiles={keycodeProfiles} />
+      ) : (
+        <KeycodeManager keycodeProfiles={keycodeProfiles} setKeycodeProfiles={setKeycodeProfiles} />
+      )}
+    </div>
+  );
+}
+
+// --- SUB-COMPONENTE: GESTIÓN DE KEYCODE ---
+function KeycodeManager({ keycodeProfiles, setKeycodeProfiles }) {
+  // Estado del Formulario
+  const [editingId, setEditingId] = useState(null); // null = Modo Creación, string = Modo Edición
+  const [references, setReferences] = useState([{ id: Date.now(), brand: '', refCode: '', isPrimary: true }]);
+  const [icCard, setIcCard] = useState('');
+  const [series, setSeries] = useState('');
+  
+  // Estado de los códigos (La base de datos gigante)
+  const [currentCodes, setCurrentCodes] = useState([]); 
+  const [csvData, setCsvData] = useState('');
+  
+  // Estado para la tabla, búsqueda y paginación
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
+
+  // Feedback UI
+  const [notification, setNotification] = useState('');
+
+  // Cargar perfil para editar
+  const handleEditProfile = (profile) => {
+    setEditingId(profile.id);
+    setReferences(profile.references);
+    setIcCard(profile.icCard);
+    setSeries(profile.series);
+    setCurrentCodes(profile.codesData);
+    setCsvData('');
+    setSearchTerm('');
+    setCurrentPage(1);
+    window.scrollTo(0, 0);
+  };
+
+  // Cancelar edición
+  const cancelEdit = () => {
+    setEditingId(null);
+    setReferences([{ id: Date.now(), brand: '', refCode: '', isPrimary: true }]);
+    setIcCard('');
+    setSeries('');
+    setCurrentCodes([]);
+    setCsvData('');
+    setSearchTerm('');
+  };
+
+  // Referencias CRUD
+  const addReferenceRow = () => setReferences([...references, { id: Date.now(), brand: '', refCode: '', isPrimary: false }]);
+  const removeReferenceRow = (id) => {
+    if (references.length === 1) return;
+    const newRefs = references.filter(r => r.id !== id);
+    if (!newRefs.some(r => r.isPrimary)) newRefs[0].isPrimary = true;
+    setReferences(newRefs);
+  };
+  const updateReference = (id, field, value) => {
+    setReferences(references.map(r => r.id === id ? { ...r, [field]: value } : r));
+  };
+  const setPrimaryReference = (id) => setReferences(references.map(r => ({ ...r, isPrimary: r.id === id })));
+
+  // Procesar CSV y fusionar con los actuales
+  const handleCSVProcess = () => {
+    if (!csvData.trim()) return;
+    
+    const lines = csvData.trim().split('\n');
+    let validCount = 0;
+    
+    // Usamos un objeto/diccionario para reemplazar/actualizar fácilmente códigos existentes
+    const codesMap = {};
+    currentCodes.forEach(c => codesMap[c.codigo] = c); // Mantenemos los que ya existían
+
+    lines.forEach(line => {
+      const parts = line.split(',').map(p => p.trim());
+      if (parts.length > 1 && parts[0]) {
+        const codigo = parts[0];
+        const bitting = parts.slice(1);
+        codesMap[codigo] = { codigo, bitting };
+        validCount++;
+      }
+    });
+
+    const newCodesArray = Object.values(codesMap);
+    setCurrentCodes(newCodesArray);
+    setCsvData('');
+    
+    // Notificación
+    setNotification(`Se procesaron y añadieron/actualizaron ${validCount} códigos exitosamente.`);
+    setTimeout(() => setNotification(''), 4000);
+  };
+
+  // Eliminar un código individualmente
+  const deleteCode = (codigo) => {
+    setCurrentCodes(currentCodes.filter(c => c.codigo !== codigo));
+  };
+
+  // Guardar (Crear nuevo o Actualizar existente)
+  const saveKeycodeProfile = () => {
+    if (!icCard || !series || currentCodes.length === 0) {
+      alert("Por favor llena IC Card, Serie y asegúrate de tener al menos un código en la lista.");
+      return;
+    }
+
+    const profileData = {
+      id: editingId || Date.now().toString(),
+      references,
+      icCard,
+      series,
+      codesData: currentCodes,
+      dateAdded: new Date().toLocaleDateString()
+    };
+
+    if (editingId) {
+      setKeycodeProfiles(keycodeProfiles.map(p => p.id === editingId ? profileData : p));
+      setNotification('Perfil actualizado correctamente.');
+    } else {
+      setKeycodeProfiles([profileData, ...keycodeProfiles]);
+      setNotification('Nuevo perfil guardado.');
+    }
+    
+    setTimeout(() => setNotification(''), 3000);
+    cancelEdit(); // Reset form
+  };
+
+  // --- Lógica de Paginación y Filtrado ---
+  const filteredCodes = useMemo(() => {
+    if (!searchTerm) return currentCodes;
+    const term = searchTerm.toLowerCase();
+    return currentCodes.filter(c => 
+      c.codigo.toLowerCase().includes(term) || 
+      c.bitting.join(',').includes(term)
+    );
+  }, [currentCodes, searchTerm]);
+
+  const totalPages = Math.ceil(filteredCodes.length / itemsPerPage);
+  const paginatedCodes = filteredCodes.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  // Asegurar que si la búsqueda deja menos páginas, volvamos a la 1
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) setCurrentPage(1);
+  }, [totalPages, currentPage]);
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Columna Izquierda: Formulario y Editor */}
+      <div className="lg:col-span-2 space-y-6">
+        
+        {/* Notificación Flotante */}
+        {notification && (
+          <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-sm flex items-center">
+            <Check className="w-5 h-5 mr-2" />
+            <p className="font-bold">{notification}</p>
+          </div>
+        )}
+
+        {/* Cabecera de Edición */}
+        {editingId && (
+          <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl flex justify-between items-center">
+            <div>
+              <h2 className="text-blue-800 font-bold flex items-center"><Edit className="w-5 h-5 mr-2" /> Editando Perfil: IC {icCard}</h2>
+              <p className="text-sm text-blue-600">Estás modificando una base de datos existente.</p>
+            </div>
+            <button onClick={cancelEdit} className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg flex items-center transition-colors">
+              <X className="w-4 h-4 mr-1"/> Cancelar
+            </button>
+          </div>
+        )}
+        
+        {/* 1. Referencias de Llave */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <h2 className="text-xl font-bold mb-4 flex items-center border-b pb-2"><Key className="w-5 h-5 mr-2 text-blue-600" />1. Referencias de Llave</h2>
+          <div className="space-y-3">
+            <div className="grid grid-cols-12 gap-2 text-sm font-semibold text-slate-500 px-2">
+              <div className="col-span-4">Marca (ej. Silca)</div>
+              <div className="col-span-4">Referencia (ej. HON66)</div>
+              <div className="col-span-3 text-center">¿Principal?</div>
+              <div className="col-span-1"></div>
+            </div>
+            {references.map((ref) => (
+              <div key={ref.id} className="grid grid-cols-12 gap-2 items-center bg-slate-50 p-2 rounded-lg border border-slate-200">
+                <div className="col-span-4"><input type="text" placeholder="Marca" value={ref.brand} onChange={(e) => updateReference(ref.id, 'brand', e.target.value)} className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm" /></div>
+                <div className="col-span-4"><input type="text" placeholder="Referencia" value={ref.refCode} onChange={(e) => updateReference(ref.id, 'refCode', e.target.value)} className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm" /></div>
+                <div className="col-span-3 flex justify-center items-center"><input type="radio" name={`primaryRef-${editingId || 'new'}`} checked={ref.isPrimary} onChange={() => setPrimaryReference(ref.id)} className="w-5 h-5 text-blue-600 focus:ring-blue-500 cursor-pointer"/></div>
+                <div className="col-span-1 flex justify-end"><button onClick={() => removeReferenceRow(ref.id)} disabled={references.length === 1} className="text-red-500 hover:text-red-700 disabled:opacity-30"><Trash2 className="w-5 h-5" /></button></div>
+              </div>
+            ))}
+            <button onClick={addReferenceRow} className="text-sm font-bold text-blue-600 hover:text-blue-800 flex items-center mt-2"><Plus className="w-4 h-4 mr-1" /> Agregar Referencia Alternativa</button>
+          </div>
+        </div>
+
+        {/* 2. Datos Generales */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <h2 className="text-xl font-bold mb-4 flex items-center border-b pb-2"><FileText className="w-5 h-5 mr-2 text-blue-600" />2. Datos de Perfil</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <div><label className="block text-sm font-bold text-slate-700 mb-1">IC (ID Card)</label><input type="text" placeholder="Ej. 1001, 1715" value={icCard} onChange={(e) => setIcCard(e.target.value)} className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono"/></div>
+            <div><label className="block text-sm font-bold text-slate-700 mb-1">Serie de Códigos</label><input type="text" placeholder="Ej. 0-1000, 0M100-0N200" value={series} onChange={(e) => setSeries(e.target.value)} className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono"/></div>
+          </div>
+        </div>
+
+        {/* 3. Base de Datos de Códigos (CSV y Visor) */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <h2 className="text-xl font-bold mb-4 flex items-center border-b pb-2"><Database className="w-5 h-5 mr-2 text-blue-600" />3. Gestor de Códigos Bitting</h2>
+          
+          {/* Añadir Códigos vía CSV */}
+          <div className="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
+            <label className="block text-sm font-bold text-slate-700 mb-2">{editingId ? 'Agregar o Actualizar Códigos (Formato CSV)' : 'Importar Códigos (Formato CSV)'}</label>
+            <p className="text-xs text-slate-500 mb-2">Formato: <span className="font-mono bg-slate-200 px-1">codigo,eje_a,eje_b,eje_c...</span> Si pegas un código que ya existe, sus ejes se actualizarán.</p>
+            <textarea
+              rows="4" placeholder="K0001,1,2,1,4,3,2,1,1&#10;K0002,2,1,4,3,1,2,2,4"
+              value={csvData} onChange={(e) => setCsvData(e.target.value)}
+              className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm mb-3"
+            ></textarea>
+            <button onClick={handleCSVProcess} className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg font-semibold transition-colors flex items-center text-sm">
+              <Plus className="w-4 h-4 mr-2" /> Procesar Texto CSV
+            </button>
+          </div>
+
+          {/* Tabla Virtual de Códigos Actuales */}
+          {currentCodes.length > 0 && (
+            <div className="border border-slate-200 rounded-lg overflow-hidden">
+              <div className="bg-slate-100 p-3 flex justify-between items-center border-b border-slate-200">
+                <span className="font-bold text-slate-700">Total: {currentCodes.length} códigos</span>
+                <div className="relative w-64">
+                  <input type="text" placeholder="Buscar código o bitting..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-8 pr-3 py-1.5 border border-slate-300 rounded text-sm focus:outline-none focus:border-blue-500" />
+                  <Search className="w-4 h-4 text-slate-400 absolute left-2.5 top-2" />
+                </div>
+              </div>
+
+              <div className="max-h-96 overflow-y-auto bg-white">
+                <table className="w-full text-sm text-left">
+                  <thead className="text-xs text-slate-500 uppercase bg-slate-50 sticky top-0 shadow-sm">
+                    <tr>
+                      <th className="px-4 py-2">Código</th>
+                      <th className="px-4 py-2">Bitting (Ejes)</th>
+                      <th className="px-4 py-2 text-right">Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedCodes.length === 0 ? (
+                      <tr><td colSpan="3" className="px-4 py-8 text-center text-slate-500">No se encontraron resultados de búsqueda.</td></tr>
+                    ) : (
+                      paginatedCodes.map((c) => (
+                        <tr key={c.codigo} className="border-b border-slate-100 hover:bg-slate-50">
+                          <td className="px-4 py-2 font-mono font-bold text-slate-700">{c.codigo}</td>
+                          <td className="px-4 py-2 font-mono text-slate-600 tracking-widest">{c.bitting.join(' - ')}</td>
+                          <td className="px-4 py-2 text-right">
+                            <button onClick={() => deleteCode(c.codigo)} className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors" title="Eliminar código">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Paginación */}
+              {totalPages > 1 && (
+                <div className="bg-slate-50 p-2 flex justify-between items-center border-t border-slate-200 text-sm">
+                  <span className="text-slate-500 ml-2">Página {currentPage} de {totalPages}</span>
+                  <div className="flex space-x-1">
+                    <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-1 rounded bg-white border border-slate-300 disabled:opacity-50 hover:bg-slate-100"><ChevronLeft className="w-5 h-5"/></button>
+                    <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-1 rounded bg-white border border-slate-300 disabled:opacity-50 hover:bg-slate-100"><ChevronRight className="w-5 h-5"/></button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <button 
+          onClick={saveKeycodeProfile}
+          className={`w-full py-4 text-white rounded-xl font-bold text-lg transition-colors shadow-lg flex items-center justify-center ${editingId ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+        >
+          {editingId ? <Check className="w-6 h-6 mr-2" /> : <Database className="w-6 h-6 mr-2" />}
+          {editingId ? 'Guardar Cambios del Perfil' : 'Guardar Perfil Keycode en Base de Datos'}
+        </button>
+      </div>
+
+      {/* Columna Derecha: Perfiles Guardados */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 h-fit">
+        <h2 className="text-xl font-bold mb-4 border-b pb-2">Perfiles en Sistema</h2>
+        {keycodeProfiles.length === 0 ? (
+          <p className="text-slate-500 text-sm italic text-center py-8">No hay perfiles de códigos creados aún.</p>
+        ) : (
+          <div className="space-y-4">
+            {keycodeProfiles.map(profile => {
+              const primaryRef = profile.references.find(r => r.isPrimary) || profile.references[0];
+              const isBeingEdited = editingId === profile.id;
+              
+              return (
+                <div key={profile.id} className={`p-4 border rounded-lg transition-colors ${isBeingEdited ? 'bg-blue-50 border-blue-400 shadow-md' : 'bg-slate-50 border-slate-200 hover:border-blue-300'}`}>
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-bold text-slate-800">IC: {profile.icCard}</h3>
+                    <div className="flex space-x-2">
+                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-semibold">Serie: {profile.series}</span>
+                      <button onClick={() => handleEditProfile(profile)} className="text-slate-400 hover:text-blue-600" title="Editar Perfil">
+                        <Edit className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mb-2 text-sm text-slate-600">
+                    <p><span className="font-semibold">Principal:</span> {primaryRef.brand} {primaryRef.refCode}</p>
+                    {profile.references.length > 1 && <p className="text-xs text-slate-400 mt-1">+ {profile.references.length - 1} ref(s) alternativas</p>}
+                  </div>
+                  <div className="text-xs text-slate-500 border-t border-slate-200 pt-2 mt-2 flex justify-between">
+                    <span>{profile.codesData.length} códigos</span>
+                    <span>Modificado: {profile.dateAdded}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// --- SUB-COMPONENTE: ASIGNACIONES DE VEHÍCULOS ---
+function AssignmentManager({ assignments, setAssignments, keycodeProfiles }) {
+  const [make, setMake] = useState('');
+  const [model, setModel] = useState('');
+  const [yearStart, setYearStart] = useState('');
+  const [yearEnd, setYearEnd] = useState('');
+  const [selectedTools, setSelectedTools] = useState([]);
+  const [selectedWorkshops, setSelectedWorkshops] = useState([]);
+  const [selectedKeycodeProfile, setSelectedKeycodeProfile] = useState('');
+
+  const makes = useMemo(() => [...new Set(carDatabase.results.map(c => c.Make))].sort(), []);
+  const models = useMemo(() => {
+    if (!make) return [];
+    return [...new Set(carDatabase.results.filter(c => c.Make === make).map(c => c.Model))].sort();
+  }, [make]);
+
+  const toggleTool = (toolId) => {
+    setSelectedTools(prev => {
+      const isSelected = prev.includes(toolId);
+      if (isSelected) {
+        if (toolId === 'keycode') setSelectedKeycodeProfile(''); // Resetear si se desmarca
+        return prev.filter(t => t !== toolId);
+      }
+      return [...prev, toolId];
+    });
+  };
+
+  const toggleWorkshop = (workshopId) => setSelectedWorkshops(prev => prev.includes(workshopId) ? prev.filter(w => w !== workshopId) : [...prev, workshopId]);
+
+  const handleSave = () => {
+    if (!make || !model || !yearStart || !yearEnd || selectedTools.length === 0 || selectedWorkshops.length === 0) {
+      alert("Por favor completa todos los campos, selecciona al menos una herramienta y un taller.");
+      return;
+    }
+
+    // Validación: Si seleccionó Keycode, debe elegir un perfil obligatoriamente
+    if (selectedTools.includes('keycode') && !selectedKeycodeProfile) {
+      alert("Has seleccionado la herramienta Keycode. Por favor, selecciona un perfil de Keycode para asignar al vehículo.");
+      return;
+    }
+
+    const newAssignment = { 
+      id: Date.now().toString(), 
+      make, 
+      model, 
+      yearStart: parseInt(yearStart), 
+      yearEnd: parseInt(yearEnd), 
+      tools: selectedTools, 
+      workshops: selectedWorkshops, 
+      dateAdded: new Date().toLocaleDateString(),
+      keycodeProfileId: selectedTools.includes('keycode') ? selectedKeycodeProfile : null
+    };
+    
+    setAssignments([newAssignment, ...assignments]);
+    setMake(''); setModel(''); setYearStart(''); setYearEnd(''); setSelectedTools([]); setSelectedWorkshops([]); setSelectedKeycodeProfile('');
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-2 space-y-6">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <h2 className="text-xl font-bold mb-4 flex items-center border-b pb-2"><Car className="w-5 h-5 mr-2 text-blue-600" />1. Seleccionar Vehículo</h2>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Marca</label>
+              <select value={make} onChange={(e) => { setMake(e.target.value); setModel(''); }} className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"><option value="">Seleccione Marca...</option>{makes.map(m => <option key={m} value={m}>{m}</option>)}</select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Modelo</label>
+              <select value={model} onChange={(e) => setModel(e.target.value)} disabled={!make} className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-100"><option value="">Seleccione Modelo...</option>{models.map(m => <option key={m} value={m}>{m}</option>)}</select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div><label className="block text-sm font-medium text-slate-700 mb-1">Año Inicio</label><input type="number" placeholder="Ej. 1999" value={yearStart} onChange={(e) => setYearStart(e.target.value)} className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"/></div>
+            <div><label className="block text-sm font-medium text-slate-700 mb-1">Año Fin</label><input type="number" placeholder="Ej. 2005" value={yearEnd} onChange={(e) => setYearEnd(e.target.value)} className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"/></div>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <h2 className="text-xl font-bold mb-4 flex items-center border-b pb-2"><Wrench className="w-5 h-5 mr-2 text-blue-600" />2. Asignar Herramientas</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {AVAILABLE_TOOLS.map(tool => {
+              const isSelected = selectedTools.includes(tool.id);
+              const Icon = tool.icon;
+              return (
+                <div key={tool.id} className={`p-4 border-2 rounded-xl transition-all ${isSelected ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-blue-300'}`}>
+                  <div className="flex items-center justify-between mb-2 cursor-pointer" onClick={() => toggleTool(tool.id)}>
+                    <Icon className={`w-6 h-6 ${isSelected ? 'text-blue-600' : 'text-slate-400'}`} />{isSelected && <Check className="w-5 h-5 text-blue-600" />}
+                  </div>
+                  <h3 className={`font-semibold cursor-pointer ${isSelected ? 'text-blue-900' : 'text-slate-700'}`} onClick={() => toggleTool(tool.id)}>{tool.name}</h3>
+                  
+                  {/* Selector Dinámico de Perfil Keycode */}
+                  {isSelected && tool.id === 'keycode' && (
+                    <div className="mt-3">
+                      <select 
+                        value={selectedKeycodeProfile} 
+                        onChange={(e) => setSelectedKeycodeProfile(e.target.value)}
+                        className="w-full p-1.5 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                      >
+                        <option value="">-- Asignar Perfil --</option>
+                        {keycodeProfiles && keycodeProfiles.map(p => (
+                          <option key={p.id} value={p.id}>IC: {p.icCard} | {p.series}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <h2 className="text-xl font-bold mb-4 flex items-center border-b pb-2"><Users className="w-5 h-5 mr-2 text-blue-600" />3. Delegar a Talleres</h2>
+          <div className="space-y-2">
+            {WORKSHOPS.map(ws => (
+              <label key={ws.id} className="flex items-center p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                <input type="checkbox" checked={selectedWorkshops.includes(ws.id)} onChange={() => toggleWorkshop(ws.id)} className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500" />
+                <span className="ml-3 font-medium text-slate-700">{ws.name}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+        <button onClick={handleSave} className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold text-lg hover:bg-slate-800 transition-colors shadow-lg flex items-center justify-center">
+          <Settings className="w-6 h-6 mr-2" /> Guardar Asignación
+        </button>
+      </div>
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 h-fit">
+        <h2 className="text-xl font-bold mb-4 border-b pb-2">Asignaciones Activas</h2>
+        {assignments.length === 0 ? <p className="text-slate-500 text-sm italic text-center py-8">No hay herramientas asignadas.</p> : (
+          <div className="space-y-4">
+            {assignments.map(item => (
+              <div key={item.id} className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                <div className="flex justify-between items-start mb-2"><h3 className="font-bold text-slate-800">{item.make} {item.model}</h3><span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-semibold">{item.yearStart} - {item.yearEnd}</span></div>
+                <div className="mb-2"><p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Herramientas:</p><div className="flex flex-wrap gap-1">{item.tools.map(t => <span key={t} className="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded-md">{AVAILABLE_TOOLS.find(x => x.id === t)?.name}</span>)}</div></div>
+                <div><p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Talleres Autorizados:</p><p className="text-sm text-slate-600">{item.workshops.map(w => WORKSHOPS.find(x => x.id === w)?.name).join(', ')}</p></div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// VISTA TALLER (WORKSHOP)
+// ==========================================
+function WorkshopView({ assignments, activeWorkshop, setActiveWorkshop, keycodeProfiles }) {
+  const [selectedYear, setSelectedYear] = useState('');
+  const [selectedMake, setSelectedMake] = useState('');
+  const [selectedModel, setSelectedModel] = useState('');
+  const [activeToolId, setActiveToolId] = useState(null);
+
+  const myAssignments = useMemo(() => assignments.filter(a => a.workshops.includes(activeWorkshop)), [assignments, activeWorkshop]);
+  
+  const availableYears = useMemo(() => {
+    const years = new Set();
+    myAssignments.forEach(a => { for (let y = a.yearStart; y <= a.yearEnd; y++) years.add(y); });
+    return Array.from(years).sort((a, b) => b - a);
+  }, [myAssignments]);
+
+  const availableMakes = useMemo(() => {
+    if (!selectedYear) return [];
+    const makes = new Set();
+    myAssignments.forEach(a => { if (selectedYear >= a.yearStart && selectedYear <= a.yearEnd) makes.add(a.make); });
+    return Array.from(makes).sort();
+  }, [myAssignments, selectedYear]);
+
+  const availableModels = useMemo(() => {
+    if (!selectedYear || !selectedMake) return [];
+    const models = new Set();
+    myAssignments.forEach(a => { if (selectedYear >= a.yearStart && selectedYear <= a.yearEnd && a.make === selectedMake) models.add(a.model); });
+    return Array.from(models).sort();
+  }, [myAssignments, selectedYear, selectedMake]);
+
+  const availableTools = useMemo(() => {
+    if (!selectedYear || !selectedMake || !selectedModel) return [];
+    const tools = new Set();
+    myAssignments.forEach(a => {
+      if (selectedYear >= a.yearStart && selectedYear <= a.yearEnd && a.make === selectedMake && a.model === selectedModel) {
+        a.tools.forEach(t => tools.add(t));
+      }
+    });
+    return Array.from(tools);
+  }, [myAssignments, selectedYear, selectedMake, selectedModel]);
+
+  const handleWorkshopChange = (e) => { setActiveWorkshop(e.target.value); setSelectedYear(''); setSelectedMake(''); setSelectedModel(''); setActiveToolId(null); };
+
+  const currentAssignment = useMemo(() => {
+    if (!selectedYear || !selectedMake || !selectedModel) return null;
+    return myAssignments.find(a => 
+      selectedYear >= a.yearStart && selectedYear <= a.yearEnd && 
+      a.make === selectedMake && a.model === selectedModel
+    );
+  }, [myAssignments, selectedYear, selectedMake, selectedModel]);
+
+  if (activeToolId === 'keycode' && currentAssignment) {
+    return (
+      <KeycodeWorkspace 
+        assignment={currentAssignment} 
+        keycodeProfiles={keycodeProfiles} 
+        onBack={() => setActiveToolId(null)} 
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-blue-900 text-white p-6 rounded-xl flex flex-col md:flex-row justify-between items-center shadow-lg">
+        <div><h2 className="text-2xl font-bold">Portal del Cerrajero</h2><p className="text-blue-200 text-sm">Bienvenido a tu estación de trabajo</p></div>
+        <div className="mt-4 md:mt-0 flex items-center space-x-3">
+          <span className="text-sm font-medium text-blue-200">Simular sesión de:</span>
+          <select value={activeWorkshop} onChange={handleWorkshopChange} className="bg-blue-800 border border-blue-700 text-white p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
+            {WORKSHOPS.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center border-b pb-3"><Car className="w-6 h-6 mr-2 text-blue-600" />Selección de Vehículo</h3>
+        {myAssignments.length === 0 ? (
+          <div className="text-center py-8 bg-slate-50 rounded-lg border border-dashed border-slate-300"><p className="text-slate-600 font-medium">No tienes vehículos asignados en este taller.</p></div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">1. Selecciona Año</label>
+              <select value={selectedYear} onChange={(e) => { setSelectedYear(Number(e.target.value) || ''); setSelectedMake(''); setSelectedModel(''); }} className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
+                <option value="">-- Año --</option>{availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">2. Selecciona Marca</label>
+              <select value={selectedMake} onChange={(e) => { setSelectedMake(e.target.value); setSelectedModel(''); }} disabled={!selectedYear} className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-200 disabled:text-slate-400 bg-slate-50">
+                <option value="">-- Marca --</option>{availableMakes.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">3. Selecciona Modelo</label>
+              <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} disabled={!selectedMake} className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-200 disabled:text-slate-400 bg-slate-50">
+                <option value="">-- Modelo --</option>{availableModels.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {selectedYear && selectedMake && selectedModel && (
+        <div className="space-y-6">
+          <div className="bg-slate-900 text-white p-6 rounded-xl flex items-center space-x-4">
+            <div className="p-3 bg-slate-800 rounded-lg"><Wrench className="w-8 h-8 text-blue-400" /></div>
+            <div><h2 className="text-2xl font-bold">{selectedMake} {selectedModel} ({selectedYear})</h2><p className="text-slate-400">Herramientas autorizadas para este vehículo</p></div>
+          </div>
+          {availableTools.length === 0 ? (
+            <div className="text-center py-8 bg-slate-50 rounded-lg border border-slate-200"><p className="text-slate-600">No hay herramientas asignadas para este modelo específico.</p></div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {AVAILABLE_TOOLS.filter(t => availableTools.includes(t.id)).map(tool => {
+                const Icon = tool.icon;
+                return (
+                  <div key={tool.id} className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col h-full hover:shadow-md transition-shadow">
+                    <div className="flex items-center space-x-3 mb-4"><div className="p-3 bg-blue-50 text-blue-600 rounded-lg"><Icon className="w-6 h-6" /></div><h3 className="text-lg font-bold text-slate-800">{tool.name}</h3></div>
+                    <p className="text-slate-600 text-sm mb-6 flex-grow">{tool.description}</p>
+                    <button onClick={() => setActiveToolId(tool.id)} className="w-full py-2 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 font-medium rounded-lg transition-colors flex items-center justify-center">Iniciar Herramienta<ChevronRight className="w-4 h-4 ml-1" /></button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- SUB-COMPONENTE: WORKSPACE DE KEYCODE (TALLER) ---
+function KeycodeWorkspace({ assignment, keycodeProfiles, onBack }) {
+  const profile = keycodeProfiles?.find(p => p.id === assignment.keycodeProfileId);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResult, setSearchResult] = useState(null);
+  const [hasSearched, setHasSearched] = useState(false);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (!profile || !searchTerm.trim()) return;
+    
+    const found = profile.codesData.find(c => c.codigo.toUpperCase() === searchTerm.toUpperCase().trim());
+    setSearchResult(found || null);
+    setHasSearched(true);
+  };
+
+  if (!profile) {
+    return (
+      <div className="space-y-6">
+        <button onClick={onBack} className="text-blue-600 hover:text-blue-800 font-medium flex items-center">
+          ← Volver a lista de herramientas
+        </button>
+        <div className="bg-red-50 border border-red-200 text-red-700 p-6 rounded-xl text-center shadow-sm">
+          <Key className="w-12 h-12 mx-auto mb-3 text-red-400" />
+          <h3 className="text-lg font-bold">Perfil de Keycode no encontrado</h3>
+          <p>El perfil asignado a este vehículo ya no existe o hay un error de configuración. Contacte al SuperAdmin.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const primaryRef = profile.references.find(r => r.isPrimary) || profile.references[0];
+
+  return (
+    <div className="space-y-6">
+      <button onClick={onBack} className="text-blue-600 hover:text-blue-800 font-medium flex items-center">
+        ← Volver a lista de herramientas
+      </button>
+
+      <div className="bg-slate-900 text-white p-6 rounded-xl flex items-center space-x-4 shadow-lg">
+        <div className="p-3 bg-blue-600 rounded-lg">
+          <Key className="w-8 h-8 text-white" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold">Keycode: {assignment.make} {assignment.model}</h2>
+          <p className="text-blue-200">IC: {profile.icCard} | Serie: {profile.series}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 md:col-span-1 h-fit">
+          <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2 flex items-center">
+            <FileText className="w-5 h-5 mr-2 text-blue-600" /> Datos Técnicos
+          </h3>
+          <div className="space-y-4">
+            <div>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Referencia Principal</p>
+              <p className="text-lg font-bold text-slate-800 bg-slate-50 p-2 rounded border border-slate-100 mt-1">
+                {primaryRef.brand} <span className="text-blue-600">{primaryRef.refCode}</span>
+              </p>
+            </div>
+            {profile.references.length > 1 && (
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Referencias Alternativas</p>
+                <ul className="text-sm text-slate-600 space-y-1">
+                  {profile.references.filter(r => !r.isPrimary).map(r => (
+                    <li key={r.id} className="flex items-center"><span className="w-2 h-2 bg-slate-300 rounded-full mr-2"></span>{r.brand} {r.refCode}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <div className="pt-4 border-t border-slate-100">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-semibold text-slate-600">Códigos indexados:</span>
+                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold">{profile.codesData.length}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 md:col-span-2">
+          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
+            <Search className="w-5 h-5 mr-2 text-blue-600" /> Calculadora de Cortes (Bitting)
+          </h3>
+          <form onSubmit={handleSearch} className="mb-6">
+            <div className="flex space-x-3">
+              <input type="text" placeholder="Ingresa el código (Ej. K001)" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="flex-grow p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono text-lg uppercase" />
+              <button type="submit" className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center">Buscar</button>
+            </div>
+          </form>
+
+          <div className="min-h-[200px] flex flex-col justify-center border-t border-slate-100 pt-6">
+            {!hasSearched ? (
+              <div className="text-center text-slate-400">
+                <Key className="w-16 h-16 mx-auto mb-2 opacity-20" />
+                <p>Ingresa un código para calcular y revelar los cortes en los ejes.</p>
+              </div>
+            ) : searchResult ? (
+              <div className="text-center">
+                <div className="inline-block bg-green-50 text-green-700 px-4 py-2 rounded-full font-bold mb-6 border border-green-200">
+                  Código Confirmado: {searchResult.codigo}
+                </div>
+                <p className="text-sm font-semibold text-slate-500 uppercase tracking-widest mb-3">Cortes Requeridos</p>
+                <div className="flex justify-center space-x-3 flex-wrap">
+                  {searchResult.bitting.map((corte, index) => (
+                    <div key={index} className="flex flex-col items-center mb-2">
+                      <span className="text-xs text-slate-400 mb-1 font-mono">Eje {String.fromCharCode(65 + index)}</span>
+                      <div className="w-14 h-20 bg-slate-800 text-white rounded-lg flex items-center justify-center text-3xl font-bold shadow-inner">{corte}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center text-slate-500 bg-slate-50 p-6 rounded-xl border border-dashed border-slate-300">
+                <p className="font-bold text-slate-700 mb-1">Código no encontrado</p>
+                <p className="text-sm">El código "<span className="font-mono">{searchTerm.toUpperCase()}</span>" no existe en la serie asignada ({profile.series}).</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

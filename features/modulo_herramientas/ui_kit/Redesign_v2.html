@@ -1,0 +1,1756 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Cerrajería Express — Rediseño v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body,#root{height:100%;font-family:'DM Sans',system-ui,sans-serif;}
+::-webkit-scrollbar{width:0;height:0;}
+
+/* ── LIGHT THEME ── */
+:root{
+  --bg:#F5F6FA; --surface:#FFFFFF; --surface2:#F0F1F6; --surface3:#E8EAF0;
+  --border:rgba(0,0,0,0.07); --border2:rgba(0,0,0,0.12);
+  --fg1:#0D0D14; --fg2:#52526E; --fg3:#9898B0;
+  --p:#00E5A0; --p-dim:#00C98C; --p-glow:rgba(0,229,160,0.2); --p-text:#0A0A0F;
+  --sheet:#FFFFFF; --nav:#FFFFFF; --nav-border:rgba(0,0,0,0.07);
+  --err:#FF4D6A; --warn:#FFB830; --info:#4D9FFF;
+  --shadow:0 2px 12px rgba(0,0,0,0.08);
+  --shadow-lg:0 8px 32px rgba(0,0,0,0.12);
+}
+/* ── DARK THEME ── */
+.dark{
+  --bg:#0A0A10; --surface:#13131A; --surface2:#1C1C26; --surface3:#242432;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
+  --fg1:#EDEDF8; --fg2:#7070A0; --fg3:#3C3C58;
+  --sheet:#181820; --nav:#101018; --nav-border:rgba(255,255,255,0.06);
+}
+
+body{background:var(--bg);color:var(--fg1);}
+
+/* ── LAYOUT ── */
+.app{display:flex;flex-direction:column;height:100%;max-width:430px;margin:0 auto;position:relative;background:var(--bg);overflow:hidden;}
+.screen{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+
+/* ── TOPBAR ── */
+.topbar{padding:52px 20px 14px;flex-shrink:0;}
+.topbar-row{display:flex;align-items:center;justify-content:space-between;}
+
+/* ── BOTTOM NAV ── */
+.bnav{display:flex;align-items:center;justify-content:space-around;height:68px;padding:0 8px 4px;flex-shrink:0;background:var(--nav);border-top:1px solid var(--nav-border);safe-area-inset-bottom:env(safe-area-inset-bottom);}
+.bnav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:9px;font-weight:600;color:var(--fg3);padding:6px 0;border-radius:12px;transition:color .15s;}
+.bnav-btn.active{color:var(--p);}
+.fab-btn{width:50px;height:50px;border-radius:16px;background:var(--p);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 0 24px var(--p-glow),0 4px 16px rgba(0,229,160,.3);margin-bottom:10px;flex-shrink:0;transition:transform .15s;}
+.fab-btn:active{transform:scale(.95);}
+
+/* ── CARDS ── */
+.card{background:var(--surface);border-radius:20px;border:1px solid var(--border);box-shadow:var(--shadow);}
+.card-p{padding:16px;}
+
+/* ── INPUTS ── */
+.inp{width:100%;padding:13px 14px;border-radius:13px;border:1.5px solid var(--border2);background:var(--surface2);font-family:'DM Sans',sans-serif;font-size:14px;color:var(--fg1);outline:none;transition:border-color .2s;}
+.inp:focus{border-color:var(--p);}
+.inp-icon{padding-left:40px;}
+.inp-wrap{position:relative;}
+.inp-ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);display:flex;align-items:center;color:var(--fg3);}
+label.lbl{font-size:11px;font-weight:700;color:var(--fg3);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px;}
+
+/* ── BUTTONS ── */
+.btn{font-family:'DM Sans',sans-serif;border:none;border-radius:13px;cursor:pointer;font-weight:700;transition:transform .15s,filter .15s;}
+.btn:active{transform:scale(.97);}
+.btn-p{background:var(--p);color:var(--p-text);padding:14px 20px;font-size:14px;width:100%;box-shadow:0 0 20px var(--p-glow);}
+.btn-p:hover{filter:brightness(.93);}
+.btn-ghost{background:var(--surface2);color:var(--fg2);padding:12px 16px;font-size:13px;border:1px solid var(--border);}
+.btn-ghost:hover{background:var(--surface3);}
+.btn-sm{padding:8px 14px;font-size:12px;border-radius:10px;}
+.btn-icon{width:36px;height:36px;border-radius:11px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.btn-danger{background:rgba(255,77,106,.12);color:var(--err);padding:12px 16px;font-size:13px;}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:9999px;font-size:11px;font-weight:700;}
+.b-green{background:rgba(0,229,160,.12);color:#00C98C;}
+.b-yellow{background:rgba(255,184,48,.12);color:#E09A00;}
+.b-red{background:rgba(255,77,106,.12);color:var(--err);}
+.b-blue{background:rgba(77,159,255,.12);color:var(--info);}
+.b-gray{background:var(--surface2);color:var(--fg3);}
+.b-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0;}
+.tab{flex:1;padding:11px 6px;font-size:11px;font-weight:600;color:var(--fg3);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:'DM Sans',sans-serif;min-width:56px;}
+.tab.active{color:var(--p);border-bottom-color:var(--p);}
+
+/* ── SHEET ── */
+.sheet-overlay{position:absolute;inset:0;z-index:80;display:flex;flex-direction:column;justify-content:flex-end;}
+.sheet-bg{position:absolute;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(3px);}
+.sheet-box{position:relative;z-index:1;background:var(--sheet);border-radius:24px 24px 0 0;padding:12px 20px 32px;max-height:92%;display:flex;flex-direction:column;animation:sheetUp .3s cubic-bezier(.4,0,.2,1);}
+.sheet-scroll{overflow-y:auto;flex:1;}
+.handle{width:36px;height:4px;border-radius:2px;background:var(--fg3);margin:0 auto 18px;opacity:.4;}
+@keyframes sheetUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* ── LIST ITEMS ── */
+.list-item{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;}
+.list-item:last-child{border-bottom:none;}
+.list-item:active{background:var(--surface2);}
+.icon-box{border-radius:13px;background:var(--surface2);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+/* ── SECTION TITLE ── */
+.sec-title{font-size:11px;font-weight:700;color:var(--fg3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
+
+/* ── VIEW TOGGLE ── */
+.view-toggle{display:flex;background:var(--surface2);border-radius:10px;padding:3px;gap:2px;}
+.vt-btn{padding:6px 10px;border-radius:7px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;color:var(--fg3);transition:background .15s,color .15s;}
+.vt-btn.active{background:var(--surface);color:var(--fg1);box-shadow:var(--shadow);}
+
+/* ── STAT CARD ── */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.stat-card{border-radius:18px;padding:15px;}
+.stat-card.primary{background:var(--p);box-shadow:0 0 28px var(--p-glow);}
+.stat-card.dark{background:var(--surface);}
+
+/* ── CHIP FILTERS ── */
+.chips{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;}
+.chip{padding:7px 13px;border-radius:9999px;border:none;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;white-space:nowrap;cursor:pointer;transition:background .15s,color .15s,box-shadow .15s;}
+.chip.active{background:var(--p);color:var(--p-text);box-shadow:0 0 14px var(--p-glow);}
+.chip.inactive{background:var(--surface);color:var(--fg2);border:1px solid var(--border);}
+
+/* ── PRODUCT CARD (GRID) ── */
+.prod-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.prod-card{background:var(--surface);border-radius:18px;overflow:hidden;border:1px solid var(--border);}
+.prod-img{height:120px;background:var(--surface2);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+.prod-img img{width:100%;height:100%;object-fit:cover;}
+
+/* ── FORM SECTIONS ── */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.form-field{margin-bottom:14px;}
+.form-field:last-child{margin-bottom:0;}
+
+/* ── TOGGLE SWITCH ── */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);}
+.toggle{width:42px;height:24px;border-radius:12px;border:none;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;}
+.toggle.on{background:var(--p);}
+.toggle.off{background:var(--surface3);}
+.toggle::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+.toggle.on::after{left:21px;}
+.toggle.off::after{left:3px;}
+
+/* ── SUMMARY BOX ── */
+.summary-box{background:var(--surface2);border-radius:16px;padding:14px 16px;}
+.sum-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:3px 0;}
+.sum-total{display:flex;justify-content:space-between;align-items:center;font-size:16px;font-weight:800;padding-top:10px;margin-top:6px;border-top:1px solid var(--border);}
+
+/* ── IMAGE GRID ── */
+.img-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.img-thumb{aspect-ratio:1;border-radius:12px;overflow:hidden;background:var(--surface2);position:relative;}
+.img-thumb img{width:100%;height:100%;object-fit:cover;}
+
+/* ── GUARANTEE CARD ── */
+.warranty-card{background:var(--surface);border-radius:18px;padding:14px 16px;border:1px solid var(--border);border-left:3px solid var(--p);}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+// ─────────────────────────────────────────────────
+// ICON HELPER
+// ─────────────────────────────────────────────────
+function Ic({n,s=18,c,style={}}) {
+  const ref = React.useRef(null);
+  React.useLayoutEffect(() => {
+    if (!ref.current) return;
+    ref.current.innerHTML = '';
+    const el = document.createElement('i');
+    el.setAttribute('data-lucide', n);
+    ref.current.appendChild(el);
+    lucide.createIcons({nodes:[el]});
+    const svg = ref.current.querySelector('svg');
+    if (svg) { svg.style.width=s+'px'; svg.style.height=s+'px'; if(c) svg.style.color=c; }
+  });
+  return <span ref={ref} style={{display:'inline-flex',alignItems:'center',...style}}/>;
+}
+
+// ─────────────────────────────────────────────────
+// BOTTOM SHEET
+// ─────────────────────────────────────────────────
+function Sheet({open,onClose,title,children,height='auto'}) {
+  if (!open) return null;
+  return (
+    <div className="sheet-overlay">
+      <div className="sheet-bg" onClick={onClose}/>
+      <div className="sheet-box" style={{maxHeight:height==='full'?'92%':height}}>
+        <div className="handle"/>
+        {title && (
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16,flexShrink:0}}>
+            <span style={{fontSize:17,fontWeight:800,color:'var(--fg1)'}}>{title}</span>
+            <button onClick={onClose} className="btn-icon"><Ic n="x" s={15} c="var(--fg2)"/></button>
+          </div>
+        )}
+        <div className="sheet-scroll">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────
+// STATUS CONFIG
+// ─────────────────────────────────────────────────
+const SVC_STATUS = {
+  pending:     {label:'Pendiente',  cls:'b-yellow', dot:'#E09A00'},
+  in_progress: {label:'En Curso',   cls:'b-blue',   dot:'var(--info)'},
+  completed:   {label:'Finalizado', cls:'b-green',  dot:'var(--p)'},
+  delivered:   {label:'Entregado',  cls:'b-gray',   dot:'var(--fg3)'},
+  cancelled:   {label:'Cancelado',  cls:'b-red',    dot:'var(--err)'},
+};
+const SVC_TYPE = {
+  automotive:  {label:'Automotriz', icon:'car'},
+  residential: {label:'Residencial',icon:'home'},
+  commercial:  {label:'Comercial',  icon:'building-2'},
+  industrial:  {label:'Industrial', icon:'factory'},
+};
+
+// ─────────────────────────────────────────────────
+// TOGGLE
+// ─────────────────────────────────────────────────
+function Toggle({on,onChange,label,sub,danger}) {
+  return (
+    <div className="toggle-row" style={danger?{borderColor:'rgba(255,77,106,.25)'}:{}}>
+      <div>
+        <div style={{fontSize:13,fontWeight:600,color:danger?'var(--err)':'var(--fg1)'}}>{label}</div>
+        {sub && <div style={{fontSize:11,color:'var(--fg3)',marginTop:1}}>{sub}</div>}
+      </div>
+      <button className={`toggle ${on?'on':'off'}`} onClick={()=>onChange(!on)}/>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────
+// SCREEN: AUTH
+// ─────────────────────────────────────────────────
+function AuthScreen({onLogin}) {
+  const [f,setF] = React.useState({code:'',email:'',pw:''});
+  const [loading,setLoading] = React.useState(false);
+  const set = k => e => setF(p=>({...p,[k]:e.target.value}));
+  const go = e => { e.preventDefault(); setLoading(true); setTimeout(()=>{setLoading(false);onLogin();},900); };
+  return (
+    <div style={{flex:1,display:'flex',flexDirection:'column',background:'var(--bg)',overflow:'auto',padding:'60px 24px 32px'}}>
+      <div style={{flex:1,display:'flex',flexDirection:'column',justifyContent:'center'}}>
+        <div style={{width:60,height:60,borderRadius:18,background:'var(--p)',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 0 32px var(--p-glow)',marginBottom:16}}>
+          <Ic n="key" s={28} c="var(--p-text)"/>
+        </div>
+        <h1 style={{fontSize:30,fontWeight:800,color:'var(--fg1)',letterSpacing:'-.03em',lineHeight:1.15,marginBottom:4}}>Cerrajería<br/><span style={{color:'var(--p)'}}>Express</span></h1>
+        <p style={{fontSize:14,color:'var(--fg2)',marginBottom:32}}>Gestión inteligente de tu taller</p>
+        <form onSubmit={go} style={{display:'flex',flexDirection:'column',gap:11}}>
+          <div className="inp-wrap"><div className="inp-ico"><Ic n="building-2" s={16}/></div><input className="inp inp-icon" placeholder="Código del taller" value={f.code} onChange={e=>setF(p=>({...p,code:e.target.value.toUpperCase()}))} autoComplete="off"/></div>
+          <div className="inp-wrap"><div className="inp-ico"><Ic n="mail" s={16}/></div><input className="inp inp-icon" type="email" placeholder="Correo electrónico" value={f.email} onChange={set('email')}/></div>
+          <div className="inp-wrap"><div className="inp-ico"><Ic n="lock" s={16}/></div><input className="inp inp-icon" type="password" placeholder="Contraseña" value={f.pw} onChange={set('pw')}/></div>
+          <div style={{marginTop:6}}><button type="submit" className="btn btn-p" disabled={loading}>{loading?'Iniciando...':'Iniciar sesión'}</button></div>
+        </form>
+        <p style={{textAlign:'center',fontSize:11,color:'var(--fg3)',marginTop:20}}>Contacta al administrador para obtener acceso</p>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────
+// SCREEN: DASHBOARD
+// ─────────────────────────────────────────────────
+const ACTIVITY_DATA = [
+  {icon:'shopping-cart',title:'Venta #0042',desc:'Cliente mostrador · $1,200',time:'5m',status:'completed'},
+  {icon:'wrench',title:'Servicio #0019',desc:'Duplicado Ford Focus',time:'22m',status:'in_progress'},
+  {icon:'file-text',title:'Cotización #0088',desc:'Empresa ABC · $8,500',time:'1h',status:null},
+  {icon:'users',title:'Nuevo cliente',desc:'Ferretería López',time:'2h',status:null},
+];
+
+function DashboardScreen({onNav}) {
+  const [sheet,setSheet] = React.useState(false);
+  const [activeItem,setActiveItem] = React.useState(null);
+  return (
+    <div className="screen">
+      <div className="scroll">
+        {/* Header */}
+        <div style={{padding:'52px 20px 8px',background:'var(--bg)'}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:4}}>
+            <div>
+              <p style={{fontSize:13,color:'var(--fg2)',fontWeight:500}}>Bienvenido 👋</p>
+              <h2 style={{fontSize:26,fontWeight:800,color:'var(--fg1)',letterSpacing:'-.025em'}}>Juan Álvarez</h2>
+            </div>
+            <div style={{position:'relative'}}>
+              <div style={{width:42,height:42,borderRadius:14,background:'var(--p)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:800,fontSize:15,color:'var(--p-text)',cursor:'pointer'}}>JA</div>
+              <span style={{position:'absolute',top:2,right:2,width:9,height:9,borderRadius:'50%',background:'var(--err)',border:'2px solid var(--bg)'}}/>
+            </div>
+          </div>
+        </div>
+
+        <div style={{padding:'0 20px 100px',display:'flex',flexDirection:'column',gap:20}}>
+          {/* Stats */}
+          <div className="stat-grid">
+            <div className="stat-card primary">
+              <div style={{width:32,height:32,borderRadius:10,background:'rgba(10,10,15,.15)',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:10}}><Ic n="shopping-cart" s={15} c="var(--p-text)"/></div>
+              <div style={{fontSize:24,fontWeight:800,color:'var(--p-text)',letterSpacing:'-.02em',lineHeight:1.1}}>$42,500</div>
+              <div style={{fontSize:11,fontWeight:600,color:'rgba(10,10,15,.65)',marginTop:3}}>Ventas del mes</div>
+              <div style={{fontSize:10,color:'rgba(10,10,15,.45)',marginTop:1}}>18 transacciones</div>
+            </div>
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              {[
+                {icon:'wrench',val:'7',lbl:'Servicios hoy',sub:'3 en curso'},
+                {icon:'file-text',val:'24',lbl:'Cotizaciones',sub:'75% aceptadas'},
+              ].map(s=>(
+                <div key={s.lbl} className="stat-card dark card" style={{padding:'11px 13px'}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+                    <div>
+                      <div style={{fontSize:20,fontWeight:800,color:'var(--fg1)',letterSpacing:'-.02em'}}>{s.val}</div>
+                      <div style={{fontSize:10,fontWeight:600,color:'var(--fg3)',marginTop:1}}>{s.lbl}</div>
+                    </div>
+                    <div style={{width:28,height:28,borderRadius:8,background:'rgba(0,229,160,.1)',display:'flex',alignItems:'center',justifyContent:'center'}}><Ic n={s.icon} s={13} c="var(--p)"/></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Status bar */}
+          <div className="card card-p">
+            <div className="sec-title">Estado de servicios</div>
+            <div style={{display:'flex',borderRadius:8,overflow:'hidden',height:8,marginBottom:10}}>
+              {[{c:'var(--info)',w:20},{c:'var(--warn)',w:35},{c:'var(--p)',w:30},{c:'var(--fg3)',w:15}].map((b,i)=>(
+                <div key={i} style={{flex:b.w,background:b.c}}/>
+              ))}
+            </div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:10}}>
+              {[
+                {l:'Pendientes',n:4,c:'var(--info)'},{l:'En Curso',n:7,c:'var(--warn)'},
+                {l:'Completados',n:12,c:'var(--p)'},{l:'Entregados',n:9,c:'var(--fg3)'},
+              ].map(s=>(
+                <div key={s.l} style={{display:'flex',alignItems:'center',gap:5}}>
+                  <span style={{width:7,height:7,borderRadius:'50%',background:s.c,flexShrink:0}}/>
+                  <span style={{fontSize:11,color:'var(--fg2)'}}>{s.l}</span>
+                  <span style={{fontSize:12,fontWeight:700,color:'var(--fg1)'}}>{s.n}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick actions */}
+          <div>
+            <div className="sec-title">Acciones rápidas</div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8}}>
+              {[
+                {icon:'wrench',lbl:'Servicio',page:'servicios'},{icon:'shopping-cart',lbl:'Venta',page:'ventas'},
+                {icon:'file-text',lbl:'Cotización',page:'cotizaciones'},{icon:'users',lbl:'Cliente',page:'clientes'},
+              ].map(a=>(
+                <button key={a.lbl} onClick={()=>onNav(a.page)} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:7,padding:'12px 6px',borderRadius:14,border:'1px solid var(--border)',background:'var(--surface)',cursor:'pointer',fontFamily:"'DM Sans',sans-serif"}}>
+                  <div style={{width:36,height:36,borderRadius:11,background:'rgba(0,229,160,.1)',display:'flex',alignItems:'center',justifyContent:'center'}}><Ic n={a.icon} s={17} c="var(--p)"/></div>
+                  <span style={{fontSize:10,fontWeight:600,color:'var(--fg2)'}}>{a.lbl}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Activity */}
+          <div>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+              <span className="sec-title" style={{marginBottom:0}}>Actividad reciente</span>
+              <span style={{fontSize:12,color:'var(--p)',fontWeight:700,cursor:'pointer'}}>Ver todo</span>
+            </div>
+            <div className="card" style={{overflow:'hidden'}}>
+              {ACTIVITY_DATA.map((item,i)=>(
+                <div key={i} className="list-item" onClick={()=>{setActiveItem(item);setSheet(true);}}>
+                  <div className="icon-box" style={{width:36,height:36}}><Ic n={item.icon} s={15} c="var(--p)"/></div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:13,fontWeight:600,color:'var(--fg1)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.title}</div>
+                    <div style={{fontSize:11,color:'var(--fg2)'}}>{item.desc}</div>
+                  </div>
+                  <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:3,flexShrink:0}}>
+                    <span style={{fontSize:10,color:'var(--fg3)'}}>{item.time}</span>
+                    {item.status && <span className={`badge ${SVC_STATUS[item.status]?.cls||'b-gray'}`}><span className="b-dot" style={{background:SVC_STATUS[item.status]?.dot}}/>{SVC_STATUS[item.status]?.label}</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <Sheet open={sheet} onClose={()=>setSheet(false)} title={activeItem?.title} height="50%">
+        {activeItem && (
+          <div style={{display:'flex',flexDirection:'column',gap:10}}>
+            <div style={{background:'var(--surface2)',borderRadius:12,padding:'11px 13px'}}>
+              <div style={{fontSize:11,fontWeight:700,color:'var(--fg3)',textTransform:'uppercase',letterSpacing:'.05em',marginBottom:3}}>Descripción</div>
+              <div style={{fontSize:14,color:'var(--fg1)'}}>{activeItem.desc}</div>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+              {[{l:'Tiempo',v:activeItem.time},{l:'Estado',v:<span className={`badge ${SVC_STATUS[activeItem.status]?.cls||'b-gray'}`}>{SVC_STATUS[activeItem.status]?.label||'—'}</span>}].map(({l,v})=>(
+                <div key={l} style={{background:'var(--surface2)',borderRadius:12,padding:'10px 12px'}}>
+                  <div style={{fontSize:10,fontWeight:700,color:'var(--fg3)',textTransform:'uppercase',letterSpacing:'.05em',marginBottom:3}}>{l}</div>
+                  <div style={{fontSize:13,fontWeight:600,color:'var(--fg1)'}}>{v}</div>
+                </div>
+              ))}
+            </div>
+            <button className="btn btn-p" onClick={()=>setSheet(false)}>Ver detalle completo</button>
+          </div>
+        )}
+      </Sheet>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────
+// SCREEN: SERVICIOS
+// ─────────────────────────────────────────────────
+const SVCS = [
+  {id:'SRV-019',desc:'Duplicado de llave Ford Focus 2019',problem:'No funciona el transponder',client:'Juan Pérez',phone:'55 1234 5678',status:'in_progress',type:'automotive',amount:450,labor:200,discount:0,date:'30 abr',address:'Av. Reforma 123',images:2},
+  {id:'SRV-018',desc:'Instalación chapa de seguridad',problem:'',client:'Ferretería López',phone:'55 9876 5432',status:'completed',type:'commercial',amount:1200,labor:500,discount:100,date:'29 abr',address:'',images:0},
+  {id:'SRV-017',desc:'Apertura cerradura Mul-T-Lock',problem:'Llave perdida',client:'Ana Torres',phone:'55 5555 4444',status:'pending',type:'residential',amount:350,labor:350,discount:0,date:'29 abr',address:'Calle 5 #22',images:1},
+  {id:'SRV-016',desc:'Masterización de llaves x8',problem:'',client:'Constructora ABC',phone:'',status:'in_progress',type:'industrial',amount:2800,labor:800,discount:200,date:'28 abr',address:'Polígono Ind.',images:3},
+  {id:'SRV-015',desc:'Cambio cilindros hab. 201-210',problem:'',client:'Hotel Central',phone:'55 0000 1111',status:'delivered',type:'commercial',amount:6500,labor:2000,discount:500,date:'27 abr',address:'Blvd. Centro',images:5},
+];
+
+const FILTERS_SVC = ['Todos','Pendientes','En Curso','Finalizados','Entregados','Cancelados'];
+const statusKeyMap = {'Pendientes':'pending','En Curso':'in_progress','Finalizados':'completed','Entregados':'delivered','Cancelados':'cancelled'};
+
+function ServiciosScreen() {
+  const [filter,setFilter] = React.useState('Todos');
+  const [search,setSearch] = React.useState('');
+  const [detail,setDetail] = React.useState(null);
+  const [formOpen,setFormOpen] = React.useState(false);
+  const [editSvc,setEditSvc] = React.useState(null);
+
+  const filtered = SVCS.filter(s=>{
+    const fk = statusKeyMap[filter];
+    const matchF = !fk || s.status===fk;
+    const matchS = !search || s.desc.toLowerCase().includes(search.toLowerCase()) || s.client.toLowerCase().includes(search.toLowerCase()) || s.id.toLowerCase().includes(search.toLowerCase());
+    return matchF && matchS;
+  });
+
+  const handleStatus = (svc,newStatus) => { /* would call API */ };
+
+  return (
+    <div className="screen">
+      <div className="scroll">
+        {/* Header */}
+        <div style={{padding:'52px 20px 12px'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+            <div>
+              <h2 style={{fontSize:26,fontWeight:800,color:'var(--fg1)',letterSpacing:'-.025em'}}>Servicios</h2>
+              <p style={{fontSize:13,color:'var(--fg2)',marginTop:2}}><span style={{color:'var(--p)',fontWeight:700}}>{SVCS.filter(s=>s.status==='in_progress').length}</span> en curso · <span style={{color:'var(--warn)',fontWeight:700}}>{SVCS.filter(s=>s.status==='pending').length}</span> pendientes</p>
+            </div>
+            <button onClick={()=>{setEditSvc(null);setFormOpen(true);}} style={{width:40,height:40,borderRadius:12,background:'var(--p)',border:'none',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 0 16px var(--p-glow)'}}><Ic n="plus" s={20} c="var(--p-text)"/></button>
+          </div>
+        </div>
+
+        {/* Filter chips */}
+        <div className="chips" style={{padding:'0 20px 12px'}}>
+          {FILTERS_SVC.map(f=>(
+            <button key={f} className={`chip ${filter===f?'active':'inactive'}`} onClick={()=>setFilter(f)}>{f}</button>
+          ))}
+        </div>
+
+        {/* Search */}
+        <div style={{padding:'0 20px 14px'}}>
+          <div className="inp-wrap"><div className="inp-ico"><Ic n="search" s={15}/></div><input className="inp inp-icon" placeholder="Buscar folio, cliente..." value={search} onChange={e=>setSearch(e.target.value)} style={{fontSize:13}}/></div>
+        </div>
+
+        {/* List */}
+        <div style={{padding:'0 20px 100px',display:'flex',flexDirection:'column',gap:10}}>
+          {filtered.map(svc=>{
+            const st = SVC_STATUS[svc.status];
+            const ty = SVC_TYPE[svc.type];
+            return (
+              <div key={svc.id} className="card" style={{overflow:'hidden'}}>
+                <div style={{padding:'13px 14px'}}>
+                  {/* Top row */}
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}>
+                    <div style={{display:'flex',alignItems:'center',gap:7}}>
+                      <div className="icon-box" style={{width:36,height:36}}><Ic n={ty.icon} s={16} c="var(--p)"/></div>
+                      <div>
+                        <span style={{fontSize:11,fontWeight:700,color:'var(--p)'}}>{svc.id}</span>
+                        <span style={{fontSize:10,color:'var(--fg3)',marginLeft:6}}>{ty.label}</span>
+                      </div>
+                    </div>
+                    <div style={{display:'flex',alignItems:'center',gap:6}}>
+                      <span className={`badge ${st.cls}`}><span className="b-dot" style={{background:st.dot}}/>{st.label}</span>
+                      <button onClick={()=>{setDetail(svc);}} className="btn-icon" style={{width:30,height:30}}><Ic n="more-vertical" s={14} c="var(--fg2)"/></button>
+                    </div>
+                  </div>
+                  {/* Description */}
+                  <div style={{fontSize:14,fontWeight:600,color:'var(--fg1)',marginBottom:4}}>{svc.desc}</div>
+                  {svc.problem && <div style={{fontSize:12,color:'var(--fg2)',marginBottom:6}}>{svc.problem}</div>}
+                  {/* Meta */}
+                  <div style={{display:'flex',flexWrap:'wrap',gap:8,marginBottom:10}}>
+                    <div style={{display:'flex',alignItems:'center',gap:4,fontSize:11,color:'var(--fg2)'}}><Ic n="user" s={12}/>{svc.client}</div>
+                    <div style={{display:'flex',alignItems:'center',gap:4,fontSize:11,color:'var(--fg2)'}}><Ic n="calendar" s={12}/>{svc.date}</div>
+                    {svc.address && <div style={{display:'flex',alignItems:'center',gap:4,fontSize:11,color:'var(--fg2)'}}><Ic n="map-pin" s={12}/>{svc.address}</div>}
+                  </div>
+                  {/* Images strip */}
+                  {svc.images>0 && (
+                    <div style={{display:'flex',gap:6,marginBottom:10}}>
+                      {Array.from({length:Math.min(svc.images,3)}).map((_,i)=>(
+                        <div key={i} style={{width:44,height:44,borderRadius:10,background:'var(--surface2)',display:'flex',alignItems:'center',justifyContent:'center'}}><Ic n="image" s={16} c="var(--fg3)"/></div>
+                      ))}
+                      {svc.images>3 && <div style={{width:44,height:44,borderRadius:10,background:'var(--surface2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,color:'var(--fg3)'}}>+{svc.images-3}</div>}
+                    </div>
+                  )}
+                  {/* Footer */}
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',borderTop:'1px solid var(--border)',paddingTop:10}}>
+                    <div>
+                      <span style={{fontSize:11,color:'var(--fg3)'}}>Monto </span>
+                      <span style={{fontSize:16,fontWeight:800,color:'var(--fg1)'}}>${svc.amount.toLocaleString()}</span>
+                    </div>
+                    <div style={{display:'flex',gap:6}}>
+                      <button onClick={()=>setDetail(svc)} style={{display:'flex',alignItems:'center',gap:4,padding:'6px 10px',borderRadius:9,border:'1px solid var(--border)',background:'var(--surface2)',fontSize:11,fontWeight:600,color:'var(--fg2)',cursor:'pointer',fontFamily:"'DM Sans',sans-serif"}}><Ic n="eye" s={12}/>Ver</button>
+                      <button onClick={()=>{setEditSvc(svc);setFormOpen(true);}} style={{display:'flex',alignItems:'center',gap:4,padding:'6px 10px',borderRadius:9,border:'none',background:'rgba(0,229,160,.1)',fontSize:11,fontWeight:700,color:'var(--p)',cursor:'pointer',fontFamily:"'DM Sans',sans-serif"}}><Ic n="edit" s={12}/>Editar</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Detail sheet */}
+      <Sheet open={!!detail} onClose={()=>setDetail(null)} title={detail?.id} height="full">
+        {detail && <ServiceDetail svc={detail} onClose={()=>setDetail(null)} onEdit={s=>{setEditSvc(s);setFormOpen(true);setDetail(null);}}/>}
+      </Sheet>
+
+      {/* Form sheet */}
+      <Sheet open={formOpen} onClose={()=>setFormOpen(false)} title={editSvc?'Editar Servicio':'Nuevo Servicio'} height="full">
+        <ServiceForm svc={editSvc} onClose={()=>setFormOpen(false)}/>
+      </Sheet>
+    </div>
+  );
+}
+
+function ServiceDetail({svc,onClose,onEdit}) {
+  const st = SVC_STATUS[svc.status];
+  const ty = SVC_TYPE[svc.type];
+  const nextStatus = {pending:'in_progress',in_progress:'completed',completed:'delivered'};
+  const nextLabel = {pending:'Iniciar servicio',in_progress:'Marcar completado',completed:'Marcar entregado'};
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:12}}>
+      <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+        <span className={`badge ${st.cls}`}><span className="b-dot" style={{background:st.dot}}/>{st.label}</span>
+        <span className="badge b-gray">{ty.label}</span>
+        {svc.address && <span className="badge b-gray"><Ic n="map-pin" s={10} style={{marginRight:3}}/>Domicilio</span>}
+      </div>
+
+      <div style={{background:'var(--surface2)',borderRadius:14,padding:'12px 14px'}}>
+        <div className="sec-title">Descripción del problema</div>
+        <div style={{fontSize:14,color:'var(--fg1)',fontWeight:500}}>{svc.desc}</div>
+        {svc.problem && <div style={{fontSize:13,color:'var(--fg2)',marginTop:6}}>{svc.problem}</div>}
+      </div>
+
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+        {[
+          {l:'Cliente',v:svc.client},{l:'Teléfono',v:svc.phone||'—'},
+          {l:'Fecha',v:svc.date},{l:'Tipo',v:ty.label},
+        ].map(({l,v})=>(
+          <div key={l} style={{background:'var(--surface2)',borderRadius:12,padding:'10px 12px'}}>
+            <div style={{fontSize:10,fontWeight:700,color:'var(--fg3)',textTransform:'uppercase',letterSpacing:'.05em',marginBottom:3}}>{l}</div>
+            <div style={{fontSize:13,fontWeight:600,color:'var(--fg1)'}}>{v}</div>
+          </div>
+        ))}
+      </div>
+
+      {svc.address && (
+        <div style={{background:'var(--surface2)',borderRadius:12,padding:'10px 12px',display:'flex',alignItems:'center',gap:8}}>
+          <Ic n="map-pin" s={16} c="var(--p)"/>
+          <div>
+            <div style={{fontSize:10,fontWeight:700,color:'var(--fg3)',textTransform:'uppercase',letterSpacing:'.05em'}}>Dirección</div>
+            <div style={{fontSize:13,color:'var(--fg1)'}}>{svc.address}</div>
+          </div>
+        </div>
+      )}
+
+      {/* Costs */}
+      <div className="summary-box">
+        <div className="sec-title" style={{marginBottom:8}}>Desglose de costos</div>
+        <div className="sum-row"><span style={{color:'var(--fg2)'}}>Mano de obra</span><span style={{fontWeight:600}}>${svc.labor}</span></div>
+        {svc.discount>0 && <div className="sum-row"><span style={{color:'var(--fg2)'}}>Descuento</span><span style={{color:'var(--err)',fontWeight:600}}>-${svc.discount}</span></div>}
+        <div className="sum-total"><span>Total estimado</span><span style={{color:'var(--p)'}}>${(svc.amount).toLocaleString()}</span></div>
+      </div>
+
+      {/* Images */}
+      {svc.images>0 && (
+        <div>
+          <div className="sec-title">Imágenes ({svc.images})</div>
+          <div className="img-grid">
+            {Array.from({length:svc.images}).map((_,i)=>(
+              <div key={i} className="img-thumb" style={{display:'flex',alignItems:'center',justifyContent:'center'}}><Ic n="image" s={20} c="var(--fg3)"/></div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Actions */}
+      <div style={{display:'flex',flexDirection:'column',gap:8,paddingTop:4}}>
+        {nextStatus[svc.status] && (
+          <button className="btn btn-p">{nextLabel[svc.status]}</button>
+        )}
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:7}}>
+          <button onClick={()=>onEdit(svc)} className="btn btn-ghost btn-sm" style={{display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><Ic n="edit" s={13}/>Editar</button>
+          <button className="btn btn-ghost btn-sm" style={{display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><Ic n="printer" s={13}/>Ticket</button>
+          <button className="btn btn-ghost btn-sm" style={{display:'flex',alignItems:'center',justifyContent:'center',gap:5,color:'#25D366'}}><Ic n="message-circle" s={13} c="#25D366"/>WhatsApp</button>
+        </div>
+        {(svc.status==='pending'||svc.status==='in_progress') && (
+          <button className="btn btn-danger btn-sm" style={{display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><Ic n="x-circle" s={13}/>Cancelar servicio</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ServiceForm({svc,onClose}) {
+  const [tab,setTab] = React.useState('cliente');
+  const [f,setF] = React.useState({
+    type:'residential',client:'',phone:'',address:'',location:'',
+    desc:'',problem:'',notes:'',labor:0,discount:0,warranty:false,warrantyDays:30,
+  });
+  const [items,setItems] = React.useState([{id:1,name:'',qty:1,price:0}]);
+  const [images,setImages] = React.useState([]);
+  const set = k => e => setF(p=>({...p,[k]:e.target.value}));
+
+  const tabs = [
+    {id:'cliente',icon:'user',label:'Cliente'},
+    {id:'servicio',icon:'wrench',label:'Servicio'},
+    {id:'productos',icon:'package',label:'Productos'},
+    {id:'costos',icon:'dollar-sign',label:'Costos'},
+    {id:'imagenes',icon:'image',label:'Imágenes'},
+  ];
+
+  const productsTotal = items.reduce((s,i)=>s+i.qty*i.price,0);
+  const total = productsTotal + Number(f.labor) - Number(f.discount);
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+      {/* Tab bar */}
+      <div className="tabs" style={{flexShrink:0,marginBottom:0}}>
+        {tabs.map(t=>(
+          <button key={t.id} className={`tab ${tab===t.id?'active':''}`} onClick={()=>setTab(t.id)}>
+            <Ic n={t.icon} s={16} c={tab===t.id?'var(--p)':'var(--fg3)'}/>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      <div style={{flex:1,overflowY:'auto',padding:'16px 4px 0'}}>
+        {/* Tab: Cliente */}
+        {tab==='cliente' && (
+          <div style={{display:'flex',flexDirection:'column',gap:12}}>
+            <div className="form-row">
+              <div className="form-field">
+                <label className="lbl">Folio</label>
+                <input className="inp" value="SRV-020" disabled style={{background:'var(--surface3)',color:'var(--fg3)'}}/>
+              </div>
+              <div className="form-field">
+                <label className="lbl">Tipo de servicio</label>
+                <select className="inp" value={f.type} onChange={set('type')} style={{cursor:'pointer'}}>
+                  {Object.entries(SVC_TYPE).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="form-field">
+              <label className="lbl">Cliente</label>
+              <div className="inp-wrap"><div className="inp-ico"><Ic n="user" s={15}/></div><input className="inp inp-icon" placeholder="Buscar o crear cliente..." value={f.client} onChange={set('client')}/></div>
+            </div>
+            <div className="form-row">
+              <div className="form-field">
+                <label className="lbl">Teléfono</label>
+                <input className="inp" placeholder="+52 55..." value={f.phone} onChange={set('phone')}/>
+              </div>
+              <div className="form-field">
+                <label className="lbl">Dirección</label>
+                <input className="inp" placeholder="Dirección" value={f.address} onChange={set('address')}/>
+              </div>
+            </div>
+            <div className="form-field">
+              <label className="lbl">Ubicación / Zona</label>
+              <div style={{display:'flex',gap:8}}>
+                <input className="inp" style={{flex:1}} placeholder="Ej: Col. Centro..." value={f.location} onChange={set('location')}/>
+                <button className="btn-icon" style={{flexShrink:0,width:44,height:44}}><Ic n="map-pin" s={17} c="var(--p)"/></button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab: Servicio */}
+        {tab==='servicio' && (
+          <div style={{display:'flex',flexDirection:'column',gap:12}}>
+            <div className="form-field">
+              <label className="lbl">Problema reportado *</label>
+              <textarea className="inp" rows={3} placeholder="Describe el problema..." value={f.desc} onChange={set('desc')} style={{resize:'none',lineHeight:1.5}}/>
+            </div>
+            <div className="form-field">
+              <label className="lbl">Solución del servicio</label>
+              <textarea className="inp" rows={3} placeholder="Describe la solución o trabajo a realizar..." value={f.problem} onChange={set('problem')} style={{resize:'none',lineHeight:1.5}}/>
+            </div>
+            <div className="form-field">
+              <label className="lbl">Notas internas</label>
+              <textarea className="inp" rows={2} placeholder="Notas solo visibles para el equipo..." value={f.notes} onChange={set('notes')} style={{resize:'none',lineHeight:1.5}}/>
+            </div>
+          </div>
+        )}
+
+        {/* Tab: Productos */}
+        {tab==='productos' && (
+          <div style={{display:'flex',flexDirection:'column',gap:10}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <span className="sec-title" style={{marginBottom:0}}>Productos utilizados</span>
+              <button onClick={()=>setItems(p=>[...p,{id:Date.now(),name:'',qty:1,price:0}])} style={{display:'flex',alignItems:'center',gap:4,padding:'6px 10px',borderRadius:9,border:'1px solid var(--border)',background:'var(--surface2)',fontSize:12,fontWeight:600,color:'var(--fg2)',cursor:'pointer',fontFamily:"'DM Sans',sans-serif"}}><Ic n="plus" s={12}/>Agregar</button>
+            </div>
+            {items.map((item,i)=>(
+              <div key={item.id} style={{background:'var(--surface2)',borderRadius:14,padding:'12px'}}>
+                <div style={{display:'flex',gap:8,marginBottom:8}}>
+                  <input className="inp" style={{flex:1,fontSize:13,padding:'9px 11px'}} placeholder="Buscar producto..." value={item.name} onChange={e=>setItems(p=>p.map((x,j)=>j===i?{...x,name:e.target.value}:x))}/>
+                  <button onClick={()=>setItems(p=>p.filter((_,j)=>j!==i))} className="btn-icon" style={{flexShrink:0}}><Ic n="trash-2" s={14} c="var(--err)"/></button>
+                </div>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:7}}>
+                  {[{l:'Cantidad',k:'qty',type:'number'},{l:'Precio',k:'price',type:'number'}].map(({l,k,type})=>(
+                    <div key={k}>
+                      <label className="lbl" style={{fontSize:9}}>{l}</label>
+                      <input className="inp" type={type} style={{padding:'7px 9px',fontSize:13}} value={item[k]} onChange={e=>setItems(p=>p.map((x,j)=>j===i?{...x,[k]:e.target.value}:x))}/>
+                    </div>
+                  ))}
+                  <div>
+                    <label className="lbl" style={{fontSize:9}}>Subtotal</label>
+                    <div style={{height:38,display:'flex',alignItems:'center',padding:'0 10px',background:'var(--surface)',borderRadius:11,fontSize:13,fontWeight:700,color:'var(--fg1)'}}>
+                      ${(item.qty*item.price).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {items.length===0 && <div style={{textAlign:'center',padding:'24px 0',color:'var(--fg3)',fontSize:13}}>Sin productos agregados</div>}
+          </div>
+        )}
+
+        {/* Tab: Costos */}
+        {tab==='costos' && (
+          <div style={{display:'flex',flexDirection:'column',gap:12}}>
+            <div className="form-row">
+              <div className="form-field">
+                <label className="lbl">Mano de obra</label>
+                <input className="inp" type="number" value={f.labor} onChange={set('labor')} placeholder="0"/>
+              </div>
+              <div className="form-field">
+                <label className="lbl">Descuento</label>
+                <input className="inp" type="number" value={f.discount} onChange={set('discount')} placeholder="0"/>
+              </div>
+            </div>
+            <div className="summary-box">
+              <div className="sum-row"><span style={{color:'var(--fg2)'}}>Productos</span><span style={{fontWeight:600}}>${productsTotal.toLocaleString()}</span></div>
+              <div className="sum-row"><span style={{color:'var(--fg2)'}}>Mano de obra</span><span style={{fontWeight:600}}>${Number(f.labor).toLocaleString()}</span></div>
+              {f.discount>0 && <div className="sum-row"><span style={{color:'var(--fg2)'}}>Descuento</span><span style={{color:'var(--err)',fontWeight:600}}>-${Number(f.discount).toLocaleString()}</span></div>}
+              <div className="sum-total"><span>Total estimado</span><span style={{color:'var(--p)'}}>${total.toLocaleString()}</span></div>
+            </div>
+            {/* Warranty */}
+            <div>
+              <div className="sec-title">Garantía</div>
+              <Toggle on={f.warranty} onChange={v=>setF(p=>({...p,warranty:v}))} label="Aplicar garantía" sub="Se generará un ticket con código QR"/>
+              {f.warranty && (
+                <div className="form-row" style={{marginTop:10}}>
+                  <div className="form-field">
+                    <label className="lbl">Duración</label>
+                    <input className="inp" type="number" value={f.warrantyDays} onChange={set('warrantyDays')} min={1}/>
+                  </div>
+                  <div className="form-field">
+                    <label className="lbl">Unidad</label>
+                    <select className="inp" style={{cursor:'pointer'}}>
+                      <option>días</option><option>semanas</option><option>meses</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Tab: Imágenes */}
+        {tab==='imagenes' && (
+          <div style={{display:'flex',flexDirection:'column',gap:12}}>
+            <button style={{width:'100%',height:90,borderRadius:16,border:'2px dashed var(--border2)',background:'var(--surface2)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:6,cursor:'pointer',color:'var(--fg3)',fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600}}>
+              <Ic n="upload" s={22} c="var(--p)"/>Subir imagen o tomar foto
+            </button>
+            {images.length===0 ? (
+              <div style={{textAlign:'center',padding:'20px 0',color:'var(--fg3)',fontSize:13}}>No hay imágenes agregadas</div>
+            ) : (
+              <div className="img-grid">
+                {images.map((img,i)=>(
+                  <div key={i} className="img-thumb"><div style={{position:'absolute',top:4,right:4,width:22,height:22,borderRadius:6,background:'rgba(255,77,106,.9)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}><Ic n="x" s={11} c="#fff"/></div></div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Footer CTA */}
+      <div style={{padding:'14px 4px 0',borderTop:'1px solid var(--border)',flexShrink:0,display:'flex',gap:8,marginTop:14}}>
+        <button className="btn btn-ghost" onClick={onClose} style={{flex:1}}>Cancelar</button>
+        <button className="btn btn-p" style={{flex:2}}>
+          {svc?'Guardar Cambios':'Crear Servicio'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────
+// SCREEN: INVENTARIO
+// ─────────────────────────────────────────────────
+const PRODUCTS_DATA = [
+  {id:1,name:'Cilindro Mul-T-Lock MT5+',sku:'CIL-001',cat:'Cilindros',store:5,wh:12,min:3,costLocal:850,costImport:1100,priceMin:1200,priceMax:1850,status:'ok',img:null,desc:'Cilindro de alta seguridad con 5 pines'},
+  {id:2,name:'Llave Yale Y100 maestra',sku:'LLV-042',cat:'Llaves',store:2,wh:1,min:5,costLocal:180,costImport:null,priceMin:280,priceMax:320,status:'low',img:null,desc:''},
+  {id:3,name:'Chapa de seguridad CISA',sku:'CHP-008',cat:'Chapas',store:8,wh:20,min:4,costLocal:1200,costImport:1400,priceMin:1800,priceMax:2100,status:'ok',img:null,desc:''},
+  {id:4,name:'Duplicador láser RW9',sku:'EQP-003',cat:'Equipos',store:1,wh:0,min:2,costLocal:12000,costImport:null,priceMin:16000,priceMax:18500,status:'low',img:null,desc:'Máquina para duplicado por láser'},
+  {id:5,name:'Llave transponder Toyota',sku:'LLV-118',cat:'Llaves',store:0,wh:0,min:3,costLocal:250,costImport:320,priceMin:400,priceMax:480,status:'out',img:null,desc:''},
+];
+
+const CAT_COLORS = {Cilindros:'#6C63FF',Llaves:'#00E5A0',Chapas:'#FFB830',Equipos:'#FF4D6A',Cerraduras:'#4D9FFF'};
+
+function InventarioScreen() {
+  const [view,setView] = React.useState('grid');
+  const [search,setSearch] = React.useState('');
+  const [cat,setCat] = React.useState('all');
+  const [formOpen,setFormOpen] = React.useState(false);
+  const [editProd,setEditProd] = React.useState(null);
+  const [detail,setDetail] = React.useState(null);
+
+  const cats = ['all',...new Set(PRODUCTS_DATA.map(p=>p.cat))];
+  const filtered = PRODUCTS_DATA.filter(p=>{
+    const ms = !search||p.name.toLowerCase().includes(search.toLowerCase())||p.sku.toLowerCase().includes(search.toLowerCase());
+    const mc = cat==='all'||p.cat===cat;
+    return ms&&mc;
+  });
+
+  const stockLabel = s => s==='out'?{l:'Sin stock',cls:'b-red'}:s==='low'?{l:'Stock bajo',cls:'b-yellow'}:{l:'En stock',cls:'b-green'};
+
+  return (
+    <div className="screen">
+      <div className="scroll">
+        <div style={{padding:'52px 20px 12px'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:14}}>
+            <div>
+              <h2 style={{fontSize:26,fontWeight:800,color:'var(--fg1)',letterSpacing:'-.025em'}}>Inventario</h2>
+              <p style={{fontSize:13,color:'var(--fg2)',marginTop:2}}>{PRODUCTS_DATA.length} productos · <span style={{color:'var(--warn)',fontWeight:700}}>{PRODUCTS_DATA.filter(p=>p.status!=='ok').length} alertas</span></p>
+            </div>
+            <div style={{display:'flex',gap:7,alignItems:'center'}}>
+              <div className="view-toggle">
+                <button className={`vt-btn ${view==='grid'?'active':''}`} onClick={()=>setView('grid')}><Ic n="grid-3x3" s={15}/></button>
+                <button className={`vt-btn ${view==='list'?'active':''}`} onClick={()=>setView('list')}><Ic n="list" s={15}/></button>
+              </div>
+              <button onClick={()=>{setEditProd(null);setFormOpen(true);}} style={{width:38,height:38,borderRadius:11,background:'var(--p)',border:'none',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 0 14px var(--p-glow)'}}><Ic n="plus" s={18} c="var(--p-text)"/></button>
+            </div>
+          </div>
+
+          {/* Search */}
+          <div className="inp-wrap" style={{marginBottom:10}}><div className="inp-ico"><Ic n="search" s={15}/></div><input className="inp inp-icon" placeholder="Buscar producto, SKU..." value={search} onChange={e=>setSearch(e.target.value)} style={{fontSize:13}}/></div>
+
+          {/* Category filter */}
+          <div className="chips" style={{paddingBottom:4}}>
+            {cats.map(c=><button key={c} className={`chip ${cat===c?'active':'inactive'}`} onClick={()=>setCat(c)}>{c==='all'?'Todos':c}</button>)}
+          </div>
+        </div>
+
+        <div style={{padding:'8px 20px 100px'}}>
+          {PRODUCTS_DATA.filter(p=>p.status!=='ok').length>0 && (
+            <div style={{display:'flex',alignItems:'center',gap:8,background:'rgba(255,184,48,.1)',borderRadius:12,padding:'9px 12px',marginBottom:12,border:'1px solid rgba(255,184,48,.2)'}}>
+              <Ic n="alert-triangle" s={15} c="var(--warn)"/>
+              <span style={{fontSize:12,color:'var(--warn)',fontWeight:600}}>{PRODUCTS_DATA.filter(p=>p.status!=='ok').length} productos requieren atención</span>
+            </div>
+          )}
+
+          {view==='grid' ? (
+            <div className="prod-grid">
+              {filtered.map(p=>{
+                const sl = stockLabel(p.status);
+                const cc = CAT_COLORS[p.cat]||'#888';
+                return (
+                  <div key={p.id} className="prod-card" onClick={()=>setDetail(p)} style={{cursor:'pointer'}}>
+                    <div className="prod-img">
+                      <Ic n="package" s={36} c="var(--fg3)"/>
+                      <div style={{position:'absolute',top:7,left:7,padding:'2px 7px',borderRadius:9999,background:cc+'33',color:cc,fontSize:9,fontWeight:700}}>{p.cat}</div>
+                      <span className={`badge ${sl.cls}`} style={{position:'absolute',bottom:7,right:7,fontSize:9}}>{sl.l}</span>
+                      {/* Mobile menu */}
+                      <button onClick={e=>{e.stopPropagation();setEditProd(p);setFormOpen(true);}} style={{position:'absolute',top:7,right:7,width:26,height:26,borderRadius:8,background:'rgba(0,0,0,.4)',border:'none',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}><Ic n="edit" s={12} c="#fff"/></button>
+                    </div>
+                    <div style={{padding:'10px 11px'}}>
+                      <div style={{fontSize:12,fontWeight:700,color:'var(--fg1)',lineHeight:1.25,marginBottom:5,overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical'}}>{p.name}</div>
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                        <div style={{display:'flex',gap:5}}>
+                          <span style={{display:'flex',alignItems:'center',gap:3,fontSize:10,color:'var(--fg2)'}}><Ic n="store" s={10}/>T:{p.store}</span>
+                          <span style={{display:'flex',alignItems:'center',gap:3,fontSize:10,color:'var(--fg2)'}}><Ic n="warehouse" s={10}/>B:{p.wh}</span>
+                        </div>
+                      </div>
+                      <div style={{fontSize:13,fontWeight:800,color:'var(--p)'}}>${p.priceMax.toLocaleString()}</div>
+                      <div style={{fontSize:10,color:'var(--fg3)'}}>Descuento: ${p.priceMin.toLocaleString()}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="card" style={{overflow:'hidden'}}>
+              {filtered.map((p,i)=>{
+                const sl = stockLabel(p.status);
+                const cc = CAT_COLORS[p.cat]||'#888';
+                return (
+                  <div key={p.id} className="list-item" onClick={()=>setDetail(p)}>
+                    <div style={{width:42,height:42,borderRadius:12,background:'var(--surface2)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><Ic n="package" s={19} c="var(--p)"/></div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:13,fontWeight:600,color:'var(--fg1)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.name}</div>
+                      <div style={{display:'flex',alignItems:'center',gap:7,marginTop:2}}>
+                        <span style={{fontFamily:'monospace',fontSize:10,color:'var(--fg3)'}}>{p.sku}</span>
+                        <span style={{fontSize:10,color:cc,fontWeight:700}}>{p.cat}</span>
+                      </div>
+                      <div style={{display:'flex',alignItems:'center',gap:7,marginTop:2}}>
+                        <span style={{fontSize:10,color:'var(--fg2)'}}>T:{p.store} · B:{p.wh}</span>
+                      </div>
+                    </div>
+                    <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:4,flexShrink:0}}>
+                      <span style={{fontSize:14,fontWeight:800,color:'var(--p)'}}>${p.priceMax.toLocaleString()}</span>
+                      <span className={`badge ${sl.cls}`} style={{fontSize:9}}>{sl.l}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Detail */}
+      <Sheet open={!!detail} onClose={()=>setDetail(null)} title={detail?.name} height="full">
+        {detail && <ProductDetail prod={detail} onEdit={p=>{setEditProd(p);setFormOpen(true);setDetail(null);}}/>}
+      </Sheet>
+
+      {/* Form */}
+      <Sheet open={formOpen} onClose={()=>setFormOpen(false)} title={editProd?'Editar Producto':'Nuevo Producto'} height="full">
+        <ProductForm prod={editProd} onClose={()=>setFormOpen(false)}/>
+      </Sheet>
+    </div>
+  );
+}
+
+function ProductDetail({prod,onEdit}) {
+  const sl = {out:{l:'Sin stock',cls:'b-red'},low:{l:'Stock bajo',cls:'b-yellow'},ok:{l:'En stock',cls:'b-green'}}[prod.status];
+  const cc = CAT_COLORS[prod.cat]||'#888';
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:12}}>
+      <div style={{width:'100%',height:160,borderRadius:16,background:'var(--surface2)',display:'flex',alignItems:'center',justifyContent:'center'}}><Ic n="package" s={48} c="var(--fg3)"/></div>
+      <div style={{display:'flex',gap:7,flexWrap:'wrap'}}>
+        <span className={`badge ${sl.cls}`}>{sl.l}</span>
+        <span style={{padding:'3px 9px',borderRadius:9999,background:cc+'22',color:cc,fontSize:11,fontWeight:700}}>{prod.cat}</span>
+        <span style={{padding:'3px 9px',borderRadius:9999,background:'var(--surface2)',color:'var(--fg3)',fontSize:11,fontFamily:'monospace'}}>{prod.sku}</span>
+      </div>
+      {prod.desc && <div style={{fontSize:13,color:'var(--fg2)',lineHeight:1.5}}>{prod.desc}</div>}
+      {/* Prices */}
+      <div className="summary-box">
+        <div className="sec-title" style={{marginBottom:8}}>Precios</div>
+        <div className="sum-row"><span style={{color:'var(--fg2)'}}>Costo local</span><span style={{fontWeight:600}}>${prod.costLocal}</span></div>
+        {prod.costImport && <div className="sum-row"><span style={{color:'var(--fg2)'}}>Costo importado</span><span style={{fontWeight:600}}>${prod.costImport}</span></div>}
+        <div className="sum-row"><span style={{color:'var(--fg2)'}}>Precio con descuento</span><span style={{fontWeight:600,color:'var(--warn)'}}>${prod.priceMin}</span></div>
+        <div className="sum-total"><span>Precio sugerido</span><span style={{color:'var(--p)'}}>${prod.priceMax.toLocaleString()}</span></div>
+      </div>
+      {/* Stock */}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
+        {[{l:'Tienda',v:prod.store,i:'store'},{l:'Bodega',v:prod.wh,i:'warehouse'},{l:'Mínimo',v:prod.min,i:'alert-triangle'}].map(({l,v,i})=>(
+          <div key={l} style={{background:'var(--surface2)',borderRadius:12,padding:'10px 12px',textAlign:'center'}}>
+            <Ic n={i} s={16} c={v<=prod.min?'var(--warn)':'var(--p)'} style={{margin:'0 auto 4px'}}/>
+            <div style={{fontSize:18,fontWeight:800,color:v<=prod.min?'var(--warn)':'var(--fg1)'}}>{v}</div>
+            <div style={{fontSize:10,color:'var(--fg3)'}}>{l}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+        <button onClick={()=>onEdit(prod)} className="btn btn-ghost" style={{display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><Ic n="edit" s={14}/>Editar</button>
+        <button className="btn btn-p" style={{display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><Ic n="move" s={14}/>Movimiento</button>
+      </div>
+    </div>
+  );
+}
+
+function ProductForm({prod,onClose}) {
+  const [tab,setTab] = React.useState('general');
+  const tabs=[{id:'general',icon:'package',label:'General'},{id:'precios',icon:'dollar-sign',label:'Precios'},{id:'inventario',icon:'warehouse',label:'Inventario'},{id:'notas',icon:'file-text',label:'Notas'}];
+  return (
+    <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+      <div className="tabs" style={{flexShrink:0}}>
+        {tabs.map(t=><button key={t.id} className={`tab ${tab===t.id?'active':''}`} onClick={()=>setTab(t.id)}><Ic n={t.icon} s={15} c={tab===t.id?'var(--p)':'var(--fg3)'}/>{t.label}</button>)}
+      </div>
+      <div style={{flex:1,overflowY:'auto',padding:'16px 4px 0'}}>
+        {tab==='general' && (
+          <div style={{display:'flex',flexDirection:'column',gap:12}}>
+            <div>
+              <label className="lbl">Imagen del producto</label>
+              <div style={{width:'100%',height:120,borderRadius:16,border:'2px dashed var(--border2)',background:'var(--surface2)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:6,cursor:'pointer',color:'var(--fg3)',fontSize:12,fontWeight:600}}>
+                <Ic n="upload" s={22} c="var(--p)"/>Subir imagen
+              </div>
+            </div>
+            <div>
+              <label className="lbl">Nombre del producto *</label>
+              <input className="inp" placeholder="Ej: Cerradura Yale 3 Golpes" defaultValue={prod?.name||''}/>
+            </div>
+            <div className="form-row">
+              <div>
+                <label className="lbl">Categoría *</label>
+                <select className="inp" style={{cursor:'pointer'}} defaultValue={prod?.cat||''}>
+                  {Object.keys(CAT_COLORS).map(c=><option key={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="lbl">Descripción</label>
+                <input className="inp" placeholder="Opcional" defaultValue={prod?.desc||''}/>
+              </div>
+            </div>
+          </div>
+        )}
+        {tab==='precios' && (
+          <div style={{display:'flex',flexDirection:'column',gap:12}}>
+            <div className="form-row">
+              <div><label className="lbl">Costo local *</label><input className="inp" type="number" defaultValue={prod?.costLocal||''}/></div>
+              <div><label className="lbl">Costo importado</label><input className="inp" type="number" placeholder="Opcional" defaultValue={prod?.costImport||''}/></div>
+            </div>
+            <div className="form-row">
+              <div><label className="lbl">Precio descuento *</label><input className="inp" type="number" defaultValue={prod?.priceMin||''}/></div>
+              <div><label className="lbl">Precio sugerido *</label><input className="inp" type="number" defaultValue={prod?.priceMax||''}/></div>
+            </div>
+          </div>
+        )}
+        {tab==='inventario' && (
+          <div style={{display:'flex',flexDirection:'column',gap:12}}>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10}}>
+              <div><label className="lbl">Stock tienda *</label><input className="inp" type="number" defaultValue={prod?.store||0}/></div>
+              <div><label className="lbl">Stock bodega *</label><input className="inp" type="number" defaultValue={prod?.wh||0}/></div>
+              <div><label className="lbl">Stock mínimo *</label><input className="inp" type="number" defaultValue={prod?.min||0}/></div>
+            </div>
+          </div>
+        )}
+        {tab==='notas' && (
+          <div style={{display:'flex',flexDirection:'column',gap:12}}>
+            <div><label className="lbl">Instrucciones de uso</label><textarea className="inp" rows={4} placeholder="Instrucciones para instalación o uso..." style={{resize:'none',lineHeight:1.5}}/></div>
+            <div><label className="lbl">Notas internas</label><textarea className="inp" rows={4} placeholder="Notas adicionales..." style={{resize:'none',lineHeight:1.5}}/></div>
+          </div>
+        )}
+      </div>
+      <div style={{padding:'14px 4px 0',borderTop:'1px solid var(--border)',flexShrink:0,display:'flex',gap:8,marginTop:14}}>
+        <button className="btn btn-ghost" onClick={onClose} style={{flex:1}}>Cancelar</button>
+        <button className="btn btn-p" style={{flex:2}}>{prod?'Guardar Cambios':'Crear Producto'}</button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────
+// SCREEN: COTIZACIONES
+// ─────────────────────────────────────────────────
+const QUOTES_DATA = [
+  {id:'COT-088',client:'Empresa ABC',phone:'55 1111 2222',email:'abc@corp.mx',address:'Av. Industrial 500',desc:'Instalación de cerraduras para oficinas',items:[{n:'Chapa CISA',q:5,p:2100},{n:'Instalación',q:1,p:500}],validity:15,discount:500,status:'completed',date:'30 abr'},
+  {id:'COT-087',client:'Juan Pérez',phone:'55 5555 6666',email:'',address:'',desc:'Duplicado de llaves',items:[{n:'Llave Toyota',q:2,p:480}],validity:7,discount:0,status:'in_progress',date:'29 abr'},
+  {id:'COT-086',client:'Hotel Central',phone:'',email:'hotel@central.mx',address:'Blvd. Centro',desc:'Masterización de llaves',items:[{n:'Llave Yale',q:12,p:320},{n:'Cilindro ML',q:3,p:1850},{n:'Instalación',q:1,p:1200}],validity:30,discount:1000,status:'pending',date:'28 abr'},
+];
+
+function CotizacionesScreen() {
+  const [detail,setDetail] = React.useState(null);
+  const [formOpen,setFormOpen] = React.useState(false);
+
+  return (
+    <div className="screen">
+      <div className="scroll">
+        <div style={{padding:'52px 20px 12px'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+            <div>
+              <h2 style={{fontSize:26,fontWeight:800,color:'var(--fg1)',letterSpacing:'-.025em'}}>Cotizaciones</h2>
+              <p style={{fontSize:13,color:'var(--fg2)',marginTop:2}}><span style={{color:'var(--p)',fontWeight:700}}>{QUOTES_DATA.length}</span> este mes</p>
+            </div>
+            <button onClick={()=>setFormOpen(true)} style={{width:40,height:40,borderRadius:12,background:'var(--p)',border:'none',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 0 16px var(--p-glow)'}}><Ic n="plus" s={20} c="var(--p-text)"/></button>
+          </div>
+        </div>
+        <div style={{padding:'0 20px 100px',display:'flex',flexDirection:'column',gap:10}}>
+          {QUOTES_DATA.map(q=>{
+            const st = SVC_STATUS[q.status];
+            const subtotal = q.items.reduce((s,i)=>s+i.q*i.p,0);
+            const total = subtotal - q.discount;
+            return (
+              <div key={q.id} className="card" style={{padding:'14px 16px',cursor:'pointer'}} onClick={()=>setDetail(q)}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}>
+                  <span style={{fontSize:11,fontWeight:700,color:'var(--p)'}}>{q.id}</span>
+                  <span className={`badge ${st?.cls||'b-gray'}`}><span className="b-dot" style={{background:st?.dot}}/>{st?.label||q.status}</span>
+                </div>
+                <div style={{fontSize:15,fontWeight:700,color:'var(--fg1)',marginBottom:4}}>{q.client}</div>
+                {q.desc && <div style={{fontSize:12,color:'var(--fg2)',marginBottom:8}}>{q.desc}</div>}
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                  <span style={{fontSize:11,color:'var(--fg3)'}}>{q.items.length} productos · {q.date} · {q.validity}d vigencia</span>
+                  <span style={{fontSize:17,fontWeight:800,color:'var(--fg1)'}}>${total.toLocaleString()}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <Sheet open={!!detail} onClose={()=>setDetail(null)} title={detail?.id} height="full">
+        {detail && <QuoteDetail quote={detail} onClose={()=>setDetail(null)}/>}
+      </Sheet>
+      <Sheet open={formOpen} onClose={()=>setFormOpen(false)} title="Nueva Cotización" height="full">
+        <QuoteForm onClose={()=>setFormOpen(false)}/>
+      </Sheet>
+    </div>
+  );
+}
+
+function QuoteDetail({quote,onClose}) {
+  const subtotal = quote.items.reduce((s,i)=>s+i.q*i.p,0);
+  const total = subtotal - quote.discount;
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:12}}>
+      <div style={{background:'var(--surface2)',borderRadius:14,padding:'12px 14px'}}>
+        <div className="sec-title">Cliente</div>
+        <div style={{fontSize:15,fontWeight:700,color:'var(--fg1)'}}>{quote.client}</div>
+        {quote.phone && <div style={{fontSize:12,color:'var(--fg2)',marginTop:2}}>{quote.phone}</div>}
+        {quote.email && <div style={{fontSize:12,color:'var(--fg2)'}}>{quote.email}</div>}
+        {quote.address && <div style={{fontSize:12,color:'var(--fg2)'}}>{quote.address}</div>}
+      </div>
+      {quote.desc && <div style={{background:'var(--surface2)',borderRadius:14,padding:'12px 14px'}}><div className="sec-title">Descripción</div><div style={{fontSize:13,color:'var(--fg1)'}}>{quote.desc}</div></div>}
+      {/* Items */}
+      <div>
+        <div className="sec-title">Productos / Servicios</div>
+        <div className="card" style={{overflow:'hidden'}}>
+          {quote.items.map((item,i)=>(
+            <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 14px',borderBottom:i<quote.items.length-1?'1px solid var(--border)':'none'}}>
+              <div>
+                <div style={{fontSize:13,fontWeight:600,color:'var(--fg1)'}}>{item.n}</div>
+                <div style={{fontSize:11,color:'var(--fg3)'}}>x{item.q} · ${item.p.toLocaleString()} c/u</div>
+              </div>
+              <span style={{fontSize:14,fontWeight:700,color:'var(--fg1)'}}>${(item.q*item.p).toLocaleString()}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="summary-box">
+        <div className="sum-row"><span style={{color:'var(--fg2)'}}>Subtotal</span><span style={{fontWeight:600}}>${subtotal.toLocaleString()}</span></div>
+        {quote.discount>0 && <div className="sum-row"><span style={{color:'var(--fg2)'}}>Descuento</span><span style={{color:'var(--err)',fontWeight:600}}>-${quote.discount.toLocaleString()}</span></div>}
+        <div className="sum-row"><span style={{color:'var(--fg2)'}}>Vigencia</span><span style={{fontWeight:600}}>{quote.validity} días</span></div>
+        <div className="sum-total"><span>Total</span><span style={{color:'var(--p)'}}>${total.toLocaleString()}</span></div>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+        <button className="btn btn-ghost" style={{display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><Ic n="file-text" s={14}/>Enviar PDF</button>
+        <button className="btn btn-p" style={{display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><Ic n="check-circle" s={14}/>Aprobar</button>
+      </div>
+    </div>
+  );
+}
+
+function QuoteForm({onClose}) {
+  const [tab,setTab] = React.useState('cliente');
+  const [items,setItems] = React.useState([{id:1,desc:'',qty:1,price:0}]);
+  const [discount,setDiscount] = React.useState(0);
+  const [validity,setValidity] = React.useState(15);
+  const subtotal = items.reduce((s,i)=>s+i.qty*i.price,0);
+  const total = subtotal - discount;
+  const tabs=[{id:'cliente',icon:'user',label:'Cliente'},{id:'items',icon:'package',label:'Items'},{id:'resumen',icon:'file-text',label:'Resumen'}];
+  return (
+    <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+      <div className="tabs" style={{flexShrink:0}}>
+        {tabs.map(t=><button key={t.id} className={`tab ${tab===t.id?'active':''}`} onClick={()=>setTab(t.id)}><Ic n={t.icon} s={15} c={tab===t.id?'var(--p)':'var(--fg3)'}/>{t.label}</button>)}
+      </div>
+      <div style={{flex:1,overflowY:'auto',padding:'16px 4px 0'}}>
+        {tab==='cliente' && (
+          <div style={{display:'flex',flexDirection:'column',gap:12}}>
+            <div className="form-row">
+              <div><label className="lbl">Folio</label><input className="inp" value="COT-089" disabled style={{background:'var(--surface3)',color:'var(--fg3)'}}/></div>
+              <div><label className="lbl">Vigencia (días)</label><input className="inp" type="number" value={validity} onChange={e=>setValidity(e.target.value)} min={1} max={90}/></div>
+            </div>
+            <div><label className="lbl">Cliente</label><div className="inp-wrap"><div className="inp-ico"><Ic n="user" s={15}/></div><input className="inp inp-icon" placeholder="Buscar o crear cliente..."/></div></div>
+            <div className="form-row">
+              <div><label className="lbl">Teléfono</label><input className="inp" placeholder="+52 55..."/></div>
+              <div><label className="lbl">Email</label><input className="inp" type="email" placeholder="correo@..."/></div>
+            </div>
+            <div><label className="lbl">Descripción</label><textarea className="inp" rows={2} placeholder="Ej: Instalación de cerraduras..." style={{resize:'none',lineHeight:1.5}}/></div>
+          </div>
+        )}
+        {tab==='items' && (
+          <div style={{display:'flex',flexDirection:'column',gap:10}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <span className="sec-title" style={{marginBottom:0}}>Productos / Servicios *</span>
+              <button onClick={()=>setItems(p=>[...p,{id:Date.now(),desc:'',qty:1,price:0}])} style={{display:'flex',alignItems:'center',gap:4,padding:'6px 10px',borderRadius:9,border:'1px solid var(--border)',background:'var(--surface2)',fontSize:12,fontWeight:600,color:'var(--fg2)',cursor:'pointer',fontFamily:"'DM Sans',sans-serif"}}><Ic n="plus" s={12}/>Agregar</button>
+            </div>
+            {items.map((item,i)=>(
+              <div key={item.id} style={{background:'var(--surface2)',borderRadius:14,padding:'12px'}}>
+                <div style={{display:'flex',gap:7,marginBottom:8}}>
+                  <span style={{fontSize:11,color:'var(--fg3)',marginTop:11,width:16,flexShrink:0}}>{i+1}.</span>
+                  <div style={{flex:1,display:'flex',flexDirection:'column',gap:7}}>
+                    <input className="inp" style={{fontSize:13,padding:'9px 11px'}} placeholder="Buscar producto o escribir descripción..." value={item.desc} onChange={e=>setItems(p=>p.map((x,j)=>j===i?{...x,desc:e.target.value}:x))}/>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:7}}>
+                      <div><label className="lbl" style={{fontSize:9}}>Cantidad</label><input className="inp" type="number" style={{padding:'7px 9px',fontSize:13}} value={item.qty} onChange={e=>setItems(p=>p.map((x,j)=>j===i?{...x,qty:Number(e.target.value)}:x))}/></div>
+                      <div><label className="lbl" style={{fontSize:9}}>Precio</label><input className="inp" type="number" style={{padding:'7px 9px',fontSize:13}} value={item.price} onChange={e=>setItems(p=>p.map((x,j)=>j===i?{...x,price:Number(e.target.value)}:x))}/></div>
+                      <div><label className="lbl" style={{fontSize:9}}>Subtotal</label><div style={{height:38,display:'flex',alignItems:'center',padding:'0 10px',background:'var(--surface)',borderRadius:11,fontSize:13,fontWeight:700,color:'var(--fg1)'}}>${(item.qty*item.price).toLocaleString()}</div></div>
+                    </div>
+                  </div>
+                  <button onClick={()=>setItems(p=>p.filter((_,j)=>j!==i))} disabled={items.length===1} className="btn-icon" style={{flexShrink:0,marginTop:2,opacity:items.length===1?.4:1}}><Ic n="trash-2" s={13} c="var(--err)"/></button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {tab==='resumen' && (
+          <div style={{display:'flex',flexDirection:'column',gap:12}}>
+            <div className="summary-box">
+              <div className="sum-row"><span style={{color:'var(--fg2)'}}>Subtotal</span><span style={{fontWeight:600}}>${subtotal.toLocaleString()}</span></div>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'6px 0'}}>
+                <span style={{fontSize:13,color:'var(--fg2)'}}>Descuento</span>
+                <input type="number" min={0} max={subtotal} value={discount} onChange={e=>setDiscount(Number(e.target.value))} style={{width:90,padding:'5px 9px',borderRadius:9,border:'1.5px solid var(--border2)',background:'var(--surface)',fontFamily:"'DM Sans',sans-serif",fontSize:13,color:'var(--fg1)',textAlign:'right',outline:'none'}}/>
+              </div>
+              <div className="sum-total"><span>Total</span><span style={{color:'var(--p)'}}>${total.toLocaleString()}</span></div>
+              <div style={{fontSize:11,color:'var(--fg3)',marginTop:4}}>Válida {validity} días desde hoy</div>
+            </div>
+            <div><label className="lbl">Notas para el cliente</label><textarea className="inp" rows={2} placeholder="Condiciones, observaciones..." style={{resize:'none',lineHeight:1.5}}/></div>
+            <div><label className="lbl">Políticas / Términos</label><textarea className="inp" rows={2} placeholder="Políticas de garantía, condiciones de pago..." style={{resize:'none',lineHeight:1.5}}/></div>
+          </div>
+        )}
+      </div>
+      <div style={{padding:'14px 4px 0',borderTop:'1px solid var(--border)',flexShrink:0,display:'flex',gap:8,marginTop:14}}>
+        <button className="btn btn-ghost" onClick={onClose} style={{flex:1}}>Cancelar</button>
+        <button className="btn btn-p" style={{flex:2}}>Crear Cotización</button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────
+// SCREEN: VENTAS
+// ─────────────────────────────────────────────────
+const SALES_DATA = [
+  {id:'VTA-042',client:'Cliente mostrador',items:[{n:'Chapa CISA',q:1,p:2100}],total:2100,method:'cash',date:'Hoy 14:32',warranty:false},
+  {id:'VTA-041',client:'Juan Pérez',items:[{n:'Llave Toyota',q:1,p:480}],total:480,method:'card',date:'Hoy 11:15',warranty:true},
+  {id:'VTA-040',client:'Ferretería López',items:[{n:'Cilindro ML',q:2,p:1850},{n:'Llaves Yale',q:8,p:320}],total:6260,method:'transfer',date:'Ayer 16:40',warranty:false},
+];
+const PAY_METHODS = {cash:'Efectivo',card:'Tarjeta',transfer:'Transferencia',credit:'Crédito'};
+const PAY_ICONS = {cash:'banknote',card:'credit-card',transfer:'arrow-right-left',credit:'clock'};
+
+function VentasScreen() {
+  const [formOpen,setFormOpen] = React.useState(false);
+  const total_hoy = SALES_DATA.filter(s=>s.date.startsWith('Hoy')).reduce((s,v)=>s+v.total,0);
+  const total_mes = SALES_DATA.reduce((s,v)=>s+v.total,0);
+
+  return (
+    <div className="screen">
+      <div className="scroll">
+        <div style={{padding:'52px 20px 12px'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:14}}>
+            <h2 style={{fontSize:26,fontWeight:800,color:'var(--fg1)',letterSpacing:'-.025em'}}>Ventas</h2>
+            <button onClick={()=>setFormOpen(true)} style={{width:40,height:40,borderRadius:12,background:'var(--p)',border:'none',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 0 16px var(--p-glow)'}}><Ic n="plus" s={20} c="var(--p-text)"/></button>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16}}>
+            <div style={{background:'var(--p)',borderRadius:18,padding:'14px',boxShadow:'0 0 24px var(--p-glow)'}}>
+              <div style={{fontSize:10,fontWeight:700,color:'rgba(10,10,15,.55)',letterSpacing:'.06em',textTransform:'uppercase',marginBottom:6}}>HOY</div>
+              <div style={{fontSize:24,fontWeight:800,color:'var(--p-text)',letterSpacing:'-.02em'}}>${total_hoy.toLocaleString()}</div>
+              <div style={{fontSize:10,color:'rgba(10,10,15,.45)',marginTop:2}}>{SALES_DATA.filter(s=>s.date.startsWith('Hoy')).length} transacciones</div>
+            </div>
+            <div className="card" style={{padding:'14px'}}>
+              <div style={{fontSize:10,fontWeight:700,color:'var(--fg3)',letterSpacing:'.06em',textTransform:'uppercase',marginBottom:6}}>ESTE MES</div>
+              <div style={{fontSize:24,fontWeight:800,color:'var(--fg1)',letterSpacing:'-.02em'}}>${total_mes.toLocaleString()}</div>
+              <div style={{fontSize:10,color:'var(--fg3)',marginTop:2}}>{SALES_DATA.length} transacciones</div>
+            </div>
+          </div>
+          <div className="sec-title">Historial</div>
+        </div>
+        <div style={{padding:'0 20px 100px',display:'flex',flexDirection:'column',gap:9}}>
+          {SALES_DATA.map(v=>(
+            <div key={v.id} className="card" style={{padding:'13px 14px'}}>
+              <div style={{display:'flex',alignItems:'center',gap:11}}>
+                <div className="icon-box" style={{width:40,height:40}}><Ic n={PAY_ICONS[v.method]} s={17} c="var(--p)"/></div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:600,color:'var(--fg1)'}}>{v.client}</div>
+                  <div style={{fontSize:11,color:'var(--fg2)',marginTop:2}}>{v.id} · {v.items.length} productos · {PAY_METHODS[v.method]}</div>
+                  <div style={{fontSize:10,color:'var(--fg3)',marginTop:1}}>{v.date}</div>
+                </div>
+                <div style={{textAlign:'right',flexShrink:0}}>
+                  <div style={{fontSize:16,fontWeight:800,color:'var(--fg1)'}}>${v.total.toLocaleString()}</div>
+                  {v.warranty && <span className="badge b-green" style={{fontSize:9,marginTop:3}}><Ic n="shield" s={9} style={{marginRight:2}}/>Garantía</span>}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <Sheet open={formOpen} onClose={()=>setFormOpen(false)} title="Nueva Venta" height="full">
+        <SaleForm onClose={()=>setFormOpen(false)}/>
+      </Sheet>
+    </div>
+  );
+}
+
+function SaleForm({onClose}) {
+  const [tab,setTab] = React.useState('cliente');
+  const [items,setItems] = React.useState([{id:1,name:'',qty:1,price:0}]);
+  const [discount,setDiscount] = React.useState(0);
+  const [warranty,setWarranty] = React.useState(false);
+  const [method,setMethod] = React.useState('cash');
+  const subtotal = items.reduce((s,i)=>s+i.qty*i.price,0);
+  const total = subtotal - discount;
+  const tabs=[{id:'cliente',icon:'user',label:'Cliente'},{id:'productos',icon:'package',label:'Productos'},{id:'resumen',icon:'file-text',label:'Resumen'}];
+  return (
+    <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+      <div className="tabs" style={{flexShrink:0}}>
+        {tabs.map(t=><button key={t.id} className={`tab ${tab===t.id?'active':''}`} onClick={()=>setTab(t.id)}><Ic n={t.icon} s={15} c={tab===t.id?'var(--p)':'var(--fg3)'}/>{t.label}</button>)}
+      </div>
+      <div style={{flex:1,overflowY:'auto',padding:'16px 4px 0'}}>
+        {tab==='cliente' && (
+          <div style={{display:'flex',flexDirection:'column',gap:12}}>
+            <div className="form-row">
+              <div><label className="lbl">Folio</label><input className="inp" value="VTA-043" disabled style={{background:'var(--surface3)',color:'var(--fg3)'}}/></div>
+              <div>
+                <label className="lbl">Método de pago</label>
+                <select className="inp" value={method} onChange={e=>setMethod(e.target.value)} style={{cursor:'pointer'}}>
+                  {Object.entries(PAY_METHODS).map(([k,v])=><option key={k} value={k}>{v}</option>)}
+                </select>
+              </div>
+            </div>
+            <div><label className="lbl">Cliente (opcional)</label><div className="inp-wrap"><div className="inp-ico"><Ic n="user" s={15}/></div><input className="inp inp-icon" placeholder="Buscar o dejar en blanco (mostrador)"/></div></div>
+          </div>
+        )}
+        {tab==='productos' && (
+          <div style={{display:'flex',flexDirection:'column',gap:10}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <span className="sec-title" style={{marginBottom:0}}>Productos *</span>
+              <button onClick={()=>setItems(p=>[...p,{id:Date.now(),name:'',qty:1,price:0}])} style={{display:'flex',alignItems:'center',gap:4,padding:'6px 10px',borderRadius:9,border:'1px solid var(--border)',background:'var(--surface2)',fontSize:12,fontWeight:600,color:'var(--fg2)',cursor:'pointer',fontFamily:"'DM Sans',sans-serif"}}><Ic n="plus" s={12}/>Agregar</button>
+            </div>
+            {items.map((item,i)=>(
+              <div key={item.id} style={{background:'var(--surface2)',borderRadius:14,padding:'12px'}}>
+                <div style={{display:'flex',gap:7,marginBottom:8}}>
+                  <input className="inp" style={{flex:1,fontSize:13,padding:'9px 11px'}} placeholder="Buscar producto..." value={item.name} onChange={e=>setItems(p=>p.map((x,j)=>j===i?{...x,name:e.target.value}:x))}/>
+                  <button onClick={()=>setItems(p=>p.filter((_,j)=>j!==i))} disabled={items.length===1} className="btn-icon" style={{flexShrink:0,opacity:items.length===1?.4:1}}><Ic n="trash-2" s={13} c="var(--err)"/></button>
+                </div>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:7}}>
+                  <div><label className="lbl" style={{fontSize:9}}>Cantidad</label><input className="inp" type="number" style={{padding:'7px 9px',fontSize:13}} value={item.qty} onChange={e=>setItems(p=>p.map((x,j)=>j===i?{...x,qty:Number(e.target.value)}:x))}/></div>
+                  <div><label className="lbl" style={{fontSize:9}}>Precio</label><input className="inp" type="number" style={{padding:'7px 9px',fontSize:13}} value={item.price} onChange={e=>setItems(p=>p.map((x,j)=>j===i?{...x,price:Number(e.target.value)}:x))}/></div>
+                  <div><label className="lbl" style={{fontSize:9}}>Subtotal</label><div style={{height:38,display:'flex',alignItems:'center',padding:'0 10px',background:'var(--surface)',borderRadius:11,fontSize:13,fontWeight:700,color:'var(--fg1)'}}>${(item.qty*item.price).toLocaleString()}</div></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {tab==='resumen' && (
+          <div style={{display:'flex',flexDirection:'column',gap:12}}>
+            <div className="summary-box">
+              <div className="sum-row"><span style={{color:'var(--fg2)'}}>Subtotal</span><span style={{fontWeight:600}}>${subtotal.toLocaleString()}</span></div>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'6px 0'}}>
+                <span style={{fontSize:13,color:'var(--fg2)'}}>Descuento</span>
+                <input type="number" min={0} max={subtotal} value={discount} onChange={e=>setDiscount(Number(e.target.value))} style={{width:90,padding:'5px 9px',borderRadius:9,border:'1.5px solid var(--border2)',background:'var(--surface)',fontFamily:"'DM Sans',sans-serif",fontSize:13,color:'var(--fg1)',textAlign:'right',outline:'none'}}/>
+              </div>
+              <div className="sum-total"><span>Total</span><span style={{color:'var(--p)'}}>${total.toLocaleString()}</span></div>
+            </div>
+            <Toggle on={warranty} onChange={setWarranty} label="Aplicar garantía" sub="Se generará un ticket con código QR"/>
+            <div><label className="lbl">Notas adicionales</label><textarea className="inp" rows={2} style={{resize:'none',lineHeight:1.5}} placeholder="Notas opcionales..."/></div>
+          </div>
+        )}
+      </div>
+      <div style={{padding:'14px 4px 0',borderTop:'1px solid var(--border)',flexShrink:0,display:'flex',gap:8,marginTop:14}}>
+        <button className="btn btn-ghost" onClick={onClose} style={{flex:1}}>Cancelar</button>
+        <button className="btn btn-p" style={{flex:2}}>Registrar Venta</button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────
+// SCREEN: CLIENTES
+// ─────────────────────────────────────────────────
+const CLIENTS_DATA = [
+  {id:1,name:'Juan Pérez',type:'person',phone:'55 1234 5678',email:'juan@gmail.com',address:'Calle 5 #22',services:8,lastSeen:'Hoy',initials:'JP',color:'#00E5A0',tags:{is_vip:false,is_frequent:true,has_debt:false,no_work_again:false}},
+  {id:2,name:'Ferretería López',type:'company',phone:'55 9876 5432',email:'ventas@ferrlopez.mx',address:'Av. Industrial 45',services:23,lastSeen:'Ayer',initials:'FL',color:'#FFB830',tags:{is_vip:true,is_frequent:true,has_debt:false,no_work_again:false}},
+  {id:3,name:'Hotel Central',type:'company',phone:'',email:'mto@hotelcentral.mx',address:'Blvd. Centro 100',services:45,lastSeen:'3 días',initials:'HC',color:'#4D9FFF',tags:{is_vip:true,is_frequent:true,has_debt:false,no_work_again:false}},
+  {id:4,name:'Roberto Silva',type:'person',phone:'55 3333 4444',email:'',address:'',services:2,lastSeen:'2 sem',initials:'RS',color:'#FF4D6A',tags:{is_vip:false,is_frequent:false,has_debt:true,no_work_again:false}},
+  {id:5,name:'Marcos Delgado',type:'person',phone:'55 7777 8888',email:'',address:'',services:1,lastSeen:'1 mes',initials:'MD',color:'#9898D0',tags:{is_vip:false,is_frequent:false,has_debt:false,no_work_again:true}},
+];
+
+const TAG_CONFIG = {is_vip:{l:'Cerrajero Ext.',cls:'b-green'},is_frequent:{l:'Frecuente',cls:'b-blue'},has_debt:{l:'Con Deuda',cls:'b-red'},no_work_again:{l:'No Trabajar',cls:'b-red'}};
+
+function ClientesScreen() {
+  const [detail,setDetail] = React.useState(null);
+  const [formOpen,setFormOpen] = React.useState(false);
+  const [editClient,setEditClient] = React.useState(null);
+  const [search,setSearch] = React.useState('');
+
+  const filtered = CLIENTS_DATA.filter(c=>!search||c.name.toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <div className="screen">
+      <div className="scroll">
+        <div style={{padding:'52px 20px 12px'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:14}}>
+            <div>
+              <h2 style={{fontSize:26,fontWeight:800,color:'var(--fg1)',letterSpacing:'-.025em'}}>Clientes</h2>
+              <p style={{fontSize:13,color:'var(--fg2)',marginTop:2}}><span style={{color:'var(--p)',fontWeight:700}}>138</span> registrados</p>
+            </div>
+            <button onClick={()=>{setEditClient(null);setFormOpen(true);}} style={{width:40,height:40,borderRadius:12,background:'var(--p)',border:'none',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 0 16px var(--p-glow)'}}><Ic n="plus" s={20} c="var(--p-text)"/></button>
+          </div>
+          <div className="inp-wrap"><div className="inp-ico"><Ic n="search" s={15}/></div><input className="inp inp-icon" placeholder="Buscar cliente..." value={search} onChange={e=>setSearch(e.target.value)} style={{fontSize:13}}/></div>
+        </div>
+        <div style={{padding:'8px 20px 100px',display:'flex',flexDirection:'column',gap:9}}>
+          {filtered.map(c=>{
+            const activeTags = Object.entries(c.tags).filter(([,v])=>v).map(([k])=>k);
+            return (
+              <div key={c.id} className="card" style={{padding:'13px 14px',cursor:'pointer'}} onClick={()=>setDetail(c)}>
+                <div style={{display:'flex',alignItems:'center',gap:11}}>
+                  <div style={{width:44,height:44,borderRadius:14,background:c.color+'22',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:800,color:c.color,flexShrink:0}}>{c.initials}</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:14,fontWeight:700,color:'var(--fg1)'}}>{c.name}</div>
+                    <div style={{fontSize:11,color:'var(--fg2)',marginTop:1}}>{c.type==='company'?'Empresa':'Persona'} · {c.services} servicios</div>
+                    {activeTags.length>0 && (
+                      <div style={{display:'flex',gap:5,flexWrap:'wrap',marginTop:4}}>
+                        {activeTags.map(t=><span key={t} className={`badge ${TAG_CONFIG[t]?.cls||'b-gray'}`} style={{fontSize:9}}>{TAG_CONFIG[t]?.l||t}</span>)}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{textAlign:'right',flexShrink:0}}>
+                    <div style={{fontSize:10,color:'var(--fg3)'}}>Última visita</div>
+                    <div style={{fontSize:11,fontWeight:600,color:'var(--fg2)',marginTop:2}}>{c.lastSeen}</div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <Sheet open={!!detail} onClose={()=>setDetail(null)} title={detail?.name} height="full">
+        {detail && <ClientDetail client={detail} onEdit={c=>{setEditClient(c);setFormOpen(true);setDetail(null);}}/>}
+      </Sheet>
+      <Sheet open={formOpen} onClose={()=>setFormOpen(false)} title={editClient?'Editar Cliente':'Nuevo Cliente'} height="full">
+        <ClientForm client={editClient} onClose={()=>setFormOpen(false)}/>
+      </Sheet>
+    </div>
+  );
+}
+
+function ClientDetail({client,onEdit}) {
+  const activeTags = Object.entries(client.tags).filter(([,v])=>v).map(([k])=>k);
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:12}}>
+      <div style={{display:'flex',alignItems:'center',gap:14}}>
+        <div style={{width:60,height:60,borderRadius:18,background:client.color+'22',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,fontWeight:800,color:client.color,flexShrink:0}}>{client.initials}</div>
+        <div>
+          <div style={{fontSize:18,fontWeight:800,color:'var(--fg1)'}}>{client.name}</div>
+          <div style={{fontSize:12,color:'var(--fg2)',marginTop:2}}>{client.type==='company'?'Empresa':'Persona'} · {client.services} servicios</div>
+          {activeTags.length>0 && <div style={{display:'flex',gap:5,marginTop:5,flexWrap:'wrap'}}>{activeTags.map(t=><span key={t} className={`badge ${TAG_CONFIG[t]?.cls}`} style={{fontSize:9}}>{TAG_CONFIG[t]?.l}</span>)}</div>}
+        </div>
+      </div>
+
+      {(client.phone||client.email||client.address) && (
+        <div className="card" style={{overflow:'hidden'}}>
+          {client.phone && <div style={{display:'flex',alignItems:'center',gap:10,padding:'11px 14px',borderBottom:'1px solid var(--border)'}}><Ic n="phone" s={15} c="var(--p)"/><span style={{fontSize:13,color:'var(--fg1)'}}>{client.phone}</span></div>}
+          {client.email && <div style={{display:'flex',alignItems:'center',gap:10,padding:'11px 14px',borderBottom:client.address?'1px solid var(--border)':'none'}}><Ic n="mail" s={15} c="var(--p)"/><span style={{fontSize:13,color:'var(--fg1)'}}>{client.email}</span></div>}
+          {client.address && <div style={{display:'flex',alignItems:'center',gap:10,padding:'11px 14px'}}><Ic n="map-pin" s={15} c="var(--p)"/><span style={{fontSize:13,color:'var(--fg1)'}}>{client.address}</span></div>}
+        </div>
+      )}
+
+      {client.tags.no_work_again && (
+        <div style={{background:'rgba(255,77,106,.08)',borderRadius:14,padding:'11px 13px',border:'1px solid rgba(255,77,106,.2)',display:'flex',gap:9,alignItems:'flex-start'}}>
+          <Ic n="alert-triangle" s={16} c="var(--err)"/>
+          <div><div style={{fontSize:12,fontWeight:700,color:'var(--err)'}}>No trabajar con este cliente</div><div style={{fontSize:11,color:'var(--err)',opacity:.7,marginTop:2}}>Ver historial para más detalles</div></div>
+        </div>
+      )}
+
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+        <button onClick={()=>onEdit(client)} className="btn btn-ghost" style={{display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><Ic n="edit" s={14}/>Editar</button>
+        <button className="btn btn-p" style={{display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><Ic n="wrench" s={14}/>Nuevo servicio</button>
+      </div>
+    </div>
+  );
+}
+
+function ClientForm({client,onClose}) {
+  const [tags,setTags] = React.useState(client?.tags||{is_vip:false,is_frequent:false,has_debt:false,no_work_again:false});
+  const [noWork,setNoWork] = React.useState(client?.tags?.no_work_again||false);
+  return (
+    <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+      <div style={{flex:1,overflowY:'auto',display:'flex',flexDirection:'column',gap:12,paddingTop:4}}>
+        <div><label className="lbl">Nombre *</label><input className="inp" placeholder="Nombre completo o razón social" defaultValue={client?.name||''}/></div>
+        <div className="form-row">
+          <div><label className="lbl">Tipo</label><select className="inp" style={{cursor:'pointer'}} defaultValue={client?.type||'person'}><option value="person">Persona</option><option value="company">Empresa</option></select></div>
+          <div><label className="lbl">Teléfono principal</label><input className="inp" placeholder="+52 55..." defaultValue={client?.phone||''}/></div>
+        </div>
+        <div className="form-row">
+          <div><label className="lbl">Teléfono secundario</label><input className="inp" placeholder="+52 55..."/></div>
+          <div><label className="lbl">Correo electrónico</label><input className="inp" type="email" placeholder="correo@..." defaultValue={client?.email||''}/></div>
+        </div>
+        <div><label className="lbl">Dirección</label><input className="inp" placeholder="Calle, número, colonia, ciudad" defaultValue={client?.address||''}/></div>
+
+        {/* Tags */}
+        <div>
+          <div className="sec-title">Etiquetas</div>
+          <div style={{display:'flex',flexDirection:'column',gap:7}}>
+            <Toggle on={tags.is_vip} onChange={v=>setTags(p=>({...p,is_vip:v}))} label="Cerrajero externo / VIP" sub="Precio especial de mayoreo"/>
+            <Toggle on={tags.is_frequent} onChange={v=>setTags(p=>({...p,is_frequent:v}))} label="Cliente frecuente"/>
+            <Toggle on={tags.has_debt} onChange={v=>setTags(p=>({...p,has_debt:v}))} label="Tiene deuda pendiente" danger/>
+            <Toggle on={noWork} onChange={v=>{setNoWork(v);setTags(p=>({...p,no_work_again:v}))}} label="No trabajar con este cliente" sub="Queda marcado como bloqueado" danger/>
+          </div>
+        </div>
+        {noWork && <div><label className="lbl">Razón (No trabajar)</label><textarea className="inp" rows={2} placeholder="Explica por qué no se debe trabajar con este cliente..." style={{resize:'none',lineHeight:1.5}}/></div>}
+        <div><label className="lbl">Notas</label><textarea className="inp" rows={2} placeholder="Notas adicionales sobre el cliente..." style={{resize:'none',lineHeight:1.5}}/></div>
+      </div>
+      <div style={{padding:'14px 4px 0',borderTop:'1px solid var(--border)',flexShrink:0,display:'flex',gap:8,marginTop:14}}>
+        <button className="btn btn-ghost" onClick={onClose} style={{flex:1}}>Cancelar</button>
+        <button className="btn btn-p" style={{flex:2}}>{client?'Guardar Cambios':'Crear Cliente'}</button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────
+// SCREEN: MÁS (Garantías + Config)
+// ─────────────────────────────────────────────────
+const WARRANTIES_DATA = [
+  {code:'GAR-001',client:'Juan Pérez',desc:'Duplicado Ford Focus',type:'Servicio',days:30,start:'1 abr 2026',end:'1 may 2026',active:true},
+  {code:'GAR-002',client:'Ferretería López',desc:'Chapa CISA x5',type:'Venta',days:90,start:'15 mar 2026',end:'13 jun 2026',active:true},
+  {code:'GAR-003',client:'Ana Torres',desc:'Apertura Mul-T-Lock',type:'Servicio',days:15,start:'1 ene 2026',end:'16 ene 2026',active:false},
+];
+
+function MasScreen({onNav,darkMode,setDarkMode}) {
+  const [subpage,setSubpage] = React.useState('main');
+  if (subpage==='garantias') return <GarantiasScreen onBack={()=>setSubpage('main')}/>;
+  if (subpage==='config') return <ConfigScreen onBack={()=>setSubpage('main')} darkMode={darkMode} setDarkMode={setDarkMode}/>;
+
+  return (
+    <div className="screen">
+      <div className="scroll">
+        <div style={{padding:'52px 20px 12px'}}>
+          <h2 style={{fontSize:26,fontWeight:800,color:'var(--fg1)',letterSpacing:'-.025em'}}>Más</h2>
+        </div>
+        <div style={{padding:'0 20px 100px',display:'flex',flexDirection:'column',gap:12}}>
+          {[
+            {icon:'shield',label:'Garantías',sub:`${WARRANTIES_DATA.filter(w=>w.active).length} activas`,page:'garantias',color:'var(--p)'},
+            {icon:'settings',label:'Configuración',sub:'Negocio, usuarios, respaldo',page:'config',color:'var(--fg2)'},
+          ].map(item=>(
+            <div key={item.page} className="card" style={{padding:'16px',cursor:'pointer',display:'flex',alignItems:'center',gap:14}} onClick={()=>setSubpage(item.page)}>
+              <div style={{width:44,height:44,borderRadius:13,background:'rgba(0,229,160,.1)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><Ic n={item.icon} s={20} c={item.color}/></div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:15,fontWeight:700,color:'var(--fg1)'}}>{item.label}</div>
+                <div style={{fontSize:12,color:'var(--fg2)',marginTop:1}}>{item.sub}</div>
+              </div>
+              <Ic n="chevron-right" s={18} c="var(--fg3)"/>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GarantiasScreen({onBack}) {
+  const [detail,setDetail] = React.useState(null);
+  return (
+    <div className="screen">
+      <div className="scroll">
+        <div style={{padding:'52px 20px 12px'}}>
+          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:4}}>
+            <button onClick={onBack} className="btn-icon"><Ic n="arrow-left" s={17} c="var(--fg1)"/></button>
+            <h2 style={{fontSize:22,fontWeight:800,color:'var(--fg1)',letterSpacing:'-.025em'}}>Garantías</h2>
+          </div>
+          <p style={{fontSize:13,color:'var(--fg2)',marginLeft:46}}><span style={{color:'var(--p)',fontWeight:700}}>{WARRANTIES_DATA.filter(w=>w.active).length}</span> activas</p>
+        </div>
+        <div style={{padding:'0 20px 100px',display:'flex',flexDirection:'column',gap:9}}>
+          {WARRANTIES_DATA.map(w=>(
+            <div key={w.code} className="warranty-card" style={{borderLeftColor:w.active?'var(--p)':'var(--fg3)',cursor:'pointer'}} onClick={()=>setDetail(w)}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6}}>
+                <span style={{fontSize:11,fontWeight:700,color:w.active?'var(--p)':'var(--fg3)'}}>{w.code}</span>
+                <span className={`badge ${w.active?'b-green':'b-gray'}`} style={{fontSize:9}}>{w.active?'Activa':'Vencida'}</span>
+              </div>
+              <div style={{fontSize:14,fontWeight:600,color:'var(--fg1)',marginBottom:3}}>{w.client}</div>
+              <div style={{fontSize:12,color:'var(--fg2)',marginBottom:6}}>{w.desc}</div>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <span style={{fontSize:11,color:'var(--fg3)'}}>{w.type} · {w.days} días</span>
+                <span style={{fontSize:11,fontWeight:600,color:w.active?'var(--p)':'var(--err)'}}>Vence: {w.end}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <Sheet open={!!detail} onClose={()=>setDetail(null)} title={detail?.code} height="70%">
+        {detail && (
+          <div style={{display:'flex',flexDirection:'column',gap:12}}>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+              {[{l:'Cliente',v:detail.client},{l:'Tipo',v:detail.type},{l:'Inicio',v:detail.start},{l:'Vence',v:detail.end}].map(({l,v})=>(
+                <div key={l} style={{background:'var(--surface2)',borderRadius:12,padding:'10px 12px'}}>
+                  <div style={{fontSize:10,fontWeight:700,color:'var(--fg3)',textTransform:'uppercase',letterSpacing:'.05em',marginBottom:3}}>{l}</div>
+                  <div style={{fontSize:13,fontWeight:600,color:'var(--fg1)'}}>{v}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{background:'var(--surface2)',borderRadius:12,padding:'11px 13px'}}>
+              <div style={{fontSize:10,fontWeight:700,color:'var(--fg3)',textTransform:'uppercase',letterSpacing:'.05em',marginBottom:3}}>Descripción</div>
+              <div style={{fontSize:13,color:'var(--fg1)'}}>{detail.desc}</div>
+            </div>
+            {/* QR placeholder */}
+            <div style={{width:120,height:120,borderRadius:16,background:'var(--surface2)',margin:'0 auto',display:'flex',alignItems:'center',justifyContent:'center',border:'1px solid var(--border)'}}>
+              <Ic n="qr-code" s={48} c="var(--fg3)"/>
+            </div>
+            <button className="btn btn-ghost" style={{display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><Ic n="printer" s={15}/>Imprimir ticket</button>
+          </div>
+        )}
+      </Sheet>
+    </div>
+  );
+}
+
+function ConfigScreen({onBack,darkMode,setDarkMode}) {
+  const [tab,setTab] = React.useState('negocio');
+  const tabs=[{id:'negocio',icon:'building-2',label:'Negocio'},{id:'usuarios',icon:'users',label:'Usuarios'},{id:'sistema',icon:'settings',label:'Sistema'}];
+  return (
+    <div className="screen">
+      <div style={{padding:'52px 20px 0',flexShrink:0}}>
+        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
+          <button onClick={onBack} className="btn-icon"><Ic n="arrow-left" s={17} c="var(--fg1)"/></button>
+          <h2 style={{fontSize:22,fontWeight:800,color:'var(--fg1)',letterSpacing:'-.025em'}}>Configuración</h2>
+        </div>
+        {/* Profile card */}
+        <div style={{background:'var(--p)',borderRadius:18,padding:'14px 16px',display:'flex',alignItems:'center',gap:12,marginBottom:16,boxShadow:'0 0 24px var(--p-glow)'}}>
+          <div style={{width:46,height:46,borderRadius:14,background:'rgba(10,10,15,.15)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:800,fontSize:17,color:'var(--p-text)'}}>JA</div>
+          <div>
+            <div style={{fontSize:15,fontWeight:800,color:'var(--p-text)'}}>Juan Álvarez</div>
+            <div style={{fontSize:11,color:'rgba(10,10,15,.6)'}}>Administrador · Cerrajería IMG</div>
+          </div>
+        </div>
+        <div className="tabs">
+          {tabs.map(t=><button key={t.id} className={`tab ${tab===t.id?'active':''}`} onClick={()=>setTab(t.id)}><Ic n={t.icon} s={15} c={tab===t.id?'var(--p)':'var(--fg3)'}/>{t.label}</button>)}
+        </div>
+      </div>
+      <div className="scroll" style={{padding:'16px 20px 100px'}}>
+        {tab==='negocio' && (
+          <div style={{display:'flex',flexDirection:'column',gap:12}}>
+            <div><label className="lbl">Nombre del negocio</label><input className="inp" defaultValue="Cerrajería IMG"/></div>
+            <div className="form-row">
+              <div><label className="lbl">Teléfono</label><input className="inp" defaultValue="+52 55 0000 0000"/></div>
+              <div><label className="lbl">Moneda</label><select className="inp" style={{cursor:'pointer'}}><option>MXN ($)</option><option>USD ($)</option></select></div>
+            </div>
+            <div><label className="lbl">Dirección</label><input className="inp" defaultValue="Av. Principal 123"/></div>
+            <div><label className="lbl">Código del taller</label><div style={{display:'flex',gap:8}}><input className="inp" style={{flex:1}} defaultValue="CERRAJ01" disabled style={{background:'var(--surface3)',color:'var(--fg3)'}}/><button className="btn btn-ghost btn-sm">Copiar</button></div></div>
+          </div>
+        )}
+        {tab==='usuarios' && (
+          <div style={{display:'flex',flexDirection:'column',gap:10}}>
+            <div className="sec-title">Usuarios activos</div>
+            {[
+              {name:'Juan Álvarez',role:'Administrador',email:'juan@cerrajeria.mx',initials:'JA',active:true},
+              {name:'Carlos Morales',role:'Técnico',email:'carlos@cerrajeria.mx',initials:'CM',active:true},
+              {name:'María López',role:'Vendedora',email:'maria@cerrajeria.mx',initials:'ML',active:false},
+            ].map(u=>(
+              <div key={u.name} className="card" style={{padding:'12px 14px',display:'flex',alignItems:'center',gap:11}}>
+                <div style={{width:38,height:38,borderRadius:11,background:'rgba(0,229,160,.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:800,color:'var(--p)',flexShrink:0}}>{u.initials}</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:600,color:'var(--fg1)'}}>{u.name}</div>
+                  <div style={{fontSize:11,color:'var(--fg2)'}}>{u.role} · {u.email}</div>
+                </div>
+                <span className={`badge ${u.active?'b-green':'b-gray'}`} style={{fontSize:9}}>{u.active?'Activo':'Inactivo'}</span>
+              </div>
+            ))}
+            <button className="btn btn-ghost" style={{display:'flex',alignItems:'center',justifyContent:'center',gap:6,marginTop:4}}><Ic n="plus" s={14}/>Invitar usuario</button>
+          </div>
+        )}
+        {tab==='sistema' && (
+          <div style={{display:'flex',flexDirection:'column',gap:10}}>
+            <Toggle on={darkMode} onChange={setDarkMode} label="Modo oscuro" sub="Cambiar apariencia de la app"/>
+            <div className="card" style={{overflow:'hidden'}}>
+              {[
+                {icon:'printer',label:'Impresora térmica',sub:'Configurar ticket'},
+                {icon:'layout-template',label:'Plantillas',sub:'Tickets y cotizaciones'},
+                {icon:'database',label:'Respaldo de datos',sub:'Última copia: hoy'},
+                {icon:'bell',label:'Notificaciones',sub:'Alertas de stock y servicios'},
+              ].map((item,i,arr)=>(
+                <div key={item.label} className="list-item" style={{borderBottom:i<arr.length-1?'1px solid var(--border)':'none'}}>
+                  <div className="icon-box" style={{width:36,height:36}}><Ic n={item.icon} s={16} c="var(--p)"/></div>
+                  <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,color:'var(--fg1)'}}>{item.label}</div><div style={{fontSize:11,color:'var(--fg2)'}}>{item.sub}</div></div>
+                  <Ic n="chevron-right" s={15} c="var(--fg3)"/>
+                </div>
+              ))}
+            </div>
+            <button className="btn btn-danger" style={{marginTop:8,display:'flex',alignItems:'center',justifyContent:'center',gap:7,width:'100%'}}><Ic n="log-out" s={15} c="var(--err)"/>Cerrar sesión</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────
+// BOTTOM NAV
+// ─────────────────────────────────────────────────
+const NAV = [
+  {icon:'home',label:'Inicio',page:'dashboard'},
+  {icon:'wrench',label:'Servicios',page:'servicios'},
+  null,
+  {icon:'package',label:'Inventario',page:'inventario'},
+  {icon:'grid-3x3',label:'Más',page:'mas'},
+];
+
+function BottomNav({page,onNav}) {
+  return (
+    <nav className="bnav">
+      {NAV.map((item,i)=>item===null?(
+        <div key="fab" style={{flex:1,display:'flex',justifyContent:'center'}}>
+          <button className="fab-btn" onClick={()=>onNav('new')}>
+            <Ic n="plus" s={22} c="var(--p-text)"/>
+          </button>
+        </div>
+      ):(
+        <button key={item.page} className={`bnav-btn ${page===item.page?'active':''}`} onClick={()=>onNav(item.page)}>
+          <Ic n={item.icon} s={22} c={page===item.page?'var(--p)':'var(--fg3)'}/>
+          {item.label}
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+// ─────────────────────────────────────────────────
+// ROOT APP
+// ─────────────────────────────────────────────────
+function App() {
+  const [authPage,setAuthPage] = React.useState(true);
+  const [page,setPage] = React.useState('dashboard');
+  const [darkMode,setDarkMode] = React.useState(false);
+
+  React.useEffect(()=>{
+    document.documentElement.className = darkMode?'dark':'';
+  },[darkMode]);
+
+  if (authPage) return (
+    <div className="app">
+      <AuthScreen onLogin={()=>setAuthPage(false)}/>
+    </div>
+  );
+
+  const handleNav = p => {
+    if(p==='new') return; // FAB — context-sensitive in production
+    setPage(p);
+  };
+
+  return (
+    <div className="app">
+      {page==='dashboard'    && <DashboardScreen onNav={setPage}/>}
+      {page==='servicios'    && <ServiciosScreen/>}
+      {page==='inventario'   && <InventarioScreen/>}
+      {page==='cotizaciones' && <CotizacionesScreen/>}
+      {page==='ventas'       && <VentasScreen/>}
+      {page==='clientes'     && <ClientesScreen/>}
+      {page==='mas'          && <MasScreen onNav={setPage} darkMode={darkMode} setDarkMode={setDarkMode}/>}
+      <BottomNav page={page} onNav={handleNav}/>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
