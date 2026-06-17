@@ -397,15 +397,6 @@ export function VehicleDatabaseManager({
       <Card className="shrink-0">
         <CardContent className="pt-4">
           <div className="flex flex-col xl:flex-row xl:items-center gap-3">
-            <div className="flex-1 min-w-0">
-              <h2 className="text-xl font-bold flex items-center gap-2">
-                <Database className="w-5 h-5 text-primary" /> Base de Vehículos
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                Gestión centralizada para asignación de vehículos en SuperAdmin
-              </p>
-            </div>
-
             <div className="flex flex-wrap gap-2">
               <Badge variant="secondary" className="gap-1">
                 <Tags className="w-3.5 h-3.5" /> {makes.length} marcas
