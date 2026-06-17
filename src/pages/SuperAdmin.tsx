@@ -1,12 +1,13 @@
 import { Navigate } from "react-router-dom";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, ToggleLeft, Users, Shield, HardDrive } from "lucide-react";
+import { Building2, ToggleLeft, Users, Shield, HardDrive, Wrench } from "lucide-react";
 import { WorkshopsTab } from "@/components/superadmin/tabs/WorkshopsTab";
 import { FeaturesTab } from "@/components/superadmin/tabs/FeaturesTab";
 import { UsersTab } from "@/components/superadmin/tabs/UsersTab";
 import { SuperAdminAccessTab } from "@/components/superadmin/tabs/SuperAdminAccessTab";
 import { StorageTab } from "@/components/superadmin/tabs/StorageTab";
+import { MaintenanceTab } from "@/components/superadmin/tabs/MaintenanceTab";
 
 export default function SuperAdmin() {
   const { isSuperAdmin, isLoading: workshopLoading } = useWorkshop();
@@ -50,6 +51,10 @@ export default function SuperAdmin() {
             <HardDrive className="h-4 w-4" />
             Archivos
           </TabsTrigger>
+          <TabsTrigger value="maintenance" className="gap-2">
+            <Wrench className="h-4 w-4" />
+            Mantenimiento
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="workshops">
@@ -66,6 +71,9 @@ export default function SuperAdmin() {
         </TabsContent>
         <TabsContent value="storage">
           <StorageTab />
+        </TabsContent>
+        <TabsContent value="maintenance">
+          <MaintenanceTab />
         </TabsContent>
       </Tabs>
     </div>

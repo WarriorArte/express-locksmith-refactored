@@ -30,6 +30,7 @@ use App\Http\Controllers\WorkshopFeatureController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\BackupRestoreController;
 use App\Http\Controllers\InstallController;
+use App\Http\Controllers\MaintenanceController;
 use Illuminate\Support\Facades\Route;
 
 // Preflight CORS
@@ -143,4 +144,5 @@ Route::middleware('legacy.auth')->group(function (): void {
     Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/herramientas/keycode-profiles', [KeycodeProfileController::class, 'handle']);
     Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/herramientas/tool-assignments', [ToolAssignmentController::class, 'handle']);
     Route::match(['GET', 'POST', 'DELETE'], '/herramientas/vehicle-database', [VehicleDatabaseController::class, 'handle']);
+    Route::match(['GET', 'DELETE'], '/herramientas/maintenance', [MaintenanceController::class, 'handle']);
 });

@@ -52,7 +52,9 @@ abstract class JsonResourceController
         $model = $this->modelClass();
         $row = new $model();
         if (!empty($payload['id'])) $row->id = $payload['id'];
-        $row->name = $payload['name'] ?? ($payload['nombre'] ?? null);
+        if (in_array('name', $row->getFillable(), true)) {
+            $row->name = $payload['name'] ?? ($payload['nombre'] ?? null);
+        }
         $row->data = $payload;
         if (in_array('workshop_id', $row->getFillable(), true)) {
             $row->workshop_id = $payload['workshop_id'] ?? ($payload['workshopId'] ?? null);
@@ -70,7 +72,9 @@ abstract class JsonResourceController
         $row = $model::query()->find($id);
         if (!$row) return ApiResponse::error('No encontrado', 404);
         $payload = $request->json()->all();
-        $row->name = $payload['name'] ?? ($payload['nombre'] ?? $row->name);
+        if (in_array('name', $row->getFillable(), true)) {
+            $row->name = $payload['name'] ?? ($payload['nombre'] ?? $row->name);
+        }
         $row->data = $payload;
         if (in_array('workshop_id', $row->getFillable(), true) && array_key_exists('workshop_id', $payload)) {
             $row->workshop_id = $payload['workshop_id'];
