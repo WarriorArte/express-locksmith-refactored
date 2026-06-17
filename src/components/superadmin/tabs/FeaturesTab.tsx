@@ -4,11 +4,42 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ToggleLeft } from "lucide-react";
+import { ToggleLeft, Wrench } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { phpApiRequest } from "@/lib/phpApi";
 import { useSuperAdminWorkshops } from "../hooks";
 import { AVAILABLE_FEATURES, type WorkshopFeatureRow } from "../types";
+
+const WORKSHOP_ASSIGNMENTS_KEY = "herramientas:workshop_assignments";
+
+/**
+ * Sincroniza el toggle de una herramienta (keycode/alarmas/immo) con el
+ * localStorage que consume WorkshopToolView. Así un único interruptor en
+ * "Features por Taller" controla tanto el flag del backend como la asignación
+ * local que el módulo de Herramientas ya esperaba.
+ */
+function syncToolAssignmentLocalStorage(
+  workshopId: string,
+  toolId: "keycode" | "alarmas" | "immo",
+  isEnabled: boolean,
+) {
+  try {
+    const raw = localStorage.getItem(WORKSHOP_ASSIGNMENTS_KEY);
+    const list: Array<{ workshopId: string; tools: string[] }> = raw ? JSON.parse(raw) : [];
+    const idx = list.findIndex((a) => a.workshopId === workshopId);
+    if (idx === -1) {
+      if (isEnabled) list.push({ workshopId, tools: [toolId] });
+    } else {
+      const current = new Set(list[idx].tools);
+      if (isEnabled) current.add(toolId);
+      else current.delete(toolId);
+      list[idx] = { workshopId, tools: Array.from(current) };
+    }
+    localStorage.setItem(WORKSHOP_ASSIGNMENTS_KEY, JSON.stringify(list));
+  } catch {
+    // noop
+  }
+}
 
 export function FeaturesTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
   const { toast } = useToast();
@@ -28,11 +59,22 @@ export function FeaturesTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
   });
 
   const toggleFeature = useMutation({
-    mutationFn: async ({ workshopId, featureKey, isEnabled }: { workshopId: string; featureKey: string; isEnabled: boolean }) => {
+    mutationFn: async ({
+      workshopId,
+      featureKey,
+      isEnabled,
+      toolId,
+    }: {
+      workshopId: string;
+      featureKey: string;
+      isEnabled: boolean;
+      toolId?: "keycode" | "alarmas" | "immo";
+    }) => {
       await phpApiRequest(`/workshop-features.php?workshop_id=${encodeURIComponent(workshopId)}`, {
         method: "PUT",
         body: JSON.stringify({ feature_key: featureKey, is_enabled: isEnabled }),
       });
+      if (toolId) syncToolAssignmentLocalStorage(workshopId, toolId, isEnabled);
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["superadmin-workshop-features"] });
@@ -41,6 +83,36 @@ export function FeaturesTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
     },
   });
 
+  const generalFeatures = AVAILABLE_FEATURES.filter((f) => f.group !== "herramientas");
+  const toolFeatures = AVAILABLE_FEATURES.filter((f) => f.group === "herramientas");
+
+  const renderToggle = (feature: (typeof AVAILABLE_FEATURES)[number]) => {
+    const wf = workshopFeatures?.find((f) => f.feature_key === feature.key);
+    // Las herramientas vienen desactivadas por defecto; el resto, activadas
+    const defaultEnabled = feature.group !== "herramientas";
+    const isEnabled = wf?.is_enabled == null ? defaultEnabled : !!wf.is_enabled;
+
+    return (
+      <div key={feature.key} className="flex items-center justify-between p-4 border rounded-lg">
+        <div className="pr-4">
+          <p className="font-medium">{feature.label}</p>
+          <p className="text-sm text-muted-foreground">{feature.description}</p>
+        </div>
+        <Switch
+          checked={isEnabled}
+          onCheckedChange={(checked) =>
+            toggleFeature.mutate({
+              workshopId: selectedWorkshop!,
+              featureKey: feature.key,
+              isEnabled: checked,
+              toolId: feature.toolId,
+            })
+          }
+        />
+      </div>
+    );
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -48,7 +120,9 @@ export function FeaturesTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
           <ToggleLeft className="h-5 w-5" />
           Features por Taller
         </CardTitle>
-        <CardDescription>Activa o desactiva módulos para cada taller</CardDescription>
+        <CardDescription>
+          Activa o desactiva módulos generales y herramientas técnicas para cada taller
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-2">
@@ -66,30 +140,24 @@ export function FeaturesTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
         </div>
 
         {selectedWorkshop && (
-          <div className="grid gap-4 md:grid-cols-2">
-            {AVAILABLE_FEATURES.map((feature) => {
-              const wf = workshopFeatures?.find((f) => f.feature_key === feature.key);
-              const isEnabled = wf?.is_enabled == null ? true : !!wf.is_enabled;
+          <div className="space-y-6">
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold flex items-center gap-2 text-muted-foreground">
+                <ToggleLeft className="h-4 w-4" /> Módulos generales
+              </h3>
+              <div className="grid gap-4 md:grid-cols-2">
+                {generalFeatures.map(renderToggle)}
+              </div>
+            </section>
 
-              return (
-                <div key={feature.key} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <p className="font-medium">{feature.label}</p>
-                    <p className="text-sm text-muted-foreground">{feature.description}</p>
-                  </div>
-                  <Switch
-                    checked={isEnabled}
-                    onCheckedChange={(checked) =>
-                      toggleFeature.mutate({
-                        workshopId: selectedWorkshop,
-                        featureKey: feature.key,
-                        isEnabled: checked,
-                      })
-                    }
-                  />
-                </div>
-              );
-            })}
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold flex items-center gap-2 text-muted-foreground">
+                <Wrench className="h-4 w-4" /> Herramientas técnicas
+              </h3>
+              <div className="grid gap-4 md:grid-cols-2">
+                {toolFeatures.map(renderToggle)}
+              </div>
+            </section>
           </div>
         )}
 

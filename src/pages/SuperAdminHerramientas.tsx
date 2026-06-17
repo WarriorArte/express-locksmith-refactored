@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Wrench, Key, Cpu, FileText, Database } from "lucide-react";
+import { Key, Cpu, FileText, Database } from "lucide-react";
 import {
   HerramientasModule,
   type SuperAdminHerramientasView,
@@ -10,7 +10,7 @@ import {
 
 export default function SuperAdminHerramientas() {
   const { isSuperAdmin, isLoading } = useWorkshop();
-  const [view, setView] = useState<SuperAdminHerramientasView>("asignacion");
+  const [view, setView] = useState<SuperAdminHerramientasView>("keycode");
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen">Cargando...</div>;
@@ -24,15 +24,12 @@ export default function SuperAdminHerramientas() {
       <div>
         <h1 className="text-3xl font-bold">Herramientas</h1>
         <p className="text-muted-foreground">
-          Gestión global de herramientas y asignaciones por taller
+          Catálogos globales: perfiles, asignaciones de vehículos y base de datos
         </p>
       </div>
 
       <Tabs value={view} onValueChange={(v) => setView(v as SuperAdminHerramientasView)} className="space-y-4">
         <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="asignacion" className="gap-2">
-            <Wrench className="h-4 w-4" /> Talleres
-          </TabsTrigger>
           <TabsTrigger value="keycode" className="gap-2">
             <Key className="h-4 w-4" /> Keycode
           </TabsTrigger>

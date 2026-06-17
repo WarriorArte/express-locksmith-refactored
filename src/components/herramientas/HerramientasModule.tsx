@@ -14,13 +14,13 @@ import { useImmoCatalog } from "@/hooks/useImmoCatalog";
 import { KeycodeManager } from "./KeycodeManager";
 import { AssignmentManager } from "./AssignmentManager";
 import { VehicleDatabaseManager } from "./VehicleDatabaseManager";
-import { WorkshopAssignmentManager } from "./WorkshopAssignmentManager";
+
 import { WorkshopToolView } from "./WorkshopToolView";
 import { AlarmasManager } from "./AlarmasManager";
 import { ImmoManager, ImmoAssignmentManager } from "./ImmoManager";
 import { ImmoSuppliesManager } from "./ImmoSuppliesManager";
 
-export type SuperAdminHerramientasView = "asignacion" | "keycode" | "immo" | "alarmas" | "vehiculos";
+export type SuperAdminHerramientasView = "keycode" | "immo" | "alarmas" | "vehiculos";
 
 interface HerramientasModuleProps {
   superAdminView?: SuperAdminHerramientasView;
@@ -35,7 +35,7 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
   const { profiles: immoProfiles, addProfile: addImmoProfile, updateProfile: updateImmoProfile, deleteProfile: deleteImmoProfile } = useImmoProfiles();
   const { catalog, addItem, updateItem, deleteItem, reorderItems } = useImmoCatalog();
   const [toolActive, setToolActive] = useState(false);
-  const [localSuperAdminView, setLocalSuperAdminView] = useState<SuperAdminHerramientasView>("asignacion");
+  const [localSuperAdminView, setLocalSuperAdminView] = useState<SuperAdminHerramientasView>("keycode");
   const activeSuperAdminView = superAdminView ?? localSuperAdminView;
   const showInternalSuperAdminTabs = superAdminView === undefined;
 
@@ -60,9 +60,6 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
               className="shrink-0"
             >
               <TabsList className="inline-flex w-full h-auto p-1 bg-muted/50 border">
-                <TabsTrigger value="asignacion" className="flex-1 py-2 gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                  <Wrench className="w-4 h-4" /> Talleres
-                </TabsTrigger>
                 <TabsTrigger value="keycode" className="flex-1 py-2 gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
                   <Key className="w-4 h-4" /> Keycode
                 </TabsTrigger>
@@ -134,16 +131,6 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
                 <p className="text-muted-foreground">Gestión centralizada de perfiles y vehículos exclusivas del SuperAdmin</p>
               </motion.div>
 
-              {activeSuperAdminView === "asignacion" && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }} 
-                  animate={{ opacity: 1, y: 0 }} 
-                  transition={{ delay: 0.1 }}
-                  className="flex-1 flex flex-col border rounded-xl bg-card shadow-sm min-h-0 p-4"
-                >
-                  <WorkshopAssignmentManager />
-                </motion.div>
-              )}
 
               {activeSuperAdminView === "alarmas" && (
                 <motion.div
