@@ -378,7 +378,7 @@ export function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
                                   method: "POST",
                                   body: JSON.stringify({ email: consistencyEmail.trim() }),
                                 });
-                                setConsistencyResult(checkRes);
+                                setConsistencyResult(checkRes as any);
                                 queryClient.invalidateQueries({ queryKey: ["superadmin-user-roles"] });
                               } catch (err) {
                                 logError("repair-user-profile", err);

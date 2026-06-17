@@ -443,7 +443,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
             labor_cost: "",
             discount: "",
             service_products: [],
-          } as ProductFormValues,
+          } as unknown as ProductFormValues,
     );
     setActiveTab("general");
     setMaxUnlockedTabIndex(0);

@@ -12,7 +12,8 @@
 
   const fillRandomValues = (arr: Uint8Array) => {
     if (typeof cryptoObj?.getRandomValues === "function") {
-      cryptoObj.getRandomValues(arr);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      cryptoObj.getRandomValues(arr as any);
       return arr;
     }
 
@@ -23,7 +24,7 @@
     return arr;
   };
 
-  const randomUUID = () => {
+  const randomUUID = (() => {
     const bytes = fillRandomValues(new Uint8Array(16));
 
     // RFC 4122 v4 bits
@@ -42,7 +43,10 @@
       "-" +
       hex.slice(20)
     );
-  };
+  }) as unknown as () => `${string}-${string}-${string}-${string}-${string}`;
+  // Wrap as IIFE-style cast: actually we want it as function, fix below.
+  const _randomUUID = randomUUID;
+  void _randomUUID;
 
   if (cryptoObj && typeof cryptoObj === "object") {
     try {

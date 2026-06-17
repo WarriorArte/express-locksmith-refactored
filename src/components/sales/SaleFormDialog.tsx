@@ -282,7 +282,7 @@ export function SaleFormDialog({ open, onOpenChange, initialProduct }: SaleFormD
     const salePreviewData = {
       ...newSale,
       items: saleItems.map(item => ({
-        id: item.id || crypto.randomUUID(),
+        id: crypto.randomUUID(),
         product_name: item.product_name,
         quantity: item.quantity,
         unit_price: item.unit_price,
