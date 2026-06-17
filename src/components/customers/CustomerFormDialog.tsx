@@ -134,10 +134,10 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
         address: customer.address || "",
         notes: customer.notes || "",
         is_normal: !!customer.is_normal,
-        is_vip: customer.is_vip || false,
+        is_vip: !!customer.is_vip,
         is_frequent: !!customer.is_frequent,
-        has_debt: customer.has_debt || false,
-        no_work_again: customer.no_work_again || false,
+        has_debt: !!customer.has_debt,
+        no_work_again: !!customer.no_work_again,
         no_work_reason: customer.no_work_reason || "",
       });
     } else {

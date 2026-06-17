@@ -3,9 +3,10 @@ export interface BaseRow {
   workshop_id?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
-  // Permitir cualquier otra columna del backend sin forzar typings estrictos por ahora.
-  // Las columnas críticas se tipan explícitamente en cada interfaz.
-  [key: string]: unknown;
+  // Catch-all para columnas no tipadas explícitamente. Usamos `any` (no `unknown`)
+  // para que el código existente pueda asignar/leer estos campos sin casts.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
 }
 
 export interface Category extends BaseRow {
