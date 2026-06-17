@@ -79,13 +79,6 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
           {activeSuperAdminView === "keycode" ? (
             <Tabs defaultValue="perfiles" className="flex-1 flex flex-col min-h-0">
               <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-4 shrink-0">
-                <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
-                  <h1 className="text-2xl lg:text-3xl font-bold text-foreground flex items-center gap-2">
-                    <Wrench className="w-7 h-7" /> Herramientas Administrativas
-                  </h1>
-                  <p className="text-muted-foreground">Gestión centralizada de perfiles y vehículos exclusivas del SuperAdmin</p>
-                </motion.div>
-
                 <TabsList className="inline-flex w-full sm:w-auto h-auto p-1 bg-muted/50 border">
                   <TabsTrigger value="perfiles" className="flex-1 sm:flex-none py-2 gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
                     <Key className="w-4 h-4" /> Perfiles y Keycodes
@@ -124,14 +117,6 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
             </Tabs>
           ) : (
             <>
-              <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="shrink-0">
-                <h1 className="text-2xl lg:text-3xl font-bold text-foreground flex items-center gap-2">
-                  <Wrench className="w-7 h-7" /> Herramientas Administrativas
-                </h1>
-                <p className="text-muted-foreground">Gestión centralizada de perfiles y vehículos exclusivas del SuperAdmin</p>
-              </motion.div>
-
-
               {activeSuperAdminView === "alarmas" && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
