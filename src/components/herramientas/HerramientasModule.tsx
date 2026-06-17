@@ -14,13 +14,13 @@ import { useImmoCatalog } from "@/hooks/useImmoCatalog";
 import { KeycodeManager } from "./KeycodeManager";
 import { AssignmentManager } from "./AssignmentManager";
 import { VehicleDatabaseManager } from "./VehicleDatabaseManager";
-import { WorkshopAssignmentManager } from "./WorkshopAssignmentManager";
+
 import { WorkshopToolView } from "./WorkshopToolView";
 import { AlarmasManager } from "./AlarmasManager";
 import { ImmoManager, ImmoAssignmentManager } from "./ImmoManager";
 import { ImmoSuppliesManager } from "./ImmoSuppliesManager";
 
-export type SuperAdminHerramientasView = "asignacion" | "keycode" | "immo" | "alarmas" | "vehiculos";
+export type SuperAdminHerramientasView = "keycode" | "immo" | "alarmas" | "vehiculos";
 
 interface HerramientasModuleProps {
   superAdminView?: SuperAdminHerramientasView;
