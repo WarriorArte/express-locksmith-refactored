@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef } from "react";
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 import {
   Plus, Trash2, Edit, ArrowLeft, Check, Search,
   ImageIcon, Car, X, ChevronDown, Cpu, Radio,

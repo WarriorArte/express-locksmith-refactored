@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 import { Key, FileJson, Database, Plus, Trash2, Edit, Check, Search, ChevronLeft, ChevronRight, Upload, ArrowLeft, Eye, Settings2, LayoutList, LayoutGrid, ImageIcon, Camera, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 

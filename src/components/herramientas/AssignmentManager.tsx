@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { Car, Wrench, Users, Settings, Check, Trash2, Pencil, X, Plus, Search, ChevronLeft, ChevronRight, ChevronDown, Lock } from "lucide-react";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

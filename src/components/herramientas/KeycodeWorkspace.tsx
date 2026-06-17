@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import { Key, ArrowLeft, CheckCircle2, Filter, X, Info, Settings2, Loader2, Camera, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { GeneradorLlaveSVG } from "@/components/llaves/GeneradorLlaveSVG";

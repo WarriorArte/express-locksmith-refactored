@@ -15,7 +15,7 @@ import {
   ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Check,
   ArrowLeftRight, Crosshair, X, ArrowLeft, ArrowRight, ArrowUpDown
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import type { DecoderConfig, BittingConfig } from "@/types";
 

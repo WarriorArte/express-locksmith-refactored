@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Store, Check, Plus, Search, ShieldCheck, Wrench, Shield, X, Settings } from "lucide-react";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

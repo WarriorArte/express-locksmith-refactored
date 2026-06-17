@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Trash2, ChevronDown, ChevronUp, Upload, Radio,
   Search, Car, X, Save, ShieldCheck,

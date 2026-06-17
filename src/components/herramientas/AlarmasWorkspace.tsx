@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Radio, Search, ChevronDown, X, ImageIcon, AlertTriangle, Info, CalendarDays, List, LayoutGrid } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
