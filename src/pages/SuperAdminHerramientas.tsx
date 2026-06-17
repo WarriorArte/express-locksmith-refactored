@@ -1,16 +1,37 @@
-import { useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useWorkshop } from "@/hooks/useWorkshop";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Key, Cpu, FileText, Database } from "lucide-react";
 import {
   HerramientasModule,
   type SuperAdminHerramientasView,
 } from "@/components/herramientas/HerramientasModule";
 
+const ROUTE_TO_VIEW: Record<string, { view: SuperAdminHerramientasView; title: string; subtitle: string }> = {
+  "/superadmin/keycode": {
+    view: "keycode",
+    title: "Keycode",
+    subtitle: "Perfiles globales de keycodes y cortes de llave",
+  },
+  "/superadmin/immo": {
+    view: "immo",
+    title: "Immo Info",
+    subtitle: "Perfiles de inmovilizadores, asignaciones y suministros",
+  },
+  "/superadmin/alarmas": {
+    view: "alarmas",
+    title: "Auto Alarmas",
+    subtitle: "Diagramas y datos de programación remota de alarmas",
+  },
+  "/superadmin/vehiculos": {
+    view: "vehiculos",
+    title: "Vehículos",
+    subtitle: "Base de datos global de marcas, modelos y años",
+  },
+};
+
 export default function SuperAdminHerramientas() {
   const { isSuperAdmin, isLoading } = useWorkshop();
-  const [view, setView] = useState<SuperAdminHerramientasView>("keycode");
+  const { pathname } = useLocation();
+  const config = ROUTE_TO_VIEW[pathname] ?? ROUTE_TO_VIEW["/superadmin/keycode"];
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen">Cargando...</div>;
@@ -22,30 +43,10 @@ export default function SuperAdminHerramientas() {
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Herramientas</h1>
-        <p className="text-muted-foreground">
-          Catálogos globales: perfiles, asignaciones de vehículos y base de datos
-        </p>
+        <h1 className="text-3xl font-bold">{config.title}</h1>
+        <p className="text-muted-foreground">{config.subtitle}</p>
       </div>
-
-      <Tabs value={view} onValueChange={(v) => setView(v as SuperAdminHerramientasView)} className="space-y-4">
-        <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="keycode" className="gap-2">
-            <Key className="h-4 w-4" /> Keycode
-          </TabsTrigger>
-          <TabsTrigger value="immo" className="gap-2">
-            <Cpu className="h-4 w-4" /> Immo
-          </TabsTrigger>
-          <TabsTrigger value="alarmas" className="gap-2">
-            <FileText className="h-4 w-4" /> Alarmas
-          </TabsTrigger>
-          <TabsTrigger value="vehiculos" className="gap-2">
-            <Database className="h-4 w-4" /> Vehículos
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
-
-      <HerramientasModule superAdminView={view} />
+      <HerramientasModule superAdminView={config.view} />
     </div>
   );
 }
