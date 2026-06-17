@@ -1,23 +1,24 @@
 ﻿import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { m as motion, AnimatePresence } from "framer-motion";
-import { 
-  LayoutDashboard, 
-  Package, 
-  FileText, 
-  Users, 
-  Wrench, 
-  ShoppingCart, 
-  Settings, 
-  ChevronLeft, 
-  ChevronRight, 
-  Key, 
-  X, 
-   
-  Shield, 
+import {
+  LayoutDashboard,
+  Package,
+  FileText,
+  Users,
+  Wrench,
+  ShoppingCart,
+  Settings,
+  ChevronLeft,
+  ChevronRight,
+  Key,
+  X,
+  Shield,
   Construction,
   Building2,
   Activity,
   LogOut,
+  Cpu,
+  Database,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -47,7 +48,10 @@ const pinnedBottomItems = [
 const superAdminNavItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
   { icon: Building2, label: "Gestión de Talleres", path: "/superadmin" },
-  { icon: Wrench, label: "Herramientas", path: "/superadmin/herramientas" },
+  { icon: Key, label: "Keycode", path: "/superadmin/keycode" },
+  { icon: Cpu, label: "Immo Info", path: "/superadmin/immo" },
+  { icon: Shield, label: "Auto Alarmas", path: "/superadmin/alarmas" },
+  { icon: Database, label: "Vehículos", path: "/superadmin/vehiculos" },
 ];
 
 const superAdminBottomItems = [
