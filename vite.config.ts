@@ -24,11 +24,15 @@ export default defineConfig(({ mode }) => ({
   esbuild: {
     drop: mode === 'production' ? ['console', 'debugger'] : [],
   },
+  define: {
+    __APP_BUILD_VERSION__: JSON.stringify(process.env.APP_BUILD_VERSION || "dev"),
+  },
   plugins: [
     react(), 
     mode === "development" && componentTagger(),
     mode === "production" && VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
+      injectRegister: false,
       includeAssets: ['favicon.ico'],
       manifest: {
         name: 'Cerrajero Pro Express',

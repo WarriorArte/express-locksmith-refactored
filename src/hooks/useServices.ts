@@ -152,6 +152,7 @@ export function useCreateService() {
       queryClient.invalidateQueries({ queryKey: ["services", wid] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats", wid] });
       queryClient.invalidateQueries({ queryKey: ["customers", wid] });
+      queryClient.invalidateQueries({ queryKey: ["recent-activity"] });
       toast({
         title: "Servicio creado",
         description: "El servicio ha sido registrado exitosamente",

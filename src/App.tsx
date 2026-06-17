@@ -8,6 +8,7 @@ import { LazyMotion, domAnimation } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { AppUpdatePrompt } from "@/components/AppUpdatePrompt";
 
 // Auth pages: keep eager — first paint on /auth must be instant
 import Auth from "./pages/Auth";
@@ -79,6 +80,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <AppUpdatePrompt />
       <BrowserRouter basename={routerBase === "/" ? undefined : routerBase}>
         <Suspense fallback={<RouteFallback />}>
           <Routes>

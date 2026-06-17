@@ -82,6 +82,7 @@ export function useCreateCustomer() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["customers", currentWorkshop?.id] });
+      queryClient.invalidateQueries({ queryKey: ["recent-activity"] });
     },
   });
 }

@@ -10,6 +10,7 @@ use App\Support\ApiResponse;
 use App\Support\Uploads\UploadedFileCleanupService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -119,6 +120,7 @@ final class ProductController
             return $product;
         });
 
+        Cache::forget("recent-activity:{$workshopId}");
         return ApiResponse::success($this->formatProduct($product->load(['category', 'tags'])), 'Producto creado', 201);
     }
 

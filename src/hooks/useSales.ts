@@ -115,6 +115,7 @@ export function useCreateSale() {
       queryClient.invalidateQueries({ queryKey: ["products", wid] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats", wid] });
       queryClient.invalidateQueries({ queryKey: ["customers", wid] });
+      queryClient.invalidateQueries({ queryKey: ["recent-activity"] });
       toast({
         title: "Venta registrada",
         description: "La venta ha sido registrada exitosamente",

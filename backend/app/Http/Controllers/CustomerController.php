@@ -9,6 +9,7 @@ use App\Models\Customer;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 final class CustomerController
 {
@@ -93,6 +94,7 @@ final class CustomerController
             'no_work_reason' => $request->input('no_work_reason'),
         ]);
 
+        Cache::forget("recent-activity:{$workshopId}");
         return ApiResponse::success($customer->fresh(), 'Cliente creado', 201);
     }
 

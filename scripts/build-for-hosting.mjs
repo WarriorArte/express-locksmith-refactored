@@ -10,6 +10,7 @@ const DIST_DIR      = path.resolve(PROJECT_ROOT, "dist");
 const HTACCESS_MODE = (process.env.HTACCESS_MODE || "hosting").toLowerCase();
 const BASE_PATH     = process.env.BUILD_BASE || "/";
 const BACKEND_PATH  = (process.env.BACKEND_PATH || "").trim();
+const BUILD_ID      = (process.env.APP_BUILD_ID || "").trim();
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -22,6 +23,27 @@ function normalizeBase(base) {
 
 async function pathExists(p) {
   try { await access(p); return true; } catch { return false; }
+}
+
+function createBuildMeta() {
+  const buildTime = new Date().toISOString();
+  let gitSha = "";
+
+  try {
+    gitSha = execFileSync("git", ["rev-parse", "--short=12", "HEAD"], {
+      cwd: PROJECT_ROOT,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+  } catch {
+    gitSha = "";
+  }
+
+  return {
+    version: BUILD_ID || [gitSha, buildTime].filter(Boolean).join("-"),
+    buildTime,
+    gitSha,
+  };
 }
 
 // Encuentra el backend automáticamente. BACKEND_PATH tiene prioridad si está definido.
@@ -149,6 +171,13 @@ echo json_encode(['error' => 'Backend no encontrado. Define BACKEND_PATH en el e
   await writeFile(path.resolve(dir, "serve-upload.php"), content, "utf8");
 }
 
+async function writeVersionFile(buildMeta) {
+  const content = `${JSON.stringify(buildMeta, null, 2)}\n`;
+
+  await writeFile(path.resolve(DIST_DIR, "version.json"), content, "utf8");
+  console.log(`[build] version.json → ${buildMeta.version}`);
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -158,6 +187,10 @@ async function main() {
 
   const resolvedBackend = await resolveBackendPath();
   console.log("[build:env] backend usado =", resolvedBackend ?? "(no encontrado)");
+
+  const buildMeta = createBuildMeta();
+  process.env.APP_BUILD_VERSION = buildMeta.version;
+  console.log("[build:env] APP_BUILD_VERSION =", buildMeta.version);
 
   const base = normalizeBase(BASE_PATH);
   console.log(`[build] vite --base=${base}`);
@@ -170,6 +203,7 @@ async function main() {
   await writeDistHtaccess();
   await createBackendBridge(resolvedBackend);
   await createUploadServer(resolvedBackend);
+  await writeVersionFile(buildMeta);
 
   console.log("[build] listo. dist/ → public_html/");
 }

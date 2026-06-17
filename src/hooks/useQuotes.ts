@@ -117,6 +117,7 @@ export function useCreateQuote() {
       const wid = currentWorkshop?.id;
       queryClient.invalidateQueries({ queryKey: ["quotes", wid] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats", wid] });
+      queryClient.invalidateQueries({ queryKey: ["recent-activity"] });
       toast({
         title: "Cotización creada",
         description: "La cotización ha sido creada exitosamente",

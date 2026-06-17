@@ -22,9 +22,11 @@ use App\Http\Controllers\SaleController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServiceImageController;
 use App\Http\Controllers\SuperAdminAccessController;
+use App\Http\Controllers\UpdateNoticeController;
 use App\Http\Controllers\WarrantyController;
 use App\Http\Controllers\WarrantySettingsController;
 use App\Http\Controllers\DashboardStatsController;
+use App\Http\Controllers\RecentActivityController;
 use App\Http\Controllers\EnvDiagnosticController;
 use App\Http\Controllers\WorkshopFeatureController;
 use App\Http\Controllers\UploadController;
@@ -104,6 +106,7 @@ Route::middleware('legacy.auth')->group(function (): void {
 
     // Dashboard
     Route::get('/dashboard-stats', [DashboardStatsController::class, 'handle']);
+    Route::get('/recent-activity', [RecentActivityController::class, 'handle']);
 });
 
 // ──────────────────────────────────────────
@@ -131,8 +134,10 @@ Route::middleware('legacy.auth')->group(function (): void {
     Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/warranty-settings.php', [WarrantySettingsController::class, 'handle']);
     Route::match(['GET', 'PUT'], '/appadmin-settings.php', [AppAdminSettingsController::class, 'handle']);
     Route::match(['GET', 'PUT'], '/superadmin-access.php', [SuperAdminAccessController::class, 'handle']);
+    Route::match(['GET', 'PUT', 'DELETE'], '/update-notices.php', [UpdateNoticeController::class, 'handle']);
     Route::match(['GET', 'PUT'], '/workshop-features.php', [WorkshopFeatureController::class, 'handle']);
     Route::get('/dashboard-stats.php', [DashboardStatsController::class, 'handle']);
+    Route::get('/recent-activity.php', [RecentActivityController::class, 'handle']);
     Route::get('/env-diagnostic.php', [EnvDiagnosticController::class, 'handle']);
     Route::match(['GET', 'POST'], '/uploads.php', [UploadController::class, 'handle']);
     Route::post('/backup-restore.php', [BackupRestoreController::class, 'handle']);

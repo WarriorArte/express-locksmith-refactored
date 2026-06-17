@@ -143,6 +143,7 @@ export function useCreateProduct() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["products", currentWorkshop?.id] });
+      queryClient.invalidateQueries({ queryKey: ["recent-activity"] });
     },
   });
 }

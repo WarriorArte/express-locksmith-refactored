@@ -6,6 +6,7 @@ use App\Support\ApiResponse;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -169,6 +170,7 @@ final class ServiceController
             }
         });
 
+        Cache::forget("recent-activity:{$workshopId}");
         return ApiResponse::success($this->fetchFull($id), 'Servicio creado');
     }
 

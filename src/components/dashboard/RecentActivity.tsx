@@ -34,100 +34,31 @@ export function RecentActivity() {
     queryFn: async () => {
       if (!user || !currentWorkshop?.id || !getPhpAuthToken()) return [];
 
-      const results: Activity[] = [];
+      const rows = await phpApiRequest<Array<{
+        type: "venta" | "servicio" | "cotizacion" | "cliente" | "producto";
+        id: string;
+        title: string;
+        description: string;
+        created_at: string;
+      }>>(`/recent-activity.php?workshop_id=${encodeURIComponent(currentWorkshop.id)}`, { method: "GET" });
 
-      // Fetch recent sales
-      const sales = await phpApiRequest<Array<{ id: string; sale_number: string; customer_name: string | null; total: number; created_at: string }>>(
-        `/sales.php?workshop_id=${encodeURIComponent(currentWorkshop.id)}`,
-        { method: "GET" }
-      );
-
-      sales?.forEach(s => {
-        results.push({
-          id: `sale-${s.id}`,
-          type: "venta",
-          title: `Venta ${s.sale_number}`,
-          description: `${s.customer_name || "Cliente mostrador"} - $${Number(s.total).toLocaleString()}`,
-          time: formatDistanceToNow(parseISO(s.created_at), { addSuffix: true, locale: es }),
-          created_at: s.created_at,
-        });
-      });
-
-      // Fetch recent services
-      const services = await phpApiRequest<Array<{ id: string; service_number: string; description: string; status: string; created_at: string }>>(
-        `/services.php?workshop_id=${encodeURIComponent(currentWorkshop.id)}`,
-        { method: "GET" }
-      );
-
-      services?.forEach(s => {
-        results.push({
-          id: `service-${s.id}`,
-          type: "servicio",
-          title: `Servicio ${s.service_number}`,
-          description: s.description.substring(0, 40) + (s.description.length > 40 ? "..." : ""),
-          time: formatDistanceToNow(parseISO(s.created_at), { addSuffix: true, locale: es }),
-          created_at: s.created_at,
-        });
-      });
-
-      // Fetch recent quotes
-      const quotes = await phpApiRequest<Array<{ id: string; quote_number: string; customer_name: string | null; total: number; created_at: string }>>(
-        `/quotes.php?workshop_id=${encodeURIComponent(currentWorkshop.id)}`,
-        { method: "GET" }
-      );
-
-      quotes?.forEach(q => {
-        results.push({
-          id: `quote-${q.id}`,
-          type: "cotizacion",
-          title: `Cotización ${q.quote_number}`,
-          description: `${q.customer_name || "Sin cliente"} - $${Number(q.total).toLocaleString()}`,
-          time: formatDistanceToNow(parseISO(q.created_at), { addSuffix: true, locale: es }),
-          created_at: q.created_at,
-        });
-      });
-
-      // Fetch recent customers
-      const customers = await phpApiRequest<Array<{ id: string; name: string; customer_type: "business" | "person"; created_at: string }>>(
-        `/customers.php?workshop_id=${encodeURIComponent(currentWorkshop.id)}`,
-        { method: "GET" }
-      );
-
-      customers?.forEach(c => {
-        results.push({
-          id: `customer-${c.id}`,
-          type: "cliente",
-          title: "Nuevo cliente",
-          description: `${c.name} - ${c.customer_type === "business" ? "Empresa" : "Persona"}`,
-          time: formatDistanceToNow(parseISO(c.created_at), { addSuffix: true, locale: es }),
-          created_at: c.created_at,
-        });
-      });
-
-      // Fetch recent products
-      const products = await phpApiRequest<Array<{ id: string; name: string; stock_store: number; stock_warehouse: number; created_at: string }>>(
-        `/products.php?workshop_id=${encodeURIComponent(currentWorkshop.id)}`,
-        { method: "GET" }
-      );
-
-      products?.forEach(p => {
-        results.push({
-          id: `product-${p.id}`,
-          type: "producto",
-          title: "Producto agregado",
-          description: `${p.name} - Stock: ${p.stock_store + p.stock_warehouse}`,
-          time: formatDistanceToNow(parseISO(p.created_at), { addSuffix: true, locale: es }),
-          created_at: p.created_at,
-        });
-      });
-
-      // Sort by date and take last 8
-      return results
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        .slice(0, 8);
+      return (rows ?? []).map(r => ({
+        id: `${r.type}-${r.id}`,
+        type: r.type,
+        title: r.type === "venta" ? `Venta ${r.title}`
+          : r.type === "servicio" ? `Servicio ${r.title}`
+          : r.type === "cotizacion" ? `Cotización ${r.title}`
+          : r.type === "cliente" ? "Nuevo cliente"
+          : "Producto agregado",
+        description: r.type === "cliente"
+          ? `${r.title} - ${r.description === "business" ? "Empresa" : "Persona"}`
+          : r.description,
+        time: formatDistanceToNow(parseISO(r.created_at), { addSuffix: true, locale: es }),
+        created_at: r.created_at,
+      }));
     },
     enabled: !authLoading && !!user && !!currentWorkshop?.id && !!getPhpAuthToken(),
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchOnWindowFocus: true,
     retry: false,
   });
 
