@@ -119,7 +119,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
       }),
       instructions: "",
       notes: "",
-    } as ProductFormValues,
+    } as unknown as ProductFormValues,
   });
 
   useEffect(() => {
@@ -147,7 +147,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
         image_url: "",
         instructions: "",
         notes: "",
-      } as ProductFormValues);
+      } as unknown as ProductFormValues);
       return;
     }
 
@@ -178,7 +178,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
         stock_store: "",
         stock_warehouse: "",
         min_stock: "",
-      } as ProductFormValues);
+      } as unknown as ProductFormValues);
     } else {
       form.reset({
         ...defaultValues,
@@ -187,7 +187,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
         labor_cost: "",
         discount: "",
         service_products: [],
-      } as ProductFormValues);
+      } as unknown as ProductFormValues);
     }
   }, [inventoryItemType, form, isEditing]);
 
@@ -424,7 +424,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
     };
 
     form.reset(
-      type === "product"
+      (type === "product"
         ? {
             ...baseValues,
             item_type: "product",
@@ -443,7 +443,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
             labor_cost: "",
             discount: "",
             service_products: [],
-          } as ProductFormValues,
+          }) as unknown as ProductFormValues,
     );
     setActiveTab("general");
     setMaxUnlockedTabIndex(0);
