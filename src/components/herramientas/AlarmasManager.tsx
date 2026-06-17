@@ -850,7 +850,7 @@ function AlarmaAsignacionTab({
                 <label className="text-xs font-medium text-muted-foreground">Marca</label>
                 <select
                   value={form.make}
-                  onChange={(e) => setField("make", e.target.value) || setField("model", "") || setField("yearStart", "") || setField("yearEnd", "")}
+                  onChange={(e) => { setField("make", e.target.value); setField("model", ""); setField("yearStart", ""); setField("yearEnd", ""); }}
                   className={selectClass}
                 >
                   <option value="">-- Marca --</option>
