@@ -1,48 +1,33 @@
-import { useState, useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import type { KeycodeProfile, BittingConfig } from "@/types";
+import { useJsonResource } from "./useJsonResource";
 
-const LS_KEY = "herramientas:keycode_profiles";
-
-function loadFromStorage(): KeycodeProfile[] {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    const profiles = raw ? (JSON.parse(raw) as KeycodeProfile[]) : [];
-    
-    // Migrar perfiles existentes para incluir configuración por defecto
-    return profiles.map(profile => {
-      if (!profile.bittingConfig) {
-        const defaultConfig: BittingConfig = {
-          length: 8,
-          maxDepth: 4,
-          depthMapping: undefined,
-        };
-        return { ...profile, bittingConfig: defaultConfig };
-      }
-      return profile;
-    });
-  } catch {
-    return [];
-  }
+function migrate(items: any[]): KeycodeProfile[] {
+  return (items as KeycodeProfile[]).map((profile) => {
+    if (!profile.bittingConfig) {
+      const defaultConfig: BittingConfig = { length: 8, maxDepth: 4, depthMapping: undefined };
+      return { ...profile, bittingConfig: defaultConfig };
+    }
+    return profile;
+  });
 }
 
 export function useKeycodeProfiles() {
-  const [profiles, setProfiles] = useState<KeycodeProfile[]>(loadFromStorage);
+  const { items, setItems, addItem, updateItem, deleteItem } = useJsonResource<KeycodeProfile>({
+    endpoint: "/herramientas/keycode-profiles",
+    cacheKey: "herramientas:keycode_profiles",
+    migrate,
+  });
 
-  useEffect(() => {
-    localStorage.setItem(LS_KEY, JSON.stringify(profiles));
-  }, [profiles]);
+  const setProfiles = useCallback((updater: KeycodeProfile[] | ((prev: KeycodeProfile[]) => KeycodeProfile[])) => {
+    setItems(updater as any);
+  }, [setItems]);
 
-  const addProfile = useCallback((profile: KeycodeProfile) => {
-    setProfiles((prev) => [profile, ...prev]);
-  }, []);
-
-  const updateProfile = useCallback((profile: KeycodeProfile) => {
-    setProfiles((prev) => prev.map((p) => (p.id === profile.id ? profile : p)));
-  }, []);
-
-  const deleteProfile = useCallback((id: string) => {
-    setProfiles((prev) => prev.filter((p) => p.id !== id));
-  }, []);
-
-  return { profiles, setProfiles, addProfile, updateProfile, deleteProfile };
+  return {
+    profiles: items,
+    setProfiles,
+    addProfile: addItem,
+    updateProfile: updateItem,
+    deleteProfile: deleteItem,
+  };
 }
