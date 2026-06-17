@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { carDatabase, type CarRecord, type VehicleCategory } from "@/data/carDatabase";
+import { phpApiRequest } from "@/lib/phpApi";
 
 const STORAGE_KEY = "herramientas:vehicle_database";
 
