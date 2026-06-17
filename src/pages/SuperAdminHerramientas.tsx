@@ -40,16 +40,12 @@ export default function SuperAdminHerramientas() {
     return <Navigate to="/" replace />;
   }
 
-  const showPageHeader = config.view !== "vehiculos";
-
   return (
     <div className="container mx-auto py-6 space-y-6">
-      {showPageHeader && (
-        <div>
-          <h1 className="text-3xl font-bold">{config.title}</h1>
-          <p className="text-muted-foreground">{config.subtitle}</p>
-        </div>
-      )}
+      <div>
+        <h1 className="text-3xl font-bold">{config.title}</h1>
+        <p className="text-muted-foreground">{config.subtitle}</p>
+      </div>
       <HerramientasModule superAdminView={config.view} />
     </div>
   );
