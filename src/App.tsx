@@ -25,6 +25,7 @@ const Garantias = lazy(() => import("./pages/Garantias"));
 const Configuracion = lazy(() => import("./pages/Configuracion"));
 const Herramientas = lazy(() => import("./pages/Herramientas"));
 const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
+const SuperAdminHerramientas = lazy(() => import("./pages/SuperAdminHerramientas"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -106,6 +107,7 @@ const App = () => (
               <Route path="/herramientas" element={<Herramientas />} />
               <Route path="/configuracion" element={<Configuracion />} />
               <Route path="/superadmin" element={<SuperAdmin />} />
+              <Route path="/superadmin/herramientas" element={<SuperAdminHerramientas />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

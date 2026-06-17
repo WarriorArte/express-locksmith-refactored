@@ -47,6 +47,7 @@ const pinnedBottomItems = [
 const superAdminNavItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
   { icon: Building2, label: "Gestión de Talleres", path: "/superadmin" },
+  { icon: Wrench, label: "Herramientas", path: "/superadmin/herramientas" },
 ];
 
 const superAdminBottomItems = [
