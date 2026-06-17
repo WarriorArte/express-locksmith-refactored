@@ -401,7 +401,7 @@ function AlarmaDataValueCard({ dv, index, onChange, onDelete }: DataValueCardPro
                       note.type === "image_variation" ? (
                         <div
                           key={note.id}
-                          className="flex items-start gap-2 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 px-3 py-2 text-xs text-amber-800 dark:text-amber-300"
+                          className="flex items-start gap-2 rounded-lg bg-warning/10 border border-amber-200 dark:border-amber-800 px-3 py-2 text-xs text-amber-800 dark:text-amber-300"
                         >
                           <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                           <div>
@@ -412,7 +412,7 @@ function AlarmaDataValueCard({ dv, index, onChange, onDelete }: DataValueCardPro
                       ) : (
                         <div
                           key={note.id}
-                          className="flex items-start gap-2 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 px-3 py-2 text-xs text-blue-800 dark:text-blue-300"
+                          className="flex items-start gap-2 rounded-lg bg-primary/5 border border-primary/20 px-3 py-2 text-xs text-primary dark:text-primary"
                         >
                           <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                           <div>
@@ -956,7 +956,7 @@ function AlarmaAsignacionTab({
       {/* Assignment list */}
       <div className="flex-1 overflow-auto custom-scrollbar min-h-0 space-y-2">
         {alarmaProfiles.length === 0 && (
-          <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg text-sm text-amber-800 dark:text-amber-300">
+          <div className="flex items-center gap-2 p-3 bg-warning/10 border border-amber-200 dark:border-amber-800 rounded-lg text-sm text-amber-800 dark:text-amber-300">
             <AlertCircle className="w-4 h-4 shrink-0" />
             Crea perfiles de alarma primero para poder asignarlos a vehículos.
           </div>

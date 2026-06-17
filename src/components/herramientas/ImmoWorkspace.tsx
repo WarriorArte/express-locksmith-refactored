@@ -219,7 +219,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
                       </span>
                     )}
                     {detail?.programacionOBD && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-semibold">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary dark:text-primary border border-primary/20 text-xs font-semibold">
                         <Check className="w-3 h-3" /> Programación OBD
                       </span>
                     )}
