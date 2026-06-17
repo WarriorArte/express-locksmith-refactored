@@ -93,12 +93,13 @@ export function FeaturesTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
     const isEnabled = wf?.is_enabled == null ? defaultEnabled : !!wf.is_enabled;
 
     return (
-      <div key={feature.key} className="flex items-center justify-between p-4 border rounded-lg">
-        <div className="pr-4">
-          <p className="font-medium">{feature.label}</p>
-          <p className="text-sm text-muted-foreground">{feature.description}</p>
+      <div key={feature.key} className="flex items-center justify-between py-2 px-3 border-b last:border-b-0">
+        <div className="pr-3 min-w-0">
+          <p className="text-sm font-medium truncate">{feature.label}</p>
+          <p className="text-xs text-muted-foreground truncate">{feature.description}</p>
         </div>
         <Switch
+          className="shrink-0"
           checked={isEnabled}
           onCheckedChange={(checked) =>
             toggleFeature.mutate({
