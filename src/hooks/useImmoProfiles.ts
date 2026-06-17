@@ -11,7 +11,6 @@ function migrate(items: any[]): ImmoProfile[] {
 export function useImmoProfiles() {
   const { items, addItem, updateItem, deleteItem } = useJsonResource<ImmoProfile>({
     endpoint: "/herramientas/immo-profiles",
-    cacheKey: "herramientas:immo_profiles",
     migrate,
   });
   return {

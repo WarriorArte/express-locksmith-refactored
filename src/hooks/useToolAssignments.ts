@@ -27,7 +27,6 @@ function migrate(items: any[]): ToolAssignment[] {
 export function useToolAssignments() {
   const { items, setItems, addItem, updateItem, deleteItem } = useJsonResource<ToolAssignment>({
     endpoint: "/herramientas/tool-assignments",
-    cacheKey: "herramientas:tool_assignments",
     migrate,
   });
 
