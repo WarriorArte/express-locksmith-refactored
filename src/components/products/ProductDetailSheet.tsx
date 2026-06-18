@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/responsive-dialog";
 import { DialogActionBar, type DialogAction } from "@/components/shared/DialogActionBar";
+import { getReadableTextColor } from "@/lib/colorContrast";
 import { resolveStorageUrl } from "@/lib/phpApi";
 import { cn } from "@/lib/utils";
 import {
@@ -54,6 +55,7 @@ export function ProductDetailSheet({
   if (!product) return null;
 
   const isService = (product.item_type ?? "product") === "service";
+  const badgeColor = isService ? "#6F67B0" : categoryColor;
 
   const getServiceTypeLabel = (serviceType: string | null) => {
     const labels: Record<string, string> = {
@@ -132,7 +134,7 @@ export function ProductDetailSheet({
             )}
             <span
               className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold"
-              style={{ backgroundColor: `${categoryColor}22`, color: categoryColor }}
+              style={{ backgroundColor: badgeColor, color: getReadableTextColor(badgeColor) }}
             >
               {isService ? getServiceTypeLabel(product.service_type) : categoryName}
             </span>

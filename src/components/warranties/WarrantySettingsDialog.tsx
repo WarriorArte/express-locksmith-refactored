@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2, Save } from "lucide-react";
+import { getReadableTextColor } from "@/lib/colorContrast";
 import { useCategories } from "@/hooks/useCategories";
 import {
   useWarrantyCategorySettings,
@@ -196,7 +197,12 @@ export function WarrantySettingsDialog({ open, onOpenChange }: WarrantySettingsD
                   return (
                     <div key={category.id} className="flex items-center gap-3 p-3 rounded-lg border bg-card">
                       <div className="flex-1 min-w-0">
-                        <Badge style={{ backgroundColor: category.color }} className="text-white">
+                        <Badge
+                          style={{
+                            backgroundColor: category.color,
+                            color: getReadableTextColor(category.color),
+                          }}
+                        >
                           {category.name}
                         </Badge>
                       </div>

@@ -47,6 +47,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+import { getReadableTextColor } from "@/lib/colorContrast";
 import { useProducts, useDeleteProduct, type Product } from "@/hooks/useProducts";
 import { useCategories } from "@/hooks/useCategories";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
@@ -109,22 +110,11 @@ export default function Inventario() {
     return category?.name || "Sin categoria";
   };
 
-  const getCategoryTextColor = (backgroundHex: string) => {
-    const normalized = backgroundHex.replace("#", "");
-    if (!/^[0-9a-fA-F]{6}$/.test(normalized)) return "#ffffff";
-
-    const r = parseInt(normalized.slice(0, 2), 16);
-    const g = parseInt(normalized.slice(2, 4), 16);
-    const b = parseInt(normalized.slice(4, 6), 16);
-    const luminance = (0.299 * r) + (0.587 * g) + (0.114 * b);
-    return luminance > 170 ? "#111827" : "#ffffff";
-  };
-
   const getCategoryBadgeStyle = (categoryId: string | null) => {
     const bg = getCategoryColor(categoryId);
     return {
       backgroundColor: bg,
-      color: getCategoryTextColor(bg),
+      color: getReadableTextColor(bg),
     };
   };
 
@@ -139,9 +129,10 @@ export default function Inventario() {
   };
 
   const getServiceTypeBadgeStyle = () => {
+    const bg = "#6F67B0";
     return {
-      backgroundColor: "#8b5cf6",
-      color: "#ffffff",
+      backgroundColor: bg,
+      color: getReadableTextColor(bg),
     };
   };
 

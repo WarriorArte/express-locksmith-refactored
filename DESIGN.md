@@ -10,7 +10,7 @@ colors:
   surface-tile: "#F0F1F5"
   muted-ink: "#5A5A72"
   divider-faint: "#E4E4E7"
-  purple-iris: "#9898D0"
+  purple-iris: "#6F67B0"
   signal-crimson: "#FF4D6A"
   amber-caution: "#FFB830"
   sidebar-void: "#131318"
@@ -123,7 +123,7 @@ One neon accent on a palette of near-neutrals. Everything else clears the way fo
 - **Neon Signal Deep** (`#00C98C`): Hover and pressed state of the primary. Slightly darker, same family. The user sees it for milliseconds; it must feel like a confident response.
 
 ### Secondary
-- **Purple Iris** (`#9898D0`): Info and accent role. Used for info badges, info state backgrounds (at low opacity), and secondary data-viz coloring when green is already in use on the same screen.
+- **Purple Iris** (`#6F67B0`): Info and accent role. Used for info badges, compact category fills, and secondary data-viz coloring when green is already in use on the same screen. It is dark enough to support white text at AA contrast.
 
 ### Tertiary
 - **Signal Crimson** (`#FF4D6A`): Destructive actions, error states, delete confirmations. Never used as an ambient tint; only on badges, alert backgrounds at low opacity, and the destructive button variant.
@@ -241,7 +241,7 @@ The bottom-sheet that slides up on mobile (and renders as a right-side panel or 
 - **Don't** use the neon green as a large background fill, section tint, or decorative band. The generic SaaS white/blue/rounded corporate look, and especially the "startup color splash" aesthetic, are explicitly rejected.
 - **Don't** use gradient text (`background-clip: text` with a gradient). The `.gradient-text` utility exists in the codebase as legacy; do not extend it. Replace with a solid single color.
 - **Don't** expand the `.glass` glassmorphism pattern to new components. It exists as a legacy utility; it is decorative by nature and prohibited for new UI.
-- **Don't** add a second accent color family to compete with neon green. Purple Iris (`#9898D0`) is a secondary role for info/variety only, never for emphasis.
+- **Don't** add a second accent color family to compete with neon green. Purple Iris (`#6F67B0`) is a secondary role for info/variety only, never for emphasis.
 - **Don't** use three-panel layouts, icon-only sidebar variants with more than 8 items, or nested navigation trees. Complex enterprise UI is an explicit anti-reference.
 - **Don't** use oversized buttons (height > 56px), emoji in UI copy, or excessive rounded corners (radius > 0.75rem). Consumer-grade friendliness and POS system aesthetics are explicitly rejected.
 - **Don't** use `border-left` or `border-right` greater than 1px as a colored stripe on cards or list items. Use background tints or full borders instead.

@@ -13,7 +13,7 @@ import {
   Key,
   X,
   Shield,
-  Construction,
+  Car,
   Building2,
   Activity,
   LogOut,
@@ -36,7 +36,7 @@ const workshopNavItems = [
   { icon: Wrench, label: "Servicios", path: "/servicios", featureKey: "services" },
   { icon: ShoppingCart, label: "Ventas", path: "/ventas", featureKey: "sales" },
   { icon: Shield, label: "Garantías", path: "/garantias", featureKey: "warranties" },
-  { icon: Construction, label: "Herramientas", path: "/herramientas", featureKey: null },
+  { icon: Car, label: "Vehículos", path: "/herramientas", featureKey: null },
 ];
 
 // Items pinned at the bottom of the sidebar

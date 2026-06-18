@@ -1,22 +1,14 @@
 import { useState, useMemo } from "react";
 import { m as motion } from "framer-motion";
-import { Car, Key, Radio, Cpu, Truck, Bike } from "lucide-react";
+import { Key, Radio, Cpu } from "lucide-react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
-import { AVAILABLE_TOOLS } from "@/data/tools";
 import { useWorkshopFeatures } from "@/hooks/useWorkshopFeatures";
 import { KeycodeWorkspace } from "./KeycodeWorkspace";
 import { AlarmasWorkspace } from "./AlarmasWorkspace";
 import { ImmoWorkspace } from "./ImmoWorkspace";
 import type { ToolAssignment, KeycodeProfile, AlarmaProfile, ImmoProfile, ImmoCatalogItem, ImmoAssignmentDetail } from "@/types";
-import { type VehicleCategory, VEHICLE_CATEGORIES, VEHICLE_CATEGORY_LABELS } from "@/data/carDatabase";
-
-const CATEGORY_ICONS_WS: Record<VehicleCategory, React.ReactNode> = {
-  Vehiculo: <Car className="w-3.5 h-3.5" />,
-  Camion: <Truck className="w-3.5 h-3.5" />,
-  Motocicleta: <Bike className="w-3.5 h-3.5" />,
-};
 
 interface WorkshopToolViewProps {
   assignments: ToolAssignment[];
@@ -25,8 +17,10 @@ interface WorkshopToolViewProps {
   alarmaProfiles: AlarmaProfile[];
   immoProfiles: ImmoProfile[];
   immoCatalog: ImmoCatalogItem[];
-  getMakeCategory: (make: string) => VehicleCategory;
   onToolActive?: (active: boolean) => void;
+  selectedYear: number | "";
+  selectedMake: string;
+  selectedModel: string;
 }
 
 export function WorkshopToolView({
@@ -36,15 +30,13 @@ export function WorkshopToolView({
   alarmaProfiles,
   immoProfiles,
   immoCatalog,
-  getMakeCategory,
   onToolActive,
+  selectedYear,
+  selectedMake,
+  selectedModel,
 }: WorkshopToolViewProps) {
   const { isFeatureEnabled } = useWorkshopFeatures();
 
-  const [selectedCategory, setSelectedCategory] = useState<VehicleCategory | "">("");
-  const [selectedYear, setSelectedYear] = useState<number | "">("");
-  const [selectedMake, setSelectedMake] = useState("");
-  const [selectedModel, setSelectedModel] = useState("");
   const [activeToolId, setActiveToolId] = useState<string | null>(null);
   const [activeKeycodeProfileId, setActiveKeycodeProfileId] = useState<string | null>(null);
   const [activeAlarmaProfileId, setActiveAlarmaProfileId] = useState<string | null>(null);
@@ -75,50 +67,6 @@ export function WorkshopToolView({
     () => isImmoAuthorized ? assignments.filter((a) => (a.immoDetails?.length ?? 0) > 0) : [],
     [assignments, isImmoAuthorized]
   );
-
-  // Unified set (no duplicates) for building the vehicle selector
-  const allValidAssignments = useMemo(() => {
-    const map = new Map<string, ToolAssignment>();
-    [...keycodeValidAssignments, ...alarmaValidAssignments, ...immoValidAssignments]
-      .forEach((a) => map.set(a.id, a));
-    const all = Array.from(map.values());
-    if (!selectedCategory) return all;
-    return all.filter((a) => getMakeCategory(a.make) === selectedCategory);
-  }, [keycodeValidAssignments, alarmaValidAssignments, immoValidAssignments, selectedCategory, getMakeCategory]);
-
-  // ── Vehicle selector options ───────────────────────────────────────────────
-
-  const availableYears = useMemo(() => {
-    const years = new Set<number>();
-    allValidAssignments.forEach((a) => {
-      for (let y = a.yearStart; y <= a.yearEnd; y++) years.add(y);
-    });
-    return Array.from(years).sort((a, b) => b - a);
-  }, [allValidAssignments]);
-
-  const availableMakes = useMemo(() => {
-    if (!selectedYear) return [];
-    const makes = new Set<string>();
-    allValidAssignments.forEach((a) => {
-      if (Number(selectedYear) >= a.yearStart && Number(selectedYear) <= a.yearEnd)
-        makes.add(a.make);
-    });
-    return Array.from(makes).sort();
-  }, [allValidAssignments, selectedYear]);
-
-  const availableModels = useMemo(() => {
-    if (!selectedYear || !selectedMake) return [];
-    const models = new Set<string>();
-    allValidAssignments.forEach((a) => {
-      if (
-        Number(selectedYear) >= a.yearStart &&
-        Number(selectedYear) <= a.yearEnd &&
-        a.make === selectedMake
-      )
-        models.add(a.model);
-    });
-    return Array.from(models).sort();
-  }, [allValidAssignments, selectedYear, selectedMake]);
 
   // ── Matching assignments for selected vehicle ──────────────────────────────
 
@@ -261,136 +209,13 @@ export function WorkshopToolView({
 
   // ── Main view ──────────────────────────────────────────────────────────────
 
-  const selectClass =
-    "flex h-11 w-full rounded-xl border border-primary/20/60 bg-white/70 px-4 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-all disabled:cursor-not-allowed disabled:opacity-50/50 dark:border-foreground";
-
-  const hasAnyTool = isKeycodeAuthorized || isAlarmasAuthorized || isImmoAuthorized;
   const vehicleSelected = selectedYear && selectedMake && selectedModel;
   const hasKeycodeData = availableKeycodeProfileIds.length > 0;
   const hasAlarmaData = availableAlarmaProfileIds.length > 0;
   const hasImmoData = availableImmoProfileIds.length > 0;
 
   return (
-    <div className="space-y-6">
-      {/* Vehicle selector */}
-      <Card className="bg-primary/5 border-none shadow-sm rounded-[24px] overflow-hidden">
-        <CardHeader className="pb-4 pt-6 px-6">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm shrink-0">
-              <Car className="h-6 w-6" />
-            </div>
-            <div className="flex flex-col gap-0.5">
-              <p className="text-sm font-medium text-muted-foreground">Buscador</p>
-              <CardTitle className="text-xl font-bold text-foreground">
-                Selección de Vehículo
-              </CardTitle>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="px-6 pb-6">
-          {!hasAnyTool ? (
-            <div className="text-center py-8 bg-muted rounded-lg border border-dashed border-border">
-              <p className="text-muted-foreground font-medium">
-                No tienes herramientas asignadas por el SuperAdmin para este taller.
-              </p>
-            </div>
-          ) : availableYears.length === 0 && !selectedCategory ? (
-            <div className="text-center py-8 bg-muted rounded-lg border border-dashed border-border">
-              <p className="text-muted-foreground font-medium">
-                Aún no hay vehículos configurados para las herramientas de este taller.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-5">
-              {/* Category filter chips */}
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => { setSelectedCategory(""); setSelectedYear(""); setSelectedMake(""); setSelectedModel(""); }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                    !selectedCategory
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
-                  }`}
-                >
-                  <Car className="w-3.5 h-3.5" /> Todos
-                </button>
-                {VEHICLE_CATEGORIES.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => { setSelectedCategory(cat); setSelectedYear(""); setSelectedMake(""); setSelectedModel(""); }}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                      selectedCategory === cat
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
-                    }`}
-                  >
-                    {CATEGORY_ICONS_WS[cat]} {VEHICLE_CATEGORY_LABELS[cat]}
-                  </button>
-                ))}
-              </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-foreground ml-1">
-                  1. Año
-                </label>
-                <select
-                  value={selectedYear}
-                  onChange={(e) => {
-                    setSelectedYear(Number(e.target.value) || "");
-                    setSelectedMake("");
-                    setSelectedModel("");
-                  }}
-                  className={selectClass}
-                >
-                  <option value="">-- Año --</option>
-                  {availableYears.map((y) => (
-                    <option key={y} value={y}>{y}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-foreground ml-1">
-                  2. Marca
-                </label>
-                <select
-                  value={selectedMake}
-                  onChange={(e) => {
-                    setSelectedMake(e.target.value);
-                    setSelectedModel("");
-                  }}
-                  disabled={!selectedYear}
-                  className={selectClass}
-                >
-                  <option value="">-- Marca --</option>
-                  {availableMakes.map((m) => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-foreground ml-1">
-                  3. Modelo
-                </label>
-                <select
-                  value={selectedModel}
-                  onChange={(e) => setSelectedModel(e.target.value)}
-                  disabled={!selectedMake}
-                  className={selectClass}
-                >
-                  <option value="">-- Modelo --</option>
-                  {availableModels.map((m) => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Tool cards — only shown when vehicle selected */}
+    <div>
       {vehicleSelected && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}

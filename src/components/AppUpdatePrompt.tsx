@@ -248,6 +248,16 @@ export function AppUpdatePrompt() {
   const refreshApp = async () => {
     setIsRefreshing(true);
 
+    if (updateNotice) {
+      try {
+        window.localStorage.setItem(NOTICE_DISMISSED_STORAGE_KEY, updateNotice.notice_key);
+      } catch {
+        // noop
+      }
+      writeCachedNotice(null);
+      setUpdateNotice(null);
+    }
+
     if (waitingWorkerRef.current) {
       waitingWorkerRef.current.postMessage({ type: "SKIP_WAITING" });
       window.setTimeout(() => window.location.reload(), 2_000);

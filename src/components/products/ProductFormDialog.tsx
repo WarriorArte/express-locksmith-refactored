@@ -1029,7 +1029,7 @@ function CategoryCombobox({
             <span className="flex min-w-0 items-center gap-2">
               <span
                 className="h-3 w-3 shrink-0 rounded-[3px]"
-                style={{ backgroundColor: selectedCategory.color || "#9898D0" }}
+                style={{ backgroundColor: selectedCategory.color || "#6F67B0" }}
               />
               <span className="truncate">{selectedCategory.name}</span>
             </span>
@@ -1074,7 +1074,7 @@ function CategoryCombobox({
                   />
                   <span
                     className="mr-2 h-3 w-3 shrink-0 rounded-[3px]"
-                    style={{ backgroundColor: category.color || "#9898D0" }}
+                    style={{ backgroundColor: category.color || "#6F67B0" }}
                   />
                   <span className="truncate">{category.name}</span>
                 </CommandItem>
