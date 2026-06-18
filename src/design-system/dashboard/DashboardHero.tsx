@@ -18,7 +18,7 @@ export function DashboardHero({
   className,
 }: DashboardHeroProps) {
   return (
-    <section className={cn("ce-hero ce-hero-mobile-bleed p-[22px_16px] lg:p-[22px] lg:min-h-0 min-h-[280px]", className)}>
+    <section className={cn("ce-hero ce-hero-mobile-bleed p-[22px_16px] lg:p-[22px] lg:min-h-0 min-h-[160px]", className)}>
 
       {/* Top: título + descripción + avatar */}
       <div className="relative z-[3] flex items-start justify-between gap-4">

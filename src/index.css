@@ -179,6 +179,8 @@
   html {
     scroll-behavior: smooth;
     overscroll-behavior-x: none;
+    /* Color del hero para que la status bar lo tome en iOS black-translucent */
+    background-color: hsl(240 16% 8%);
   }
 
   body {
