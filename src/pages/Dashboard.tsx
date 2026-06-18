@@ -45,9 +45,9 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain pt-10 lg:pt-3 px-5 lg:px-6 pb-24 md:pb-6 no-scrollbar">
-      {/* Mobile nav grid */}
-      <div className="lg:hidden">
+    <div className="flex-1 min-h-0 flex flex-col lg:block lg:overflow-auto lg:overscroll-y-contain lg:pt-3 lg:px-6 lg:pb-6 no-scrollbar">
+      {/* Mobile nav grid — fills entire remaining height */}
+      <div className="lg:hidden flex-1 flex flex-col min-h-0 pt-10 px-5">
         <DashboardHero
           firstName={firstName}
           inProgressServices={inProgress}
@@ -57,14 +57,14 @@ export default function Dashboard() {
           }
         />
 
-        <div className="relative z-10 -mt-12 grid grid-cols-3 gap-3">
+        <div className="relative z-10 -mt-12 flex-1 min-h-0 grid grid-cols-3 grid-rows-3 gap-3 pb-[calc(env(safe-area-inset-bottom,0px)+5.5rem)]">
           {filteredNavItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
                 cn(
-                  "card-elevated shadow-md aspect-square flex flex-col items-center justify-center gap-2.5 rounded-xl px-2 transition-all duration-200",
+                  "card-elevated shadow-md flex flex-col items-center justify-center gap-2 rounded-xl px-2 transition-all duration-200",
                   isActive
                     ? "!bg-primary !text-primary-foreground border-primary"
                     : "text-muted-foreground hover:text-foreground",
@@ -79,7 +79,7 @@ export default function Dashboard() {
           ))}
 
           {Array.from({ length: (3 - (filteredNavItems.length % 3)) % 3 }).map((_, i) => (
-            <div key={`placeholder-${i}`} className="card-elevated shadow-md aspect-square rounded-xl opacity-30" />
+            <div key={`placeholder-${i}`} className="card-elevated shadow-md rounded-xl opacity-30" />
           ))}
         </div>
       </div>
