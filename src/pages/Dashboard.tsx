@@ -55,10 +55,10 @@ export default function Dashboard() {
           accountTrigger={
             <AccountMenu showNotifications={false} triggerClassName="shrink-0" />
           }
-          className="flex-1 min-h-0"
         />
 
-        <div className="relative z-10 -mt-12 shrink-0 grid grid-cols-3 gap-3">
+        <div className="flex-1 flex items-center">
+        <div className="w-full grid grid-cols-3 gap-3">
           {filteredNavItems.map((item) => (
             <NavLink
               key={item.path}
@@ -82,6 +82,7 @@ export default function Dashboard() {
           {Array.from({ length: (3 - (filteredNavItems.length % 3)) % 3 }).map((_, i) => (
             <div key={`placeholder-${i}`} className="card-elevated shadow-md aspect-square rounded-xl opacity-30" />
           ))}
+        </div>
         </div>
       </div>
 
