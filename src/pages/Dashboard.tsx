@@ -45,9 +45,9 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col lg:block lg:overflow-auto lg:overscroll-y-contain lg:pt-3 lg:px-6 lg:pb-6 no-scrollbar">
-      {/* Mobile nav grid — fills entire remaining height */}
-      <div className="lg:hidden flex-1 flex flex-col min-h-0 pt-10 px-5 pb-[calc(env(safe-area-inset-bottom,0px)+5.5rem)]">
+    <div className="flex-1 min-h-0 overflow-hidden lg:overflow-auto lg:overscroll-y-contain no-scrollbar lg:pt-3 lg:px-6 lg:pb-6">
+      {/* Mobile: hero + grid llenan exactamente la pantalla sin scroll */}
+      <div className="lg:hidden h-full flex flex-col pt-10 px-5 pb-[calc(env(safe-area-inset-bottom,0px)+6.25rem)]">
         <DashboardHero
           firstName={firstName}
           inProgressServices={inProgress}
@@ -55,10 +55,11 @@ export default function Dashboard() {
           accountTrigger={
             <AccountMenu showNotifications={false} triggerClassName="shrink-0" />
           }
+          className="shrink-0"
+          style={{ height: "calc(100dvh - 100vw - 5rem - env(safe-area-inset-bottom, 0px))" }}
         />
 
-        <div className="flex-1 flex items-center">
-        <div className="w-full grid grid-cols-3 gap-3">
+        <div className="mt-1 shrink-0 grid grid-cols-3 gap-3">
           {filteredNavItems.map((item) => (
             <NavLink
               key={item.path}
@@ -82,7 +83,6 @@ export default function Dashboard() {
           {Array.from({ length: (3 - (filteredNavItems.length % 3)) % 3 }).map((_, i) => (
             <div key={`placeholder-${i}`} className="card-elevated shadow-md aspect-square rounded-xl opacity-30" />
           ))}
-        </div>
         </div>
       </div>
 

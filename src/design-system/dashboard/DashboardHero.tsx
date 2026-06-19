@@ -8,6 +8,7 @@ interface DashboardHeroProps {
   expiringQuotes: number;
   accountTrigger?: React.ReactNode;
   className?: string;
+  style?: React.CSSProperties;
 }
 
 export function DashboardHero({
@@ -16,9 +17,10 @@ export function DashboardHero({
   expiringQuotes,
   accountTrigger,
   className,
+  style,
 }: DashboardHeroProps) {
   return (
-    <section className={cn("ce-hero ce-hero-mobile-bleed p-[22px_16px] lg:p-[22px] lg:min-h-0 min-h-[280px]", className)}>
+    <section className={cn("ce-hero ce-hero-mobile-bleed p-[22px_16px] lg:p-[22px] lg:min-h-0", className)} style={style}>
 
       {/* Top: título + descripción + avatar */}
       <div className="relative z-[3] flex items-start justify-between gap-4">
@@ -42,7 +44,7 @@ export function DashboardHero({
       </div>
 
       {/* Descripción — fondo del hero, justo encima de los botones */}
-      <p className="lg:hidden absolute z-[3] bottom-[70px] left-[16px] ce-hero-meta">
+      <p className="lg:hidden absolute z-[3] bottom-5 left-[16px] ce-hero-meta">
         Tu taller<br />en la palma de tu mano.
       </p>
 

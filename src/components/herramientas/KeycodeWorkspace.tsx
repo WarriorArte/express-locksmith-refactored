@@ -1,16 +1,18 @@
 import { useState, useRef, useMemo, useCallback, useEffect } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { m as motion, AnimatePresence } from "framer-motion";
-import { Key, ArrowLeft, CheckCircle2, Filter, X, Info, Settings2, Loader2, Camera, Lock } from "lucide-react";
+import { Key, ArrowLeft, CheckCircle2, Filter, X, Info, Settings2, Loader2, Camera, Lock, Search, List } from "lucide-react";
 import { toast } from "sonner";
 import { GeneradorLlaveSVG } from "@/components/llaves/GeneradorLlaveSVG";
+import { UnifiedSearchInput } from "@/components/shared/UnifiedSearchInput";
 import { KeyPhotoDecoder } from "@/components/herramientas/KeyPhotoDecoder";
 import { buildDefaultDecoderConfig } from "@/lib/decoderPresets";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { AccountMenu } from "@/components/layout/AccountMenu";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/responsive-dialog";
 
 import type { ToolAssignment, KeycodeProfile, BittingConfig } from "@/types";
 import { LOCK_LABELS, LOCK_ORDER } from "@/types";
@@ -62,6 +64,14 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
   const [advancedMode, setAdvancedMode] = useState(false);
   const [decoderOpen, setDecoderOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const isMobile = useIsMobile();
+  const [resultsSheetOpen, setResultsSheetOpen] = useState(false);
+
+  useEffect(() => {
+    if (isMobile && (isSearching || hasBittingSearched)) {
+      setResultsSheetOpen(true);
+    }
+  }, [isMobile, isSearching, hasBittingSearched]);
   const [tileVariants, setTileVariants] = useState<{ up: boolean; down: boolean }[]>(() =>
     Array(bittingTotalLength).fill(null).map(() => ({ up: false, down: false }))
   );
@@ -85,7 +95,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     return sel;
   }, [assignment.lockSelections, profile]);
 
-  const hasInfo = usesLetterMapping || !!profileLockSelections;
+  const hasInfo = true;
 
   const getAxesQueryRanges = () => {
     if (!profile) return [] as { label: string | null; start: number; length: number }[];
@@ -264,6 +274,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     setBittingGroups([]);
     setHasBittingSearched(false);
     setTileVariants(Array(bittingTotalLength).fill(null).map(() => ({ up: false, down: false })));
+    setResultsSheetOpen(false);
   };
 
   const loadEntry = (entry: { codigo: string; bitting: string[] }) => {
@@ -273,6 +284,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     setExactEntry(entry);
     setCodeState("exact");
     setSearchTerm(entry.codigo);
+    setResultsSheetOpen(false);
   };
 
   // ── Decoder por foto ──
@@ -375,7 +387,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
 
   const ranges = getAxesQueryRanges();
   const showAxisLabels = ranges.length >= 2;
-  const hasAnyValue = gridValues.some((v) => v.trim() !== "" && v !== "?");
+  const hasAnyValue = gridValues.some((v) => v.trim() !== "" && v !== "?") || searchTerm.trim() !== "";
   const hasMultiAxes = profile.bittingConfig.axes && profile.bittingConfig.axes.length >= 2;
 
   // Preparar valores para el SVG interactivo
@@ -402,103 +414,99 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
 
   return (
     <>
-    <div className="h-[calc(100dvh-4rem-2rem)] lg:h-[calc(100dvh-4rem-3rem)] flex flex-col lg:flex-row lg:gap-4 overflow-hidden">
+    <div className="h-full flex flex-col">
+
+      {/* ══════════════════════════════════════
+          HERO HEADER
+          ══════════════════════════════════════ */}
+      <div className="shrink-0 bg-background px-5 lg:px-6 pt-10 lg:pt-3 pb-4">
+        <section className="ce-hero ce-hero-mobile-bleed p-[22px_16px] lg:p-[22px]">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <button
+                onClick={onBack}
+                className="ce-hero-eyebrow inline-flex items-center gap-1.5 hover:opacity-70 transition-opacity"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Herramientas
+              </button>
+              <AnimatePresence mode="wait">
+                <motion.h1
+                  key={exactEntry?.codigo ?? "serie"}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.18 }}
+                  className="ce-hero-title mt-1.5 text-[clamp(1.55rem,5.4vw,2.15rem)] lg:mt-2 lg:text-[clamp(1.75rem,3vw,2.5rem)]"
+                >
+                  {codeState === "exact" && exactEntry
+                    ? <span className="text-primary">{exactEntry.codigo}.</span>
+                    : profile.series
+                      ? <>Serie <span className="text-primary">{profile.series}.</span></>
+                      : <>IC <span className="text-primary">{profile.icCard}.</span></>
+                  }
+                </motion.h1>
+              </AnimatePresence>
+              <p className="ce-hero-meta mt-2">{assignment.yearStart} – {assignment.yearEnd}</p>
+            </div>
+            <div className="shrink-0 mt-1">
+              <AccountMenu />
+            </div>
+          </div>
+
+          {/* ── Barra de búsqueda ── */}
+          <form onSubmit={handleCodeSearch} className="mt-4 lg:mt-5 flex items-center gap-2">
+            <UnifiedSearchInput
+              className="flex-1 min-w-0"
+              placeholder="Codigo"
+              value={searchTerm}
+              onChange={(val) => {
+                setSearchTerm(val);
+                if (codeState === "notfound") setCodeState("idle");
+              }}
+              inputClassName="font-mono uppercase placeholder:normal-case"
+            />
+            <button
+              type="submit"
+              className="h-10 w-10 shrink-0 flex items-center justify-center rounded-xl bg-white/[.09] border border-white/[.13] text-[hsl(240_22%_95%)] hover:bg-white/[.14] active:scale-95 transition-all"
+            >
+              <Search className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setInfoModalOpen(true)}
+              className="h-10 w-10 shrink-0 flex items-center justify-center rounded-xl bg-white/[.09] border border-white/[.13] text-[hsl(240_22%_95%)] hover:bg-white/[.14] active:scale-95 transition-all"
+            >
+              <Info className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={handleOpenDecoder}
+              className="h-10 w-10 shrink-0 flex items-center justify-center rounded-xl bg-white/[.09] border border-white/[.13] text-[hsl(240_22%_95%)] hover:bg-white/[.14] active:scale-95 transition-all"
+            >
+              <Camera className="w-4 h-4" />
+            </button>
+          </form>
+          {codeState === "notfound" && (
+            <p className="mt-1.5 text-xs text-white/60">
+              El código <span className="font-mono font-semibold">{searchTerm.toUpperCase()}</span> no existe en esta serie.
+            </p>
+          )}
+        </section>
+      </div>
+
+      {/* ══════════════════════════════════════
+          CONTENIDO — dos columnas en desktop
+          ══════════════════════════════════════ */}
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row lg:gap-4 overflow-hidden px-5 lg:px-6 pb-24 lg:pb-6">
 
       {/* ══════════════════════════════════════
           COLUMNA IZQUIERDA — SVG interactivo + controles
           ══════════════════════════════════════ */}
-      <div className="shrink-0 pb-2 lg:w-[480px] lg:overflow-y-auto lg:pb-4">
+      <div className="shrink-0 pb-2 overflow-y-auto no-scrollbar lg:w-[480px] lg:pb-4">
 
         <Card>
-          <CardHeader className="pt-3 pb-2 px-4">
-            <CardTitle className="text-base flex items-center gap-2">
-              <button
-                onClick={onBack}
-                className="text-primary hover:text-primary/80 transition-colors shrink-0"
-                title="Volver"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-              <div className="flex flex-col min-w-0">
-                <span className="font-bold text-sm leading-tight">{assignment.make} {assignment.model}</span>
-                <div className="flex items-center gap-x-2 flex-wrap">
-                  <span className="text-xs text-muted-foreground">IC {profile.icCard}</span>
-                  <span className="text-xs text-muted-foreground">· Serie {profile.series}</span>
-                  {profile.references.find(r => r.isPrimary) && (
-                    <span className="text-xs text-muted-foreground">· {profile.references.find(r => r.isPrimary)!.brand} {profile.references.find(r => r.isPrimary)!.refCode}</span>
-                  )}
-                </div>
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4 pt-1 space-y-4">
-
-            {/* Búsqueda por código */}
-            <form onSubmit={handleCodeSearch} className="flex gap-2 w-full">
-              <Input
-                placeholder="Ingresa tu código"
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  if (codeState === "notfound") setCodeState("idle");
-                }}
-                className={`font-mono text-base uppercase ${codeState === "notfound" ? "border-destructive focus-visible:ring-destructive" : ""}`}
-              />
-              <Button type="submit" className="shrink-0">Buscar</Button>
-              {hasInfo && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setInfoModalOpen(true)}
-                  title="Información de la cerradura y mapeo"
-                  className="shrink-0 text-amber-600 border-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/40"
-                >
-                  <Info className="w-4 h-4" />
-                </Button>
-              )}
-              <Button
-                type="button"
-                variant={advancedMode ? "default" : "outline"}
-                size="icon"
-                onClick={() => setAdvancedMode(!advancedMode)}
-                title={advancedMode ? "Desactivar búsqueda avanzada" : "Activar búsqueda avanzada (±1)"}
-                className="shrink-0"
-              >
-                <Settings2 className="w-4 h-4" />
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={handleOpenDecoder}
-                title="Decodificar llave por foto"
-                className="shrink-0 text-primary border-primary/40 hover:bg-primary/10"
-              >
-                <Camera className="w-4 h-4" />
-              </Button>
-              {hasAnyValue && (
-                <Button type="button" variant="outline" size="icon" onClick={handleClear} title="Limpiar" className="shrink-0">
-                  <X className="w-4 h-4" />
-                </Button>
-              )}
-            </form>
-
-            {/* Feedback código no encontrado */}
-            <AnimatePresence>
-              {codeState === "notfound" && (
-                <motion.p
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="text-sm text-destructive -mt-2"
-                >
-                  El código <span className="font-mono font-semibold">{searchTerm.toUpperCase()}</span> no existe en esta serie.
-                </motion.p>
-              )}
-            </AnimatePresence>
-
-            <Separator />
+          <CardContent className="px-4 pb-4 pt-4 space-y-4">
 
             {/* SVG interactivo con inputs inline — siempre visible */}
             {profile.configuracionVisual ? (
@@ -640,145 +648,152 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
 
             {/* Acciones */}
             <div className="flex gap-2 sm:max-w-md sm:mx-auto">
-              {(hasAnyValue && codeState !== "exact") || hasBittingSearched ? (
+              {((hasAnyValue && codeState !== "exact") || hasBittingSearched) && (
                 <Button
                   type="button"
+                  size="icon"
                   onClick={handleBittingSearch}
                   variant={hasBittingSearched ? "outline" : "default"}
-                  className="flex-1"
+                  title={hasBittingSearched ? "Actualizar búsqueda" : "Buscar coincidencias"}
+                  className="shrink-0"
                 >
-                  <Filter className="w-4 h-4 mr-2" />
-                  {hasBittingSearched ? "Actualizar búsqueda" : "Buscar coincidencias"}
+                  <Filter className="w-4 h-4" />
                 </Button>
-              ) : null}
+              )}
+              {hasBittingSearched && isMobile && (
+                <Button
+                  type="button"
+                  size="icon"
+                  onClick={() => setResultsSheetOpen(true)}
+                  title="Ver resultados"
+                  className="shrink-0"
+                >
+                  <List className="w-4 h-4" />
+                </Button>
+              )}
+              <Button
+                type="button"
+                variant={advancedMode ? "default" : "outline"}
+                size="icon"
+                onClick={() => setAdvancedMode(!advancedMode)}
+                title={advancedMode ? "Desactivar búsqueda avanzada" : "Activar búsqueda avanzada (±1)"}
+                className="shrink-0"
+              >
+                <Settings2 className="w-4 h-4" />
+              </Button>
+              {hasAnyValue && (
+                <Button type="button" variant="outline" size="icon" onClick={handleClear} title="Limpiar" className="shrink-0">
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
             </div>
 
-            {/* Código confirmado */}
-            <AnimatePresence>
-              {codeState === "exact" && exactEntry && (
-                <motion.div
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="flex items-center justify-center gap-2"
-                >
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
-                  <span className="text-sm font-semibold text-green-700 dark:text-green-400">Código confirmado:</span>
-                  <Badge variant="outline" className="font-mono text-base px-3 py-0.5 border-green-500 text-green-700 dark:text-green-400">
-                    {exactEntry.codigo}
-                  </Badge>
-                </motion.div>
-              )}
-            </AnimatePresence>
 
           </CardContent>
         </Card>
 
-        {/* Modal de información: cerraduras + mapeo de profundidades */}
-        <AnimatePresence>
-          {infoModalOpen && hasInfo && profile && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
-              onClick={() => setInfoModalOpen(false)}
-            >
-              <motion.div
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="bg-background rounded-xl border border-amber-300 dark:border-amber-700 shadow-xl p-5 max-w-md w-full space-y-4 max-h-[85vh] overflow-y-auto custom-scrollbar"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <Info className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
-                    <h3 className="font-semibold text-sm text-foreground">Información de la serie</h3>
-                  </div>
-                  <button onClick={() => setInfoModalOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors">
-                    <X className="w-4 h-4" />
-                  </button>
+        {/* Modal de información */}
+        <Dialog open={infoModalOpen} onOpenChange={setInfoModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                Información de la serie
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4 pb-2">
+              {/* Vehículo e IC */}
+              <div className="space-y-1 bg-muted/40 rounded-md p-2.5 border">
+                <p className="text-sm font-semibold text-foreground">{assignment.make} {assignment.model}</p>
+                <p className="text-xs text-muted-foreground">{assignment.yearStart} – {assignment.yearEnd}</p>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1">
+                  <span className="text-xs text-muted-foreground">IC: <span className="font-mono font-semibold text-foreground">{profile.icCard}</span></span>
+                  {profile.series && (
+                    <span className="text-xs text-muted-foreground">Serie: <span className="font-semibold text-foreground">{profile.series}</span></span>
+                  )}
+                  {profile.references.find(r => r.isPrimary) && (
+                    <span className="text-xs text-muted-foreground">
+                      Ref: <span className="font-semibold text-foreground">{profile.references.find(r => r.isPrimary)!.brand} {profile.references.find(r => r.isPrimary)!.refCode}</span>
+                    </span>
+                  )}
                 </div>
+              </div>
 
-                {/* Sección de cerraduras del vehículo */}
-                {profileLockSelections && (() => {
-                  const axes = profile.bittingConfig.axes;
-                  const isDosEjes = !!(axes && axes.length >= 2);
-                  return (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Lock className="w-4 h-4 text-primary" />
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">Cerraduras de este vehículo</h4>
-                      </div>
-                      <p className="text-[11px] text-muted-foreground leading-snug">
-                        Cortes incluidos en cada cerradura ({assignment.make} {assignment.model} {assignment.yearStart}-{assignment.yearEnd}):
-                      </p>
-                      <div className="space-y-1.5 bg-muted/40 rounded-md p-2.5 border">
-                        {LOCK_ORDER.filter((lk) => profileLockSelections[lk]).map((lk) => {
-                          const arr = profileLockSelections[lk]!;
-                          const renderRow = (start: number, end: number) =>
-                            arr.slice(start, end).map((checked, i) => (
-                              <span
-                                key={start + i}
-                                className={`inline-flex items-center justify-center w-4 h-4 rounded-sm border text-[9px] font-bold ${checked ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground/40 border-input'}`}
-                              >
-                                {checked ? '✓' : ''}
-                              </span>
-                            ));
-                          return (
-                            <div key={lk} className="flex items-center gap-2 text-xs">
-                              <span className="w-20 shrink-0 font-medium">{LOCK_LABELS[lk]}:</span>
-                              {isDosEjes ? (
-                                <div className="flex flex-wrap gap-1.5 items-center">
-                                  <span className="text-[9px] font-bold text-muted-foreground">{axes![0].label}</span>
-                                  <div className="flex gap-0.5">{renderRow(0, axes![0].length)}</div>
-                                  <span className="text-[9px] font-bold text-muted-foreground ml-1">{axes![1].label}</span>
-                                  <div className="flex gap-0.5">{renderRow(axes![0].length, axes![0].length + axes![1].length)}</div>
-                                </div>
-                              ) : (
-                                <div className="flex flex-wrap gap-0.5">{renderRow(0, arr.length)}</div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* Sección de mapeo de profundidades */}
-                {usesLetterMapping && profile.bittingConfig.depthMapping && (
+              {/* Cerraduras del vehículo */}
+              {profileLockSelections && (() => {
+                const axes = profile.bittingConfig.axes;
+                const isDosEjes = !!(axes && axes.length >= 2);
+                return (
                   <div className="space-y-2">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">Mapeo de profundidades</h4>
+                    <div className="flex items-center gap-2">
+                      <Lock className="w-4 h-4 text-primary" />
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">Cerraduras de este vehículo</h4>
+                    </div>
                     <p className="text-[11px] text-muted-foreground leading-snug">
-                      Es posible que las llaves de esta cerradura tengan impresos números, letras o marcas distintas. Usa esta tabla para interpretarlos:
+                      Cortes incluidos en cada cerradura ({assignment.make} {assignment.model} {assignment.yearStart}-{assignment.yearEnd}):
                     </p>
-                    <div className="flex flex-wrap gap-2">
-                      {Object.entries(profile.bittingConfig.depthMapping).map(([num, letter]) => (
-                        <div key={num} className="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-700 rounded px-2 py-1">
-                          <span className="font-mono font-bold text-sm text-foreground">{letter}</span>
-                          <span className="text-amber-500 text-xs">=</span>
-                          <span className="font-mono text-sm text-muted-foreground">{num}</span>
-                        </div>
-                      ))}
+                    <div className="space-y-1.5 bg-muted/40 rounded-md p-2.5 border">
+                      {LOCK_ORDER.filter((lk) => profileLockSelections[lk]).map((lk) => {
+                        const arr = profileLockSelections[lk]!;
+                        const renderRow = (start: number, end: number) =>
+                          arr.slice(start, end).map((checked, i) => (
+                            <span
+                              key={start + i}
+                              className={`inline-flex items-center justify-center w-4 h-4 rounded-sm border text-[9px] font-bold ${checked ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground/40 border-input'}`}
+                            >
+                              {checked ? '✓' : ''}
+                            </span>
+                          ));
+                        return (
+                          <div key={lk} className="flex items-center gap-2 text-xs">
+                            <span className="w-20 shrink-0 font-medium">{LOCK_LABELS[lk]}:</span>
+                            {isDosEjes ? (
+                              <div className="flex flex-wrap gap-1.5 items-center">
+                                <span className="text-[9px] font-bold text-muted-foreground">{axes![0].label}</span>
+                                <div className="flex gap-0.5">{renderRow(0, axes![0].length)}</div>
+                                <span className="text-[9px] font-bold text-muted-foreground ml-1">{axes![1].label}</span>
+                                <div className="flex gap-0.5">{renderRow(axes![0].length, axes![0].length + axes![1].length)}</div>
+                              </div>
+                            ) : (
+                              <div className="flex flex-wrap gap-0.5">{renderRow(0, arr.length)}</div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-                )}
+                );
+              })()}
 
-                <Button className="w-full" onClick={() => setInfoModalOpen(false)}>Entendido</Button>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              {/* Mapeo de profundidades */}
+              {usesLetterMapping && profile.bittingConfig.depthMapping && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">Mapeo de profundidades</h4>
+                  <p className="text-[11px] text-muted-foreground leading-snug">
+                    Es posible que las llaves de esta cerradura tengan impresos números, letras o marcas distintas. Usa esta tabla para interpretarlos:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(profile.bittingConfig.depthMapping).map(([num, letter]) => (
+                      <div key={num} className="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-700 rounded px-2 py-1">
+                        <span className="font-mono font-bold text-sm text-foreground">{letter}</span>
+                        <span className="text-amber-500 text-xs">=</span>
+                        <span className="font-mono text-sm text-muted-foreground">{num}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
       </div>
 
       {/* ══════════════════════════════════════
-          COLUMNA DERECHA — resultados (scrollable)
+          COLUMNA DERECHA — resultados (solo desktop)
           ══════════════════════════════════════ */}
-      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+      <div className="hidden lg:flex flex-1 min-h-0 flex-col overflow-hidden">
 
       {/* Loading overlay */}
       <AnimatePresence>
@@ -843,28 +858,33 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                               <span className={`font-mono text-sm font-semibold w-14 shrink-0 ${isSelected ? "text-primary" : "text-foreground"}`}>
                                 {entry.codigo}
                               </span>
-                              <div className="flex items-center gap-2 flex-wrap min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap min-w-0 flex-1">
                                 {axesDisplay.map((axis, aIdx) => (
-                                  <div key={aIdx} className="flex items-center gap-0.5">
+                                  <div key={aIdx} className="flex items-center gap-1 flex-1 min-w-0">
                                     {showAxisLabels && (
-                                      <span className="text-[10px] font-bold text-muted-foreground mr-0.5 shrink-0">
+                                      <span className="text-[10px] font-bold text-muted-foreground shrink-0">
                                         {axis.label}:
                                       </span>
                                     )}
-                                    {axis.values.map((val, posIdx) => {
-                                      const flatIdx = ranges[aIdx]?.start + posIdx;
-                                      const isWild = !(gridValues[flatIdx] ?? "").trim() || gridValues[flatIdx] === "?";
-                                      return (
-                                        <span
-                                          key={posIdx}
-                                          className={`inline-flex items-center justify-center w-6 h-6 rounded text-xs font-bold shrink-0 ${
-                                            isWild ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                                          }`}
-                                        >
-                                          {val}
-                                        </span>
-                                      );
-                                    })}
+                                    <div
+                                      className="flex-1 grid min-w-0"
+                                      style={{ gridTemplateColumns: `repeat(${axis.values.length}, minmax(0, 1fr))`, gap: '2px' }}
+                                    >
+                                      {axis.values.map((val, posIdx) => {
+                                        const flatIdx = ranges[aIdx]?.start + posIdx;
+                                        const isWild = !(gridValues[flatIdx] ?? "").trim() || gridValues[flatIdx] === "?";
+                                        return (
+                                          <span
+                                            key={posIdx}
+                                            className={`aspect-square flex items-center justify-center rounded text-[11px] font-bold ${
+                                              isWild ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                                            }`}
+                                          >
+                                            {val}
+                                          </span>
+                                        );
+                                      })}
+                                    </div>
                                   </div>
                                 ))}
                               </div>
@@ -892,7 +912,119 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
       </AnimatePresence>
 
       </div>{/* fin columna derecha */}
+      </div>{/* fin área de contenido */}
     </div>
+
+    {/* ── Bottom sheet de resultados (solo mobile) ── */}
+    <Dialog open={resultsSheetOpen} onOpenChange={setResultsSheetOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-base">
+            {isSearching ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                <span>Buscando...</span>
+              </>
+            ) : bittingResults.length > 0 ? (
+              <>
+                <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
+                <span className="text-green-700 dark:text-green-400">
+                  {bittingResults.length} código{bittingResults.length !== 1 ? "s" : ""}
+                  {" · "}
+                  {bittingGroups.length} llave{bittingGroups.length !== 1 ? "s" : ""} necesaria{bittingGroups.length !== 1 ? "s" : ""}
+                </span>
+              </>
+            ) : (
+              <span>Sin coincidencias</span>
+            )}
+          </DialogTitle>
+        </DialogHeader>
+
+        {isSearching ? (
+          <div className="flex items-center justify-center gap-2 py-12">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            <span className="text-sm text-muted-foreground">Buscando coincidencias…</span>
+          </div>
+        ) : bittingResults.length > 0 ? (
+          <div className="space-y-3 pb-2">
+            {bittingGroups.map((group, groupIdx) => (
+              <div key={groupIdx} className="space-y-1">
+                <div className="flex items-center gap-2 px-1">
+                  <span className="text-xs font-bold text-foreground bg-muted px-2 py-0.5 rounded-full">
+                    Llave {groupIdx + 1}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {group.length} código{group.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
+                <div className="rounded-lg border border-border overflow-hidden divide-y divide-border">
+                  {group.map((entry, entryIdx) => {
+                    const axesDisplay = getAxesResult(entry.bitting, profile!.bittingConfig);
+                    const isSelected = exactEntry?.codigo === entry.codigo;
+                    return (
+                      <motion.button
+                        key={entry.codigo}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: (groupIdx * 4 + entryIdx) * 0.03 }}
+                        onClick={() => loadEntry(entry)}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors ${
+                          isSelected ? "bg-primary/8" : "hover:bg-muted/60"
+                        }`}
+                      >
+                        <span className={`font-mono text-sm font-semibold w-14 shrink-0 ${isSelected ? "text-primary" : "text-foreground"}`}>
+                          {entry.codigo}
+                        </span>
+                        <div className="flex items-center gap-2 flex-wrap min-w-0 flex-1">
+                          {axesDisplay.map((axis, aIdx) => (
+                            <div key={aIdx} className="flex items-center gap-1 flex-1 min-w-0">
+                              {showAxisLabels && (
+                                <span className="text-[10px] font-bold text-muted-foreground shrink-0">
+                                  {axis.label}:
+                                </span>
+                              )}
+                              <div
+                                className="flex-1 grid min-w-0"
+                                style={{ gridTemplateColumns: `repeat(${axis.values.length}, minmax(0, 1fr))`, gap: '2px' }}
+                              >
+                                {axis.values.map((val, posIdx) => {
+                                  const flatIdx = ranges[aIdx]?.start + posIdx;
+                                  const isWild = !(gridValues[flatIdx] ?? "").trim() || gridValues[flatIdx] === "?";
+                                  return (
+                                    <span
+                                      key={posIdx}
+                                      className={`aspect-square flex items-center justify-center rounded text-[11px] font-bold ${
+                                        isWild ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                                      }`}
+                                    >
+                                      {val}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        {isSelected && (
+                          <CheckCircle2 className="w-4 h-4 text-primary ml-auto shrink-0" />
+                        )}
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center bg-muted/50 p-8 rounded-xl border border-dashed border-border">
+            <p className="font-semibold text-foreground mb-1">Sin coincidencias</p>
+            <p className="text-sm text-muted-foreground">
+              Ningún código coincide con el patrón de cortes ingresado.
+            </p>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
 
     {decoderOpen && effectiveDecoderConfig && profile && (
       <KeyPhotoDecoder
