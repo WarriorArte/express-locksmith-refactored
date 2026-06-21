@@ -1,7 +1,7 @@
 import { useState, useRef, useMemo, useCallback, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { m as motion, AnimatePresence } from "framer-motion";
-import { Key, ArrowLeft, CheckCircle2, Filter, X, Info, Settings2, Loader2, Camera, Lock, Search, List } from "lucide-react";
+import { Key, ArrowLeft, CheckCircle2, X, Info, Settings2, Loader2, Camera, Lock, Search, List, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { GeneradorLlaveSVG } from "@/components/llaves/GeneradorLlaveSVG";
 import { UnifiedSearchInput } from "@/components/shared/UnifiedSearchInput";
@@ -22,9 +22,10 @@ interface KeycodeWorkspaceProps {
   keycodeProfiles: KeycodeProfile[];
   onFetchCodes: (id: string) => Promise<KeycodeProfile | null>;
   onBack: () => void;
+  year?: number;
 }
 
-export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, onBack }: KeycodeWorkspaceProps) {
+export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, onBack, year }: KeycodeWorkspaceProps) {
   const profileId = assignment.keycodeProfileIds?.[0] ?? (assignment as any).keycodeProfileId ?? null;
   const baseProfile = keycodeProfiles.find((p) => p.id === profileId);
 
@@ -54,6 +55,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
 
   const [searchTerm, setSearchTerm] = useState("");
   const [gridValues, setGridValues] = useState<string[]>(() => Array(bittingTotalLength).fill("?"));
+  const [searchValues, setSearchValues] = useState<string[]>(() => Array(bittingTotalLength).fill("?"));
   const [codeState, setCodeState] = useState<"idle" | "exact" | "notfound">("idle");
   const [exactEntry, setExactEntry] = useState<{ codigo: string; bitting: string[] } | null>(null);
 
@@ -221,12 +223,14 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
 
     // "?" actúa como comodín: marca la celda como faltante y avanza
     setGridValues((prev) => { const n = [...prev]; n[flatIdx] = val; return n; });
-    const nextIndex = flatIdx < bittingTotalLength - 1 ? flatIdx + 1 : flatIdx;
+    const nextIndex = flatIdx < bittingTotalLength - 1 ? flatIdx + 1 : 0;
     setSelectedCellIdx(nextIndex);
   };
 
   const handleBittingSearch = () => {
     if (!profile) return;
+    if (!canBittingSearch) return;
+    setSearchValues([...gridValues]);
     setIsSearching(true);
 
     setTimeout(() => {
@@ -267,6 +271,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
 
   const handleClear = () => {
     setGridValues(Array(bittingTotalLength).fill("?"));
+    setSearchValues(Array(bittingTotalLength).fill("?"));
     setSearchTerm("");
     setCodeState("idle");
     setExactEntry(null);
@@ -388,6 +393,8 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
   const ranges = getAxesQueryRanges();
   const showAxisLabels = ranges.length >= 2;
   const hasAnyValue = gridValues.some((v) => v.trim() !== "" && v !== "?") || searchTerm.trim() !== "";
+  const filledCells = gridValues.filter((v) => v.trim() !== "" && v !== "?").length;
+  const canBittingSearch = (codeState !== "exact" || advancedMode) && filledCells >= Math.ceil(bittingTotalLength * 0.5);
   const hasMultiAxes = profile.bittingConfig.axes && profile.bittingConfig.axes.length >= 2;
 
   // Preparar valores para el SVG interactivo
@@ -440,14 +447,14 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                   className="ce-hero-title mt-1.5 text-[clamp(1.55rem,5.4vw,2.15rem)] lg:mt-2 lg:text-[clamp(1.75rem,3vw,2.5rem)]"
                 >
                   {codeState === "exact" && exactEntry
-                    ? <span className="text-primary">{exactEntry.codigo}.</span>
+                    ? <span className="text-primary">{exactEntry.codigo}</span>
                     : profile.series
-                      ? <>Serie <span className="text-primary">{profile.series}.</span></>
-                      : <>IC <span className="text-primary">{profile.icCard}.</span></>
+                      ? <>Serie <span className="text-primary">{profile.series}</span></>
+                      : <>IC <span className="text-primary">{profile.icCard}</span></>
                   }
                 </motion.h1>
               </AnimatePresence>
-              <p className="ce-hero-meta mt-2">{assignment.yearStart} – {assignment.yearEnd}</p>
+              <p className="ce-hero-meta mt-2">{assignment.make} {assignment.model}{year ? ` · ${year}` : ""}</p>
             </div>
             <div className="shrink-0 mt-1">
               <AccountMenu />
@@ -503,14 +510,23 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
       {/* ══════════════════════════════════════
           COLUMNA IZQUIERDA — SVG interactivo + controles
           ══════════════════════════════════════ */}
-      <div className="shrink-0 pb-2 overflow-y-auto no-scrollbar lg:w-[480px] lg:pb-4">
+      <div className="flex-1 flex flex-col min-h-0 pb-2 lg:flex-none lg:shrink-0 lg:w-[480px] lg:pb-4">
 
-        <Card>
-          <CardContent className="px-4 pb-4 pt-4 space-y-4">
+        {/* SVG interactivo con inputs inline — siempre visible */}
+        <div className="flex-1 min-h-0 flex items-center gap-1 mb-3">
 
-            {/* SVG interactivo con inputs inline — siempre visible */}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="shrink-0 text-muted-foreground hover:text-foreground -ml-1"
+                onClick={() => setSelectedCellIdx(prev => prev > 0 ? prev - 1 : bittingTotalLength - 1)}
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+              <div className="flex-1 min-w-0 overflow-y-auto no-scrollbar">
             {profile.configuracionVisual ? (
-              <div className="flex justify-center overflow-x-auto bg-muted/30 border border-dashed border-border rounded-lg p-1">
+              <div className="flex justify-center overflow-x-auto bg-muted/30 border border-dashed border-border rounded-lg p-1" style={{ color: 'hsl(240 16% 10%)' }}>
                 <GeneradorLlaveSVG
                   config={{ ...profile.configuracionVisual, maxDepth: profile.bittingConfig.maxDepth }}
                   cortesPrimarios={primaryNums}
@@ -598,7 +614,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                               onChange={() => {}}
                               onKeyDown={handleGridKeyDown}
                               onFocus={() => setSelectedCellIdx(globalIndex)}
-                              onPointerDown={() => setSelectedCellIdx(globalIndex)}
+                              onPointerDown={(e) => { e.preventDefault(); setSelectedCellIdx(globalIndex); }}
                               inputMode="none"
                               maxLength={2}
                               autoComplete="off"
@@ -620,7 +636,20 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                 ))}
               </div>
             )}
+              </div>{/* fin contenedor figura */}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="shrink-0 text-muted-foreground hover:text-foreground -mr-1"
+                onClick={() => setSelectedCellIdx(prev => prev < bittingTotalLength - 1 ? prev + 1 : 0)}
+              >
+                <ChevronRight className="w-5 h-5" />
+              </Button>
+        </div>{/* fin flex flechas */}
 
+        <Card>
+          <CardContent className="px-4 pb-4 pt-4 space-y-4">
             {/* Teclado Virtual Numérico / Profundidades */}
             {profile && (
               <div className="flex flex-wrap justify-center gap-2 sm:max-w-md sm:mx-auto mt-4 mb-4">
@@ -648,24 +677,24 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
 
             {/* Acciones */}
             <div className="flex gap-2 sm:max-w-md sm:mx-auto">
-              {((hasAnyValue && codeState !== "exact") || hasBittingSearched) && (
-                <Button
-                  type="button"
-                  size="icon"
-                  onClick={handleBittingSearch}
-                  variant={hasBittingSearched ? "outline" : "default"}
-                  title={hasBittingSearched ? "Actualizar búsqueda" : "Buscar coincidencias"}
-                  className="shrink-0"
-                >
-                  <Filter className="w-4 h-4" />
-                </Button>
-              )}
-              {hasBittingSearched && isMobile && (
+              <Button
+                type="button"
+                size="icon"
+                onClick={handleBittingSearch}
+                variant={hasBittingSearched ? "outline" : "default"}
+                title={hasBittingSearched ? "Actualizar búsqueda" : "Buscar coincidencias"}
+                disabled={!canBittingSearch}
+                className="shrink-0"
+              >
+                <Key className="w-4 h-4" />
+              </Button>
+              {isMobile && (
                 <Button
                   type="button"
                   size="icon"
                   onClick={() => setResultsSheetOpen(true)}
                   title="Ver resultados"
+                  disabled={!hasBittingSearched}
                   className="shrink-0"
                 >
                   <List className="w-4 h-4" />
@@ -677,15 +706,21 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                 size="icon"
                 onClick={() => setAdvancedMode(!advancedMode)}
                 title={advancedMode ? "Desactivar búsqueda avanzada" : "Activar búsqueda avanzada (±1)"}
-                className="shrink-0"
+                className="shrink-0 ml-auto"
               >
                 <Settings2 className="w-4 h-4" />
               </Button>
-              {hasAnyValue && (
-                <Button type="button" variant="outline" size="icon" onClick={handleClear} title="Limpiar" className="shrink-0">
-                  <X className="w-4 h-4" />
-                </Button>
-              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={handleClear}
+                title="Limpiar"
+                disabled={!hasAnyValue}
+                className="shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </Button>
             </div>
 
 
@@ -851,33 +886,42 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                               animate={{ opacity: 1 }}
                               transition={{ delay: (groupIdx * 4 + entryIdx) * 0.03 }}
                               onClick={() => loadEntry(entry)}
-                              className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors ${
+                              className={`w-full flex flex-col gap-1.5 px-3 py-2.5 text-left transition-colors ${
                                 isSelected ? "bg-primary/8" : "hover:bg-muted/60"
                               }`}
                             >
-                              <span className={`font-mono text-sm font-semibold w-14 shrink-0 ${isSelected ? "text-primary" : "text-foreground"}`}>
-                                {entry.codigo}
-                              </span>
-                              <div className="flex items-center gap-2 flex-wrap min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className={`font-mono text-sm font-semibold ${isSelected ? "text-primary" : "text-foreground"}`}>
+                                  {entry.codigo}
+                                </span>
+                                {isSelected && <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />}
+                              </div>
+                              <div className="flex flex-col gap-1 w-full">
                                 {axesDisplay.map((axis, aIdx) => (
-                                  <div key={aIdx} className="flex items-center gap-1 flex-1 min-w-0">
+                                  <div key={aIdx} className="flex items-center gap-1.5 w-full">
                                     {showAxisLabels && (
-                                      <span className="text-[10px] font-bold text-muted-foreground shrink-0">
+                                      <span className="text-[10px] font-bold text-muted-foreground shrink-0 w-3">
                                         {axis.label}:
                                       </span>
                                     )}
                                     <div
-                                      className="flex-1 grid min-w-0"
-                                      style={{ gridTemplateColumns: `repeat(${axis.values.length}, minmax(0, 1fr))`, gap: '2px' }}
+                                      className="grid"
+                                      style={{ gridTemplateColumns: `repeat(${axis.values.length}, 1.75rem)`, gap: '2px' }}
                                     >
                                       {axis.values.map((val, posIdx) => {
                                         const flatIdx = ranges[aIdx]?.start + posIdx;
-                                        const isWild = !(gridValues[flatIdx] ?? "").trim() || gridValues[flatIdx] === "?";
+                                        const searchVal = searchValues[flatIdx] ?? "";
+                                        const isWild = !searchVal.trim() || searchVal === "?";
+                                        const isAdvanced = advancedMode && !isWild && val !== searchVal;
                                         return (
                                           <span
                                             key={posIdx}
-                                            className={`aspect-square flex items-center justify-center rounded text-[11px] font-bold ${
-                                              isWild ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                                            className={`h-6 flex items-center justify-center rounded text-[11px] font-bold ${
+                                              isWild
+                                                ? "bg-primary text-primary-foreground"
+                                                : isAdvanced
+                                                  ? "bg-amber-400/25 text-amber-600 dark:text-amber-400"
+                                                  : "bg-muted text-muted-foreground"
                                             }`}
                                           >
                                             {val}
@@ -888,9 +932,6 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                                   </div>
                                 ))}
                               </div>
-                              {isSelected && (
-                                <CheckCircle2 className="w-4 h-4 text-primary ml-auto shrink-0" />
-                              )}
                             </motion.button>
                           );
                         })}
@@ -968,33 +1009,42 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                         animate={{ opacity: 1 }}
                         transition={{ delay: (groupIdx * 4 + entryIdx) * 0.03 }}
                         onClick={() => loadEntry(entry)}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors ${
+                        className={`w-full flex flex-col gap-1.5 px-3 py-2.5 text-left transition-colors ${
                           isSelected ? "bg-primary/8" : "hover:bg-muted/60"
                         }`}
                       >
-                        <span className={`font-mono text-sm font-semibold w-14 shrink-0 ${isSelected ? "text-primary" : "text-foreground"}`}>
-                          {entry.codigo}
-                        </span>
-                        <div className="flex items-center gap-2 flex-wrap min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className={`font-mono text-sm font-semibold ${isSelected ? "text-primary" : "text-foreground"}`}>
+                            {entry.codigo}
+                          </span>
+                          {isSelected && <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />}
+                        </div>
+                        <div className="flex flex-col gap-1 w-full">
                           {axesDisplay.map((axis, aIdx) => (
-                            <div key={aIdx} className="flex items-center gap-1 flex-1 min-w-0">
+                            <div key={aIdx} className="flex items-center gap-1.5 w-full">
                               {showAxisLabels && (
-                                <span className="text-[10px] font-bold text-muted-foreground shrink-0">
+                                <span className="text-[10px] font-bold text-muted-foreground shrink-0 w-3">
                                   {axis.label}:
                                 </span>
                               )}
                               <div
-                                className="flex-1 grid min-w-0"
-                                style={{ gridTemplateColumns: `repeat(${axis.values.length}, minmax(0, 1fr))`, gap: '2px' }}
+                                className="grid"
+                                style={{ gridTemplateColumns: `repeat(${axis.values.length}, 1.75rem)`, gap: '2px' }}
                               >
                                 {axis.values.map((val, posIdx) => {
                                   const flatIdx = ranges[aIdx]?.start + posIdx;
-                                  const isWild = !(gridValues[flatIdx] ?? "").trim() || gridValues[flatIdx] === "?";
+                                  const searchVal = searchValues[flatIdx] ?? "";
+                                  const isWild = !searchVal.trim() || searchVal === "?";
+                                  const isAdvanced = advancedMode && !isWild && val !== searchVal;
                                   return (
                                     <span
                                       key={posIdx}
-                                      className={`aspect-square flex items-center justify-center rounded text-[11px] font-bold ${
-                                        isWild ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                                      className={`h-6 flex items-center justify-center rounded text-[11px] font-bold ${
+                                        isWild
+                                          ? "bg-primary text-primary-foreground"
+                                          : isAdvanced
+                                            ? "bg-amber-400/25 text-amber-600 dark:text-amber-400"
+                                            : "bg-muted text-muted-foreground"
                                       }`}
                                     >
                                       {val}
@@ -1005,9 +1055,6 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                             </div>
                           ))}
                         </div>
-                        {isSelected && (
-                          <CheckCircle2 className="w-4 h-4 text-primary ml-auto shrink-0" />
-                        )}
                       </motion.button>
                     );
                   })}

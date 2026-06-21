@@ -100,7 +100,7 @@ export function LlavePistaCanalUnificada({ config, cortes, inputSide = 'none', i
         <line key={`guia-${i}`} x1={0} y1={g.y} x2={g.x2} y2={g.y} stroke="#e5e7eb" strokeWidth="1" />
       ))}
       <path d={outlinePath} fill="none" stroke="#b6c2cf" strokeWidth="2.5" />
-      <path d={trackPath} fill="none" stroke="#2563eb" strokeWidth="3.0" strokeLinejoin="round" strokeLinecap="round" />
+      <path d={trackPath} fill="none" stroke="currentColor" strokeWidth="3.0" strokeLinejoin="round" strokeLinecap="round" />
       {children}
     </svg>
   );

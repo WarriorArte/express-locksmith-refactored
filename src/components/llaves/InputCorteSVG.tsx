@@ -34,10 +34,10 @@ interface InputCorteSVGProps {
 }
 
 const colorMap = {
-  gray: { text: '#1e40af', bg: '#eff6ff', border: '#93c5fd' },
-  indigo: { text: '#1e40af', bg: '#eff6ff', border: '#93c5fd' },
-  green: { text: '#1e40af', bg: '#eff6ff', border: '#93c5fd' },
-  blue: { text: '#1e40af', bg: '#eff6ff', border: '#93c5fd' },
+  gray:   { text: 'hsl(var(--foreground))', bg: 'hsl(var(--background))', border: 'hsl(var(--border))' },
+  indigo: { text: 'hsl(var(--foreground))', bg: 'hsl(var(--background))', border: 'hsl(var(--border))' },
+  green:  { text: 'hsl(var(--foreground))', bg: 'hsl(var(--background))', border: 'hsl(var(--border))' },
+  blue:   { text: 'hsl(var(--foreground))', bg: 'hsl(var(--background))', border: 'hsl(var(--border))' },
 };
 
 export function InputCorteSVG({
@@ -136,8 +136,8 @@ export function InputCorteSVG({
               width: '100%', height: '100%', display: 'flex',
               alignItems: 'center', justifyContent: 'center',
               fontSize: '9px', fontWeight: 'bold',
-              backgroundColor: upActive ? '#2563eb' : '#e5e7eb',
-              color: upActive ? '#fff' : '#6b7280',
+              backgroundColor: upActive ? 'hsl(var(--primary))' : 'hsl(var(--muted))',
+              color: upActive ? 'hsl(var(--primary-foreground))' : 'hsl(var(--muted-foreground))',
               borderRadius: '3px 3px 0 0', border: 'none',
               cursor: 'pointer', lineHeight: 1, padding: 0,
             }}
@@ -151,25 +151,26 @@ export function InputCorteSVG({
             type="text"
             maxLength={2}
             value={value}
-            onFocus={(e) => { e.target.select(); onSelect?.(); }}
-            onPointerDown={() => { onSelect?.(); }}
+            onFocus={() => { onSelect?.(); }}
+            onPointerDown={(e) => { if (virtualKeypadMode) e.preventDefault(); onSelect?.(); }}
             onChange={() => {}}
             onKeyDown={virtualKeypadMode ? (e) => { e.preventDefault(); } : handleKeyDown}
             inputMode={virtualKeypadMode ? 'none' : undefined}
             readOnly={virtualKeypadMode}
             autoComplete="off"
             style={{
-              width: '18px', height: '22px', fontSize: '11px',
+              width: '18px', height: '22px', fontSize: '14px',
               padding: 0, textAlign: 'center', fontWeight: 'bold',
               color: c.text,
-              backgroundColor: isSelected ? '#dbeafe' : c.bg,
-              border: isSelected ? '2px solid #2563eb' : `1px solid ${c.border}`,
+              backgroundColor: isSelected ? 'hsl(var(--primary) / 0.15)' : c.bg,
+              border: isSelected ? '2px solid hsl(var(--primary))' : `1px solid ${c.border}`,
               borderRadius: '3px',
               outline: 'none',
-              boxShadow: isSelected ? '0 0 0 3px rgba(37,99,235,0.25)' : '0 1px 2px rgba(0,0,0,0.05)',
+              boxShadow: isSelected ? '0 0 0 3px hsl(var(--primary) / 0.25)' : '0 1px 2px rgba(0,0,0,0.05)',
               lineHeight: '22px', display: 'block',
-              caretColor: virtualKeypadMode ? 'transparent' : undefined,
-              cursor: virtualKeypadMode ? 'pointer' : 'text',
+              caretColor: 'transparent',
+              cursor: 'pointer',
+              userSelect: 'none',
             }}
           />
         </div>
@@ -182,8 +183,8 @@ export function InputCorteSVG({
               width: '100%', height: '100%', display: 'flex',
               alignItems: 'center', justifyContent: 'center',
               fontSize: '9px', fontWeight: 'bold',
-              backgroundColor: downActive ? '#2563eb' : '#e5e7eb',
-              color: downActive ? '#fff' : '#6b7280',
+              backgroundColor: downActive ? 'hsl(var(--primary))' : 'hsl(var(--muted))',
+              color: downActive ? 'hsl(var(--primary-foreground))' : 'hsl(var(--muted-foreground))',
               borderRadius: '0 0 3px 3px', border: 'none',
               cursor: 'pointer', lineHeight: 1, padding: 0,
             }}

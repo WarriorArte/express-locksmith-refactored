@@ -162,6 +162,7 @@ export function WorkshopToolView({
         assignment={activeKeycodeAssignment}
         keycodeProfiles={keycodeProfiles}
         onFetchCodes={onFetchKeycodes}
+        year={Number(selectedYear)}
         onBack={() => {
           setActiveToolId(null);
           setActiveKeycodeProfileId(null);

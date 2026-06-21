@@ -76,7 +76,7 @@ export function LlaveEstandarUnLado({ config, cortes, inputSide = 'none', inputM
       {guiasY.map((y, i) => (
         <line key={`guia-${i}`} x1={0} y1={y} x2={svgWidth} y2={y} stroke="#e5e7eb" strokeWidth="1" />
       ))}
-      <path d={pathD} fill="none" stroke="#2563eb" strokeWidth="3.5" strokeLinejoin="round" strokeLinecap="round" />
+      <path d={pathD} fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinejoin="round" strokeLinecap="round" />
       {children}
     </svg>
   );
