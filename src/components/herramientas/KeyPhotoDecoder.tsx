@@ -11,7 +11,7 @@
  */
 import { useState, useRef, useEffect, useMemo } from "react";
 import {
-  Camera, Image as ImageIcon, RotateCcw, ZoomIn,
+  RotateCcw, ZoomIn,
   ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Check,
   ArrowLeftRight, Crosshair, X, ArrowLeft, ArrowRight, ArrowUpDown
 } from "lucide-react";
@@ -48,14 +48,14 @@ const ControlDeslizanteVertical = ({
 
   return (
     <div
-      className="flex flex-col items-center w-[54px] sm:w-[60px] bg-foreground/90 backdrop-blur-md p-1.5 sm:p-2 rounded-[1.25rem] touch-none select-none cursor-ns-resize border border-border shadow-xl h-[150px] sm:h-[180px] pointer-events-auto"
+      className="flex flex-col items-center w-[54px] sm:w-[60px] bg-[#14141A] backdrop-blur-sm p-1.5 sm:p-2 rounded-[1.25rem] touch-none select-none cursor-ns-resize border border-[#00E5A0]/20 shadow-xl h-[150px] sm:h-[180px] pointer-events-auto"
       onMouseDown={handleStart} onMouseMove={handleMove} onMouseUp={handleEnd} onMouseLeave={handleEnd}
       onTouchStart={handleStart} onTouchMove={handleMove} onTouchEnd={handleEnd} onTouchCancel={handleEnd}
     >
-      <div className="flex flex-col items-center gap-1 text-[9px] sm:text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-2 shrink-0">
-        <Icono size={16} className="text-primary" />
+      <div className="flex flex-col items-center gap-1 text-[9px] sm:text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-2 shrink-0">
+        <Icono size={16} className="text-[#00E5A0]" />
       </div>
-      <div className="w-full flex-1 bg-background rounded-lg relative overflow-hidden flex items-center justify-center shadow-inner ring-1 ring-border">
+      <div className="w-full flex-1 bg-[#0A0A10] rounded-lg relative overflow-hidden flex items-center justify-center shadow-inner ring-1 ring-[rgba(0,229,160,0.2)]">
         <div
           className="absolute inset-0 opacity-25"
           style={{
@@ -63,7 +63,7 @@ const ControlDeslizanteVertical = ({
             backgroundSize: '100% 14px',
           }}
         />
-        <ArrowUpDown size={14} className="text-amber-400 opacity-95 relative z-10" />
+        <ArrowUpDown size={14} className="text-[#FFB830] opacity-95 relative z-10" />
       </div>
     </div>
   );
@@ -72,16 +72,16 @@ const ControlDeslizanteVertical = ({
 interface KeyPhotoDecoderProps {
   initialConfig: DecoderConfig;
   bittingConfig: BittingConfig;
+  initialImageUrl?: string | null;
   onClose: () => void;
   onConfirm: (bitting: string[]) => void;
 }
 
 interface CorteState { izq: number; der: number; }
 
-export function KeyPhotoDecoder({ initialConfig, bittingConfig, onClose, onConfirm }: KeyPhotoDecoderProps) {
-  const [fase, setFase] = useState<'captura' | 'alineacion' | 'ajuste'>('captura');
-  const [mostrarMenuCaptura, setMostrarMenuCaptura] = useState(true);
-  const [imagenUrl, setImagenUrl] = useState<string | null>(null);
+export function KeyPhotoDecoder({ initialConfig, bittingConfig, initialImageUrl, onClose, onConfirm }: KeyPhotoDecoderProps) {
+  const [fase, setFase] = useState<'captura' | 'alineacion' | 'ajuste'>(initialImageUrl ? 'alineacion' : 'captura');
+  const [imagenUrl, setImagenUrl] = useState<string | null>(initialImageUrl ?? null);
   const [haInteractuado, setHaInteractuado] = useState(false);
   const [desbloqueadoUnaVez, setDesbloqueadoUnaVez] = useState(false);
 
@@ -246,17 +246,6 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, onClose, onConfi
     onConfirm(construirBitting());
   };
 
-  const handleCargaImagen = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setImagenUrl(url);
-      setHaInteractuado(false);
-      avanzarA('alineacion');
-      setMostrarMenuCaptura(false);
-      setImgTransform({ x: 0, y: 0, scale: 1, rotate: 0 });
-    }
-  };
 
   // --- MATEMÁTICAS GESTOS (intacto) ---
   const getDistance = (touches: React.TouchList) => Math.hypot(touches[1].clientX - touches[0].clientX, touches[1].clientY - touches[0].clientY);
@@ -474,13 +463,26 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, onClose, onConfi
         viewBox={`0 0 ${width} ${height}`}
         preserveAspectRatio="xMidYMid meet"
         className="absolute inset-0 pointer-events-none z-20"
+        style={{ overflow: 'visible' }}
       >
         <defs>
           <filter id="neon-glow-decoder" x="-20%" y="-20%" width="140%" height="140%">
             <feGaussianBlur stdDeviation="3" result="blur" />
             <feComposite in="SourceGraphic" in2="blur" operator="over" />
           </filter>
+          <mask id="grid-vignette-mask">
+            <rect x={-10000} y={-10000} width={20000} height={20000} fill="white" />
+            <rect
+              x={centerX - (config.anchoLlave / 2 * config.escalaPixelMm)}
+              y={lineYTopExtended}
+              width={config.anchoLlave * config.escalaPixelMm}
+              height={lineYBottomExtended - lineYTopExtended}
+              fill="black"
+            />
+          </mask>
         </defs>
+
+        <rect x={-10000} y={-10000} width={20000} height={20000} fill="rgba(0,0,0,0.55)" mask="url(#grid-vignette-mask)" />
 
         <rect x={centerX - (config.anchoLlave / 2 * config.escalaPixelMm) - 40} y={refY - 1.5} width={(config.anchoLlave * config.escalaPixelMm) + 80} height="3" fill="#ff0000" rx="1" />
 
@@ -516,13 +518,13 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, onClose, onConfi
               {showGuiaIzq && (
                 <>
                   <line x1={xIzq} y1={lineYTopExtended} x2={xIzq} y2={lineYBottomExtended} stroke="rgba(0, 229, 255, 0.45)" strokeWidth="0.65" />
-                  <text x={xIzq} y={lineYTop - 8} fill="rgba(0, 229, 255, 0.7)" fontSize="9" textAnchor="middle">{i + 1}</text>
+                  <text x={xIzq} y={lineYTop - 8} fill="rgba(200, 240, 255, 0.95)" fontSize="11" textAnchor="middle">{i + 1}</text>
                 </>
               )}
               {showGuiaDer && (
                 <>
                   <line x1={xDer} y1={lineYTopExtended} x2={xDer} y2={lineYBottomExtended} stroke="rgba(0, 229, 255, 0.45)" strokeWidth="0.65" />
-                  <text x={xDer} y={lineYTop - 8} fill="rgba(0, 229, 255, 0.7)" fontSize="9" textAnchor="middle">{i + 1}</text>
+                  <text x={xDer} y={lineYTop - 8} fill="rgba(200, 240, 255, 0.95)" fontSize="11" textAnchor="middle">{i + 1}</text>
                 </>
               )}
             </g>
@@ -569,7 +571,7 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, onClose, onConfi
               {hasIzq && (
                 <>
                   <line x1={startX_Izq} y1={cutYIzq} x2={centerX - maxProfDist - 15} y2={cutYIzq} stroke={isRowActiveIzq ? "#39FF14" : "rgba(0, 229, 255, 0.4)"} strokeWidth={isRowActiveIzq ? "2" : "1"} />
-                  <text x={centerX - maxProfDist - 25} y={cutYIzq + 4} fill={isRowActiveIzq ? "#39FF14" : "rgba(0, 229, 255, 0.4)"} fontSize="10" textAnchor="end" fontWeight="bold">{i + 1}</text>
+                  <text x={centerX - maxProfDist - 25} y={cutYIzq + 4} fill={isRowActiveIzq ? "#39FF14" : "rgba(200, 240, 255, 0.9)"} fontSize="12" textAnchor="end" fontWeight="bold">{i + 1}</text>
                   {fase !== 'captura' && (
                     <>
                       <circle cx={xPuntoIzq} cy={cutYIzq} r={isRowActiveIzq ? 4 : 2.5} fill={isRowActiveIzq ? "#f59e0b" : "#00E5FF"} filter={isRowActiveIzq ? "url(#neon-glow-decoder)" : ""} />
@@ -581,7 +583,7 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, onClose, onConfi
               {hasDer && (
                 <>
                   <line x1={startX_Der} y1={cutYDer} x2={centerX + maxProfDist + 15} y2={cutYDer} stroke={isRowActiveDer ? "#39FF14" : "rgba(0, 229, 255, 0.4)"} strokeWidth={isRowActiveDer ? "2" : "1"} />
-                  <text x={centerX + maxProfDist + 25} y={cutYDer + 4} fill={isRowActiveDer ? "#39FF14" : "rgba(0, 229, 255, 0.4)"} fontSize="10" textAnchor="start" fontWeight="bold">{i + 1}</text>
+                  <text x={centerX + maxProfDist + 25} y={cutYDer + 4} fill={isRowActiveDer ? "#39FF14" : "rgba(200, 240, 255, 0.9)"} fontSize="12" textAnchor="start" fontWeight="bold">{i + 1}</text>
                   {fase !== 'captura' && (
                     <>
                       <circle cx={xPuntoDer} cy={cutYDer} r={isRowActiveDer ? 4 : 2.5} fill={isRowActiveDer ? "#f59e0b" : "#00E5FF"} filter={isRowActiveDer ? "url(#neon-glow-decoder)" : ""} />
@@ -652,7 +654,7 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, onClose, onConfi
 
         {/* Capa segura */}
         <div className="absolute inset-0 pointer-events-none z-20">
-          <button onClick={onClose} className="absolute top-4 right-4 z-40 p-3 bg-foreground/90 backdrop-blur-md border border-border rounded-full shadow-lg text-muted-foreground hover:text-white active:scale-95 pointer-events-auto">
+          <button onClick={onClose} className="absolute top-4 right-4 z-40 p-3 bg-[#14141A] backdrop-blur-sm border border-[#00E5A0]/20 rounded-full shadow-lg text-gray-400 hover:text-white active:scale-95 pointer-events-auto">
             <X size={20} />
           </button>
 
@@ -665,12 +667,12 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, onClose, onConfi
                 <ControlDeslizanteVertical icono={RotateCcw} onChangeDelta={handleRotateDelta} />
               </div>
               <div className="absolute right-3 sm:right-5 top-[60%] -translate-y-1/2 flex flex-col gap-3 pointer-events-none items-center">
-                <button onClick={alternarBloqueoVista} className="w-[54px] sm:w-[60px] h-[54px] sm:h-[60px] bg-primary rounded-[1.25rem] shadow-[0_4px_15px_rgba(37,99,235,0.5)] flex justify-center items-center active:scale-90 transition-transform pointer-events-auto shrink-0">
-                  <ArrowRight size={26} strokeWidth={2.8} className="text-primary-foreground" />
+                <button onClick={alternarBloqueoVista} className="w-[54px] sm:w-[60px] h-[54px] sm:h-[60px] bg-[#00E5A0] rounded-[1.25rem] shadow-[0_4px_15px_rgba(0,229,160,0.35)] flex justify-center items-center active:scale-90 transition-transform pointer-events-auto shrink-0">
+                  <ArrowRight size={26} strokeWidth={2.8} className="text-[#0a0a0f]" />
                 </button>
                 {desbloqueadoUnaVez && (
-                  <button onClick={confirmarFinal} className="w-[54px] sm:w-[60px] h-[54px] sm:h-[60px] bg-amber-500 rounded-[1.25rem] shadow-[0_4px_15px_rgba(212,160,23,0.5)] flex justify-center items-center active:scale-90 transition-transform pointer-events-auto shrink-0">
-                    <Check size={28} strokeWidth={3} className="text-foreground" />
+                  <button onClick={confirmarFinal} className="w-[54px] sm:w-[60px] h-[54px] sm:h-[60px] bg-[#FFB830] rounded-[1.25rem] shadow-[0_4px_15px_rgba(255,184,48,0.35)] flex justify-center items-center active:scale-90 transition-transform pointer-events-auto shrink-0">
+                    <Check size={28} strokeWidth={3} className="text-[#0a0a0f]" />
                   </button>
                 )}
               </div>
@@ -680,32 +682,32 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, onClose, onConfi
           {fase === 'ajuste' && (
             <>
               <div className="absolute left-3 sm:left-5 top-[calc(100%+100px)] -translate-y-1/2 z-[70] flex flex-col gap-4 pointer-events-none items-center">
-                <div className="flex flex-col items-center justify-center w-[54px] sm:w-[60px] h-[54px] sm:h-[60px] bg-foreground/90 backdrop-blur-md rounded-[1.25rem] border border-border shadow-xl pointer-events-auto">
-                  <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">Corte</span>
+                <div className="flex flex-col items-center justify-center w-[54px] sm:w-[60px] h-[54px] sm:h-[60px] bg-[#14141A] backdrop-blur-sm rounded-[1.25rem] border border-[#00E5A0]/20 shadow-xl pointer-events-auto">
+                  <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Corte</span>
                   <span className="text-xl font-black text-white leading-none">{cursorActivo.corteIndex + 1}</span>
                 </div>
               </div>
               <div className="absolute right-3 sm:right-5 top-[calc(100%+100px)] -translate-y-1/2 z-[70] flex flex-col gap-4 pointer-events-none items-center">
-                <div className="flex flex-col items-center justify-center w-[54px] sm:w-[60px] h-[54px] sm:h-[60px] bg-foreground/90 backdrop-blur-md rounded-[1.25rem] border border-border shadow-xl pointer-events-auto">
-                  <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">Nivel</span>
-                  <span className="text-xl font-black text-amber-400 leading-none">{(cortes[cursorActivo.corteIndex]?.[cursorActivo.lado] || 0) + 1}</span>
+                <div className="flex flex-col items-center justify-center w-[54px] sm:w-[60px] h-[54px] sm:h-[60px] bg-[#14141A] backdrop-blur-sm rounded-[1.25rem] border border-[#00E5A0]/20 shadow-xl pointer-events-auto">
+                  <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Nivel</span>
+                  <span className="text-xl font-black text-[#00E5A0] leading-none">{(cortes[cursorActivo.corteIndex]?.[cursorActivo.lado] || 0) + 1}</span>
                 </div>
               </div>
               <div className="absolute right-3 sm:right-5 top-[60%] -translate-y-1/2 flex flex-col gap-3 pointer-events-none items-center">
                 {showLadoToggle && (
-                  <button onClick={alternarLado} className="relative w-[54px] sm:w-[60px] h-[54px] sm:h-[60px] bg-foreground/90 backdrop-blur-md border border-border rounded-[1.25rem] shadow-xl flex justify-center items-center active:scale-90 transition-transform pointer-events-auto shrink-0">
-                    <ArrowLeftRight size={18} className="text-amber-400" />
-                    <span className="absolute bottom-1 text-[8px] font-black tracking-widest text-amber-400 uppercase">
+                  <button onClick={alternarLado} className="relative w-[54px] sm:w-[60px] h-[54px] sm:h-[60px] bg-[#14141A] border border-[#00E5A0]/20 rounded-[1.25rem] shadow-xl flex justify-center items-center active:scale-90 transition-transform pointer-events-auto shrink-0">
+                    <ArrowLeftRight size={18} className="text-[#FFB830]" />
+                    <span className="absolute bottom-1 text-[8px] font-black tracking-widest text-[#FFB830] uppercase">
                       {cursorActivo.lado === 'izq' ? 'IZQ' : 'DER'}
                     </span>
                   </button>
                 )}
-                <button onClick={alternarBloqueoVista} className="w-[54px] sm:w-[60px] h-[54px] sm:h-[60px] bg-primary rounded-[1.25rem] shadow-[0_4px_15px_rgba(37,99,235,0.5)] flex justify-center items-center active:scale-90 transition-transform pointer-events-auto shrink-0">
-                  <ArrowLeft size={26} strokeWidth={2.8} className="text-primary-foreground" />
+                <button onClick={alternarBloqueoVista} className="w-[54px] sm:w-[60px] h-[54px] sm:h-[60px] bg-primary rounded-[1.25rem] shadow-[0_4px_15px_rgba(0,229,160,0.35)] flex justify-center items-center active:scale-90 transition-transform pointer-events-auto shrink-0">
+                  <ArrowLeft size={26} strokeWidth={2.8} className="text-[#0a0a0f]" />
                 </button>
                 {desbloqueadoUnaVez && (
-                  <button onClick={confirmarFinal} className="w-[54px] sm:w-[60px] h-[54px] sm:h-[60px] bg-amber-500 rounded-[1.25rem] shadow-[0_4px_15px_rgba(212,160,23,0.5)] flex justify-center items-center active:scale-90 transition-transform pointer-events-auto shrink-0">
-                    <Check size={28} strokeWidth={3} className="text-foreground" />
+                  <button onClick={confirmarFinal} className="w-[54px] sm:w-[60px] h-[54px] sm:h-[60px] bg-[#FFB830] rounded-[1.25rem] shadow-[0_4px_15px_rgba(255,184,48,0.35)] flex justify-center items-center active:scale-90 transition-transform pointer-events-auto shrink-0">
+                    <Check size={28} strokeWidth={3} className="text-[#0a0a0f]" />
                   </button>
                 )}
               </div>
@@ -719,45 +721,27 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, onClose, onConfi
         <div className="absolute bottom-0 left-0 w-full h-[200px] z-50 pointer-events-none flex items-center justify-center">
           {fase === 'alineacion' && (
             <div className="grid grid-cols-3 gap-2 w-[160px] h-[160px] pointer-events-none">
-              <div /><button onClick={() => moverDpad('y', -1)} className="pointer-events-auto flex items-center justify-center bg-foreground/90 backdrop-blur-md rounded-2xl text-white active:bg-primary transition-colors shadow-lg border border-border"><ChevronUp size={28} /></button><div />
-              <button onClick={() => moverDpad('x', -1)} className="pointer-events-auto flex items-center justify-center bg-foreground/90 backdrop-blur-md rounded-2xl text-white active:bg-primary transition-colors shadow-lg border border-border"><ChevronLeft size={28} /></button>
-              <div className="pointer-events-auto flex items-center justify-center bg-background/80 backdrop-blur-md rounded-2xl border border-border shadow-inner"><Crosshair size={22} className="text-muted-foreground" /></div>
-              <button onClick={() => moverDpad('x', 1)} className="pointer-events-auto flex items-center justify-center bg-foreground/90 backdrop-blur-md rounded-2xl text-white active:bg-primary transition-colors shadow-lg border border-border"><ChevronRight size={28} /></button>
-              <div /><button onClick={() => moverDpad('y', 1)} className="pointer-events-auto flex items-center justify-center bg-foreground/90 backdrop-blur-md rounded-2xl text-white active:bg-primary transition-colors shadow-lg border border-border"><ChevronDown size={28} /></button><div />
+              <div /><button onClick={() => moverDpad('y', -1)} className="pointer-events-auto flex items-center justify-center bg-[#14141A] rounded-2xl text-gray-300 active:bg-[#00E5A0] active:text-[#0a0a0f] transition-colors shadow-lg border border-[#00E5A0]/20"><ChevronUp size={28} /></button><div />
+              <button onClick={() => moverDpad('x', -1)} className="pointer-events-auto flex items-center justify-center bg-[#14141A] rounded-2xl text-gray-300 active:bg-[#00E5A0] active:text-[#0a0a0f] transition-colors shadow-lg border border-[#00E5A0]/20"><ChevronLeft size={28} /></button>
+              <div className="pointer-events-auto flex items-center justify-center bg-[#0A0A10]/80 rounded-2xl border border-[#00E5A0]/20 shadow-inner"><Crosshair size={22} className="text-gray-600" /></div>
+              <button onClick={() => moverDpad('x', 1)} className="pointer-events-auto flex items-center justify-center bg-[#14141A] rounded-2xl text-gray-300 active:bg-[#00E5A0] active:text-[#0a0a0f] transition-colors shadow-lg border border-[#00E5A0]/20"><ChevronRight size={28} /></button>
+              <div /><button onClick={() => moverDpad('y', 1)} className="pointer-events-auto flex items-center justify-center bg-[#14141A] rounded-2xl text-gray-300 active:bg-[#00E5A0] active:text-[#0a0a0f] transition-colors shadow-lg border border-[#00E5A0]/20"><ChevronDown size={28} /></button><div />
             </div>
           )}
 
           {fase === 'ajuste' && (
             <div className="grid grid-cols-3 gap-2 w-[160px] h-[160px] pointer-events-none">
-              <div /><button onClick={() => moverCursor(1)} className="pointer-events-auto flex items-center justify-center bg-foreground/90 backdrop-blur-md rounded-2xl text-white active:bg-primary transition-colors shadow-lg border border-border"><ChevronUp size={28} /></button><div />
-              <button onClick={() => ajustarProfundidad('izq')} className="pointer-events-auto flex items-center justify-center bg-foreground/90 backdrop-blur-md rounded-2xl text-white active:bg-warning transition-colors shadow-lg border border-border"><ChevronLeft size={28} /></button>
-              <div className="pointer-events-auto flex items-center justify-center bg-background/80 backdrop-blur-md rounded-2xl border border-border shadow-inner"><Crosshair size={22} className="text-muted-foreground" /></div>
-              <button onClick={() => ajustarProfundidad('der')} className="pointer-events-auto flex items-center justify-center bg-foreground/90 backdrop-blur-md rounded-2xl text-white active:bg-warning transition-colors shadow-lg border border-border"><ChevronRight size={28} /></button>
-              <div /><button onClick={() => moverCursor(-1)} className="pointer-events-auto flex items-center justify-center bg-foreground/90 backdrop-blur-md rounded-2xl text-white active:bg-primary transition-colors shadow-lg border border-border"><ChevronDown size={28} /></button><div />
+              <div /><button onClick={() => moverCursor(1)} className="pointer-events-auto flex items-center justify-center bg-[#14141A] rounded-2xl text-gray-300 active:bg-[#00E5A0] active:text-[#0a0a0f] transition-colors shadow-lg border border-[#00E5A0]/20"><ChevronUp size={28} /></button><div />
+              <button onClick={() => ajustarProfundidad('izq')} className="pointer-events-auto flex items-center justify-center bg-[#14141A] rounded-2xl text-gray-300 active:bg-[#FFB830] active:text-[#0a0a0f] transition-colors shadow-lg border border-[#00E5A0]/20"><ChevronLeft size={28} /></button>
+              <div className="pointer-events-auto flex items-center justify-center bg-[#0A0A10]/80 rounded-2xl border border-[#00E5A0]/20 shadow-inner"><Crosshair size={22} className="text-gray-600" /></div>
+              <button onClick={() => ajustarProfundidad('der')} className="pointer-events-auto flex items-center justify-center bg-[#14141A] rounded-2xl text-gray-300 active:bg-[#FFB830] active:text-[#0a0a0f] transition-colors shadow-lg border border-[#00E5A0]/20"><ChevronRight size={28} /></button>
+              <div /><button onClick={() => moverCursor(-1)} className="pointer-events-auto flex items-center justify-center bg-[#14141A] rounded-2xl text-gray-300 active:bg-[#00E5A0] active:text-[#0a0a0f] transition-colors shadow-lg border border-[#00E5A0]/20"><ChevronDown size={28} /></button><div />
             </div>
           )}
         </div>
       )}
 
       {/* ======================= MODAL DE CAPTURA INICIAL ======================= */}
-      {fase === 'captura' && mostrarMenuCaptura && (
-        <div className="absolute inset-0 bg-background/70 backdrop-blur-md flex items-center justify-center z-[60] p-6 pointer-events-auto">
-          <div className="bg-white border border-border p-5 rounded-3xl flex flex-col gap-3 w-full max-w-xs shadow-2xl">
-            <h3 className="text-center text-muted-foreground font-bold uppercase tracking-widest mb-1 text-[10px]">Origen de imagen</h3>
-            <label className="flex items-center justify-center gap-3 bg-primary text-primary-foreground p-3.5 rounded-2xl cursor-pointer active:scale-95 transition-transform">
-              <Camera size={18} />
-              <span className="font-bold tracking-wider text-sm">Tomar Foto</span>
-              <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleCargaImagen} />
-            </label>
-            <label className="flex items-center justify-center gap-3 bg-muted border border-border text-foreground p-3.5 rounded-2xl cursor-pointer active:scale-95 transition-transform">
-              <ImageIcon size={18} />
-              <span className="font-bold tracking-wider text-sm">Abrir Galería</span>
-              <input type="file" accept="image/*" className="hidden" onChange={handleCargaImagen} />
-            </label>
-            <button onClick={onClose} className="mt-1 text-muted-foreground font-bold text-xs tracking-widest uppercase py-2">Cancelar</button>
-          </div>
-        </div>
-      )}
     </motion.div>
   );
 }

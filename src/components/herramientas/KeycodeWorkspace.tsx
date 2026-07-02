@@ -1,7 +1,7 @@
 import { useState, useRef, useMemo, useCallback, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { m as motion, AnimatePresence } from "framer-motion";
-import { Key, ArrowLeft, CheckCircle2, X, Info, Settings2, Loader2, Camera, Lock, Search, List, ChevronLeft, ChevronRight } from "lucide-react";
+import { Key, ArrowLeft, CheckCircle2, X, Info, Settings2, Loader2, Camera, Lock, Search, List, ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { GeneradorLlaveSVG } from "@/components/llaves/GeneradorLlaveSVG";
 import { UnifiedSearchInput } from "@/components/shared/UnifiedSearchInput";
@@ -65,6 +65,8 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
   const [infoModalOpen, setInfoModalOpen] = useState(false);
   const [advancedMode, setAdvancedMode] = useState(false);
   const [decoderOpen, setDecoderOpen] = useState(false);
+  const [capturaModalOpen, setCapturaModalOpen] = useState(false);
+  const [decoderImageUrl, setDecoderImageUrl] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const isMobile = useIsMobile();
   const [resultsSheetOpen, setResultsSheetOpen] = useState(false);
@@ -299,6 +301,15 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
       toast.warning("Esta serie no tiene configuración del decodificador. Pide al SuperAdmin que la configure desde Perfiles → Decoder.");
       return;
     }
+    setCapturaModalOpen(true);
+  };
+
+  const handleCapturaImagen = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setDecoderImageUrl(url);
+    setCapturaModalOpen(false);
     setDecoderOpen(true);
   };
 
@@ -1077,10 +1088,33 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
       <KeyPhotoDecoder
         initialConfig={effectiveDecoderConfig}
         bittingConfig={profile.bittingConfig}
+        initialImageUrl={decoderImageUrl}
         onClose={() => setDecoderOpen(false)}
         onConfirm={handleDecoderConfirm}
       />
     )}
+
+    <Dialog open={capturaModalOpen} onOpenChange={setCapturaModalOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground text-center">
+            Origen de imagen
+          </DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-3 pb-2">
+          <label className="flex items-center justify-center gap-3 bg-primary text-primary-foreground p-3.5 rounded-2xl cursor-pointer active:scale-95 transition-transform">
+            <Camera size={18} />
+            <span className="font-bold tracking-wider text-sm">Tomar Foto</span>
+            <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleCapturaImagen} />
+          </label>
+          <label className="flex items-center justify-center gap-3 bg-muted border border-border text-foreground p-3.5 rounded-2xl cursor-pointer active:scale-95 transition-transform">
+            <ImageIcon size={18} />
+            <span className="font-bold tracking-wider text-sm">Abrir Galería</span>
+            <input type="file" accept="image/*" className="hidden" onChange={handleCapturaImagen} />
+          </label>
+        </div>
+      </DialogContent>
+    </Dialog>
     </>
   );
 }
