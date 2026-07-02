@@ -451,12 +451,17 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, onClose, onConfi
     const downshift = config.alineacion === 'punta' ? 40 : 30;
     const marginTop = baseMargin + downshift;
     const marginBottom = baseMargin - downshift;
-    const height = gridHeight + marginTop + marginBottom;
     const centerX = width / 2;
 
     const refY = config.alineacion === 'punta' ? marginTop : marginTop + gridHeight;
     const lineYTop = marginTop;
     const lineYBottom = marginTop + gridHeight;
+    const exceso = config.distanciasCortes.length >= 2
+      ? Math.abs(config.distanciasCortes[0] - config.distanciasCortes[1]) * config.escalaPixelMm
+      : 0;
+    const lineYTopExtended = config.alineacion === 'hombro' ? lineYTop - exceso : lineYTop;
+    const lineYBottomExtended = config.alineacion === 'punta' ? lineYBottom + exceso : lineYBottom;
+    const height = gridHeight + marginTop + marginBottom + exceso;
     const maxProfDist = (config.anchoLlave / 2) * config.escalaPixelMm;
 
     const maxCortesLen = isDosEjes
@@ -486,8 +491,8 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, onClose, onConfi
           </text>
         </g>
 
-        <line x1={centerX - (config.anchoLlave / 2 * config.escalaPixelMm)} y1={lineYTop} x2={centerX - (config.anchoLlave / 2 * config.escalaPixelMm)} y2={lineYBottom} stroke="#FF9900" strokeWidth="2" />
-        <line x1={centerX + (config.anchoLlave / 2 * config.escalaPixelMm)} y1={lineYTop} x2={centerX + (config.anchoLlave / 2 * config.escalaPixelMm)} y2={lineYBottom} stroke="#FF9900" strokeWidth="2" />
+        <line x1={centerX - (config.anchoLlave / 2 * config.escalaPixelMm)} y1={lineYTopExtended} x2={centerX - (config.anchoLlave / 2 * config.escalaPixelMm)} y2={lineYBottomExtended} stroke="#FF9900" strokeWidth="2" />
+        <line x1={centerX + (config.anchoLlave / 2 * config.escalaPixelMm)} y1={lineYTopExtended} x2={centerX + (config.anchoLlave / 2 * config.escalaPixelMm)} y2={lineYBottomExtended} stroke="#FF9900" strokeWidth="2" />
 
         {isDosEjes && (
           <>
@@ -510,13 +515,13 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, onClose, onConfi
             <g key={`guia-${i}`}>
               {showGuiaIzq && (
                 <>
-                  <line x1={xIzq} y1={lineYTop} x2={xIzq} y2={lineYBottom} stroke="rgba(0, 229, 255, 0.45)" strokeWidth="0.65" />
+                  <line x1={xIzq} y1={lineYTopExtended} x2={xIzq} y2={lineYBottomExtended} stroke="rgba(0, 229, 255, 0.45)" strokeWidth="0.65" />
                   <text x={xIzq} y={lineYTop - 8} fill="rgba(0, 229, 255, 0.7)" fontSize="9" textAnchor="middle">{i + 1}</text>
                 </>
               )}
               {showGuiaDer && (
                 <>
-                  <line x1={xDer} y1={lineYTop} x2={xDer} y2={lineYBottom} stroke="rgba(0, 229, 255, 0.45)" strokeWidth="0.65" />
+                  <line x1={xDer} y1={lineYTopExtended} x2={xDer} y2={lineYBottomExtended} stroke="rgba(0, 229, 255, 0.45)" strokeWidth="0.65" />
                   <text x={xDer} y={lineYTop - 8} fill="rgba(0, 229, 255, 0.7)" fontSize="9" textAnchor="middle">{i + 1}</text>
                 </>
               )}
