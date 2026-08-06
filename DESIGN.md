@@ -2,8 +2,8 @@
 name: Cerrajero Pro Express
 description: Business management platform for locksmith shops. A precision instrument for the counter.
 colors:
-  neon-signal: "#00E5A0"
-  neon-signal-deep: "#00C98C"
+  neon-signal: "#00AEE6"
+  neon-signal-deep: "#0097C7"
   ink-near-black: "#0D0D12"
   surface-pale: "#F7F8FA"
   surface-card: "#FFFFFF"
@@ -100,14 +100,14 @@ components:
 
 **Creative North Star: "The Precision Instrument"**
 
-This is a tool built to a tight tolerance. Every element has a job: nothing decorates, nothing gestures at personality without delivering function. The dot-matrix grid on the body surface is the one allowed flourish, and it earns its place by evoking something between a calibration sheet and a security terminal. The neon green accent is the activation signal: it fires on interactive targets and success states, not backgrounds, not text, not decoration.
+This is a tool built to a tight tolerance. Every element has a job: nothing decorates, nothing gestures at personality without delivering function. The dot-matrix grid on the body surface is the one allowed flourish, and it earns its place by evoking something between a calibration sheet and a security terminal. The celeste neón accent is the activation signal: it fires on interactive targets and success states, not backgrounds, not text, not decoration.
 
-The system supports both light and dark themes with equal seriousness. Neither is the default by sentiment. Light mode is used in a well-lit shop during the day; the nearly-black sidebar rail anchors the navigation against the pale surface. Dark mode is used when ambient light is low or when the user prefers it. The neon green reads clearly in both contexts.
+The system supports both light and dark themes with equal seriousness. Neither is the default by sentiment. Light mode is used in a well-lit shop during the day; the nearly-black sidebar rail anchors the navigation against the pale surface. Dark mode is used when ambient light is low or when the user prefers it. The celeste neón reads clearly in both contexts.
 
 This system explicitly rejects: the generic SaaS white-and-blue corporate look; dated desktop-software aesthetics with chrome-heavy modals and XP-era table styling; consumer-grade friendliness with oversized buttons, emoji, and hand-holding copy; complex enterprise UI with icon-only navigation rails packed with twenty items; and POS system aesthetics with garish color bands and receipt-printer legacy patterns.
 
 **Key Characteristics:**
-- Single accent color (neon green) used at most 10-15% of any screen surface
+- Single accent color (celeste neón) used at most 10-15% of any screen surface
 - Structural shadow system: depth communicates hierarchy, not mood
 - Flat border radius (0.4rem) across all components; tight and resolved, not aggressively rounded
 - DM Sans at high weight contrast: 800 for display, 400 for body
@@ -119,8 +119,8 @@ This system explicitly rejects: the generic SaaS white-and-blue corporate look; 
 One neon accent on a palette of near-neutrals. Everything else clears the way for it.
 
 ### Primary
-- **Neon Signal** (`#00E5A0`): The primary interactive accent. Used on primary buttons, active navigation states, focus rings, success confirmations, and the status "active" pill. Never used as a background tint on large surfaces. Its rarity is the point.
-- **Neon Signal Deep** (`#00C98C`): Hover and pressed state of the primary. Slightly darker, same family. The user sees it for milliseconds; it must feel like a confident response.
+- **Neon Signal** (`#00AEE6`): The primary interactive accent. Used on primary buttons, active navigation states, focus rings, success confirmations, and the status "active" pill. Never used as a background tint on large surfaces. Its rarity is the point.
+- **Neon Signal Deep** (`#0097C7`): Hover and pressed state of the primary. Slightly darker, same family. The user sees it for milliseconds; it must feel like a confident response.
 
 ### Secondary
 - **Purple Iris** (`#6F67B0`): Info and accent role. Used for info badges, compact category fills, and secondary data-viz coloring when green is already in use on the same screen. It is dark enough to support white text at AA contrast.
@@ -142,7 +142,7 @@ One neon accent on a palette of near-neutrals. Everything else clears the way fo
 - **Moonlight** (`#F0F0F8`): Dark theme primary text.
 
 ### Named Rules
-**The One-Signal Rule.** The neon green accent appears on at most 10-15% of any given screen. It marks interactive targets and positive outcomes. When everything is green, nothing is.
+**The One-Signal Rule.** The celeste neón accent appears on at most 10-15% of any given screen. It marks interactive targets and positive outcomes. When everything is green, nothing is.
 
 **The Dark-Rail Anchor Rule.** The sidebar is always dark, in both themes. It is not a light-on-dark or dark-on-light surprise: it is a permanent structural element. Do not invert or theme it with content-area palette changes.
 
@@ -176,7 +176,7 @@ The dot-matrix body texture is not a shadow effect; it is a surface property of 
 - **Ambient Mid** (`0 4px 6px -1px hsl(240 16% 6% / 0.06), 0 2px 4px -2px hsl(240 16% 6% / 0.04)`): Hover state for interactive cards, showing responsiveness without drama.
 - **Structural** (`0 10px 24px -8px hsl(240 16% 6% / 0.10)`): Sheets, drawers, and dropdown menus when they open over content.
 - **Heavy Lift** (`0 20px 32px -8px hsl(240 16% 6% / 0.14)`): Modals and dialogs at the top of the z-stack.
-- **Neon Glow** (`0 0 24px hsl(159 100% 45% / 0.30)`): Primary action elements only. The green focus aura. Used on primary buttons and primary card variants, not on regular interactive elements.
+- **Neon Glow** (`0 0 24px hsl(195 100% 45% / 0.30)`): Primary action elements only. The green focus aura. Used on primary buttons and primary card variants, not on regular interactive elements.
 - **Dark overrides:** Dark theme shadows increase opacity significantly (40-60%) because the low-contrast background absorbs them.
 
 ### Named Rules
@@ -190,15 +190,15 @@ The dot-matrix body texture is not a shadow effect; it is a surface property of 
 Firm but not sharp. The 0.4rem radius rounds the corners just enough to signal a modern tool without going soft.
 
 - **Shape:** Gently curved (0.4rem radius). Height 40px default, 44px large variant. 1.5px border at 60% border-color opacity is always present, even on filled variants.
-- **Primary:** Neon Signal green (`#00E5A0`) background, Ink Near-Black text, 0.4rem radius, px-4 py-2. Hover: Neon Signal Deep (`#00C98C`). Focus: 2px ring in primary color, 2px offset.
+- **Primary:** Neon Signal celeste (`#00AEE6`) background, Ink Near-Black text, 0.4rem radius, px-4 py-2. Hover: Neon Signal Deep (`#0097C7`). Focus: 2px ring in primary color, 2px offset.
 - **Secondary:** Surface Tile (`#F0F1F5`) background, Ink Near-Black text. Hover: 80% opacity. Ghost variant: transparent with muted-ink text, no background fill on rest state.
 - **Destructive:** Signal Crimson (`#FF4D6A`) background, white text. Same shape as primary.
-- **Proto variant:** Same as primary but with `box-shadow: 0 2px 10px hsl(159 100% 45% / 0.20)` and `active:scale(0.98)` press feedback. Used for high-emphasis CTAs.
+- **Proto variant:** Same as primary but with `box-shadow: 0 2px 10px hsl(195 100% 45% / 0.20)` and `active:scale(0.98)` press feedback. Used for high-emphasis CTAs.
 - **Disabled:** 50% opacity, pointer-events none. No color change.
 
 ### Inputs / Fields
 - **Style:** Surface Tile (`#F0F1F5`) background, 1.5px border in Divider Faint, 0.4rem radius, height 46px. Text: 0.875rem, weight 500.
-- **Focus:** Border shifts to Neon Signal green (`#00E5A0`). No glow on inputs; only border color changes. Ring is removed (focus-visible ring set to 0).
+- **Focus:** Border shifts to Neon Signal celeste (`#00AEE6`). No glow on inputs; only border color changes. Ring is removed (focus-visible ring set to 0).
 - **Placeholder:** Muted Ink (`#5A5A72`) at normal weight (400) to visually distinguish from filled values (500).
 - **Disabled:** 60% opacity, muted background, no-cursor.
 - **Error:** Border shifts to Signal Crimson. Error message in Signal Crimson below the field.
@@ -218,7 +218,7 @@ Firm but not sharp. The 0.4rem radius rounds the corners just enough to signal a
 - **Style:** Dark rail (`#131318` background) in both themes. Fixed-width on desktop; collapsible to icon-only. Text: Moonlight at 80% opacity for inactive items.
 - **Default item:** flex gap-3 px-4 py-3, text-sm, 0.4rem radius. No background.
 - **Hover:** Surface Tile background in the dark rail context (`--sidebar-accent`). Text at full opacity.
-- **Active:** Neon Signal green background, Ink Near-Black text, font-medium. This is the only place the full green accent appears as a background fill on a non-button element.
+- **Active:** Neon Signal celeste background, Ink Near-Black text, font-medium. This is the only place the full green accent appears as a background fill on a non-button element.
 - **Mobile:** Bottom navigation bar with icon + label pattern. 4 primary routes surfaced. Touch target minimum 44px.
 
 ### Detail Sheet (Signature Component)
@@ -227,7 +227,7 @@ The bottom-sheet that slides up on mobile (and renders as a right-side panel or 
 ## 6. Do's and Don'ts
 
 ### Do:
-- **Do** use the neon green (`#00E5A0`) exclusively on primary buttons, active nav items, success states, and focus rings. Nothing else.
+- **Do** use the celeste neón (`#00AEE6`) exclusively on primary buttons, active nav items, success states, and focus rings. Nothing else.
 - **Do** use structural shadows to communicate hierarchy: body < card < sheet < modal. Each layer adds one shadow level.
 - **Do** keep all border radii at 0.4rem. A single radius across the system is part of the precision-instrument identity.
 - **Do** use DM Sans 800 for all page-level headings with -0.02em letter-spacing and tight line-height (1.1-1.2).
@@ -238,10 +238,10 @@ The bottom-sheet that slides up on mobile (and renders as a right-side panel or 
 - **Do** use table layouts for multi-record data. Cards are for single-record summaries only.
 
 ### Don't:
-- **Don't** use the neon green as a large background fill, section tint, or decorative band. The generic SaaS white/blue/rounded corporate look, and especially the "startup color splash" aesthetic, are explicitly rejected.
+- **Don't** use the celeste neón as a large background fill, section tint, or decorative band. The generic SaaS white/blue/rounded corporate look, and especially the "startup color splash" aesthetic, are explicitly rejected.
 - **Don't** use gradient text (`background-clip: text` with a gradient). The `.gradient-text` utility exists in the codebase as legacy; do not extend it. Replace with a solid single color.
 - **Don't** expand the `.glass` glassmorphism pattern to new components. It exists as a legacy utility; it is decorative by nature and prohibited for new UI.
-- **Don't** add a second accent color family to compete with neon green. Purple Iris (`#6F67B0`) is a secondary role for info/variety only, never for emphasis.
+- **Don't** add a second accent color family to compete with celeste neón. Purple Iris (`#6F67B0`) is a secondary role for info/variety only, never for emphasis.
 - **Don't** use three-panel layouts, icon-only sidebar variants with more than 8 items, or nested navigation trees. Complex enterprise UI is an explicit anti-reference.
 - **Don't** use oversized buttons (height > 56px), emoji in UI copy, or excessive rounded corners (radius > 0.75rem). Consumer-grade friendliness and POS system aesthetics are explicitly rejected.
 - **Don't** use `border-left` or `border-right` greater than 1px as a colored stripe on cards or list items. Use background tints or full borders instead.

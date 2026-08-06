@@ -29,11 +29,11 @@
     --surface-2: 225 11% 95%;           /* #F0F1F5 */
 
     /* Primary — Neon Green (signature accent) */
-    --primary: 159 100% 45%;            /* #00E5A0 */
-    --primary-foreground: 240 21% 5%;   /* near-black on green */
-    --primary-hover: 159 100% 39%;      /* #00C98C */
-    --primary-light: 159 100% 95%;
-    --primary-glow: 159 100% 45%;
+    --primary: 195 100% 45%;            /* #00AEE6 */
+    --primary-foreground: 240 21% 5%;   /* near-black on celeste */
+    --primary-hover: 195 100% 39%;      /* #0097C7 */
+    --primary-light: 195 100% 95%;
+    --primary-glow: 195 100% 45%;
 
     /* Secondary — neutral surface tile */
     --secondary: 225 11% 95%;
@@ -56,9 +56,9 @@
     --destructive-light: 350 100% 95%;
 
     /* Success === primary green */
-    --success: 159 100% 45%;
+    --success: 195 100% 45%;
     --success-foreground: 240 21% 5%;
-    --success-light: 159 100% 94%;
+    --success-light: 195 100% 94%;
 
     /* Warning */
     --warning: 36 100% 59%;             /* #FFB830 */
@@ -72,33 +72,33 @@
 
     --border: 240 6% 90%;               /* rgba(0,0,0,0.07) approx */
     --input: 225 11% 95%;
-    --ring: 159 100% 45%;
+    --ring: 195 100% 45%;
     --radius: 0.4rem;
 
     /* Sidebar — Light: deep dark sidebar still works as accent rail */
     --sidebar-background: 240 16% 8%;   /* near-black, like the dark theme bg */
     --sidebar-foreground: 240 22% 95%;
-    --sidebar-primary: 159 100% 45%;
+    --sidebar-primary: 195 100% 45%;
     --sidebar-primary-foreground: 240 21% 5%;
     --sidebar-accent: 240 14% 14%;
     --sidebar-accent-foreground: 240 22% 95%;
     --sidebar-border: 0 0% 100% / 0.07;
-    --sidebar-ring: 159 100% 45%;
+    --sidebar-ring: 195 100% 45%;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(159 100% 45%) 0%, hsl(159 100% 38%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(195 100% 45%) 0%, hsl(195 100% 38%) 100%);
     --gradient-secondary: linear-gradient(135deg, hsl(225 11% 95%) 0%, hsl(225 11% 90%) 100%);
     --gradient-hero: linear-gradient(135deg, hsl(240 16% 8%) 0%, hsl(240 16% 12%) 100%);
     --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(225 11% 98%) 100%);
-    --gradient-success: linear-gradient(135deg, hsl(159 100% 45%) 0%, hsl(159 100% 38%) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(195 100% 45%) 0%, hsl(195 100% 38%) 100%);
 
     /* Shadows */
     --shadow-sm: 0 1px 3px 0 hsl(240 16% 6% / 0.04);
     --shadow-md: 0 4px 6px -1px hsl(240 16% 6% / 0.06), 0 2px 4px -2px hsl(240 16% 6% / 0.04);
     --shadow-lg: 0 10px 24px -8px hsl(240 16% 6% / 0.10);
     --shadow-xl: 0 20px 32px -8px hsl(240 16% 6% / 0.14);
-    --shadow-glow: 0 0 24px hsl(159 100% 45% / 0.30);
-    --shadow-gold: 0 8px 24px hsl(159 100% 45% / 0.25);
+    --shadow-glow: 0 0 24px hsl(195 100% 45% / 0.30);
+    --shadow-gold: 0 8px 24px hsl(195 100% 45% / 0.25);
   }
 
   /* ─────────────────────────────────────────────────────────
@@ -116,11 +116,11 @@
 
     --surface-2: 240 13% 14%;           /* #1E1E26 */
 
-    --primary: 159 100% 45%;
+    --primary: 195 100% 45%;
     --primary-foreground: 240 22% 5%;
-    --primary-hover: 159 100% 50%;
-    --primary-light: 159 100% 14%;
-    --primary-glow: 159 100% 45%;
+    --primary-hover: 195 100% 50%;
+    --primary-light: 195 100% 14%;
+    --primary-glow: 195 100% 45%;
 
     --secondary: 240 13% 14%;
     --secondary-foreground: 240 22% 96%;
@@ -138,9 +138,9 @@
     --destructive-foreground: 0 0% 100%;
     --destructive-light: 350 100% 18%;
 
-    --success: 159 100% 45%;
+    --success: 195 100% 45%;
     --success-foreground: 240 22% 5%;
-    --success-light: 159 100% 12%;
+    --success-light: 195 100% 12%;
 
     --warning: 36 100% 59%;
     --warning-foreground: 240 22% 5%;
@@ -152,11 +152,11 @@
 
     --border: 240 10% 16%;              /* subtle line, no alpha (Tailwind-friendly) */
     --input: 240 13% 14%;
-    --ring: 159 100% 45%;
+    --ring: 195 100% 45%;
 
     --sidebar-background: 240 22% 5%;
     --sidebar-foreground: 240 22% 96%;
-    --sidebar-primary: 159 100% 45%;
+    --sidebar-primary: 195 100% 45%;
     --sidebar-primary-foreground: 240 22% 5%;
     --sidebar-accent: 240 13% 14%;
     --sidebar-accent-foreground: 240 22% 96%;
