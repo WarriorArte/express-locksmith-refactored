@@ -53,6 +53,7 @@ import { ImageUploader } from "@/components/shared/ImageUploader";
 import { phpApiUpload } from "@/lib/phpApi";
 import { BackupManager } from "@/components/settings/BackupManager";
 import { QuoteDocSettingsPanel, QuoteDocSettingsPreview } from "@/components/settings/QuoteDocSettingsPanel";
+import { UpdateCheckCard } from "@/components/settings/UpdateCheckCard";
 import { useQuoteDocSettings } from "@/hooks/useQuoteDocSettings";
 
 import { COUNTRIES, getCountryByCode, inferCountryCode } from "@/lib/countries";
@@ -332,6 +333,8 @@ export default function Configuracion() {
                 </button>
               </div>
             </div>
+
+            <UpdateCheckCard />
           </TabsContent>
 
           {/* Negocio Tab */}
@@ -924,6 +927,10 @@ function MobileConfigTabs({
             </div>
             <Switch checked={theme === "dark"} onCheckedChange={(c) => setTheme(c ? "dark" : "light")} />
           </div>
+
+          <UpdateCheckCard compact />
+
+
 
           {/* Backup as list-item card */}
           <div className="bg-card rounded-2xl border border-border overflow-hidden">
