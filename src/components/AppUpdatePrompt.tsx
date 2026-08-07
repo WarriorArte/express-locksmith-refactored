@@ -3,6 +3,7 @@ import { Download, RefreshCw, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { getPhpAuthToken, phpApiRequest } from "@/lib/phpApi";
+import { MANUAL_UPDATE_CHECK_EVENT, type ManualUpdateCheckDetail } from "@/lib/appUpdates";
 
 type BuildVersion = {
   version?: string;
