@@ -22,7 +22,7 @@ export default function SuperAdmin() {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="flex-1 min-h-0 overflow-auto container mx-auto py-6 pb-10 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Panel de Superadministrador</h1>

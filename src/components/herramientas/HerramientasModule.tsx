@@ -121,7 +121,7 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
     return (
       <>
         {/* Fallback para Móvil */}
-        <div className="flex flex-col items-center justify-center p-8 text-center h-[calc(100vh-6rem)] lg:hidden">
+        <div className="flex flex-col items-center justify-center p-8 text-center flex-1 min-h-0 lg:hidden">
           <Wrench className="w-16 h-16 text-muted-foreground mb-4" />
           <h2 className="text-xl font-bold mb-2">Se requiere PC</h2>
           <p className="text-muted-foreground">
@@ -130,7 +130,7 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
         </div>
 
         {/* Vista Escritorio */}
-        <div className="hidden lg:flex flex-col h-[calc(100vh-5rem)] space-y-4">
+        <div className="hidden lg:flex flex-col flex-1 min-h-0 space-y-4">
           {showInternalSuperAdminTabs && (
             <Tabs
               value={activeSuperAdminView}
@@ -174,13 +174,13 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
                 className="flex-1 flex flex-col min-h-0 pt-2"
               >
                 <TabsContent value="perfiles" className="flex-1 m-0 min-h-0 overflow-hidden outline-none data-[state=inactive]:hidden flex flex-col border rounded-xl bg-card shadow-sm">
-                  <div className="flex-1 overflow-auto p-4 custom-scrollbar">
+                  <div className="flex-1 overflow-auto p-4 pb-8 custom-scrollbar">
                     <KeycodeManager profiles={profiles} onSave={addProfile} onUpdate={updateProfile} onDelete={deleteProfile} onFetchCodes={fetchProfileWithCodes} />
                   </div>
                 </TabsContent>
 
                 <TabsContent value="asignaciones" className="flex-1 m-0 min-h-0 overflow-hidden outline-none data-[state=inactive]:hidden flex flex-col border rounded-xl bg-card shadow-sm">
-                  <div className="flex-1 overflow-auto p-4 custom-scrollbar">
+                  <div className="flex-1 overflow-auto p-4 pb-8 custom-scrollbar">
                     <AssignmentManager
                       assignments={assignments.filter(a => (a.keycodeProfileIds?.length ?? 0) > 0)}
                       onSave={addAssignment}
@@ -239,7 +239,7 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
                     className="flex-1 flex flex-col min-h-0 pt-2"
                   >
                     <TabsContent value="perfiles" className="flex-1 m-0 min-h-0 overflow-hidden outline-none data-[state=inactive]:hidden flex flex-col border rounded-xl bg-card shadow-sm">
-                      <div className="flex-1 overflow-auto p-4 custom-scrollbar">
+                      <div className="flex-1 overflow-auto p-4 pb-8 custom-scrollbar">
                         <ImmoManager
                           profiles={immoProfiles}
                           onSave={addImmoProfile}
@@ -251,7 +251,7 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
                     </TabsContent>
 
                     <TabsContent value="asignaciones" className="flex-1 m-0 min-h-0 overflow-hidden outline-none data-[state=inactive]:hidden flex flex-col border rounded-xl bg-card shadow-sm">
-                      <div className="flex-1 overflow-auto p-4 custom-scrollbar">
+                      <div className="flex-1 overflow-auto p-4 pb-8 custom-scrollbar">
                         <ImmoAssignmentManager
                           immoProfiles={immoProfiles}
                           assignments={assignments}
@@ -265,7 +265,7 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
                     </TabsContent>
 
                     <TabsContent value="suministros" className="flex-1 m-0 min-h-0 overflow-hidden outline-none data-[state=inactive]:hidden flex flex-col border rounded-xl bg-card shadow-sm">
-                      <div className="flex-1 overflow-auto p-4 custom-scrollbar">
+                      <div className="flex-1 overflow-auto p-4 pb-8 custom-scrollbar">
                         <ImmoSuppliesManager
                           catalog={catalog}
                           onAdd={addItem}

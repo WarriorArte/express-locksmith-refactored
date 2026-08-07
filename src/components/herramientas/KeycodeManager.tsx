@@ -114,6 +114,11 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
   const [loadingEdit, setLoadingEdit] = useState(false);
   const itemsPerPage = 50;
 
+  // --- Manual code entry / JSON merge ---
+  const [manualCodigo, setManualCodigo] = useState("");
+  const [manualBitting, setManualBitting] = useState("");
+  const mergeFileInputRef = useRef<HTMLInputElement>(null);
+
   // --- List view state ---
   const [profilesSearch, setProfilesSearch] = useState("");
   const [profilesViewMode, setProfilesViewMode] = useState<"list" | "grid">("list");
@@ -250,6 +255,91 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
 
   const deleteCode = (codigo: string) =>
     setCurrentCodes((prev) => prev.filter((c) => c.codigo !== codigo));
+
+  // Longitud total de bitting esperada según la config actual (suma de ejes si está dividido).
+  const expectedBittingLength = useMemo(() => {
+    return bittingConfig.axes && bittingConfig.axes.length >= 2
+      ? bittingConfig.axes.reduce((s, a) => s + a.length, 0)
+      : bittingConfig.length;
+  }, [bittingConfig]);
+
+  // ── Agregar código manualmente ──────────────────────────────────
+  const addManualCode = () => {
+    const codigo = manualCodigo.trim();
+    const bitting = manualBitting.trim();
+
+    if (!codigo) {
+      toast.error("Ingresa un código.");
+      return;
+    }
+    if (currentCodes.some((c) => c.codigo.toLowerCase() === codigo.toLowerCase())) {
+      toast.error(`El código "${codigo}" ya existe en esta serie.`);
+      return;
+    }
+    if (!/^\d+$/.test(bitting)) {
+      toast.error("El bitting debe contener solo dígitos.");
+      return;
+    }
+    if (bitting.length !== expectedBittingLength) {
+      toast.error(`El bitting debe tener ${expectedBittingLength} dígitos (recibidos ${bitting.length}).`);
+      return;
+    }
+
+    setCurrentCodes((prev) => [...prev, { codigo, bitting: bitting.split("") }]);
+    setManualCodigo("");
+    setManualBitting("");
+    toast.success(`Código "${codigo}" agregado.`);
+  };
+
+  // ── Importar JSON y fusionar (omite duplicados, agrega solo los nuevos) ──
+  const handleMergeFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const parsed = JSON.parse(ev.target?.result as string) as JsonSerieImport;
+        if (!Array.isArray(parsed.registros)) {
+          toast.error("El JSON no tiene el formato esperado (registros).");
+          return;
+        }
+
+        const existing = new Set(currentCodes.map((c) => c.codigo.toLowerCase()));
+        const nuevos: CodeEntry[] = [];
+        const vistosEnArchivo = new Set<string>();
+        let duplicados = 0;
+
+        for (const r of parsed.registros) {
+          if (!r.code || !r.bitting) continue;
+          const key = r.code.toLowerCase();
+          if (existing.has(key) || vistosEnArchivo.has(key)) {
+            duplicados++;
+            continue;
+          }
+          vistosEnArchivo.add(key);
+          nuevos.push({ codigo: r.code, bitting: r.bitting.split("") });
+        }
+
+        if (nuevos.length > 0) {
+          setCurrentCodes((prev) => [...prev, ...nuevos]);
+        }
+
+        if (nuevos.length === 0 && duplicados === 0) {
+          toast.info("El JSON no contiene registros válidos.");
+        } else if (nuevos.length === 0) {
+          toast.warning(`Todos los códigos del JSON (${duplicados}) ya existen. No se agregó nada.`);
+        } else if (duplicados === 0) {
+          toast.success(`${nuevos.length} código(s) nuevo(s) agregado(s).`);
+        } else {
+          toast.success(`${nuevos.length} código(s) nuevo(s) agregado(s). ${duplicados} duplicado(s) omitido(s).`);
+        }
+      } catch {
+        toast.error("Error al leer el archivo JSON. Verifica que sea un JSON válido.");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
 
   // ── Pagination ───────────────────────────────────────────────
   const filteredCodes = useMemo(() => {
@@ -526,7 +616,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
     ];
 
     return (
-      <div className="h-[calc(100dvh-4rem-2rem)] flex flex-col">
+      <div className="h-full flex flex-col">
         {/* Header compacto */}
         <div className="flex items-center justify-between gap-3 pb-3 shrink-0">
           <div className="flex items-center gap-2 min-w-0">
@@ -811,6 +901,43 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                         </>
                       )}
 
+                      {/* Corte extra en punta (solo doble_lado y estandar_1_lado) */}
+                      {(configuracionVisual.tipo === 'doble_lado' || configuracionVisual.tipo === 'estandar_1_lado') && (
+                        <>
+                          <Separator />
+                          <div className="flex items-center justify-between">
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase">Corte Extra en Punta</p>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant={configuracionVisual.corteExtra ? "default" : "outline"}
+                              className="h-6 text-[10px] px-2"
+                              onClick={() => setConfiguracionVisual(c => c ? { ...c, corteExtra: !c.corteExtra } : c)}
+                            >
+                              {configuracionVisual.corteExtra ? "Activado" : "Desactivado"}
+                            </Button>
+                          </div>
+                          {configuracionVisual.corteExtra && (
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                              <VisualRangeField
+                                label="Dist. Corte Extra"
+                                min={4}
+                                max={40}
+                                value={configuracionVisual.distanciaCorteExtra ?? Math.round((configuracionVisual.spacing ?? 18) * 0.7)}
+                                onChange={(value) => setConfiguracionVisual(c => c ? { ...c, distanciaCorteExtra: value } : c)}
+                              />
+                              <VisualRangeField
+                                label="Profundidad Extra"
+                                min={1}
+                                max={configuracionVisual.maxDepth ?? bittingConfig.maxDepth}
+                                value={configuracionVisual.profundidadCorteExtra ?? 1}
+                                onChange={(value) => setConfiguracionVisual(c => c ? { ...c, profundidadCorteExtra: value } : c)}
+                              />
+                            </div>
+                          )}
+                        </>
+                      )}
+
                       {/* Bisel punta */}
                       {configuracionVisual.tipo !== 'doble_lado' && configuracionVisual.tipo !== 'estandar_1_lado' && (
                         <VisualRangeField
@@ -1020,6 +1147,41 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
               {/* ── TAB: Códigos ── */}
               {editTab === "codes" && (
                 <div className="space-y-3">
+                  {/* Agregar código manualmente */}
+                  <div className="flex flex-col gap-2 p-2.5 rounded-lg border border-border bg-muted/40">
+                    <Label className="text-xs font-semibold text-muted-foreground">Agregar código manualmente</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Código"
+                        value={manualCodigo}
+                        onChange={(e) => setManualCodigo(e.target.value)}
+                        className="h-8 text-sm font-mono flex-1"
+                      />
+                      <Input
+                        placeholder={`Bitting (${expectedBittingLength} dígitos)`}
+                        value={manualBitting}
+                        onChange={(e) => setManualBitting(e.target.value)}
+                        className="h-8 text-sm font-mono flex-1"
+                        maxLength={expectedBittingLength}
+                      />
+                      <Button size="sm" className="h-8 shrink-0" onClick={addManualCode}>
+                        <Plus className="w-3.5 h-3.5 mr-1" /> Agregar
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Importar JSON y fusionar con los códigos actuales */}
+                  <div className="flex items-center justify-between gap-2 p-2.5 rounded-lg border border-border bg-muted/40">
+                    <div className="min-w-0">
+                      <Label className="text-xs font-semibold text-muted-foreground block">Importar JSON (fusiona)</Label>
+                      <p className="text-[10px] text-muted-foreground">Omite códigos repetidos, agrega solo los nuevos.</p>
+                    </div>
+                    <Button variant="outline" size="sm" className="h-8 shrink-0" onClick={() => mergeFileInputRef.current?.click()}>
+                      <Upload className="w-3.5 h-3.5 mr-1.5" /> Cargar JSON
+                    </Button>
+                    <input ref={mergeFileInputRef} type="file" accept=".json" className="hidden" onChange={handleMergeFileChange} />
+                  </div>
+
                   <div className="relative">
                     <Search className="w-4 h-4 text-muted-foreground absolute left-2.5 top-2" />
                     <Input placeholder="Buscar código..." value={searchTerm}

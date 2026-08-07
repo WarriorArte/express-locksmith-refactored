@@ -78,6 +78,26 @@ class AuthTest extends TestCase
             ->assertJson(['success' => false]);
     }
 
+    public function test_superadmin_no_puede_login_desde_auth_normal(): void
+    {
+        GlobalUserRole::create([
+            'id' => (string) Str::uuid(),
+            'user_id' => $this->user->id,
+            'role' => 'superadmin',
+        ]);
+
+        $response = $this->postJson('/api/auth/login', [
+            'email' => 'test@example.com',
+            'password' => 'password123',
+        ]);
+
+        $response->assertStatus(403)
+            ->assertJson([
+                'success' => false,
+                'message' => 'El SuperAdmin debe iniciar sesion desde la ruta SuperAdmin configurada',
+            ]);
+    }
+
     public function test_login_sin_email_retorna_422(): void
     {
         $response = $this->postJson('/api/auth/login', [

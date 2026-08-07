@@ -59,6 +59,9 @@ export interface ConfiguracionVisualLlave {
   anchoInf?: number;
   dinamismoInf?: number;
   orientacion?: 'inferior' | 'superior';
+  corteExtra?: boolean;
+  distanciaCorteExtra?: number;
+  profundidadCorteExtra?: number;
 }
 
 /**

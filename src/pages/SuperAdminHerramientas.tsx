@@ -41,12 +41,14 @@ export default function SuperAdminHerramientas() {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div>
+    <div className="flex-1 min-h-0 flex flex-col container mx-auto py-6 gap-6">
+      <div className="shrink-0">
         <h1 className="text-3xl font-bold">{config.title}</h1>
         <p className="text-muted-foreground">{config.subtitle}</p>
       </div>
-      <HerramientasModule superAdminView={config.view} />
+      <div className="flex-1 min-h-0 flex flex-col">
+        <HerramientasModule superAdminView={config.view} />
+      </div>
     </div>
   );
 }

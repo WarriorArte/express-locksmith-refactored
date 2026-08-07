@@ -783,6 +783,43 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete }: Keycode
                         </>
                       )}
 
+                      {/* Corte extra en punta (solo doble_lado y estandar_1_lado) */}
+                      {(configuracionVisual.tipo === 'doble_lado' || configuracionVisual.tipo === 'estandar_1_lado') && (
+                        <>
+                          <Separator />
+                          <div className="flex items-center justify-between">
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase">Corte Extra en Punta</p>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant={configuracionVisual.corteExtra ? "default" : "outline"}
+                              className="h-6 text-[10px] px-2"
+                              onClick={() => setConfiguracionVisual(c => c ? { ...c, corteExtra: !c.corteExtra } : c)}
+                            >
+                              {configuracionVisual.corteExtra ? "Activado" : "Desactivado"}
+                            </Button>
+                          </div>
+                          {configuracionVisual.corteExtra && (
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                              <VisualRangeField
+                                label="Dist. Corte Extra"
+                                min={4}
+                                max={40}
+                                value={configuracionVisual.distanciaCorteExtra ?? Math.round((configuracionVisual.spacing ?? 18) * 0.7)}
+                                onChange={(value) => setConfiguracionVisual(c => c ? { ...c, distanciaCorteExtra: value } : c)}
+                              />
+                              <VisualRangeField
+                                label="Profundidad Extra"
+                                min={1}
+                                max={configuracionVisual.maxDepth ?? bittingConfig.maxDepth}
+                                value={configuracionVisual.profundidadCorteExtra ?? 1}
+                                onChange={(value) => setConfiguracionVisual(c => c ? { ...c, profundidadCorteExtra: value } : c)}
+                              />
+                            </div>
+                          )}
+                        </>
+                      )}
+
                       {/* Bisel punta */}
                       {configuracionVisual.tipo !== 'doble_lado' && configuracionVisual.tipo !== 'estandar_1_lado' && (
                         <VisualRangeField

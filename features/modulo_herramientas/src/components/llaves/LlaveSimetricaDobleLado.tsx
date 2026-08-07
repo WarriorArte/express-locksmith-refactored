@@ -50,6 +50,23 @@ export function LlaveSimetricaDobleLado({ config, cortes, inputSide = 'none', in
     return pts;
   })();
 
+  const corteExtra = config.corteExtra ?? false;
+  const distanciaCorteExtra = config.distanciaCorteExtra ?? spacing * 0.7;
+  const profundidadCorteExtra = Math.max(1, Math.min(config.profundidadCorteExtra ?? 1, maxDepth));
+  const extraD = (profundidadCorteExtra - 1) * depthStep;
+
+  if (corteExtra) {
+    const lastX = profile[profile.length - 1].x;
+    const maxD = (maxDepth - 1) * depthStep;
+    const extraWidth = maxD > 0 ? crestWidth + (extraD / maxD) * (valleyWidth - crestWidth) : crestWidth;
+    const extraSafeWidth = Math.min(extraWidth, spacing);
+    const extraCenterX = lastX + distanciaCorteExtra;
+    profile.push(
+      { x: extraCenterX - extraSafeWidth / 2, d: extraD },
+      { x: extraCenterX + extraSafeWidth / 2, d: extraD }
+    );
+  }
+
   const { d: pathD, svgWidth } = (() => {
     let path = `M 0,${topEdgeY} L ${shoulderWidth},${topEdgeY} L ${shoulderWidth},${baseYTop} `;
 

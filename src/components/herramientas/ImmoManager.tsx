@@ -338,7 +338,7 @@ export function ImmoManager({ profiles, onSave, onUpdate, onDelete, catalog: _ca
 
   const title = isNew ? "Nueva entrada Immo" : profileTitle(draft);
   return (
-    <div className="h-[calc(100dvh-4rem-2rem)] flex flex-col">
+    <div className="h-full flex flex-col">
       <div className="flex items-center justify-between gap-3 pb-3 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           <button onClick={() => setView("list")} className="text-primary hover:text-primary/80 transition-colors shrink-0">

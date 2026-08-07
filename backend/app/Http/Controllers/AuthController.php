@@ -56,6 +56,10 @@ final class AuthController
         $profile = $user->profile;
         $globalRole = $user->global_role;
 
+        if ($globalRole === 'superadmin') {
+            return ApiResponse::error('El SuperAdmin debe iniciar sesion desde la ruta SuperAdmin configurada', 403);
+        }
+
         if ($user->isSuperadmin()) {
             $workshops = DB::table('workshops')->orderBy('name')->get(['id', 'name', 'code', 'is_active']);
         } else {

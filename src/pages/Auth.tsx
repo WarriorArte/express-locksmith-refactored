@@ -86,17 +86,16 @@ export default function Auth() {
         return;
       }
 
-      const isSuperAdmin = globalRole === "superadmin";
       const activeWorkshops = (workshops || []).filter((w) => !!w.is_active);
 
-      // 3. Buscar el taller por código; si es superadmin y no coincide, usar el primero disponible
-      if (isSuperAdmin) {
+      // 3. Bloquear SuperAdmin en el login normal; debe usar la entrada aislada.
+      if (globalRole === "superadmin") {
+        await signOut();
         toast({
-          title: "Bienvenido",
-          description: "Has iniciado sesion como SuperAdmin",
+          title: "Acceso denegado",
+          description: "El SuperAdmin debe iniciar sesion desde la ruta SuperAdmin",
+          variant: "destructive",
         });
-
-        navigate("/superadmin", { replace: true });
         return;
       }
 
