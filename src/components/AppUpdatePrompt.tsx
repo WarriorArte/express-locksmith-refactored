@@ -193,29 +193,40 @@ export function AppUpdatePrompt() {
     }
   }, []);
 
+  const isCheckingRef = useRef(false);
+  const lastRunAtRef = useRef(0);
+
+  const runChecks = useCallback(async () => {
+    // In-memory guard: at most one round of checks per session hour, on top of
+    // the per-browser daily gate. Keeps the Laravel backend from being polled.
+    if (isCheckingRef.current) return;
+    if (lastRunAtRef.current && Date.now() - lastRunAtRef.current < 60 * 60 * 1_000) return;
+    if (!navigator.onLine) return;
+
+    isCheckingRef.current = true;
+    lastRunAtRef.current = Date.now();
+
+    try {
+      await checkVersion();
+      await checkUpdateNotice();
+    } finally {
+      isCheckingRef.current = false;
+    }
+  }, [checkUpdateNotice, checkVersion]);
+
   useEffect(() => {
-    void checkVersion();
-    void checkUpdateNotice();
+    void runChecks();
 
     const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        void checkVersion();
-        void checkUpdateNotice();
-      }
-    };
-    const onOnline = () => {
-      void checkVersion();
-      void checkUpdateNotice();
+      if (document.visibilityState === "visible") void runChecks();
     };
 
-    window.addEventListener("online", onOnline);
     document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
-      window.removeEventListener("online", onOnline);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [checkUpdateNotice, checkVersion]);
+  }, [runChecks]);
 
   useEffect(() => {
     if (!import.meta.env.PROD || !("serviceWorker" in navigator)) return;
