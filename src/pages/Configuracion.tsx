@@ -332,6 +332,8 @@ export default function Configuracion() {
                 </button>
               </div>
             </div>
+
+            <UpdateCheckCard />
           </TabsContent>
 
           {/* Negocio Tab */}
