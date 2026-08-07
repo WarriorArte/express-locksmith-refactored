@@ -310,13 +310,28 @@ export function AppUpdatePrompt() {
       setUpdateNotice(null);
     }
 
-    if (waitingWorkerRef.current) {
-      waitingWorkerRef.current.postMessage({ type: "SKIP_WAITING" });
-      window.setTimeout(() => window.location.reload(), 2_000);
-      return;
+    const waitingWorker = waitingWorkerRef.current;
+
+    if (waitingWorker) {
+      // Activate the new worker and reload as soon as it takes control, instead
+      // of guessing with a fixed timeout.
+      await new Promise<void>((resolve) => {
+        const timeoutId = window.setTimeout(resolve, 4_000);
+
+        const onControllerChange = () => {
+          window.clearTimeout(timeoutId);
+          navigator.serviceWorker.removeEventListener("controllerchange", onControllerChange);
+          resolve();
+        };
+
+        navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
+        waitingWorker.postMessage({ type: "SKIP_WAITING" });
+      });
+
+      waitingWorkerRef.current = null;
     }
 
-    window.location.reload();
+    await hardReload();
   };
 
   const dismissPrompt = () => {
