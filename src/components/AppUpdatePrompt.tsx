@@ -98,6 +98,47 @@ function writeCachedNotice(notice: UpdateNotice | null): void {
   }
 }
 
+function clearCheckMarkers(): void {
+  try {
+    window.localStorage.removeItem(VERSION_CHECK_STORAGE_KEY);
+    window.localStorage.removeItem(NOTICE_CHECK_STORAGE_KEY);
+    window.localStorage.removeItem(SERVICE_WORKER_CHECK_STORAGE_KEY);
+  } catch {
+    // noop
+  }
+}
+
+/**
+ * Forces the browser to drop the cached app shell and load the new build in a
+ * single step (a plain location.reload() can re-serve the stale HTML, which is
+ * why the prompt used to require two taps).
+ */
+async function hardReload(): Promise<void> {
+  clearCheckMarkers();
+
+  try {
+    if ("caches" in window) {
+      const cacheNames = await caches.keys();
+      await Promise.allSettled(cacheNames.map((name) => caches.delete(name)));
+    }
+  } catch {
+    // noop
+  }
+
+  try {
+    if ("serviceWorker" in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.allSettled(registrations.map((registration) => registration.unregister()));
+    }
+  } catch {
+    // noop
+  }
+
+  const url = new URL(window.location.href);
+  url.searchParams.set("_v", Date.now().toString(36));
+  window.location.replace(url.toString());
+}
+
 export function AppUpdatePrompt() {
   const [hasVersionUpdate, setHasVersionUpdate] = useState(false);
   const [hasServiceWorkerUpdate, setHasServiceWorkerUpdate] = useState(false);
