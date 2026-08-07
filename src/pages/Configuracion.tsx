@@ -928,6 +928,10 @@ function MobileConfigTabs({
             <Switch checked={theme === "dark"} onCheckedChange={(c) => setTheme(c ? "dark" : "light")} />
           </div>
 
+          <UpdateCheckCard compact />
+
+
+
           {/* Backup as list-item card */}
           <div className="bg-card rounded-2xl border border-border overflow-hidden">
             {isAdmin && <SystemRow icon={Shield} label="Respaldo de datos" sub="Copia de seguridad" onClick={() => document.getElementById("__cfg_backup")?.scrollIntoView({ behavior: "smooth" })} />}
