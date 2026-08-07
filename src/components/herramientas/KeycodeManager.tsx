@@ -10,6 +10,16 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { GeneradorLlaveSVG } from "@/components/llaves/GeneradorLlaveSVG";
 import { buildDefaultDecoderConfig, applyDecoderPreset, mapVisualTipoToDecoder } from "@/lib/decoderPresets";
 
@@ -122,6 +132,8 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
   // --- List view state ---
   const [profilesSearch, setProfilesSearch] = useState("");
   const [profilesViewMode, setProfilesViewMode] = useState<"list" | "grid">("list");
+  const [deleteProfileId, setDeleteProfileId] = useState<string | null>(null);
+  const [deleteCodeTarget, setDeleteCodeTarget] = useState<string | null>(null);
   
   // --- Preview override test ---
   const [manualPreviewInput, setManualPreviewInput] = useState("");
@@ -253,8 +265,19 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
   const setPrimaryReference = (id: number) =>
     setReferences((prev) => prev.map((r) => ({ ...r, isPrimary: r.id === id })));
 
-  const deleteCode = (codigo: string) =>
-    setCurrentCodes((prev) => prev.filter((c) => c.codigo !== codigo));
+  const confirmDeleteCode = () => {
+    if (!deleteCodeTarget) return;
+    setCurrentCodes((prev) => prev.filter((c) => c.codigo !== deleteCodeTarget));
+    setDeleteCodeTarget(null);
+    toast.success(`Código "${deleteCodeTarget}" eliminado.`);
+  };
+
+  const confirmDeleteProfile = () => {
+    if (!deleteProfileId) return;
+    onDelete(deleteProfileId);
+    setDeleteProfileId(null);
+    toast.success("Serie eliminada.");
+  };
 
   // Longitud total de bitting esperada según la config actual (suma de ejes si está dividido).
   const expectedBittingLength = useMemo(() => {
@@ -522,7 +545,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-destructive hover:text-destructive"
-                      onClick={() => { onDelete(profile.id); toast.success("Serie eliminada."); }}
+                      onClick={() => setDeleteProfileId(profile.id)}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -588,7 +611,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                     <div className="w-px bg-border" />
                     <button
                       className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors"
-                      onClick={() => { onDelete(profile.id); toast.success("Serie eliminada."); }}
+                      onClick={() => setDeleteProfileId(profile.id)}
                     >
                       <Trash2 className="w-3.5 h-3.5" /> Eliminar
                     </button>
@@ -598,6 +621,23 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
             })}
           </div>
         )}
+
+        <AlertDialog open={!!deleteProfileId} onOpenChange={(open) => !open && setDeleteProfileId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Eliminar esta serie?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Se eliminará permanentemente la serie y todos sus códigos. Esta acción no se puede deshacer.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDeleteProfile} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Eliminar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     );
   }
@@ -1209,7 +1249,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                             <TableCell className="font-mono font-bold text-xs py-1.5">{c.codigo}</TableCell>
                             <TableCell className="font-mono text-muted-foreground tracking-widest text-xs py-1.5">{c.bitting.join(" ")}</TableCell>
                             <TableCell className="text-right py-1.5">
-                              <Button variant="ghost" size="icon" onClick={() => deleteCode(c.codigo)} className="h-6 w-6 text-destructive hover:text-destructive">
+                              <Button variant="ghost" size="icon" onClick={() => setDeleteCodeTarget(c.codigo)} className="h-6 w-6 text-destructive hover:text-destructive">
                                 <Trash2 className="w-3 h-3" />
                               </Button>
                             </TableCell>
@@ -1285,6 +1325,23 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
             </div>
           </div>
         </div>
+
+        <AlertDialog open={!!deleteCodeTarget} onOpenChange={(open) => !open && setDeleteCodeTarget(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Eliminar este código?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Se eliminará el código "{deleteCodeTarget}" de esta serie. Esta acción no se puede deshacer.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDeleteCode} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Eliminar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     );
   }

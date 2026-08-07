@@ -7,6 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 import type { ImmoCatalogItem } from "@/types";
 
@@ -47,6 +57,14 @@ function CatalogSection({
   const [editingLabel, setEditingLabel] = useState("");
   const [dragId, setDragId] = useState<string | null>(null);
   const imgRefs = useRef<Map<string, HTMLInputElement>>(new Map());
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const confirmDelete = () => {
+    if (!deleteId) return;
+    onDelete(deleteId);
+    toast.success("Elemento eliminado.");
+    setDeleteId(null);
+  };
 
   const commitEdit = () => {
     if (!editingId) return;
@@ -191,7 +209,7 @@ function CatalogSection({
                 <button
                   type="button"
                   title="Eliminar"
-                  onClick={() => { onDelete(item.id); toast.success("Elemento eliminado."); }}
+                  onClick={() => setDeleteId(item.id)}
                   className="w-6 h-6 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                 >
                   <Trash2 className="w-3 h-3" />
@@ -222,6 +240,23 @@ function CatalogSection({
           </Button>
         </div>
       </CardContent>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar este elemento?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

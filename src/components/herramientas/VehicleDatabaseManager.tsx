@@ -29,6 +29,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { CarRecord, VehicleCategory } from "@/data/carDatabase";
@@ -119,6 +129,7 @@ export function VehicleDatabaseManager({
   const [importRows, setImportRows] = useState<CarRecord[]>([]);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const importInputRef = useRef<HTMLInputElement | null>(null);
+  const [confirmDeleteKind, setConfirmDeleteKind] = useState<"make" | "model" | "year" | "reset" | null>(null);
 
   const filteredMakes = useMemo(
     () => categoryFilter ? makes.filter((m) => getMakeCategory(m) === categoryFilter) : makes,
@@ -296,7 +307,10 @@ export function VehicleDatabaseManager({
       toast.error("Selecciona una marca para eliminar.");
       return;
     }
+    setConfirmDeleteKind("make");
+  };
 
+  const executeDeleteMake = () => {
     deleteMake(selectedMake);
     setSelectedMake("");
     setSelectedModel("");
@@ -341,7 +355,10 @@ export function VehicleDatabaseManager({
       toast.error("Selecciona marca y modelo.");
       return;
     }
+    setConfirmDeleteKind("model");
+  };
 
+  const executeDeleteModel = () => {
     deleteModel(selectedMake, selectedModel);
     setSelectedModel("");
     setSelectedYear("");
@@ -385,11 +402,47 @@ export function VehicleDatabaseManager({
       toast.error("Selecciona marca/modelo/año.");
       return;
     }
+    setConfirmDeleteKind("year");
+  };
 
+  const executeDeleteYear = () => {
+    const source = Number(selectedYear);
     deleteYear(selectedMake, selectedModel, source);
     setSelectedYear("");
     setRenameYearTo("");
     toast.success("Año eliminado.");
+  };
+
+  const executeReset = () => {
+    resetToSeed();
+    setSelectedMake("");
+    setSelectedModel("");
+    setSelectedYear("");
+    setCategoryFilter("");
+    toast.success("Base restaurada desde temp_db/auto-list.");
+  };
+
+  const confirmDeleteConfig: Record<"make" | "model" | "year" | "reset", { title: string; description: string; onConfirm: () => void }> = {
+    make: {
+      title: `¿Eliminar la marca "${selectedMake}"?`,
+      description: "Se eliminarán todos sus modelos y años asociados. Esta acción no se puede deshacer.",
+      onConfirm: executeDeleteMake,
+    },
+    model: {
+      title: `¿Eliminar el modelo "${selectedModel}"?`,
+      description: "Se eliminarán todos los años asociados a este modelo. Esta acción no se puede deshacer.",
+      onConfirm: executeDeleteModel,
+    },
+    year: {
+      title: `¿Eliminar el año ${selectedYear}?`,
+      description: "Esta acción no se puede deshacer.",
+      onConfirm: executeDeleteYear,
+    },
+    reset: {
+      title: "¿Restaurar la base de datos?",
+      description: "Se reemplazará toda la base de datos de vehículos actual por los datos originales de temp_db/auto-list. Se perderán todos los cambios manuales. Esta acción no se puede deshacer.",
+      onConfirm: executeReset,
+    },
   };
 
   return (
@@ -460,14 +513,7 @@ export function VehicleDatabaseManager({
               {import.meta.env.DEV && (
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    resetToSeed();
-                    setSelectedMake("");
-                    setSelectedModel("");
-                    setSelectedYear("");
-                    setCategoryFilter("");
-                    toast.success("Base restaurada desde temp_db/auto-list.");
-                  }}
+                  onClick={() => setConfirmDeleteKind("reset")}
                 >
                   <RotateCcw className="w-4 h-4 mr-1.5" /> Restaurar
                 </Button>
@@ -995,6 +1041,30 @@ export function VehicleDatabaseManager({
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog open={!!confirmDeleteKind} onOpenChange={(open) => !open && setConfirmDeleteKind(null)}>
+        <AlertDialogContent>
+          {confirmDeleteKind && (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{confirmDeleteConfig[confirmDeleteKind].title}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {confirmDeleteConfig[confirmDeleteKind].description}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => { confirmDeleteConfig[confirmDeleteKind].onConfirm(); setConfirmDeleteKind(null); }}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {confirmDeleteKind === "reset" ? "Restaurar" : "Eliminar"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </>
+          )}
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

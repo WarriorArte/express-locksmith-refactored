@@ -15,6 +15,16 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 import type {
   ImmoProfile, ImmoGenField, ImmoCatalogItem,
@@ -246,6 +256,14 @@ export function ImmoManager({ profiles, onSave, onUpdate, onDelete, catalog: _ca
   const [draft, setDraft] = useState<Omit<ImmoProfile, "id" | "dateAdded">>(emptyProfile());
   const [isNew, setIsNew] = useState(false);
   const [search, setSearch] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const confirmDelete = () => {
+    if (!deleteId) return;
+    onDelete(deleteId);
+    setDeleteId(null);
+    toast.success("Perfil eliminado.");
+  };
 
   const openNew = () => { setDraft(emptyProfile()); setEditingId(null); setIsNew(true); setView("edit"); };
 
@@ -324,7 +342,7 @@ export function ImmoManager({ profiles, onSave, onUpdate, onDelete, catalog: _ca
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(p)}>
                     <Edit className="w-4 h-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => { onDelete(p.id); toast.success("Perfil eliminado."); }}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteId(p.id)}>
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
@@ -332,6 +350,23 @@ export function ImmoManager({ profiles, onSave, onUpdate, onDelete, catalog: _ca
             ))}
           </div>
         )}
+
+        <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Eliminar este perfil Immo?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta acción no se puede deshacer.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Eliminar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     );
   }
@@ -397,6 +432,7 @@ export function ImmoAssignmentManager({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(0);
+  const [deleteAssignmentId, setDeleteAssignmentId] = useState<string | null>(null);
 
   const transponderCatalog = useMemo(() => catalog.filter((i) => i.category === "transponder"), [catalog]);
   const equipoCatalog = useMemo(() => catalog.filter((i) => i.category === "equipo"), [catalog]);
@@ -431,6 +467,14 @@ export function ImmoAssignmentManager({
   const resetForm = () => {
     setMake(""); setModel(""); setYearStart(""); setYearEnd("");
     setSelectedIds([]); setDetailMap({}); setExpandedProfileId(null); setEditingId(null);
+  };
+
+  const confirmDeleteAssignment = () => {
+    if (!deleteAssignmentId) return;
+    onDelete(deleteAssignmentId);
+    toast.success("Asignación eliminada.");
+    if (editingId === deleteAssignmentId) resetForm();
+    setDeleteAssignmentId(null);
   };
 
   const loadForEdit = (a: ToolAssignment) => {
@@ -710,7 +754,7 @@ export function ImmoAssignmentManager({
                         <div className="text-[11px] text-muted-foreground font-mono mt-0.5">{item.yearStart}–{item.yearEnd}</div>
                       </div>
                       <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => { onDelete(item.id); toast.success("Asignación eliminada."); if (editingId === item.id) resetForm(); }}>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => setDeleteAssignmentId(item.id)}>
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                       </div>
@@ -747,6 +791,23 @@ export function ImmoAssignmentManager({
           </div>
         )}
       </div>
+
+      <AlertDialog open={!!deleteAssignmentId} onOpenChange={(open) => !open && setDeleteAssignmentId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar esta asignación?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteAssignment} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
