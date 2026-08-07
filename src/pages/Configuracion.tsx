@@ -53,6 +53,7 @@ import { ImageUploader } from "@/components/shared/ImageUploader";
 import { phpApiUpload } from "@/lib/phpApi";
 import { BackupManager } from "@/components/settings/BackupManager";
 import { QuoteDocSettingsPanel, QuoteDocSettingsPreview } from "@/components/settings/QuoteDocSettingsPanel";
+import { UpdateCheckCard } from "@/components/settings/UpdateCheckCard";
 import { useQuoteDocSettings } from "@/hooks/useQuoteDocSettings";
 
 import { COUNTRIES, getCountryByCode, inferCountryCode } from "@/lib/countries";
