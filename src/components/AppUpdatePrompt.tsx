@@ -282,6 +282,7 @@ export function AppUpdatePrompt() {
         const base = import.meta.env.BASE_URL || "/";
         const normalizedBase = base.endsWith("/") ? base : `${base}/`;
         const registration = await navigator.serviceWorker.register(`${normalizedBase}sw.js`);
+        registrationRef.current = registration;
 
         if (registration.waiting && navigator.serviceWorker.controller) {
           waitingWorkerRef.current = registration.waiting;
