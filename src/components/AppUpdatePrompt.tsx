@@ -98,6 +98,47 @@ function writeCachedNotice(notice: UpdateNotice | null): void {
   }
 }
 
+function clearCheckMarkers(): void {
+  try {
+    window.localStorage.removeItem(VERSION_CHECK_STORAGE_KEY);
+    window.localStorage.removeItem(NOTICE_CHECK_STORAGE_KEY);
+    window.localStorage.removeItem(SERVICE_WORKER_CHECK_STORAGE_KEY);
+  } catch {
+    // noop
+  }
+}
+
+/**
+ * Forces the browser to drop the cached app shell and load the new build in a
+ * single step (a plain location.reload() can re-serve the stale HTML, which is
+ * why the prompt used to require two taps).
+ */
+async function hardReload(): Promise<void> {
+  clearCheckMarkers();
+
+  try {
+    if ("caches" in window) {
+      const cacheNames = await caches.keys();
+      await Promise.allSettled(cacheNames.map((name) => caches.delete(name)));
+    }
+  } catch {
+    // noop
+  }
+
+  try {
+    if ("serviceWorker" in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.allSettled(registrations.map((registration) => registration.unregister()));
+    }
+  } catch {
+    // noop
+  }
+
+  const url = new URL(window.location.href);
+  url.searchParams.set("_v", Date.now().toString(36));
+  window.location.replace(url.toString());
+}
+
 export function AppUpdatePrompt() {
   const [hasVersionUpdate, setHasVersionUpdate] = useState(false);
   const [hasServiceWorkerUpdate, setHasServiceWorkerUpdate] = useState(false);
@@ -108,6 +149,7 @@ export function AppUpdatePrompt() {
   const [dismissedVersion, setDismissedVersion] = useState<string | null>(null);
   const latestVersionRef = useRef<string | null>(null);
   const waitingWorkerRef = useRef<ServiceWorker | null>(null);
+  const isRefreshingRef = useRef(false);
 
   const checkVersion = useCallback(async (force = false) => {
     if (!force && !shouldRunDailyCheck(VERSION_CHECK_STORAGE_KEY)) return;
@@ -152,29 +194,40 @@ export function AppUpdatePrompt() {
     }
   }, []);
 
+  const isCheckingRef = useRef(false);
+  const lastRunAtRef = useRef(0);
+
+  const runChecks = useCallback(async () => {
+    // In-memory guard: at most one round of checks per session hour, on top of
+    // the per-browser daily gate. Keeps the Laravel backend from being polled.
+    if (isCheckingRef.current) return;
+    if (lastRunAtRef.current && Date.now() - lastRunAtRef.current < 60 * 60 * 1_000) return;
+    if (!navigator.onLine) return;
+
+    isCheckingRef.current = true;
+    lastRunAtRef.current = Date.now();
+
+    try {
+      await checkVersion();
+      await checkUpdateNotice();
+    } finally {
+      isCheckingRef.current = false;
+    }
+  }, [checkUpdateNotice, checkVersion]);
+
   useEffect(() => {
-    void checkVersion();
-    void checkUpdateNotice();
+    void runChecks();
 
     const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        void checkVersion();
-        void checkUpdateNotice();
-      }
-    };
-    const onOnline = () => {
-      void checkVersion();
-      void checkUpdateNotice();
+      if (document.visibilityState === "visible") void runChecks();
     };
 
-    window.addEventListener("online", onOnline);
     document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
-      window.removeEventListener("online", onOnline);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [checkUpdateNotice, checkVersion]);
+  }, [runChecks]);
 
   useEffect(() => {
     if (!import.meta.env.PROD || !("serviceWorker" in navigator)) return;
@@ -183,9 +236,10 @@ export function AppUpdatePrompt() {
     let serviceWorkerCheckId = 0;
 
     const onControllerChange = () => {
-      if (reloadPending) return;
+      // refreshApp handles its own reload; avoid a competing one.
+      if (reloadPending || isRefreshingRef.current) return;
       reloadPending = true;
-      window.location.reload();
+      void hardReload();
     };
 
     const watchInstallingWorker = (worker: ServiceWorker | null) => {
@@ -246,6 +300,7 @@ export function AppUpdatePrompt() {
   const showPrompt = hasNotice || hasServiceWorkerUpdate || hasVersionUpdate;
 
   const refreshApp = async () => {
+    isRefreshingRef.current = true;
     setIsRefreshing(true);
 
     if (updateNotice) {
@@ -258,13 +313,28 @@ export function AppUpdatePrompt() {
       setUpdateNotice(null);
     }
 
-    if (waitingWorkerRef.current) {
-      waitingWorkerRef.current.postMessage({ type: "SKIP_WAITING" });
-      window.setTimeout(() => window.location.reload(), 2_000);
-      return;
+    const waitingWorker = waitingWorkerRef.current;
+
+    if (waitingWorker) {
+      // Activate the new worker and reload as soon as it takes control, instead
+      // of guessing with a fixed timeout.
+      await new Promise<void>((resolve) => {
+        const timeoutId = window.setTimeout(resolve, 4_000);
+
+        const onControllerChange = () => {
+          window.clearTimeout(timeoutId);
+          navigator.serviceWorker.removeEventListener("controllerchange", onControllerChange);
+          resolve();
+        };
+
+        navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
+        waitingWorker.postMessage({ type: "SKIP_WAITING" });
+      });
+
+      waitingWorkerRef.current = null;
     }
 
-    window.location.reload();
+    await hardReload();
   };
 
   const dismissPrompt = () => {
