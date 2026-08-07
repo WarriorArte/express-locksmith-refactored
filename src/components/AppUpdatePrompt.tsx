@@ -300,6 +300,7 @@ export function AppUpdatePrompt() {
   const showPrompt = hasNotice || hasServiceWorkerUpdate || hasVersionUpdate;
 
   const refreshApp = async () => {
+    isRefreshingRef.current = true;
     setIsRefreshing(true);
 
     if (updateNotice) {
