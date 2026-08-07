@@ -152,27 +152,30 @@ export function AppUpdatePrompt() {
   const isRefreshingRef = useRef(false);
 
   const checkVersion = useCallback(async (force = false) => {
-    if (!force && !shouldRunDailyCheck(VERSION_CHECK_STORAGE_KEY)) return;
+    if (!force && !shouldRunDailyCheck(VERSION_CHECK_STORAGE_KEY)) return false;
 
     try {
       const nextVersion = await fetchBuildVersion();
 
-      if (!nextVersion) return;
+      if (!nextVersion) return false;
 
       markDailyCheck(VERSION_CHECK_STORAGE_KEY);
 
-      if (nextVersion !== __APP_BUILD_VERSION__ && nextVersion !== dismissedVersion) {
+      if (nextVersion !== __APP_BUILD_VERSION__ && (force || nextVersion !== dismissedVersion)) {
         latestVersionRef.current = nextVersion;
         setHasVersionUpdate(true);
+        return true;
       }
     } catch {
       // version.json is created only in production builds; ignore local/dev misses.
     }
+
+    return false;
   }, [dismissedVersion]);
 
-  const checkUpdateNotice = useCallback(async () => {
-    if (!shouldRunDailyCheck(NOTICE_CHECK_STORAGE_KEY)) return;
-    if (!getPhpAuthToken()) return;
+  const checkUpdateNotice = useCallback(async (force = false) => {
+    if (!force && !shouldRunDailyCheck(NOTICE_CHECK_STORAGE_KEY)) return false;
+    if (!getPhpAuthToken()) return false;
 
     try {
       const notice = await fetchUpdateNotice();
@@ -181,35 +184,45 @@ export function AppUpdatePrompt() {
       if (!notice) {
         writeCachedNotice(null);
         setUpdateNotice(null);
-        return;
+        return false;
       }
 
       const dismissedNoticeKey = window.localStorage.getItem(NOTICE_DISMISSED_STORAGE_KEY);
-      if (notice.notice_key !== dismissedNoticeKey) {
+      if (force || notice.notice_key !== dismissedNoticeKey) {
         writeCachedNotice(notice);
         setUpdateNotice(notice);
+        return true;
       }
     } catch {
       // Ignore notice checks when the API is unavailable; the next daily window will retry.
     }
+
+    return false;
   }, []);
 
   const isCheckingRef = useRef(false);
-  const lastRunAtRef = useRef(0);
+  const registrationRef = useRef<ServiceWorkerRegistration | null>(null);
 
-  const runChecks = useCallback(async () => {
-    // In-memory guard: at most one round of checks per session hour, on top of
-    // the per-browser daily gate. Keeps the Laravel backend from being polled.
-    if (isCheckingRef.current) return;
-    if (lastRunAtRef.current && Date.now() - lastRunAtRef.current < 60 * 60 * 1_000) return;
-    if (!navigator.onLine) return;
+  const runChecks = useCallback(async (force = false) => {
+    // Automatic checks are limited to the per-browser daily gate so the Laravel
+    // backend is not polled; `force` comes from the manual button in settings.
+    if (isCheckingRef.current) return false;
+    if (!navigator.onLine) return false;
 
     isCheckingRef.current = true;
-    lastRunAtRef.current = Date.now();
 
     try {
-      await checkVersion();
-      await checkUpdateNotice();
+      const [hasVersion, hasNotice] = [await checkVersion(force), await checkUpdateNotice(force)];
+
+      if (force && registrationRef.current) {
+        try {
+          await registrationRef.current.update();
+        } catch {
+          // noop
+        }
+      }
+
+      return hasVersion || hasNotice;
     } finally {
       isCheckingRef.current = false;
     }
@@ -222,10 +235,20 @@ export function AppUpdatePrompt() {
       if (document.visibilityState === "visible") void runChecks();
     };
 
+    const onManualCheck = (event: Event) => {
+      const detail = (event as CustomEvent<ManualUpdateCheckDetail>).detail;
+
+      void runChecks(true).then((updateAvailable) => {
+        detail?.resolve?.({ updateAvailable: updateAvailable || waitingWorkerRef.current !== null });
+      });
+    };
+
     document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener(MANUAL_UPDATE_CHECK_EVENT, onManualCheck);
 
     return () => {
       document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener(MANUAL_UPDATE_CHECK_EVENT, onManualCheck);
     };
   }, [runChecks]);
 
