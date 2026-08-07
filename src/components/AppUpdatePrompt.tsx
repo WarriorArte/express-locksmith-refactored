@@ -149,6 +149,7 @@ export function AppUpdatePrompt() {
   const [dismissedVersion, setDismissedVersion] = useState<string | null>(null);
   const latestVersionRef = useRef<string | null>(null);
   const waitingWorkerRef = useRef<ServiceWorker | null>(null);
+  const isRefreshingRef = useRef(false);
 
   const checkVersion = useCallback(async (force = false) => {
     if (!force && !shouldRunDailyCheck(VERSION_CHECK_STORAGE_KEY)) return;
