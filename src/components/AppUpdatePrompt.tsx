@@ -235,9 +235,10 @@ export function AppUpdatePrompt() {
     let serviceWorkerCheckId = 0;
 
     const onControllerChange = () => {
-      if (reloadPending) return;
+      // refreshApp handles its own reload; avoid a competing one.
+      if (reloadPending || isRefreshingRef.current) return;
       reloadPending = true;
-      window.location.reload();
+      void hardReload();
     };
 
     const watchInstallingWorker = (worker: ServiceWorker | null) => {
