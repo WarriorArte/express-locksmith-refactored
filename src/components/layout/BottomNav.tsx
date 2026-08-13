@@ -178,7 +178,7 @@ export function BottomNav() {
           {/* Burbuja del tab activo, encajada en la muesca */}
           {notchX !== null && activeItem && (
             <motion.div
-              className="pointer-events-none absolute top-[-12px] z-10 flex h-[50px] w-[50px] items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_0_22px_hsl(var(--primary)/0.5),0_10px_20px_-6px_hsl(var(--primary)/0.55)]"
+              className="pointer-events-none absolute top-[-12px] z-10 flex h-[50px] w-[50px] items-center justify-center rounded-[14px] bg-primary text-primary-foreground shadow-[0_0_22px_hsl(var(--primary)/0.5),0_10px_20px_-6px_hsl(var(--primary)/0.55)]"
               initial={false}
               animate={{ left: getNotchCenter(barWidth, notchX) - 25, scale: 1 }}
               transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.7 }}
