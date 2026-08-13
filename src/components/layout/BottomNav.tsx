@@ -1,4 +1,4 @@
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import {
   Home, Wrench, Package, Plus,
   ShoppingCart, FileText, Users, Car,
@@ -7,8 +7,9 @@ import {
 import { cn } from "@/lib/utils";
 import { useWorkshopFeatures } from "@/hooks/useWorkshopFeatures";
 import { useWorkshop } from "@/hooks/useWorkshop";
-import { useState, useRef, useLayoutEffect } from "react";
-import { m as motion } from "framer-motion";
+import { useState } from "react";
+import { AnimatePresence, m as motion } from "framer-motion";
+
 import {
   Dialog,
   DialogContent,
