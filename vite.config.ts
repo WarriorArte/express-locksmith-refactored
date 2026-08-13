@@ -1,11 +1,29 @@
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
-import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
+function versionManifestPlugin(buildVersion: string): Plugin {
+  return {
+    name: "emit-version-manifest",
+    apply: "build",
+    generateBundle() {
+      this.emitFile({
+        type: "asset",
+        fileName: "version.json",
+        source: JSON.stringify({ version: buildVersion, buildTime: new Date().toISOString() }, null, 2),
+      });
+    },
+  };
+}
+
+export default defineConfig(({ mode }) => {
+  const buildVersion =
+    process.env.APP_BUILD_VERSION ||
+    (mode === "production" ? `build-${Date.now().toString(36)}` : "dev");
+
+  return {
   server: {
     host: "::",
     port: 8080,
@@ -25,63 +43,12 @@ export default defineConfig(({ mode }) => ({
     drop: mode === 'production' ? ['console', 'debugger'] : [],
   },
   define: {
-    __APP_BUILD_VERSION__: JSON.stringify(process.env.APP_BUILD_VERSION || "dev"),
+    __APP_BUILD_VERSION__: JSON.stringify(buildVersion),
   },
   plugins: [
     react(), 
     mode === "development" && componentTagger(),
-    mode === "production" && VitePWA({
-      registerType: 'prompt',
-      injectRegister: false,
-      includeAssets: ['favicon.ico'],
-      manifest: {
-        name: 'Cerrajero Pro Express',
-        short_name: 'Cerrajero Pro',
-        description: 'Sistema completo de gestión para cerrajería',
-        theme_color: '#1e40af',
-        background_color: '#ffffff',
-        display: 'standalone',
-        scope: '/',
-        start_url: '/',
-        icons: [
-          {
-            src: 'icon-192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'icon-512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          }
-        ]
-      },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        navigateFallbackDenylist: [
-          /\/php(?:\/|$)/,
-          /\/api(?:\/|$)/,
-          /\/install(?:\/|$)/,
-          /\/up(?:\/|$)/,
-        ],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          }
-        ]
-      }
-    })
+    versionManifestPlugin(buildVersion),
   ].filter(Boolean),
   resolve: {
     alias: {
@@ -114,4 +81,5 @@ export default defineConfig(({ mode }) => ({
     },
     chunkSizeWarningLimit: 800,
   },
-}));
+  };
+});
