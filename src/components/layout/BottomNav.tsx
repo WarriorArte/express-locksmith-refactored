@@ -4,7 +4,6 @@ import {
   ShoppingCart, FileText, Users, Car,
   type LucideIcon,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useWorkshopFeatures } from "@/hooks/useWorkshopFeatures";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -190,9 +189,22 @@ export function BottomNav() {
                 animate={{ scale: 1, opacity: 1, rotate: 0 }}
                 transition={{ type: "spring", stiffness: 520, damping: 22 }}
               >
-                <activeItem.icon className="h-[23px] w-[23px]" strokeWidth={2.2} />
+                <activeItem.icon className="h-[23px] w-[23px]" strokeWidth={2} />
               </motion.span>
             </motion.div>
+          )}
+
+          {/* Título del tab activo, alineado siempre con la burbuja */}
+          {notchX !== null && activeItem && (
+            <motion.span
+              key={activeItem.to}
+              className="pointer-events-none absolute top-[42px] z-20 w-[50px] text-center text-[10px] font-bold text-primary"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ left: clampNotch(barWidth, notchX) - 25, opacity: 1, y: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.7 }}
+            >
+              {activeItem.label}
+            </motion.span>
           )}
 
           <div className="relative flex h-full items-end justify-around px-2 pb-2">
@@ -338,23 +350,14 @@ function NavBtn({
       }}
       className="relative flex h-full flex-1 flex-col items-center justify-end gap-1 rounded-[18px] pb-1 active:bg-muted/60"
     >
-      <motion.span
-        className="flex flex-col items-center gap-1"
-        animate={active ? { y: 0, opacity: 1 } : { y: 0, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 460, damping: 26 }}
-      >
-        {!active && (
+      {!active && (
+        <span className="flex flex-col items-center gap-1">
           <Icon className="h-[22px] w-[22px] text-muted-foreground" strokeWidth={2} />
-        )}
-        <span
-          className={cn(
-            "text-[10px] transition-colors duration-200",
-            active ? "font-bold text-primary" : "font-medium text-muted-foreground",
-          )}
-        >
-          {item.label}
+          <span className="text-[10px] font-medium text-muted-foreground transition-colors duration-200">
+            {item.label}
+          </span>
         </span>
-      </motion.span>
+      )}
     </NavLink>
   );
 }
