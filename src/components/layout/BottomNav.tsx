@@ -1,4 +1,4 @@
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import {
   Home, Wrench, Package, Plus,
   ShoppingCart, FileText, Users, Car,
@@ -7,8 +7,9 @@ import {
 import { cn } from "@/lib/utils";
 import { useWorkshopFeatures } from "@/hooks/useWorkshopFeatures";
 import { useWorkshop } from "@/hooks/useWorkshop";
-import { useState, useRef, useLayoutEffect } from "react";
-import { m as motion } from "framer-motion";
+import { useState } from "react";
+import { AnimatePresence, m as motion } from "framer-motion";
+
 import {
   Dialog,
   DialogContent,
@@ -43,7 +44,6 @@ const quickActions = [
 
 export function BottomNav() {
   const location = useLocation();
-  const navigate = useNavigate();
   const { isFeatureEnabled } = useWorkshopFeatures();
   const { isSuperAdmin, currentWorkshop, isLoading } = useWorkshop();
 
@@ -61,22 +61,10 @@ export function BottomNav() {
     isFeatureEnabled(a.featureKey),
   );
 
-  const shouldShowFAB = !isLoading && !(isSuperAdmin && !currentWorkshop);
-
-  const navInnerRef = useRef<HTMLDivElement>(null);
-  const [pillX, setPillX] = useState<number | null>(null);
-  const [pillW, setPillW] = useState(0);
-
-  useLayoutEffect(() => {
-    const container = navInnerRef.current;
-    if (!container) return;
-    const activeEl = container.querySelector<HTMLElement>('[data-nav-active="true"]');
-    if (!activeEl) { setPillX(null); return; }
-    const cRect = container.getBoundingClientRect();
-    const bRect = activeEl.getBoundingClientRect();
-    setPillX(bRect.left - cRect.left + 4);
-    setPillW(bRect.width - 8);
-  }, [location.pathname]);
+  const shouldShowFAB =
+    !isLoading &&
+    !(isSuperAdmin && !currentWorkshop) &&
+    enabledQuickActions.length > 0;
 
   const openAction = (dialog: string) => {
     setActionsOpen(false);
@@ -91,9 +79,15 @@ export function BottomNav() {
 
   if (isLoading) return null;
 
-  // Layout: 2 nav items left | FAB | 2 nav items right
-  const leftItems = filteredNavItems.slice(0, 2);
-  const rightItems = filteredNavItems.slice(2, 4);
+  const isItemActive = (to: string) =>
+    to === "/"
+      ? location.pathname === "/"
+      : location.pathname === to || location.pathname.startsWith(`${to}/`);
+
+  // Layout: mitad izquierda | FAB | mitad derecha (simétrico con 3 o 4 items)
+  const half = Math.ceil(filteredNavItems.length / 2);
+  const leftItems = filteredNavItems.slice(0, half);
+  const rightItems = filteredNavItems.slice(half);
 
   const directActionMap: Record<string, string> = {
     "/inventario": "product",
@@ -102,7 +96,9 @@ export function BottomNav() {
     "/servicios": "service",
     "/ventas": "sale",
   };
-  const directAction = directActionMap[location.pathname] || null;
+  const directAction = enabledQuickActions.length
+    ? directActionMap[location.pathname] || null
+    : null;
 
   const handleFabClick = () => {
     if (directAction) {
@@ -114,26 +110,10 @@ export function BottomNav() {
 
   return (
     <>
-      <nav
-        className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 md:hidden"
-      >
-        <div
-          ref={navInnerRef}
-          className="relative flex h-[68px] items-center justify-around rounded-[24px] border border-border/80 bg-card/95 px-2 shadow-[0_18px_42px_-18px_hsl(var(--foreground)/0.42),0_8px_22px_-14px_hsl(var(--primary)/0.38)] backdrop-blur-xl"
-        >
-          {/* Sliding pill */}
-          {pillX !== null && (
-            <motion.div
-              className="absolute top-2 bottom-2 rounded-[16px] bg-primary pointer-events-none shadow-[0_0_20px_hsl(var(--primary)/0.45),0_8px_18px_-6px_hsl(var(--primary)/0.4)]"
-              style={{ left: 0, width: pillW }}
-              animate={{ x: pillX }}
-              initial={false}
-              transition={{ type: "spring", stiffness: 420, damping: 34 }}
-            />
-          )}
-
+      <nav className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 lg:hidden">
+        <div className="relative flex h-[68px] items-center justify-around rounded-[24px] border border-border/80 bg-card/95 px-2 shadow-[0_18px_42px_-18px_hsl(var(--foreground)/0.42),0_8px_22px_-14px_hsl(var(--primary)/0.38)] backdrop-blur-xl">
           {leftItems.map((item) => (
-            <NavBtn key={item.to} item={item} active={location.pathname === item.to} />
+            <NavBtn key={item.to} item={item} active={isItemActive(item.to)} />
           ))}
 
           {/* Center FAB */}
@@ -151,7 +131,7 @@ export function BottomNav() {
           )}
 
           {rightItems.map((item) => (
-            <NavBtn key={item.to} item={item} active={location.pathname === item.to} />
+            <NavBtn key={item.to} item={item} active={isItemActive(item.to)} />
           ))}
         </div>
       </nav>
@@ -214,26 +194,49 @@ function NavBtn({
   return (
     <NavLink
       to={item.to}
-      data-nav-active={active ? "true" : "false"}
+      aria-current={active ? "page" : undefined}
       onClick={(e) => {
         if (active) e.preventDefault();
       }}
       className="relative flex h-full flex-1 flex-col items-center justify-center gap-1 rounded-[18px] active:bg-muted/70"
     >
-      <Icon
-        className={cn(
-          "relative z-10 w-[22px] h-[22px] transition-colors duration-200",
-          active ? "text-primary-foreground" : "text-muted-foreground",
+      {/* Marcador: aparece en su sitio con un "pop", sin deslizarse */}
+      <AnimatePresence initial={false}>
+        {active && (
+          <motion.span
+            key="marker"
+            className="absolute inset-x-1 top-2 bottom-2 rounded-[16px] bg-primary shadow-[0_0_20px_hsl(var(--primary)/0.45),0_8px_18px_-6px_hsl(var(--primary)/0.4)]"
+            initial={{ opacity: 0, scale: 0.6 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.85 }}
+            transition={{ type: "spring", stiffness: 520, damping: 30, mass: 0.6 }}
+          />
         )}
-      />
-      <span
-        className={cn(
-          "relative z-10 text-[10px] font-medium transition-colors duration-200",
-          active ? "text-primary-foreground font-semibold" : "text-muted-foreground",
-        )}
+      </AnimatePresence>
+
+      <motion.span
+        className="relative z-10 flex flex-col items-center gap-1"
+        animate={active ? { y: -1, scale: 1.06 } : { y: 0, scale: 1 }}
+        transition={{ type: "spring", stiffness: 460, damping: 26 }}
       >
-        {item.label}
-      </span>
+        <Icon
+          className={cn(
+            "w-[22px] h-[22px] transition-colors duration-200",
+            active ? "text-primary-foreground" : "text-muted-foreground",
+          )}
+        />
+        <span
+          className={cn(
+            "text-[10px] transition-colors duration-200",
+            active
+              ? "text-primary-foreground font-bold"
+              : "text-muted-foreground font-medium",
+          )}
+        >
+          {item.label}
+        </span>
+      </motion.span>
     </NavLink>
   );
 }
+
