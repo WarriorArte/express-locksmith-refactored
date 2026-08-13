@@ -276,54 +276,68 @@ export function BottomNav() {
   );
 }
 
+/** Silueta de la barra: rectángulo redondeado con una muesca cóncava bajo el tab activo. */
+function buildBarPath(w: number, notchX: number | null): string {
+  const h = 68;
+  const r = 24;
+  const nw = 34; // media anchura de la muesca
+  const nd = 24; // profundidad de la muesca
+  const cx =
+    notchX === null ? null : Math.min(Math.max(notchX, r + nw), w - r - nw);
+
+  const top =
+    cx === null
+      ? `H ${w - r}`
+      : `H ${cx - nw} C ${cx - nw + 10} 0 ${cx - nw + 4} ${nd} ${cx} ${nd} ` +
+        `C ${cx + nw - 4} ${nd} ${cx + nw - 10} 0 ${cx + nw} 0 H ${w - r}`;
+
+  return [
+    `M ${r} 0`,
+    top,
+    `A ${r} ${r} 0 0 1 ${w} ${r}`,
+    `V ${h - r}`,
+    `A ${r} ${r} 0 0 1 ${w - r} ${h}`,
+    `H ${r}`,
+    `A ${r} ${r} 0 0 1 0 ${h - r}`,
+    `V ${r}`,
+    `A ${r} ${r} 0 0 1 ${r} 0`,
+    "Z",
+  ].join(" ");
+}
+
 function NavBtn({
   item,
   active,
+  innerRef,
 }: {
   item: Pick<NavItem, "to" | "icon" | "label">;
   active: boolean;
+  innerRef?: (el: HTMLAnchorElement | null) => void;
 }) {
   const Icon = item.icon;
   return (
     <NavLink
+      ref={innerRef}
       to={item.to}
+      aria-label={item.label}
       aria-current={active ? "page" : undefined}
       onClick={(e) => {
         if (active) e.preventDefault();
       }}
-      className="relative flex h-full flex-1 flex-col items-center justify-center gap-1 rounded-[18px] active:bg-muted/70"
+      className="relative flex h-full flex-1 flex-col items-center justify-end gap-1 rounded-[18px] pb-1 active:bg-muted/60"
     >
-      {/* Marcador: aparece en su sitio con un "pop", sin deslizarse */}
-      <AnimatePresence initial={false}>
-        {active && (
-          <motion.span
-            key="marker"
-            className="absolute inset-x-1 top-2 bottom-2 rounded-[16px] bg-primary shadow-[0_0_20px_hsl(var(--primary)/0.45),0_8px_18px_-6px_hsl(var(--primary)/0.4)]"
-            initial={{ opacity: 0, scale: 0.6 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.85 }}
-            transition={{ type: "spring", stiffness: 520, damping: 30, mass: 0.6 }}
-          />
-        )}
-      </AnimatePresence>
-
       <motion.span
-        className="relative z-10 flex flex-col items-center gap-1"
-        animate={active ? { y: -1, scale: 1.06 } : { y: 0, scale: 1 }}
+        className="flex flex-col items-center gap-1"
+        animate={active ? { y: 0, opacity: 1 } : { y: 0, opacity: 1 }}
         transition={{ type: "spring", stiffness: 460, damping: 26 }}
       >
-        <Icon
-          className={cn(
-            "w-[22px] h-[22px] transition-colors duration-200",
-            active ? "text-primary-foreground" : "text-muted-foreground",
-          )}
-        />
+        {!active && (
+          <Icon className="h-[22px] w-[22px] text-muted-foreground" strokeWidth={2} />
+        )}
         <span
           className={cn(
             "text-[10px] transition-colors duration-200",
-            active
-              ? "text-primary-foreground font-bold"
-              : "text-muted-foreground font-medium",
+            active ? "font-bold text-primary" : "font-medium text-muted-foreground",
           )}
         >
           {item.label}
@@ -332,4 +346,5 @@ function NavBtn({
     </NavLink>
   );
 }
+
 
