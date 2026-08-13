@@ -180,7 +180,7 @@ export function BottomNav() {
             <motion.div
               className="pointer-events-none absolute top-[-12px] z-10 flex h-[50px] w-[50px] items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_0_22px_hsl(var(--primary)/0.5),0_10px_20px_-6px_hsl(var(--primary)/0.55)]"
               initial={false}
-              animate={{ left: clampNotch(barWidth, notchX) - 25, scale: 1 }}
+              animate={{ left: getNotchCenter(barWidth, notchX) - 25, scale: 1 }}
               transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.7 }}
             >
               <motion.span
@@ -281,10 +281,13 @@ export function BottomNav() {
 const NOTCH_HALF = 36; // media anchura de la muesca
 const NOTCH_DEPTH = 26; // profundidad de la muesca
 
-/** Centro de la muesca, limitado para no comerse las esquinas redondeadas. */
-function clampNotch(w: number, notchX: number | null): number {
+/**
+ * Mantiene la burbuja dentro de la barra sin desplazarla del centro real
+ * de su icono. El radio de la burbuja es el único límite necesario.
+ */
+function getNotchCenter(w: number, notchX: number | null): number {
   if (notchX === null || w === 0) return 0;
-  return Math.min(Math.max(notchX, 24 + NOTCH_HALF), w - 24 - NOTCH_HALF);
+  return Math.min(Math.max(notchX, 25), w - 25);
 }
 
 /** Silueta de la barra: rectángulo redondeado con una muesca cóncava bajo el tab activo. */
@@ -293,7 +296,7 @@ function buildBarPath(w: number, notchX: number | null): string {
   const r = 24;
   const nw = NOTCH_HALF;
   const nd = NOTCH_DEPTH;
-  const cx = notchX === null ? null : clampNotch(w, notchX);
+  const cx = notchX === null ? null : getNotchCenter(w, notchX);
 
   const top =
     cx === null
