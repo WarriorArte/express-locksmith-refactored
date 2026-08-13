@@ -22,7 +22,7 @@ const VERSION_CHECK_STORAGE_KEY = "cerrajeria:last-version-check";
 const NOTICE_CHECK_STORAGE_KEY = "cerrajeria:last-update-notice-check";
 const NOTICE_DISMISSED_STORAGE_KEY = "cerrajeria:dismissed-update-notice";
 const NOTICE_CACHE_STORAGE_KEY = "cerrajeria:cached-update-notice";
-const SERVICE_WORKER_CHECK_STORAGE_KEY = "cerrajeria:last-service-worker-check";
+const VERSION_DISMISSED_STORAGE_KEY = "cerrajeria:dismissed-version";
 
 function buildVersionUrl(): string {
   const base = import.meta.env.BASE_URL || "/";
@@ -103,7 +103,6 @@ function clearCheckMarkers(): void {
   try {
     window.localStorage.removeItem(VERSION_CHECK_STORAGE_KEY);
     window.localStorage.removeItem(NOTICE_CHECK_STORAGE_KEY);
-    window.localStorage.removeItem(SERVICE_WORKER_CHECK_STORAGE_KEY);
   } catch {
     // noop
   }
@@ -142,15 +141,19 @@ async function hardReload(): Promise<void> {
 
 export function AppUpdatePrompt() {
   const [hasVersionUpdate, setHasVersionUpdate] = useState(false);
-  const [hasServiceWorkerUpdate, setHasServiceWorkerUpdate] = useState(false);
   const [updateNotice, setUpdateNotice] = useState<UpdateNotice | null>(() =>
     typeof window === "undefined" ? null : readCachedNotice(),
   );
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [dismissedVersion, setDismissedVersion] = useState<string | null>(null);
+  const [dismissedVersion, setDismissedVersion] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      return window.localStorage.getItem(VERSION_DISMISSED_STORAGE_KEY);
+    } catch {
+      return null;
+    }
+  });
   const latestVersionRef = useRef<string | null>(null);
-  const waitingWorkerRef = useRef<ServiceWorker | null>(null);
-  const isRefreshingRef = useRef(false);
 
   const checkVersion = useCallback(async (force = false) => {
     if (!force && !shouldRunDailyCheck(VERSION_CHECK_STORAGE_KEY)) return false;
@@ -202,7 +205,6 @@ export function AppUpdatePrompt() {
   }, []);
 
   const isCheckingRef = useRef(false);
-  const registrationRef = useRef<ServiceWorkerRegistration | null>(null);
 
   const runChecks = useCallback(async (force = false) => {
     // Automatic checks are limited to the per-browser daily gate so the Laravel
@@ -214,14 +216,6 @@ export function AppUpdatePrompt() {
 
     try {
       const [hasVersion, hasNotice] = [await checkVersion(force), await checkUpdateNotice(force)];
-
-      if (force && registrationRef.current) {
-        try {
-          await registrationRef.current.update();
-        } catch {
-          // noop
-        }
-      }
 
       return hasVersion || hasNotice;
     } finally {
@@ -240,7 +234,7 @@ export function AppUpdatePrompt() {
       const detail = (event as CustomEvent<ManualUpdateCheckDetail>).detail;
 
       void runChecks(true).then((updateAvailable) => {
-        detail?.resolve?.({ updateAvailable: updateAvailable || waitingWorkerRef.current !== null });
+        detail?.resolve?.({ updateAvailable });
       });
     };
 
@@ -253,79 +247,11 @@ export function AppUpdatePrompt() {
     };
   }, [runChecks]);
 
-  useEffect(() => {
-    if (!import.meta.env.PROD || !("serviceWorker" in navigator)) return;
-
-    let reloadPending = false;
-    let serviceWorkerCheckId = 0;
-
-    const onControllerChange = () => {
-      // refreshApp handles its own reload; avoid a competing one.
-      if (reloadPending || isRefreshingRef.current) return;
-      reloadPending = true;
-      void hardReload();
-    };
-
-    const watchInstallingWorker = (worker: ServiceWorker | null) => {
-      if (!worker) return;
-
-      worker.addEventListener("statechange", () => {
-        if (worker.state === "installed" && navigator.serviceWorker.controller) {
-          waitingWorkerRef.current = worker;
-          setHasServiceWorkerUpdate(true);
-        }
-      });
-    };
-
-    const registerServiceWorker = async () => {
-      try {
-        const base = import.meta.env.BASE_URL || "/";
-        const normalizedBase = base.endsWith("/") ? base : `${base}/`;
-        const registration = await navigator.serviceWorker.register(`${normalizedBase}sw.js`);
-        registrationRef.current = registration;
-
-        if (registration.waiting && navigator.serviceWorker.controller) {
-          waitingWorkerRef.current = registration.waiting;
-          setHasServiceWorkerUpdate(true);
-        }
-
-        watchInstallingWorker(registration.installing);
-
-        registration.addEventListener("updatefound", () => {
-          watchInstallingWorker(registration.installing);
-        });
-
-        serviceWorkerCheckId = window.setInterval(() => {
-          if (navigator.onLine && shouldRunDailyCheck(SERVICE_WORKER_CHECK_STORAGE_KEY)) {
-            markDailyCheck(SERVICE_WORKER_CHECK_STORAGE_KEY);
-            void registration.update();
-          }
-        }, DAILY_CHECK_INTERVAL_MS);
-
-        if (navigator.onLine && shouldRunDailyCheck(SERVICE_WORKER_CHECK_STORAGE_KEY)) {
-          markDailyCheck(SERVICE_WORKER_CHECK_STORAGE_KEY);
-          void registration.update();
-        }
-      } catch {
-        // Ignore service worker registration issues; version polling remains active.
-      }
-    };
-
-    navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
-    void registerServiceWorker();
-
-    return () => {
-      window.clearInterval(serviceWorkerCheckId);
-      navigator.serviceWorker.removeEventListener("controllerchange", onControllerChange);
-    };
-  }, []);
-
   const hasNotice = !!updateNotice;
   const isNoticeForced = !!updateNotice?.force_refresh;
-  const showPrompt = hasNotice || hasServiceWorkerUpdate || hasVersionUpdate;
+  const showPrompt = hasNotice || hasVersionUpdate;
 
   const refreshApp = async () => {
-    isRefreshingRef.current = true;
     setIsRefreshing(true);
 
     if (updateNotice) {
@@ -336,27 +262,6 @@ export function AppUpdatePrompt() {
       }
       writeCachedNotice(null);
       setUpdateNotice(null);
-    }
-
-    const waitingWorker = waitingWorkerRef.current;
-
-    if (waitingWorker) {
-      // Activate the new worker and reload as soon as it takes control, instead
-      // of guessing with a fixed timeout.
-      await new Promise<void>((resolve) => {
-        const timeoutId = window.setTimeout(resolve, 4_000);
-
-        const onControllerChange = () => {
-          window.clearTimeout(timeoutId);
-          navigator.serviceWorker.removeEventListener("controllerchange", onControllerChange);
-          resolve();
-        };
-
-        navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
-        waitingWorker.postMessage({ type: "SKIP_WAITING" });
-      });
-
-      waitingWorkerRef.current = null;
     }
 
     await hardReload();
@@ -375,10 +280,14 @@ export function AppUpdatePrompt() {
 
     if (latestVersionRef.current) {
       setDismissedVersion(latestVersionRef.current);
+      try {
+        window.localStorage.setItem(VERSION_DISMISSED_STORAGE_KEY, latestVersionRef.current);
+      } catch {
+        // noop
+      }
     }
 
     setHasVersionUpdate(false);
-    setHasServiceWorkerUpdate(false);
   };
 
   if (!showPrompt) return null;
