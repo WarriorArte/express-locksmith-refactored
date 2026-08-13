@@ -211,7 +211,7 @@ export function BottomNav() {
                   whileTap={{ scale: 0.9 }}
                   onClick={handleFabClick}
                   aria-label={directAction ? "Crear" : "Acciones rápidas"}
-                  className="flex h-[46px] w-[46px] items-center justify-center rounded-full border border-primary/40 bg-primary/10 text-primary"
+                  className="flex h-[46px] w-[46px] items-center justify-center rounded-[14px] border border-primary/40 bg-primary/10 text-primary"
                 >
                   <Plus className="h-5 w-5" strokeWidth={2.6} />
                 </motion.button>
