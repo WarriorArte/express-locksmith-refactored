@@ -242,22 +242,37 @@
   .ce-crystal {
     background-image: var(--gradient-crystal);
     box-shadow: var(--crystal-inner), var(--shadow-crystal);
+    position: relative;
+    isolation: isolate;
   }
 
-  /* Reflejo superior tipo vidrio */
-  .ce-crystal {
-    position: relative;
-    overflow: hidden;
-  }
+  /* Reflejo superior tipo vidrio (highlight brillante) */
+  .bg-primary::before,
+  .card-primary::before,
   .ce-crystal::before {
     content: "";
     position: absolute;
-    inset: 1px 1px auto 1px;
-    height: 45%;
-    border-radius: inherit;
-    background: linear-gradient(180deg, hsl(0 0% 100% / 0.42), hsl(0 0% 100% / 0));
+    inset: 2px 3px auto 3px;
+    height: 44%;
+    border-radius: calc(max(6px, 0.5em)) calc(max(6px, 0.5em)) 60% 60% / 100% 100% 22px 22px;
+    background: linear-gradient(
+      180deg,
+      hsl(0 0% 100% / 0.85) 0%,
+      hsl(0 0% 100% / 0.45) 45%,
+      hsl(0 0% 100% / 0.06) 100%
+    );
     pointer-events: none;
+    z-index: 0;
   }
+
+  /* El contenido siempre por encima del reflejo */
+  .bg-primary > *,
+  .card-primary > *,
+  .ce-crystal > * {
+    position: relative;
+    z-index: 1;
+  }
+
 
   /* Primary card with glow */
   .card-primary {
