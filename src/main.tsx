@@ -7,6 +7,25 @@ import { WorkshopProvider } from "@/hooks/useWorkshop";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
+// Legacy service workers (from the old PWA setup) can keep serving a stale app
+// shell. Updates now rely on version.json + a cache-busting reload, so any
+// previously installed worker and its caches are removed once, on boot.
+if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+  void navigator.serviceWorker
+    .getRegistrations()
+    .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+    .then(async (results) => {
+      if (!results.some(Boolean)) return;
+      if ("caches" in window) {
+        const cacheNames = await caches.keys();
+        await Promise.allSettled(cacheNames.map((name) => caches.delete(name)));
+      }
+    })
+    .catch(() => {
+      // noop
+    });
+}
+
 // Prevent browser edge-swipe navigation (back/forward) on mobile browsers.
 if (typeof window !== "undefined") {
   let touchStartX = 0;
