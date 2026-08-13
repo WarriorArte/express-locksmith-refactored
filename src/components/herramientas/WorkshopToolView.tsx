@@ -297,8 +297,8 @@ export function WorkshopToolView({
                   <Card key="immo" className="hover:shadow-md transition-shadow">
                     <CardContent className="p-4 flex flex-col gap-3">
                       <div className="flex items-center gap-2.5">
-                        <div className="p-2 bg-violet-500/10 rounded-lg shrink-0">
-                          <Cpu className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+                        <div className="p-2 bg-accent/10 rounded-lg shrink-0">
+                          <Cpu className="w-4 h-4 text-accent" />
                         </div>
                         <h3 className="text-base font-bold text-foreground">Immo Info</h3>
                       </div>
