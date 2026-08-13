@@ -313,7 +313,7 @@ export function WorkshopToolView({
                             }}
                             className="group flex flex-col gap-2 text-left"
                           >
-                            <div className="aspect-square w-full rounded-xl overflow-hidden border border-border bg-muted/50 group-hover:border-violet-400/70 group-hover:shadow-sm transition-all">
+                            <div className="aspect-square w-full rounded-xl overflow-hidden border border-border bg-muted/50 group-hover:border-primary/70 group-hover:shadow-sm transition-all">
                               {p!.mainImage ? (
                                 <img
                                   src={p!.mainImage}
@@ -322,7 +322,7 @@ export function WorkshopToolView({
                                 />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center">
-                                  <Cpu className="w-8 h-8 text-violet-500/40" />
+                                  <Cpu className="w-8 h-8 text-accent/40" />
                                 </div>
                               )}
                             </div>
