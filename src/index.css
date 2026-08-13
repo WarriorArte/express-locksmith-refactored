@@ -231,11 +231,34 @@
     background: hsl(var(--surface-2));
   }
 
+  /* Celeste cristal: cualquier superficie celeste llena recibe brillo de vidrio */
+  .bg-primary,
+  .card-primary,
+  .ce-crystal {
+    background-image: var(--gradient-crystal);
+    box-shadow: var(--crystal-inner), var(--shadow-crystal);
+  }
+
+  /* Reflejo superior tipo vidrio */
+  .ce-crystal {
+    position: relative;
+    overflow: hidden;
+  }
+  .ce-crystal::before {
+    content: "";
+    position: absolute;
+    inset: 1px 1px auto 1px;
+    height: 45%;
+    border-radius: inherit;
+    background: linear-gradient(180deg, hsl(0 0% 100% / 0.42), hsl(0 0% 100% / 0));
+    pointer-events: none;
+  }
+
   /* Primary card with glow */
   .card-primary {
     @apply bg-primary text-primary-foreground rounded-sm;
-    box-shadow: var(--shadow-gold);
   }
+
 
   /* Standard outlined card — solid bg to block grid texture */
   .card-elevated {
