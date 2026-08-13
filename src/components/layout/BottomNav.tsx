@@ -4,7 +4,6 @@ import {
   ShoppingCart, FileText, Users, Car,
   type LucideIcon,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useWorkshopFeatures } from "@/hooks/useWorkshopFeatures";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
