@@ -76,7 +76,7 @@ const CATEGORY_ICONS: Record<VehicleCategory, React.ReactNode> = {
 const CATEGORY_COLORS: Record<VehicleCategory, string> = {
   Vehiculo: "bg-primary/10 text-primary border-primary/20 dark:text-primary",
   Camion: "bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-800",
-  Motocicleta: "bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-800",
+  Motocicleta: "bg-accent/10 text-accent border-accent/20 dark:bg-accent/20 dark:text-accent dark:border-accent/30",
 };
 
 const selectClass =
