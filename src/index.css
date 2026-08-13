@@ -86,11 +86,28 @@
     --sidebar-ring: 195 100% 45%;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(195 100% 45%) 0%, hsl(195 100% 38%) 100%);
+    --gradient-primary: linear-gradient(160deg, hsl(195 100% 62%) 0%, hsl(195 100% 47%) 45%, hsl(196 100% 40%) 100%);
     --gradient-secondary: linear-gradient(135deg, hsl(225 11% 95%) 0%, hsl(225 11% 90%) 100%);
     --gradient-hero: linear-gradient(135deg, hsl(240 16% 8%) 0%, hsl(240 16% 12%) 100%);
     --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(225 11% 98%) 100%);
-    --gradient-success: linear-gradient(135deg, hsl(195 100% 45%) 0%, hsl(195 100% 38%) 100%);
+    --gradient-success: linear-gradient(160deg, hsl(195 100% 62%) 0%, hsl(196 100% 40%) 100%);
+
+    /* Crystal / glass celeste (publicidad style) */
+    --gradient-crystal: linear-gradient(
+      165deg,
+      hsl(192 100% 72%) 0%,
+      hsl(194 100% 58%) 28%,
+      hsl(196 100% 46%) 62%,
+      hsl(198 100% 38%) 100%
+    );
+    --crystal-inner:
+      inset 0 1px 0 hsl(0 0% 100% / 0.55),
+      inset 0 8px 18px -10px hsl(0 0% 100% / 0.75),
+      inset 0 -10px 18px -10px hsl(200 100% 22% / 0.45);
+    --shadow-crystal:
+      0 6px 18px -6px hsl(196 100% 40% / 0.45),
+      0 2px 4px -2px hsl(200 100% 20% / 0.25);
+
 
     /* Shadows */
     --shadow-sm: 0 1px 3px 0 hsl(240 16% 6% / 0.04);
