@@ -658,7 +658,7 @@ export function ImmoAssignmentManager({
                           {p.mainImage ? (
                             <img src={p.mainImage} className="w-6 h-6 rounded object-cover shrink-0" alt="" />
                           ) : (
-                            <Cpu className="w-4 h-4 text-violet-500 shrink-0" />
+                            <Cpu className="w-4 h-4 text-accent shrink-0" />
                           )}
                           <span className="text-sm font-semibold text-foreground truncate">{profileTitle(p)}</span>
                           {detail.transponder && (
@@ -765,7 +765,7 @@ export function ImmoAssignmentManager({
                           const p = immoProfiles.find((x) => x.id === d.profileId);
                           return p ? (
                             <div key={d.profileId} className="flex flex-col gap-0.5">
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300 border border-violet-200 dark:border-violet-800">
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-accent-light text-accent border border-accent/20 dark:bg-accent/30 dark:text-accent-foreground dark:border-accent/40">
                                 {profileTitle(p)}
                               </span>
                               {d.transponder && (

@@ -297,8 +297,8 @@ export function WorkshopToolView({
                   <Card key="immo" className="hover:shadow-md transition-shadow">
                     <CardContent className="p-4 flex flex-col gap-3">
                       <div className="flex items-center gap-2.5">
-                        <div className="p-2 bg-violet-500/10 rounded-lg shrink-0">
-                          <Cpu className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+                        <div className="p-2 bg-accent/10 rounded-lg shrink-0">
+                          <Cpu className="w-4 h-4 text-accent" />
                         </div>
                         <h3 className="text-base font-bold text-foreground">Immo Info</h3>
                       </div>
@@ -313,7 +313,7 @@ export function WorkshopToolView({
                             }}
                             className="group flex flex-col gap-2 text-left"
                           >
-                            <div className="aspect-square w-full rounded-xl overflow-hidden border border-border bg-muted/50 group-hover:border-violet-400/70 group-hover:shadow-sm transition-all">
+                            <div className="aspect-square w-full rounded-xl overflow-hidden border border-border bg-muted/50 group-hover:border-primary/70 group-hover:shadow-sm transition-all">
                               {p!.mainImage ? (
                                 <img
                                   src={p!.mainImage}
@@ -322,7 +322,7 @@ export function WorkshopToolView({
                                 />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center">
-                                  <Cpu className="w-8 h-8 text-violet-500/40" />
+                                  <Cpu className="w-8 h-8 text-accent/40" />
                                 </div>
                               )}
                             </div>
