@@ -7,8 +7,9 @@ import {
 import { cn } from "@/lib/utils";
 import { useWorkshopFeatures } from "@/hooks/useWorkshopFeatures";
 import { useWorkshop } from "@/hooks/useWorkshop";
-import { useState } from "react";
-import { AnimatePresence, m as motion } from "framer-motion";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { m as motion } from "framer-motion";
+
 
 import {
   Dialog,
