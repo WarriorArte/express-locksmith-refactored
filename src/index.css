@@ -94,19 +94,24 @@
 
     /* Crystal / glass celeste (publicidad style) */
     --gradient-crystal: linear-gradient(
-      165deg,
-      hsl(192 100% 72%) 0%,
-      hsl(194 100% 58%) 28%,
-      hsl(196 100% 46%) 62%,
-      hsl(198 100% 38%) 100%
+      180deg,
+      hsl(190 100% 80%) 0%,
+      hsl(193 100% 66%) 22%,
+      hsl(196 100% 50%) 55%,
+      hsl(199 100% 38%) 88%,
+      hsl(200 100% 44%) 100%
     );
     --crystal-inner:
-      inset 0 1px 0 hsl(0 0% 100% / 0.55),
-      inset 0 8px 18px -10px hsl(0 0% 100% / 0.75),
-      inset 0 -10px 18px -10px hsl(200 100% 22% / 0.45);
+      inset 0 1.5px 0 hsl(0 0% 100% / 0.85),
+      inset 0 -1.5px 0 hsl(0 0% 100% / 0.25),
+      inset 1px 0 0 hsl(0 0% 100% / 0.35),
+      inset -1px 0 0 hsl(0 0% 100% / 0.35),
+      inset 0 -14px 20px -12px hsl(190 100% 85% / 0.65),
+      inset 0 18px 26px -16px hsl(0 0% 100% / 0.9);
     --shadow-crystal:
-      0 6px 18px -6px hsl(196 100% 40% / 0.45),
-      0 2px 4px -2px hsl(200 100% 20% / 0.25);
+      0 10px 22px -8px hsl(196 100% 40% / 0.55),
+      0 3px 6px -2px hsl(200 100% 20% / 0.28);
+
 
 
     /* Shadows */
@@ -237,22 +242,37 @@
   .ce-crystal {
     background-image: var(--gradient-crystal);
     box-shadow: var(--crystal-inner), var(--shadow-crystal);
+    position: relative;
+    isolation: isolate;
   }
 
-  /* Reflejo superior tipo vidrio */
-  .ce-crystal {
-    position: relative;
-    overflow: hidden;
-  }
+  /* Reflejo superior tipo vidrio (highlight brillante) */
+  .bg-primary::before,
+  .card-primary::before,
   .ce-crystal::before {
     content: "";
     position: absolute;
-    inset: 1px 1px auto 1px;
-    height: 45%;
-    border-radius: inherit;
-    background: linear-gradient(180deg, hsl(0 0% 100% / 0.42), hsl(0 0% 100% / 0));
+    inset: 2px 3px auto 3px;
+    height: 44%;
+    border-radius: calc(max(6px, 0.5em)) calc(max(6px, 0.5em)) 60% 60% / 100% 100% 22px 22px;
+    background: linear-gradient(
+      180deg,
+      hsl(0 0% 100% / 0.85) 0%,
+      hsl(0 0% 100% / 0.45) 45%,
+      hsl(0 0% 100% / 0.06) 100%
+    );
     pointer-events: none;
+    z-index: 0;
   }
+
+  /* El contenido siempre por encima del reflejo */
+  .bg-primary > *,
+  .card-primary > *,
+  .ce-crystal > * {
+    position: relative;
+    z-index: 1;
+  }
+
 
   /* Primary card with glow */
   .card-primary {
