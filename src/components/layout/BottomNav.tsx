@@ -7,8 +7,9 @@ import {
 import { cn } from "@/lib/utils";
 import { useWorkshopFeatures } from "@/hooks/useWorkshopFeatures";
 import { useWorkshop } from "@/hooks/useWorkshop";
-import { useState } from "react";
-import { AnimatePresence, m as motion } from "framer-motion";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { m as motion } from "framer-motion";
+
 
 import {
   Dialog,
@@ -108,33 +109,125 @@ export function BottomNav() {
     }
   };
 
+  const barRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<Record<string, HTMLElement | null>>({});
+  const [barWidth, setBarWidth] = useState(0);
+  const [notchX, setNotchX] = useState<number | null>(null);
+
+  const activeItem = filteredNavItems.find((i) => isItemActive(i.to)) || null;
+
+  const measure = useCallback(() => {
+    const bar = barRef.current;
+    if (!bar) return;
+    const rect = bar.getBoundingClientRect();
+    setBarWidth(rect.width);
+    const el = activeItem ? itemRefs.current[activeItem.to] : null;
+    if (el) {
+      const r = el.getBoundingClientRect();
+      setNotchX(r.left - rect.left + r.width / 2);
+    } else {
+      setNotchX(null);
+    }
+  }, [activeItem]);
+
+  useLayoutEffect(() => {
+    measure();
+  }, [measure, filteredNavItems.length, shouldShowFAB]);
+
+  useEffect(() => {
+    const bar = barRef.current;
+    if (!bar) return;
+    const ro = new ResizeObserver(() => measure());
+    ro.observe(bar);
+    window.addEventListener("orientationchange", measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("orientationchange", measure);
+    };
+  }, [measure]);
+
   return (
     <>
       <nav className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 lg:hidden">
-        <div className="relative flex h-[68px] items-center justify-around rounded-[24px] border border-border/80 bg-card/95 px-2 shadow-[0_18px_42px_-18px_hsl(var(--foreground)/0.42),0_8px_22px_-14px_hsl(var(--primary)/0.38)] backdrop-blur-xl">
-          {leftItems.map((item) => (
-            <NavBtn key={item.to} item={item} active={isItemActive(item.to)} />
-          ))}
-
-          {/* Center FAB */}
-          {shouldShowFAB && (
-            <div className="flex-1 flex items-center justify-center">
-              <motion.button
-                whileTap={{ scale: 0.92 }}
-                onClick={handleFabClick}
-                aria-label={directAction ? "Crear" : "Acciones rápidas"}
-                className="flex h-[54px] w-[54px] items-center justify-center rounded-[20px] bg-primary text-primary-foreground shadow-[0_0_24px_hsl(var(--primary)/0.45),0_12px_24px_-8px_hsl(var(--primary)/0.55)]"
-              >
-                <Plus className="w-6 h-6" strokeWidth={2.5} />
-              </motion.button>
-            </div>
+        <div
+          ref={barRef}
+          className="relative h-[68px] drop-shadow-[0_18px_34px_hsl(var(--foreground)/0.28)]"
+        >
+          {/* Silueta de la barra con muesca que se mueve al tab activo */}
+          {barWidth > 0 && (
+            <svg
+              className="absolute inset-0 h-full w-full overflow-visible"
+              viewBox={`0 0 ${barWidth} 68`}
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <motion.path
+                d={buildBarPath(barWidth, notchX)}
+                fill="hsl(var(--card))"
+                stroke="hsl(var(--border))"
+                strokeWidth={1}
+                initial={false}
+                animate={{ d: buildBarPath(barWidth, notchX) }}
+                transition={{ type: "spring", stiffness: 260, damping: 26, mass: 0.7 }}
+              />
+            </svg>
           )}
 
-          {rightItems.map((item) => (
-            <NavBtn key={item.to} item={item} active={isItemActive(item.to)} />
-          ))}
+          {/* Burbuja del tab activo, encajada en la muesca */}
+          {notchX !== null && activeItem && (
+            <motion.div
+              className="pointer-events-none absolute top-[-22px] z-10 flex h-[50px] w-[50px] items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_0_22px_hsl(var(--primary)/0.5),0_10px_20px_-6px_hsl(var(--primary)/0.55)]"
+              initial={false}
+              animate={{ left: clampNotch(barWidth, notchX) - 25, scale: 1 }}
+              transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.7 }}
+            >
+              <motion.span
+                key={activeItem.to}
+                initial={{ scale: 0.5, opacity: 0, rotate: -18 }}
+                animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                transition={{ type: "spring", stiffness: 520, damping: 22 }}
+              >
+                <activeItem.icon className="h-[23px] w-[23px]" strokeWidth={2.2} />
+              </motion.span>
+            </motion.div>
+          )}
+
+          <div className="relative flex h-full items-end justify-around px-2 pb-2">
+            {leftItems.map((item) => (
+              <NavBtn
+                key={item.to}
+                item={item}
+                active={isItemActive(item.to)}
+                innerRef={(el) => (itemRefs.current[item.to] = el)}
+              />
+            ))}
+
+            {/* Center FAB */}
+            {shouldShowFAB && (
+              <div className="flex flex-1 items-center justify-center self-center">
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={handleFabClick}
+                  aria-label={directAction ? "Crear" : "Acciones rápidas"}
+                  className="flex h-[46px] w-[46px] items-center justify-center rounded-full border border-primary/40 bg-primary/10 text-primary"
+                >
+                  <Plus className="h-5 w-5" strokeWidth={2.6} />
+                </motion.button>
+              </div>
+            )}
+
+            {rightItems.map((item) => (
+              <NavBtn
+                key={item.to}
+                item={item}
+                active={isItemActive(item.to)}
+                innerRef={(el) => (itemRefs.current[item.to] = el)}
+              />
+            ))}
+          </div>
         </div>
       </nav>
+
 
       {/* Quick actions sheet */}
       <Dialog open={actionsOpen} onOpenChange={setActionsOpen}>
@@ -183,54 +276,77 @@ export function BottomNav() {
   );
 }
 
+const NOTCH_HALF = 36; // media anchura de la muesca
+const NOTCH_DEPTH = 26; // profundidad de la muesca
+
+/** Centro de la muesca, limitado para no comerse las esquinas redondeadas. */
+function clampNotch(w: number, notchX: number | null): number {
+  if (notchX === null || w === 0) return 0;
+  return Math.min(Math.max(notchX, 24 + NOTCH_HALF), w - 24 - NOTCH_HALF);
+}
+
+/** Silueta de la barra: rectángulo redondeado con una muesca cóncava bajo el tab activo. */
+function buildBarPath(w: number, notchX: number | null): string {
+  const h = 68;
+  const r = 24;
+  const nw = NOTCH_HALF;
+  const nd = NOTCH_DEPTH;
+  const cx = notchX === null ? null : clampNotch(w, notchX);
+
+  const top =
+    cx === null
+      ? `H ${w - r}`
+      : `H ${cx - nw} C ${cx - nw + 14} 0 ${cx - nw + 8} ${nd} ${cx} ${nd} ` +
+        `C ${cx + nw - 8} ${nd} ${cx + nw - 14} 0 ${cx + nw} 0 H ${w - r}`;
+
+
+  return [
+    `M ${r} 0`,
+    top,
+    `A ${r} ${r} 0 0 1 ${w} ${r}`,
+    `V ${h - r}`,
+    `A ${r} ${r} 0 0 1 ${w - r} ${h}`,
+    `H ${r}`,
+    `A ${r} ${r} 0 0 1 0 ${h - r}`,
+    `V ${r}`,
+    `A ${r} ${r} 0 0 1 ${r} 0`,
+    "Z",
+  ].join(" ");
+}
+
 function NavBtn({
   item,
   active,
+  innerRef,
 }: {
   item: Pick<NavItem, "to" | "icon" | "label">;
   active: boolean;
+  innerRef?: (el: HTMLAnchorElement | null) => void;
 }) {
   const Icon = item.icon;
   return (
     <NavLink
+      ref={innerRef}
       to={item.to}
+      aria-label={item.label}
       aria-current={active ? "page" : undefined}
       onClick={(e) => {
         if (active) e.preventDefault();
       }}
-      className="relative flex h-full flex-1 flex-col items-center justify-center gap-1 rounded-[18px] active:bg-muted/70"
+      className="relative flex h-full flex-1 flex-col items-center justify-end gap-1 rounded-[18px] pb-1 active:bg-muted/60"
     >
-      {/* Marcador: aparece en su sitio con un "pop", sin deslizarse */}
-      <AnimatePresence initial={false}>
-        {active && (
-          <motion.span
-            key="marker"
-            className="absolute inset-x-1 top-2 bottom-2 rounded-[16px] bg-primary shadow-[0_0_20px_hsl(var(--primary)/0.45),0_8px_18px_-6px_hsl(var(--primary)/0.4)]"
-            initial={{ opacity: 0, scale: 0.6 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.85 }}
-            transition={{ type: "spring", stiffness: 520, damping: 30, mass: 0.6 }}
-          />
-        )}
-      </AnimatePresence>
-
       <motion.span
-        className="relative z-10 flex flex-col items-center gap-1"
-        animate={active ? { y: -1, scale: 1.06 } : { y: 0, scale: 1 }}
+        className="flex flex-col items-center gap-1"
+        animate={active ? { y: 0, opacity: 1 } : { y: 0, opacity: 1 }}
         transition={{ type: "spring", stiffness: 460, damping: 26 }}
       >
-        <Icon
-          className={cn(
-            "w-[22px] h-[22px] transition-colors duration-200",
-            active ? "text-primary-foreground" : "text-muted-foreground",
-          )}
-        />
+        {!active && (
+          <Icon className="h-[22px] w-[22px] text-muted-foreground" strokeWidth={2} />
+        )}
         <span
           className={cn(
             "text-[10px] transition-colors duration-200",
-            active
-              ? "text-primary-foreground font-bold"
-              : "text-muted-foreground font-medium",
+            active ? "font-bold text-primary" : "font-medium text-muted-foreground",
           )}
         >
           {item.label}
@@ -239,4 +355,5 @@ function NavBtn({
     </NavLink>
   );
 }
+
 
