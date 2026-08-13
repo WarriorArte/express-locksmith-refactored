@@ -351,23 +351,14 @@ function NavBtn({
       }}
       className="relative flex h-full flex-1 flex-col items-center justify-end gap-1 rounded-[18px] pb-1 active:bg-muted/60"
     >
-      <motion.span
-        className="flex flex-col items-center gap-1"
-        animate={active ? { y: 0, opacity: 1 } : { y: 0, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 460, damping: 26 }}
-      >
-        {!active && (
+      {!active && (
+        <span className="flex flex-col items-center gap-1">
           <Icon className="h-[22px] w-[22px] text-muted-foreground" strokeWidth={2} />
-        )}
-        <span
-          className={cn(
-            "text-[10px] transition-colors duration-200",
-            active ? "font-bold text-primary" : "font-medium text-muted-foreground",
-          )}
-        >
-          {item.label}
+          <span className="text-[10px] font-medium text-muted-foreground transition-colors duration-200">
+            {item.label}
+          </span>
         </span>
-      </motion.span>
+      )}
     </NavLink>
   );
 }
