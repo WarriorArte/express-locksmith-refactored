@@ -130,9 +130,9 @@
     --muted: 240 13% 14%;
     --muted-foreground: 240 18% 56%;    /* #7878A0 */
 
-    --accent: 247 32% 60%;
+    --accent: 220 13% 60%;
     --accent-foreground: 0 0% 100%;
-    --accent-light: 240 30% 18%;
+    --accent-light: 220 13% 18%;
 
     --destructive: 350 100% 65%;
     --destructive-foreground: 0 0% 100%;
@@ -146,9 +146,9 @@
     --warning-foreground: 240 22% 5%;
     --warning-light: 36 100% 14%;
 
-    --info: 247 32% 60%;
-    --info-foreground: 0 0% 100%;
-    --info-light: 240 30% 18%;
+    --info: 195 100% 50%;
+    --info-foreground: 240 22% 5%;
+    --info-light: 195 100% 14%;
 
     --border: 240 10% 16%;              /* subtle line, no alpha (Tailwind-friendly) */
     --input: 240 13% 14%;
