@@ -78,7 +78,8 @@ export function BottomNav() {
     }
   };
 
-  if (isLoading) return null;
+
+
 
   const isItemActive = (to: string) =>
     to === "/"
@@ -145,6 +146,8 @@ export function BottomNav() {
       window.removeEventListener("orientationchange", measure);
     };
   }, [measure]);
+
+  if (isLoading) return null;
 
   return (
     <>
