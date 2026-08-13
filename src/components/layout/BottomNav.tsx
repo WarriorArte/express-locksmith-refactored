@@ -276,20 +276,29 @@ export function BottomNav() {
   );
 }
 
+const NOTCH_HALF = 36; // media anchura de la muesca
+const NOTCH_DEPTH = 26; // profundidad de la muesca
+
+/** Centro de la muesca, limitado para no comerse las esquinas redondeadas. */
+function clampNotch(w: number, notchX: number | null): number {
+  if (notchX === null || w === 0) return 0;
+  return Math.min(Math.max(notchX, 24 + NOTCH_HALF), w - 24 - NOTCH_HALF);
+}
+
 /** Silueta de la barra: rectángulo redondeado con una muesca cóncava bajo el tab activo. */
 function buildBarPath(w: number, notchX: number | null): string {
   const h = 68;
   const r = 24;
-  const nw = 34; // media anchura de la muesca
-  const nd = 24; // profundidad de la muesca
-  const cx =
-    notchX === null ? null : Math.min(Math.max(notchX, r + nw), w - r - nw);
+  const nw = NOTCH_HALF;
+  const nd = NOTCH_DEPTH;
+  const cx = notchX === null ? null : clampNotch(w, notchX);
 
   const top =
     cx === null
       ? `H ${w - r}`
-      : `H ${cx - nw} C ${cx - nw + 10} 0 ${cx - nw + 4} ${nd} ${cx} ${nd} ` +
-        `C ${cx + nw - 4} ${nd} ${cx + nw - 10} 0 ${cx + nw} 0 H ${w - r}`;
+      : `H ${cx - nw} C ${cx - nw + 14} 0 ${cx - nw + 8} ${nd} ${cx} ${nd} ` +
+        `C ${cx + nw - 8} ${nd} ${cx + nw - 14} 0 ${cx + nw} 0 H ${w - r}`;
+
 
   return [
     `M ${r} 0`,
