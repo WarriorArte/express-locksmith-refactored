@@ -39,7 +39,7 @@ export function StatCard({
       className={cn(
         "relative overflow-hidden rounded-sm p-4",
         isHero
-          ? "ce-crystal bg-primary text-primary-foreground"
+          ? "bg-primary text-primary-foreground shadow-[0_0_24px_hsl(var(--primary)/0.30)]"
           : "bg-card text-foreground border border-border",
       )}
     >
