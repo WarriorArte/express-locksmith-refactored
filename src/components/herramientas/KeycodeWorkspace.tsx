@@ -30,20 +30,35 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
   const baseProfile = keycodeProfiles.find((p) => p.id === profileId);
 
   // Carga los códigos completos al montar (la lista llega con codesData vacío)
+  const needsCodesFetch = !!(
+    profileId &&
+    baseProfile &&
+    baseProfile.codesData.length === 0 &&
+    (baseProfile.codesCount ?? 0) > 0
+  );
+
   const [loadedProfile, setLoadedProfile] = useState<KeycodeProfile | null>(null);
-  const [loadingCodes, setLoadingCodes] = useState(false);
+  // Inicia en true si hace falta traer códigos, para evitar el "flash" del UI ya renderizado
+  const [loadingCodes, setLoadingCodes] = useState(needsCodesFetch);
 
   useEffect(() => {
-    if (!profileId || !baseProfile) return;
-    if (baseProfile.codesData.length === 0 && (baseProfile.codesCount ?? 0) > 0) {
-      setLoadingCodes(true);
-      onFetchCodes(profileId).then((full) => {
-        if (full) setLoadedProfile(full);
-        setLoadingCodes(false);
-      });
+    if (!needsCodesFetch) {
+      setLoadingCodes(false);
+      return;
     }
+    setLoadingCodes(true);
+    let cancelled = false;
+    onFetchCodes(profileId!).then((full) => {
+      if (cancelled) return;
+      if (full) setLoadedProfile(full);
+      setLoadingCodes(false);
+    });
+    return () => {
+      cancelled = true;
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profileId]);
+  }, [profileId, needsCodesFetch]);
+
 
   const profile = loadedProfile ?? baseProfile;
 
