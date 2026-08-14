@@ -178,7 +178,7 @@ export function BottomNav() {
           {/* Burbuja del tab activo, flotando sobre la muesca */}
           {notchX !== null && activeItem && (
             <motion.div
-              className="pointer-events-none absolute top-[-22px] z-10 flex h-[48px] w-[48px] items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_0_18px_hsl(var(--primary)/0.45),0_8px_16px_-5px_hsl(var(--primary)/0.5)]"
+              className="pointer-events-none absolute top-[-20px] z-10 flex h-[48px] w-[48px] items-center justify-center rounded-[14px] bg-primary text-primary-foreground shadow-[0_0_18px_hsl(var(--primary)/0.45),0_8px_16px_-5px_hsl(var(--primary)/0.5)]"
               initial={false}
               animate={{ left: getNotchCenter(barWidth, notchX) - 24, scale: 1 }}
               transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.7 }}
@@ -278,7 +278,9 @@ export function BottomNav() {
   );
 }
 
-const NOTCH_RADIUS = 26; // radio del semicírculo que forma la muesca
+const NOTCH_HALF = 28; // media anchura de la muesca cuadrada
+const NOTCH_DEPTH = 32; // profundidad de la muesca
+const NOTCH_CORNER = 12; // radio de las esquinas redondeadas de la muesca
 
 /**
  * Mantiene la burbuja centrada sobre su icono. La burbuja mide 48 px,
@@ -289,17 +291,24 @@ function getNotchCenter(w: number, notchX: number | null): number {
   return Math.min(Math.max(notchX, 24), w - 24);
 }
 
-/** Silueta de la barra: rectángulo redondeado con una muesca semicircular bajo el tab activo. */
+/** Silueta de la barra: rectángulo redondeado con una muesca cuadrada de bordes redondeados bajo el tab activo. */
 function buildBarPath(w: number, notchX: number | null): string {
   const h = 68;
   const r = 24;
-  const nr = NOTCH_RADIUS;
+  const nw = NOTCH_HALF;
+  const nd = NOTCH_DEPTH;
+  const nc = NOTCH_CORNER;
   const cx = notchX === null ? null : getNotchCenter(w, notchX);
 
   const top =
     cx === null
       ? `H ${w - r}`
-      : `H ${cx - nr} A ${nr} ${nr} 0 0 1 ${cx + nr} 0 H ${w - r}`;
+      : `H ${cx - nw} ` +
+        `V ${nd - nc} ` +
+        `C ${cx - nw} ${nd} ${cx - nw + nc} ${nd} ${cx - nw + nc} ${nd} ` +
+        `H ${cx + nw - nc} ` +
+        `C ${cx + nw - nc} ${nd} ${cx + nw} ${nd} ${cx + nw} ${nd - nc} ` +
+        `V 0 H ${w - r}`;
 
 
   return [
