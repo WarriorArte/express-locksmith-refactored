@@ -47,7 +47,7 @@ export default function Dashboard() {
   return (
     <div className="flex-1 min-h-0 overflow-hidden lg:overflow-auto lg:overscroll-y-contain no-scrollbar lg:pt-3 lg:px-6 lg:pb-6">
       {/* Mobile: hero + grid llenan exactamente la pantalla sin scroll */}
-      <div className="lg:hidden h-full flex flex-col pt-10 px-5 pb-[calc(env(safe-area-inset-bottom,0px)+7.5rem)]">
+      <div className="lg:hidden h-full flex flex-col pt-10 px-5 pb-[calc(env(safe-area-inset-bottom,0px)+9.5rem)]">
         <DashboardHero
           firstName={firstName}
           inProgressServices={inProgress}
@@ -56,7 +56,7 @@ export default function Dashboard() {
             <AccountMenu showNotifications={false} triggerClassName="shrink-0" />
           }
           className="shrink-0"
-          style={{ height: "calc(100dvh - 100vw - 5rem - env(safe-area-inset-bottom, 0px))" }}
+          style={{ height: "calc(100dvh - 100vw - 7.5rem - env(safe-area-inset-bottom, 0px))" }}
         />
 
         <div className="mt-1 shrink-0 grid grid-cols-3 gap-3">
