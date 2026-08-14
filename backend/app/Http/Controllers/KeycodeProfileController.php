@@ -153,18 +153,26 @@ final class KeycodeProfileController
     private function replaceCodes(string $profileId, array $codesData): void
     {
         DB::table('keycode_codes')->where('profile_id', $profileId)->delete();
+        $this->insertCodes($profileId, $codesData);
+    }
 
+    /** Inserta ignorando duplicados de la PK compuesta (profile_id, codigo). */
+    private function insertCodes(string $profileId, array $codesData): void
+    {
         $rows = [];
         foreach ($codesData as $c) {
-            $bitting = is_array($c['bitting']) ? implode('', $c['bitting']) : ($c['bitting'] ?? '');
-            $rows[]  = ['profile_id' => $profileId, 'codigo' => $c['codigo'] ?? '', 'bitting' => $bitting];
-            if (count($rows) >= 500) {
-                DB::table('keycode_codes')->insert($rows);
+            $codigo = (string) ($c['codigo'] ?? '');
+            if ($codigo === '') continue;
+            $bitting = is_array($c['bitting'] ?? null) ? implode('', $c['bitting']) : (string) ($c['bitting'] ?? '');
+            $rows[]  = ['profile_id' => $profileId, 'codigo' => $codigo, 'bitting' => $bitting];
+            if (count($rows) >= 2000) {
+                DB::table('keycode_codes')->insertOrIgnore($rows);
                 $rows = [];
             }
         }
-        if (!empty($rows)) DB::table('keycode_codes')->insert($rows);
+        if (!empty($rows)) DB::table('keycode_codes')->insertOrIgnore($rows);
     }
+
 
     private function buildSampleFromArray(array $codesData): array
     {
