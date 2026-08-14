@@ -56,18 +56,15 @@ final class KeycodeProfileController
             ->groupBy('profile_id')
             ->pluck('total', 'profile_id');
 
-        // Dos queries para las muestras: ids mínimos → filas
-        $minIds = DB::table('keycode_codes')
-            ->whereIn('profile_id', $profileIds)
-            ->selectRaw('MIN(id) as min_id')
-            ->groupBy('profile_id')
-            ->pluck('min_id');
+        // Muestra: el código más bajo de cada perfil (usa la PK compuesta)
+        $sampleRows = collect($profileIds)->mapWithKeys(function ($pid) {
+            $row = DB::table('keycode_codes')
+                ->where('profile_id', $pid)
+                ->orderBy('codigo')
+                ->first(['codigo', 'bitting']);
+            return [$pid => $row];
+        })->filter();
 
-        $sampleRows = DB::table('keycode_codes')
-            ->whereIn('id', $minIds)
-            ->select('profile_id', 'codigo', 'bitting')
-            ->get()
-            ->keyBy('profile_id');
 
         return ApiResponse::success(
             $profiles->map(function ($p) use ($counts, $sampleRows) {
