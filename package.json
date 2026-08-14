@@ -85,6 +85,7 @@
   },
   "overrides": {
     "brace-expansion": "^5.0.9",
+    "dompurify": "^3.4.13",
     "esbuild": "^0.28.1",
     "typescript-eslint": {
       "@typescript-eslint/typescript-estree": {
