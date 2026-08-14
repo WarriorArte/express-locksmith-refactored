@@ -17,22 +17,42 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import type { ToolAssignment, KeycodeProfile, BittingConfig } from "@/types";
 import { LOCK_LABELS, LOCK_ORDER } from "@/types";
 
+export type KeycodeSearchFn = (
+  profileId: string,
+  opts: { codigo?: string; positions?: (string[] | null)[]; limit?: number; offset?: number },
+) => Promise<{ total: number; results: { codigo: string; bitting: string[] }[] }>;
+
+/** A partir de este número de códigos la serie se busca en el servidor en vez de descargarse completa. */
+const REMOTE_SEARCH_THRESHOLD = 5000;
+/** Máximo de coincidencias que traemos del servidor por búsqueda de bitting. */
+const REMOTE_RESULT_LIMIT = 500;
+
 interface KeycodeWorkspaceProps {
   assignment: ToolAssignment;
   keycodeProfiles: KeycodeProfile[];
   onFetchCodes: (id: string) => Promise<KeycodeProfile | null>;
+  onSearchCodes?: KeycodeSearchFn;
   onBack: () => void;
   year?: number;
 }
 
-export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, onBack, year }: KeycodeWorkspaceProps) {
+export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, onSearchCodes, onBack, year }: KeycodeWorkspaceProps) {
   const profileId = assignment.keycodeProfileIds?.[0] ?? (assignment as any).keycodeProfileId ?? null;
   const baseProfile = keycodeProfiles.find((p) => p.id === profileId);
+
+  // Series grandes: no se descargan completas, se consultan en el servidor.
+  const remoteMode = !!(
+    onSearchCodes &&
+    baseProfile &&
+    baseProfile.codesData.length === 0 &&
+    (baseProfile.codesCount ?? 0) > REMOTE_SEARCH_THRESHOLD
+  );
 
   // Carga los códigos completos al montar (la lista llega con codesData vacío)
   const needsCodesFetch = !!(
     profileId &&
     baseProfile &&
+    !remoteMode &&
     baseProfile.codesData.length === 0 &&
     (baseProfile.codesCount ?? 0) > 0
   );
@@ -199,9 +219,51 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     return chains.map((c) => c.entries);
   };
 
-  const handleCodeSearch = (e: React.FormEvent) => {
+  const applyCodeResult = (found: { codigo: string; bitting: string[] } | null | undefined) => {
+    if (!profile) return;
+    if (found) {
+      const axesResult = getAxesResult(found.bitting, profile.bittingConfig);
+      const flatValues = axesResult.flatMap((a) => a.values);
+      setGridValues(flatValues);
+      setExactEntry(found);
+      setCodeState("exact");
+    } else {
+      setCodeState("notfound");
+      setExactEntry(null);
+    }
+    setBittingResults([]);
+    setBittingGroups([]);
+    setHasBittingSearched(false);
+  };
+
+  /** Construye el arreglo de posiciones aceptadas para la búsqueda remota. */
+  const buildRemotePositions = (values: string[], variants: { up: boolean; down: boolean }[] | null) => {
+    const maxDepth = profile!.bittingConfig.maxDepth;
+    return values.map((q, i) => {
+      if (!q.trim() || q === "?") return null;
+      const base = parseInt(q.trim(), 10);
+      if (isNaN(base)) return [q.trim().toUpperCase()];
+      const accepted = [String(base)];
+      if (variants && variants[i]) {
+        if (variants[i].up && base + 1 <= maxDepth) accepted.push(String(base + 1));
+        if (variants[i].down && base - 1 >= 1) accepted.push(String(base - 1));
+      }
+      return accepted;
+    });
+  };
+
+  const handleCodeSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile || !searchTerm.trim()) return;
+
+    if (remoteMode && onSearchCodes) {
+      setIsSearching(true);
+      const { results } = await onSearchCodes(profile.id, { codigo: searchTerm.trim(), limit: 1 });
+      setIsSearching(false);
+      applyCodeResult(results[0] ?? null);
+      return;
+    }
+
     const found = profile.codesData.find(
       (c) => c.codigo.toUpperCase() === searchTerm.toUpperCase().trim()
     );
@@ -244,11 +306,32 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     setSelectedCellIdx(nextIndex);
   };
 
-  const handleBittingSearch = () => {
+  const handleBittingSearch = async () => {
     if (!profile) return;
     if (!canBittingSearch) return;
     setSearchValues([...gridValues]);
     setIsSearching(true);
+
+    if (remoteMode && onSearchCodes) {
+      const positions = buildRemotePositions(gridValues, advancedMode ? tileVariants : null);
+      const { total, results } = await onSearchCodes(profile.id, {
+        positions,
+        limit: REMOTE_RESULT_LIMIT,
+      });
+      setBittingResults(results);
+      setBittingGroups(groupByKey(results, gridValues));
+      setHasBittingSearched(true);
+      setIsSearching(false);
+      if (total > results.length) {
+        toast.info(`Se encontraron ${total} coincidencias. Mostrando las primeras ${results.length}; agrega más dígitos para afinar.`);
+      }
+      if (results.length === 1) {
+        setExactEntry(results[0]);
+        setCodeState("exact");
+        setSearchTerm(results[0].codigo);
+      }
+      return;
+    }
 
     setTimeout(() => {
       const maxDepth = profile.bittingConfig.maxDepth;
@@ -340,6 +423,23 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     setDecoderOpen(false);
     toast.success(`Bitting decodificado: ${bitting.join('-')}`);
     // Auto-buscar coincidencias después de un microtick
+    if (remoteMode && onSearchCodes) {
+      setIsSearching(true);
+      void (async () => {
+        const positions = buildRemotePositions(flat, null);
+        const { results } = await onSearchCodes(profile.id, { positions, limit: REMOTE_RESULT_LIMIT });
+        setBittingResults(results);
+        setBittingGroups(groupByKey(results, flat));
+        setHasBittingSearched(true);
+        setIsSearching(false);
+        if (results.length === 1) {
+          setExactEntry(results[0]);
+          setCodeState("exact");
+          setSearchTerm(results[0].codigo);
+        }
+      })();
+      return;
+    }
     setTimeout(() => {
       // Disparar búsqueda manualmente reusando lógica
       setIsSearching(true);
