@@ -293,7 +293,8 @@ const NOTCH_LIP = 9; // curva suave de entrada en el borde superior
  * por lo que su centro se ajusta a 24 px de los bordes.
  */
 function getNotchCenter(w: number, notchX: number | null): number {
-  if (notchX === null || w === 0) return 0;
+  if (w === 0) return 0;
+  if (notchX === null) return w / 2;
   return Math.min(Math.max(notchX, 24), w - 24);
 }
 
