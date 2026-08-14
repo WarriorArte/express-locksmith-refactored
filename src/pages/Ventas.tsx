@@ -210,7 +210,7 @@ export default function Ventas() {
         </PageHeader>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain px-5 lg:px-6 pb-24 md:pb-6 no-scrollbar">
+      <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain px-5 lg:px-6 pb-mobile-nav no-scrollbar">
       {/* Sales List */}
       <div className="mt-6">
         {isLoading ? (

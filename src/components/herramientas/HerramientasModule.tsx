@@ -174,13 +174,13 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
                 className="flex-1 flex flex-col min-h-0 pt-2"
               >
                 <TabsContent value="perfiles" className="flex-1 m-0 min-h-0 overflow-hidden outline-none data-[state=inactive]:hidden flex flex-col border rounded-xl bg-card shadow-sm">
-                  <div className="flex-1 overflow-auto p-4 pb-8 custom-scrollbar">
+                  <div className="flex-1 overflow-auto p-4 pb-mobile-nav custom-scrollbar">
                     <KeycodeManager profiles={profiles} onSave={addProfile} onUpdate={updateProfile} onDelete={deleteProfile} onFetchCodes={fetchProfileWithCodes} />
                   </div>
                 </TabsContent>
 
                 <TabsContent value="asignaciones" className="flex-1 m-0 min-h-0 overflow-hidden outline-none data-[state=inactive]:hidden flex flex-col border rounded-xl bg-card shadow-sm">
-                  <div className="flex-1 overflow-auto p-4 pb-8 custom-scrollbar">
+                  <div className="flex-1 overflow-auto p-4 pb-mobile-nav custom-scrollbar">
                     <AssignmentManager
                       assignments={assignments.filter(a => (a.keycodeProfileIds?.length ?? 0) > 0)}
                       onSave={addAssignment}
@@ -239,7 +239,7 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
                     className="flex-1 flex flex-col min-h-0 pt-2"
                   >
                     <TabsContent value="perfiles" className="flex-1 m-0 min-h-0 overflow-hidden outline-none data-[state=inactive]:hidden flex flex-col border rounded-xl bg-card shadow-sm">
-                      <div className="flex-1 overflow-auto p-4 pb-8 custom-scrollbar">
+                      <div className="flex-1 overflow-auto p-4 pb-mobile-nav custom-scrollbar">
                         <ImmoManager
                           profiles={immoProfiles}
                           onSave={addImmoProfile}
@@ -251,7 +251,7 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
                     </TabsContent>
 
                     <TabsContent value="asignaciones" className="flex-1 m-0 min-h-0 overflow-hidden outline-none data-[state=inactive]:hidden flex flex-col border rounded-xl bg-card shadow-sm">
-                      <div className="flex-1 overflow-auto p-4 pb-8 custom-scrollbar">
+                      <div className="flex-1 overflow-auto p-4 pb-mobile-nav custom-scrollbar">
                         <ImmoAssignmentManager
                           immoProfiles={immoProfiles}
                           assignments={assignments}
@@ -265,7 +265,7 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
                     </TabsContent>
 
                     <TabsContent value="suministros" className="flex-1 m-0 min-h-0 overflow-hidden outline-none data-[state=inactive]:hidden flex flex-col border rounded-xl bg-card shadow-sm">
-                      <div className="flex-1 overflow-auto p-4 pb-8 custom-scrollbar">
+                      <div className="flex-1 overflow-auto p-4 pb-mobile-nav custom-scrollbar">
                         <ImmoSuppliesManager
                           catalog={catalog}
                           onAdd={addItem}
@@ -536,7 +536,7 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
       <div className={
         toolActive
           ? "flex-1 min-h-0"
-          : "flex-1 min-h-0 overflow-auto overscroll-y-contain px-5 lg:px-6 pb-24 md:pb-6 no-scrollbar"
+          : "flex-1 min-h-0 overflow-auto overscroll-y-contain px-5 lg:px-6 pb-mobile-nav no-scrollbar"
       }>
         <WorkshopToolView
           assignments={assignments}
