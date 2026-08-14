@@ -311,9 +311,9 @@ function buildBarPath(w: number, notchX: number | null): string {
     cx === null
       ? `H ${w - r}`
       : [
-          // entrada izquierda (borde superior baja hacia la muesca)
+          // entrada izquierda (borde superior baja hacia la muesca, sin picos)
           `H ${cx - nw - lip}`,
-          `A ${lip} ${lip} 0 0 1 ${cx - nw} ${lip}`,
+          `Q ${cx - nw} 0 ${cx - nw} ${lip}`,
           // pared izquierda
           `V ${nd - nc}`,
           // esquina inferior izquierda de la muesca (igual radio que la burbuja)
@@ -325,9 +325,10 @@ function buildBarPath(w: number, notchX: number | null): string {
           // pared derecha
           `V ${lip}`,
           // salida derecha
-          `A ${lip} ${lip} 0 0 1 ${cx + nw + lip} 0`,
+          `Q ${cx + nw} 0 ${cx + nw + lip} 0`,
           `H ${w - r}`,
         ].join(" ");
+
 
   return [
     `M ${r} 0`,
