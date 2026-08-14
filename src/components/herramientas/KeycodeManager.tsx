@@ -682,9 +682,19 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
               <p className="text-xs text-muted-foreground">IC: {icCard || "—"} · {currentCodes.length} códigos</p>
             </div>
           </div>
-          <Button onClick={saveEdit} size="sm" className="shrink-0" disabled={!canSave}>
-            <Check className="w-4 h-4 mr-1" /> Guardar
+          <Button onClick={saveEdit} size="sm" className="shrink-0" disabled={!canSave || saving}>
+            {saving ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                {saveProgress
+                  ? `Subiendo ${Math.round((saveProgress.done / Math.max(saveProgress.total, 1)) * 100)}%`
+                  : "Guardando…"}
+              </>
+            ) : (
+              <><Check className="w-4 h-4 mr-1" /> Guardar</>
+            )}
           </Button>
+
         </div>
 
         {/* Main content: 2 columns on desktop */}
