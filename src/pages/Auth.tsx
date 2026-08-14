@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { m as motion } from "framer-motion";
 import { Key, Mail, Lock, Eye, EyeOff, Loader2, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";

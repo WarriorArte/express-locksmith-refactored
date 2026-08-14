@@ -1,4 +1,4 @@
-import { Navigate } from "react-router-dom";
+import { Navigate } from "react-router";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Building2, ToggleLeft, Users, Shield, HardDrive, Wrench, Megaphone } from "lucide-react";
