@@ -531,7 +531,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
       {/* ══════════════════════════════════════
           CONTENIDO — dos columnas en desktop
           ══════════════════════════════════════ */}
-      <div className="flex-1 min-h-0 flex flex-col lg:flex-row lg:gap-4 overflow-hidden px-5 lg:px-6 pb-24 lg:pb-6">
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row lg:gap-4 overflow-hidden px-5 lg:px-6 pb-mobile-nav">
 
       {/* ══════════════════════════════════════
           COLUMNA IZQUIERDA — SVG interactivo + controles
