@@ -427,6 +427,16 @@
   .safe-area-pb {
     padding-bottom: env(safe-area-inset-bottom);
   }
+
+  /* Espacio inferior para vistas móviles con bottom nav fija */
+  .pb-mobile-nav {
+    padding-bottom: calc(7rem + env(safe-area-inset-bottom));
+  }
+  @media (min-width: 1024px) {
+    .pb-mobile-nav {
+      padding-bottom: 1.5rem;
+    }
+  }
 }
 
 @media print {
