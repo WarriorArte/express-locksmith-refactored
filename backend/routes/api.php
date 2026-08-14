@@ -147,6 +147,7 @@ Route::middleware('legacy.auth')->group(function (): void {
     Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/herramientas/immo-profiles', [ImmoProfileController::class, 'handle']);
     Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/herramientas/immo-catalog', [ImmoCatalogController::class, 'handle']);
     Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/herramientas/keycode-profiles', [KeycodeProfileController::class, 'handle']);
+    Route::get('/herramientas/keycode-search', [KeycodeSearchController::class, 'handle']);
     Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/herramientas/tool-assignments', [ToolAssignmentController::class, 'handle']);
     Route::match(['GET', 'POST', 'DELETE'], '/herramientas/vehicle-database', [VehicleDatabaseController::class, 'handle']);
     Route::match(['GET', 'DELETE'], '/herramientas/maintenance', [MaintenanceController::class, 'handle']);
