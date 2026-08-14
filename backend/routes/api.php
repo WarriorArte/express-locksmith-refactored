@@ -4,6 +4,7 @@ use App\Http\Controllers\AlarmaProfileController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ImmoCatalogController;
 use App\Http\Controllers\ImmoProfileController;
+use App\Http\Controllers\KeycodeCodesController;
 use App\Http\Controllers\KeycodeProfileController;
 use App\Http\Controllers\KeycodeSearchController;
 use App\Http\Controllers\ToolAssignmentController;
@@ -148,6 +149,7 @@ Route::middleware('legacy.auth')->group(function (): void {
     Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/herramientas/immo-profiles', [ImmoProfileController::class, 'handle']);
     Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/herramientas/immo-catalog', [ImmoCatalogController::class, 'handle']);
     Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/herramientas/keycode-profiles', [KeycodeProfileController::class, 'handle']);
+    Route::post('/herramientas/keycode-codes', [KeycodeCodesController::class, 'handle']);
     Route::get('/herramientas/keycode-search', [KeycodeSearchController::class, 'handle']);
     Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/herramientas/tool-assignments', [ToolAssignmentController::class, 'handle']);
     Route::match(['GET', 'POST', 'DELETE'], '/herramientas/vehicle-database', [VehicleDatabaseController::class, 'handle']);
