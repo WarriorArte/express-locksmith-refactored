@@ -47,7 +47,7 @@ export default function Dashboard() {
   return (
     <div className="flex-1 min-h-0 overflow-hidden lg:overflow-auto lg:overscroll-y-contain no-scrollbar lg:pt-3 lg:px-6 lg:pb-6">
       {/* Mobile: hero + grid llenan exactamente la pantalla sin scroll */}
-      <div className="lg:hidden h-full flex flex-col pt-10 px-5 pb-[calc(env(safe-area-inset-bottom,0px)+6rem)]">
+      <div className="lg:hidden h-full flex flex-col pt-10 px-5 pb-[calc(env(safe-area-inset-bottom,0px)+4.5rem)]">
         <DashboardHero
           firstName={firstName}
           inProgressServices={inProgress}
