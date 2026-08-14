@@ -73,21 +73,75 @@ export function useKeycodeProfiles() {
     }
   }, []);
 
-  const addProfile = useCallback((profile: KeycodeProfile) => {
+  /** Sube los códigos en lotes pequeños (evita payloads gigantes y timeouts de PHP). */
+  const uploadCodesInChunks = useCallback(async (
+    profileId: string,
+    codes: CodeEntry[],
+    onProgress?: (done: number, total: number) => void,
+  ) => {
+    const total = codes.length;
+    for (let i = 0; i < total; i += CHUNK_SIZE) {
+      const chunk = codes.slice(i, i + CHUNK_SIZE).map((c) => ({
+        codigo: c.codigo,
+        bitting: Array.isArray(c.bitting) ? c.bitting.join("") : c.bitting,
+      }));
+      await phpApiRequest("/herramientas/keycode-codes", {
+        method: "POST",
+        body: JSON.stringify({
+          profile_id: profileId,
+          mode: i === 0 ? "replace" : "append",
+          codes: chunk,
+        }),
+      });
+      onProgress?.(Math.min(i + CHUNK_SIZE, total), total);
+    }
+    // Serie vacía: limpiar códigos existentes
+    if (total === 0) {
+      await phpApiRequest("/herramientas/keycode-codes", {
+        method: "POST",
+        body: JSON.stringify({ profile_id: profileId, mode: "replace", codes: [] }),
+      });
+    }
+  }, []);
+
+  const addProfile = useCallback(async (
+    profile: KeycodeProfile,
+    onProgress?: (done: number, total: number) => void,
+  ) => {
     const prev = profiles;
     setProfiles((p) => [stripCodes(profile), ...p]);
-    phpApiRequest(ENDPOINT, { method: "POST", body: JSON.stringify(profile) })
-      .catch(() => setProfiles(prev));
-  }, [profiles]);
+    try {
+      const big = profile.codesData.length > CHUNK_SIZE;
+      await phpApiRequest(ENDPOINT, {
+        method: "POST",
+        body: JSON.stringify(big ? { ...profile, codesData: [] } : profile),
+      });
+      if (big) await uploadCodesInChunks(profile.id, profile.codesData, onProgress);
+    } catch {
+      setProfiles(prev);
+      throw new Error("No se pudo guardar la serie");
+    }
+  }, [profiles, uploadCodesInChunks]);
 
-  const updateProfile = useCallback((profile: KeycodeProfile) => {
+  const updateProfile = useCallback(async (
+    profile: KeycodeProfile,
+    onProgress?: (done: number, total: number) => void,
+  ) => {
     const prev = profiles;
     setProfiles((p) => p.map((x) => (x.id === profile.id ? stripCodes(profile) : x)));
-    phpApiRequest(`${ENDPOINT}?id=${encodeURIComponent(profile.id)}`, {
-      method: "PUT",
-      body: JSON.stringify(profile),
-    }).catch(() => setProfiles(prev));
-  }, [profiles]);
+    try {
+      const big = profile.codesData.length > CHUNK_SIZE;
+      const { codesData, ...meta } = profile;
+      await phpApiRequest(`${ENDPOINT}?id=${encodeURIComponent(profile.id)}`, {
+        method: "PUT",
+        body: JSON.stringify(big ? meta : profile),
+      });
+      if (big) await uploadCodesInChunks(profile.id, codesData, onProgress);
+    } catch {
+      setProfiles(prev);
+      throw new Error("No se pudo actualizar la serie");
+    }
+  }, [profiles, uploadCodesInChunks]);
 
   const deleteProfile = useCallback((id: string) => {
     const prev = profiles;
@@ -104,6 +158,8 @@ export function useKeycodeProfiles() {
     deleteProfile,
     fetchProfileWithCodes,
     searchCodes,
+    uploadCodesInChunks,
     loading,
   };
+
 }
