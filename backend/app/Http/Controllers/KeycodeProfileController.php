@@ -124,7 +124,7 @@ final class KeycodeProfileController
         }
 
         $count  = DB::table('keycode_codes')->where('profile_id', $id)->count();
-        $minRow = DB::table('keycode_codes')->where('profile_id', $id)->orderBy('id')->first(['codigo', 'bitting']);
+        $minRow = DB::table('keycode_codes')->where('profile_id', $id)->orderBy('codigo')->first(['codigo', 'bitting']);
         $sample = $minRow ? [['codigo' => $minRow->codigo, 'bitting' => str_split($minRow->bitting)]] : [];
 
         return ApiResponse::success($this->serializeList($profile->refresh(), $count, $sample), 'Actualizado');
