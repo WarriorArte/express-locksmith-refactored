@@ -430,7 +430,7 @@
 
   /* Espacio inferior para vistas móviles con bottom nav fija */
   .pb-mobile-nav {
-    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+    padding-bottom: calc(3rem + env(safe-area-inset-bottom));
   }
   @media (min-width: 1024px) {
     .pb-mobile-nav {
