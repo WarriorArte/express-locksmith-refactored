@@ -91,9 +91,9 @@ export function LlaveEstandarUnLado({ config, cortes, inputSide = 'none', inputM
   return (
     <svg width={svgWidth + pad} height={svgHeight} viewBox={`-${pad} ${viewTop} ${svgWidth + pad} ${svgHeight}`} className="drop-shadow-sm max-w-full" xmlns="http://www.w3.org/2000/svg">
       {guiasY.map((y, i) => (
-        <line key={`guia-${i}`} x1={0} y1={y} x2={svgWidth} y2={y} stroke="#e5e7eb" strokeWidth="1" />
+        <line key={`guia-${i}`} x1={0} y1={y} x2={svgWidth} y2={y} className="stroke-muted-foreground/20" strokeWidth="1" />
       ))}
-      <path d={pathD} fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinejoin="round" strokeLinecap="round" />
+      <path d={pathD} fill="none" className="stroke-primary" strokeWidth="3.5" strokeLinejoin="round" strokeLinecap="round" />
       {children}
     </svg>
   );

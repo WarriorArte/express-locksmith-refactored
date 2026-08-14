@@ -552,7 +552,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
               </Button>
               <div className="flex-1 min-w-0 overflow-y-auto no-scrollbar">
             {profile.configuracionVisual ? (
-              <div className="flex justify-center overflow-x-auto bg-muted/30 border border-dashed border-border rounded-lg p-1" style={{ color: 'hsl(240 16% 10%)' }}>
+              <div className="flex justify-center overflow-x-auto bg-muted/30 border border-dashed border-border rounded-lg p-1">
                 <GeneradorLlaveSVG
                   config={{ ...profile.configuracionVisual, maxDepth: profile.bittingConfig.maxDepth }}
                   cortesPrimarios={primaryNums}
