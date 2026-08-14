@@ -153,7 +153,7 @@ export function BottomNav() {
       <nav className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 lg:hidden">
         <div
           ref={barRef}
-          className="relative h-[68px] drop-shadow-[0_18px_34px_hsl(var(--foreground)/0.28)]"
+          className="relative h-[68px] drop-shadow-[0_18px_34px_hsl(var(--foreground)/0.28)] dark:drop-shadow-[0_10px_20px_hsl(0_0%_0%/0.5)]"
         >
           {/* Silueta de la barra con muesca que se mueve al tab activo */}
           {barWidth > 0 && (
