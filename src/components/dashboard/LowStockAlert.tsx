@@ -1,7 +1,7 @@
 import { m as motion } from "framer-motion";
 import { resolveStorageUrl } from "@/lib/phpApi";
 import { AlertTriangle, ExternalLink, Package } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 
 interface LowStockAlertProps {

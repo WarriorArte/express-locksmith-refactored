@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router";
 import { m as motion } from "framer-motion";
 import { Building2, Eye, EyeOff, Key, Loader2, Lock, Mail, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";

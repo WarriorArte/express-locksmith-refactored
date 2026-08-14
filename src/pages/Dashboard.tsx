@@ -7,7 +7,7 @@ import {
   Shield,
   Car,
 } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { NavLink } from "react-router";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { LowStockAlert } from "@/components/dashboard/LowStockAlert";
 import { UpcomingQuotes } from "@/components/dashboard/UpcomingQuotes";
