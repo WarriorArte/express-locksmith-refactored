@@ -52,6 +52,27 @@ export function useKeycodeProfiles() {
     }
   }, []);
 
+  /** Búsqueda server-side de códigos (series grandes). positions: null = comodín, string[] = valores aceptados (±1). */
+  const searchCodes = useCallback(async (
+    profileId: string,
+    opts: { codigo?: string; positions?: (string[] | null)[]; limit?: number; offset?: number },
+  ): Promise<{ total: number; results: CodeEntry[] }> => {
+    const params = new URLSearchParams({ profile_id: profileId });
+    if (opts.codigo) params.set("codigo", opts.codigo);
+    if (opts.positions) params.set("positions", JSON.stringify(opts.positions));
+    if (opts.limit != null) params.set("limit", String(opts.limit));
+    if (opts.offset != null) params.set("offset", String(opts.offset));
+    try {
+      const data = await phpApiRequest<{ total: number; results: CodeEntry[] }>(
+        `/herramientas/keycode-search?${params.toString()}`,
+        { method: "GET" },
+      );
+      return { total: data?.total ?? 0, results: data?.results ?? [] };
+    } catch {
+      return { total: 0, results: [] };
+    }
+  }, []);
+
   const addProfile = useCallback((profile: KeycodeProfile) => {
     const prev = profiles;
     setProfiles((p) => [stripCodes(profile), ...p]);
@@ -82,6 +103,7 @@ export function useKeycodeProfiles() {
     updateProfile,
     deleteProfile,
     fetchProfileWithCodes,
+    searchCodes,
     loading,
   };
 }
