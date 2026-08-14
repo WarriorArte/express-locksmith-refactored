@@ -103,6 +103,7 @@ export function useKeycodeProfiles() {
     updateProfile,
     deleteProfile,
     fetchProfileWithCodes,
+    searchCodes,
     loading,
   };
 }
