@@ -3,6 +3,8 @@ import type { KeycodeProfile, BittingConfig, CodeEntry } from "@/types";
 import { phpApiRequest } from "@/lib/phpApi";
 
 const ENDPOINT = "/herramientas/keycode-profiles";
+/** Tamaño de lote para subir códigos (series grandes). */
+const CHUNK_SIZE = 3000;
 
 function migrate(items: KeycodeProfile[]): KeycodeProfile[] {
   return items.map((p) => {
