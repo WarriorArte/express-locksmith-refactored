@@ -45,7 +45,7 @@ interface HerramientasModuleProps {
 
 export function HerramientasModule({ superAdminView }: HerramientasModuleProps) {
   const { isSuperAdmin } = useWorkshop();
-  const { profiles, addProfile, updateProfile, deleteProfile, fetchProfileWithCodes } = useKeycodeProfiles();
+  const { profiles, addProfile, updateProfile, deleteProfile, fetchProfileWithCodes, searchCodes } = useKeycodeProfiles();
   const { assignments, addAssignment, updateAssignment, deleteAssignment } = useToolAssignments();
   const vehicleDb = useVehicleDatabase({ readOnly: !isSuperAdmin });
   const { profiles: alarmaProfiles, addProfile: addAlarmaProfile, updateProfile: updateAlarmaProfile, deleteProfile: deleteAlarmaProfile } = useAlarmaProfiles();
@@ -542,6 +542,7 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
           assignments={assignments}
           keycodeProfiles={profiles}
           onFetchKeycodes={fetchProfileWithCodes}
+          onSearchKeycodes={searchCodes}
           alarmaProfiles={alarmaProfiles}
           immoProfiles={immoProfiles}
           immoCatalog={catalog}

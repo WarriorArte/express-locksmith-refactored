@@ -5,7 +5,7 @@ import { Key, Radio, Cpu } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 import { useWorkshopFeatures } from "@/hooks/useWorkshopFeatures";
-import { KeycodeWorkspace } from "./KeycodeWorkspace";
+import { KeycodeWorkspace, type KeycodeSearchFn } from "./KeycodeWorkspace";
 import { AlarmasWorkspace } from "./AlarmasWorkspace";
 import { ImmoWorkspace } from "./ImmoWorkspace";
 import type { ToolAssignment, KeycodeProfile, AlarmaProfile, ImmoProfile, ImmoCatalogItem, ImmoAssignmentDetail } from "@/types";
@@ -14,6 +14,7 @@ interface WorkshopToolViewProps {
   assignments: ToolAssignment[];
   keycodeProfiles: KeycodeProfile[];
   onFetchKeycodes: (id: string) => Promise<KeycodeProfile | null>;
+  onSearchKeycodes?: KeycodeSearchFn;
   alarmaProfiles: AlarmaProfile[];
   immoProfiles: ImmoProfile[];
   immoCatalog: ImmoCatalogItem[];
@@ -27,6 +28,7 @@ export function WorkshopToolView({
   assignments,
   keycodeProfiles,
   onFetchKeycodes,
+  onSearchKeycodes,
   alarmaProfiles,
   immoProfiles,
   immoCatalog,
@@ -162,6 +164,7 @@ export function WorkshopToolView({
         assignment={activeKeycodeAssignment}
         keycodeProfiles={keycodeProfiles}
         onFetchCodes={onFetchKeycodes}
+        onSearchCodes={onSearchKeycodes}
         year={Number(selectedYear)}
         onBack={() => {
           setActiveToolId(null);
