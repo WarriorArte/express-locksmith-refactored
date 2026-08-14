@@ -62,7 +62,7 @@ export default defineConfig(({ mode }) => {
     rollupOptions: {
       output: {
         manualChunks: {
-          "react-vendor": ["react", "react-dom", "react-router-dom"],
+          "react-vendor": ["react", "react-dom", "react-router"],
           "query": ["@tanstack/react-query"],
           "motion": ["framer-motion"],
           "forms": ["react-hook-form", "@hookform/resolvers", "zod"],
