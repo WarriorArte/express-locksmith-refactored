@@ -278,7 +278,9 @@ export function BottomNav() {
   );
 }
 
-const NOTCH_RADIUS = 26; // radio del semicírculo que forma la muesca
+const NOTCH_HALF = 28; // media anchura de la muesca cuadrada
+const NOTCH_DEPTH = 32; // profundidad de la muesca
+const NOTCH_CORNER = 12; // radio de las esquinas redondeadas de la muesca
 
 /**
  * Mantiene la burbuja centrada sobre su icono. La burbuja mide 48 px,
@@ -289,17 +291,24 @@ function getNotchCenter(w: number, notchX: number | null): number {
   return Math.min(Math.max(notchX, 24), w - 24);
 }
 
-/** Silueta de la barra: rectángulo redondeado con una muesca semicircular bajo el tab activo. */
+/** Silueta de la barra: rectángulo redondeado con una muesca cuadrada de bordes redondeados bajo el tab activo. */
 function buildBarPath(w: number, notchX: number | null): string {
   const h = 68;
   const r = 24;
-  const nr = NOTCH_RADIUS;
+  const nw = NOTCH_HALF;
+  const nd = NOTCH_DEPTH;
+  const nc = NOTCH_CORNER;
   const cx = notchX === null ? null : getNotchCenter(w, notchX);
 
   const top =
     cx === null
       ? `H ${w - r}`
-      : `H ${cx - nr} A ${nr} ${nr} 0 0 1 ${cx + nr} 0 H ${w - r}`;
+      : `H ${cx - nw} ` +
+        `V ${nd - nc} ` +
+        `C ${cx - nw} ${nd} ${cx - nw + nc} ${nd} ${cx - nw + nc} ${nd} ` +
+        `H ${cx + nw - nc} ` +
+        `C ${cx + nw - nc} ${nd} ${cx + nw} ${nd} ${cx + nw} ${nd - nc} ` +
+        `V 0 H ${w - r}`;
 
 
   return [
