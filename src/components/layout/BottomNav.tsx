@@ -278,16 +278,16 @@ export function BottomNav() {
   );
 }
 
-const NOTCH_HALF = 36; // media anchura de la muesca
-const NOTCH_DEPTH = 26; // profundidad de la muesca
+const NOTCH_HALF = 46; // media anchura de la muesca
+const NOTCH_DEPTH = 38; // profundidad de la muesca
 
 /**
- * Mantiene la burbuja dentro de la barra sin desplazarla del centro real
- * de su icono. El radio de la burbuja es el único límite necesario.
+ * Mantiene la burbuja centrada sobre su icono. El radio de la burbuja
+ * ahora es 26 px (52 px de diámetro) para dejar margen dentro de la muesca.
  */
 function getNotchCenter(w: number, notchX: number | null): number {
   if (notchX === null || w === 0) return 0;
-  return Math.min(Math.max(notchX, 25), w - 25);
+  return Math.min(Math.max(notchX, 26), w - 26);
 }
 
 /** Silueta de la barra: rectángulo redondeado con una muesca cóncava bajo el tab activo. */
@@ -301,8 +301,8 @@ function buildBarPath(w: number, notchX: number | null): string {
   const top =
     cx === null
       ? `H ${w - r}`
-      : `H ${cx - nw} C ${cx - nw + 14} 0 ${cx - nw + 8} ${nd} ${cx} ${nd} ` +
-        `C ${cx + nw - 8} ${nd} ${cx + nw - 14} 0 ${cx + nw} 0 H ${w - r}`;
+      : `H ${cx - nw} C ${cx - nw + 18} 0 ${cx - nw + 10} ${nd} ${cx} ${nd} ` +
+        `C ${cx + nw - 10} ${nd} ${cx + nw - 18} 0 ${cx + nw} 0 H ${w - r}`;
 
 
   return [
