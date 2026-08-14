@@ -175,12 +175,12 @@ export function BottomNav() {
             </svg>
           )}
 
-          {/* Burbuja del tab activo, encajada en la muesca */}
+          {/* Burbuja del tab activo, flotando sobre la muesca */}
           {notchX !== null && activeItem && (
             <motion.div
-              className="pointer-events-none absolute top-[-12px] z-10 flex h-[50px] w-[50px] items-center justify-center rounded-[14px] border-4 border-background bg-primary text-primary-foreground shadow-[0_0_18px_hsl(var(--primary)/0.45),0_8px_16px_-5px_hsl(var(--primary)/0.5)]"
+              className="pointer-events-none absolute top-[-22px] z-10 flex h-[52px] w-[52px] items-center justify-center rounded-[16px] border-[5px] border-background bg-primary text-primary-foreground shadow-[0_0_18px_hsl(var(--primary)/0.45),0_8px_16px_-5px_hsl(var(--primary)/0.5)]"
               initial={false}
-              animate={{ left: getNotchCenter(barWidth, notchX) - 25, scale: 1 }}
+              animate={{ left: getNotchCenter(barWidth, notchX) - 26, scale: 1 }}
               transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.7 }}
             >
               <motion.span
@@ -189,7 +189,7 @@ export function BottomNav() {
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.14, ease: "easeOut" }}
               >
-                <activeItem.icon className="h-[21px] w-[21px]" strokeWidth={1.45} />
+                <activeItem.icon className="h-[22px] w-[22px]" strokeWidth={1.45} />
               </motion.span>
             </motion.div>
           )}
@@ -278,16 +278,16 @@ export function BottomNav() {
   );
 }
 
-const NOTCH_HALF = 36; // media anchura de la muesca
-const NOTCH_DEPTH = 26; // profundidad de la muesca
+const NOTCH_HALF = 46; // media anchura de la muesca
+const NOTCH_DEPTH = 38; // profundidad de la muesca
 
 /**
- * Mantiene la burbuja dentro de la barra sin desplazarla del centro real
- * de su icono. El radio de la burbuja es el único límite necesario.
+ * Mantiene la burbuja centrada sobre su icono. El radio de la burbuja
+ * ahora es 26 px (52 px de diámetro) para dejar margen dentro de la muesca.
  */
 function getNotchCenter(w: number, notchX: number | null): number {
   if (notchX === null || w === 0) return 0;
-  return Math.min(Math.max(notchX, 25), w - 25);
+  return Math.min(Math.max(notchX, 26), w - 26);
 }
 
 /** Silueta de la barra: rectángulo redondeado con una muesca cóncava bajo el tab activo. */
@@ -301,8 +301,8 @@ function buildBarPath(w: number, notchX: number | null): string {
   const top =
     cx === null
       ? `H ${w - r}`
-      : `H ${cx - nw} C ${cx - nw + 14} 0 ${cx - nw + 8} ${nd} ${cx} ${nd} ` +
-        `C ${cx + nw - 8} ${nd} ${cx + nw - 14} 0 ${cx + nw} 0 H ${w - r}`;
+      : `H ${cx - nw} C ${cx - nw + 18} 0 ${cx - nw + 10} ${nd} ${cx} ${nd} ` +
+        `C ${cx + nw - 10} ${nd} ${cx + nw - 18} 0 ${cx + nw} 0 H ${w - r}`;
 
 
   return [
