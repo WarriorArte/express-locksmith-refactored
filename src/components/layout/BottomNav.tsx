@@ -178,9 +178,9 @@ export function BottomNav() {
           {/* Burbuja del tab activo, flotando sobre la muesca */}
           {notchX !== null && activeItem && (
             <motion.div
-              className="pointer-events-none absolute top-[-22px] z-10 flex h-[52px] w-[52px] items-center justify-center rounded-[16px] border-[5px] border-background bg-primary text-primary-foreground shadow-[0_0_18px_hsl(var(--primary)/0.45),0_8px_16px_-5px_hsl(var(--primary)/0.5)]"
+              className="pointer-events-none absolute top-[-22px] z-10 flex h-[48px] w-[48px] items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_0_18px_hsl(var(--primary)/0.45),0_8px_16px_-5px_hsl(var(--primary)/0.5)]"
               initial={false}
-              animate={{ left: getNotchCenter(barWidth, notchX) - 26, scale: 1 }}
+              animate={{ left: getNotchCenter(barWidth, notchX) - 24, scale: 1 }}
               transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.7 }}
             >
               <motion.span
@@ -278,31 +278,28 @@ export function BottomNav() {
   );
 }
 
-const NOTCH_HALF = 46; // media anchura de la muesca
-const NOTCH_DEPTH = 38; // profundidad de la muesca
+const NOTCH_RADIUS = 26; // radio del semicírculo que forma la muesca
 
 /**
- * Mantiene la burbuja centrada sobre su icono. El radio de la burbuja
- * ahora es 26 px (52 px de diámetro) para dejar margen dentro de la muesca.
+ * Mantiene la burbuja centrada sobre su icono. La burbuja mide 48 px,
+ * por lo que su centro se ajusta a 24 px de los bordes.
  */
 function getNotchCenter(w: number, notchX: number | null): number {
   if (notchX === null || w === 0) return 0;
-  return Math.min(Math.max(notchX, 26), w - 26);
+  return Math.min(Math.max(notchX, 24), w - 24);
 }
 
-/** Silueta de la barra: rectángulo redondeado con una muesca cóncava bajo el tab activo. */
+/** Silueta de la barra: rectángulo redondeado con una muesca semicircular bajo el tab activo. */
 function buildBarPath(w: number, notchX: number | null): string {
   const h = 68;
   const r = 24;
-  const nw = NOTCH_HALF;
-  const nd = NOTCH_DEPTH;
+  const nr = NOTCH_RADIUS;
   const cx = notchX === null ? null : getNotchCenter(w, notchX);
 
   const top =
     cx === null
       ? `H ${w - r}`
-      : `H ${cx - nw} C ${cx - nw + 18} 0 ${cx - nw + 10} ${nd} ${cx} ${nd} ` +
-        `C ${cx + nw - 10} ${nd} ${cx + nw - 18} 0 ${cx + nw} 0 H ${w - r}`;
+      : `H ${cx - nr} A ${nr} ${nr} 0 0 1 ${cx + nr} 0 H ${w - r}`;
 
 
   return [
