@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ImmoCatalogController;
 use App\Http\Controllers\ImmoProfileController;
 use App\Http\Controllers\KeycodeProfileController;
+use App\Http\Controllers\KeycodeSearchController;
 use App\Http\Controllers\ToolAssignmentController;
 use App\Http\Controllers\VehicleDatabaseController;
 use App\Http\Controllers\AppAdminSettingsController;
