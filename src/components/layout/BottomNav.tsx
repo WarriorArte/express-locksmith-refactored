@@ -278,9 +278,15 @@ export function BottomNav() {
   );
 }
 
-const NOTCH_HALF = 28; // media anchura de la muesca cuadrada
-const NOTCH_DEPTH = 32; // profundidad de la muesca
-const NOTCH_CORNER = 12; // radio de las esquinas redondeadas de la muesca
+const BUBBLE = 48; // lado de la burbuja
+const BUBBLE_R = 14; // radio de la burbuja
+const GAP = 6; // aire entre burbuja y barra
+const BUBBLE_TOP = -20; // top de la burbuja respecto a la barra
+
+const NOTCH_HALF = BUBBLE / 2 + GAP; // 30
+const NOTCH_DEPTH = BUBBLE_TOP + BUBBLE + GAP; // 34
+const NOTCH_CORNER = BUBBLE_R + GAP; // 20 · mismo radio visual que la burbuja
+const NOTCH_LIP = 9; // curva suave de entrada en el borde superior
 
 /**
  * Mantiene la burbuja centrada sobre su icono. La burbuja mide 48 px,
@@ -298,18 +304,30 @@ function buildBarPath(w: number, notchX: number | null): string {
   const nw = NOTCH_HALF;
   const nd = NOTCH_DEPTH;
   const nc = NOTCH_CORNER;
+  const lip = NOTCH_LIP;
   const cx = notchX === null ? null : getNotchCenter(w, notchX);
 
   const top =
     cx === null
       ? `H ${w - r}`
-      : `H ${cx - nw} ` +
-        `V ${nd - nc} ` +
-        `C ${cx - nw} ${nd} ${cx - nw + nc} ${nd} ${cx - nw + nc} ${nd} ` +
-        `H ${cx + nw - nc} ` +
-        `C ${cx + nw - nc} ${nd} ${cx + nw} ${nd} ${cx + nw} ${nd - nc} ` +
-        `V 0 H ${w - r}`;
-
+      : [
+          // entrada izquierda (borde superior baja hacia la muesca)
+          `H ${cx - nw - lip}`,
+          `A ${lip} ${lip} 0 0 1 ${cx - nw} ${lip}`,
+          // pared izquierda
+          `V ${nd - nc}`,
+          // esquina inferior izquierda de la muesca (igual radio que la burbuja)
+          `A ${nc} ${nc} 0 0 0 ${cx - nw + nc} ${nd}`,
+          // fondo de la muesca
+          `H ${cx + nw - nc}`,
+          // esquina inferior derecha
+          `A ${nc} ${nc} 0 0 0 ${cx + nw} ${nd - nc}`,
+          // pared derecha
+          `V ${lip}`,
+          // salida derecha
+          `A ${lip} ${lip} 0 0 1 ${cx + nw + lip} 0`,
+          `H ${w - r}`,
+        ].join(" ");
 
   return [
     `M ${r} 0`,
@@ -324,6 +342,7 @@ function buildBarPath(w: number, notchX: number | null): string {
     "Z",
   ].join(" ");
 }
+
 
 function NavBtn({
   item,
