@@ -307,13 +307,23 @@ function buildBarPath(w: number, notchX: number | null): string {
   const lip = NOTCH_LIP;
   const cx = notchX === null ? null : getNotchCenter(w, notchX);
 
+  // Espacio disponible a cada lado de la muesca: si la muesca queda cerca de un
+  // extremo, se recorta primero el "lip" y luego la esquina de la barra para que
+  // el trazo nunca se cruce (eso creaba el pico sobrante).
+  const spaceL = cx === null ? w : Math.max(0, cx - nw);
+  const spaceR = cx === null ? w : Math.max(0, w - (cx + nw));
+  const rL = Math.min(r, spaceL);
+  const rR = Math.min(r, spaceR);
+  const lipL = Math.max(0, Math.min(lip, spaceL - rL));
+  const lipR = Math.max(0, Math.min(lip, spaceR - rR));
+
   const top =
     cx === null
       ? `H ${w - r}`
       : [
-          // entrada izquierda (borde superior baja hacia la muesca)
-          `H ${cx - nw - lip}`,
-          `A ${lip} ${lip} 0 0 1 ${cx - nw} ${lip}`,
+          // entrada izquierda (borde superior baja hacia la muesca, sin picos)
+          `H ${cx - nw - lipL}`,
+          lipL > 0 ? `Q ${cx - nw} 0 ${cx - nw} ${lipL}` : `V ${lipL}`,
           // pared izquierda
           `V ${nd - nc}`,
           // esquina inferior izquierda de la muesca (igual radio que la burbuja)
@@ -323,25 +333,26 @@ function buildBarPath(w: number, notchX: number | null): string {
           // esquina inferior derecha
           `A ${nc} ${nc} 0 0 0 ${cx + nw} ${nd - nc}`,
           // pared derecha
-          `V ${lip}`,
+          `V ${lipR}`,
           // salida derecha
-          `A ${lip} ${lip} 0 0 1 ${cx + nw + lip} 0`,
-          `H ${w - r}`,
+          lipR > 0 ? `Q ${cx + nw} 0 ${cx + nw + lipR} 0` : `V 0`,
+          `H ${w - rR}`,
         ].join(" ");
 
   return [
-    `M ${r} 0`,
+    `M ${rL} 0`,
     top,
-    `A ${r} ${r} 0 0 1 ${w} ${r}`,
+    `A ${rR} ${rR} 0 0 1 ${w} ${rR}`,
     `V ${h - r}`,
     `A ${r} ${r} 0 0 1 ${w - r} ${h}`,
     `H ${r}`,
     `A ${r} ${r} 0 0 1 0 ${h - r}`,
-    `V ${r}`,
-    `A ${r} ${r} 0 0 1 ${r} 0`,
+    `V ${rL}`,
+    `A ${rL} ${rL} 0 0 1 ${rL} 0`,
     "Z",
   ].join(" ");
 }
+
 
 
 function NavBtn({
