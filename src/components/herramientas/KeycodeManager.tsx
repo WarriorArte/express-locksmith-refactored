@@ -36,8 +36,8 @@ type EditTab = "references" | "bitting" | "visual" | "imagen" | "decoder" | "cod
 
 interface KeycodeManagerProps {
   profiles: KeycodeProfile[];
-  onSave: (profile: KeycodeProfile) => void;
-  onUpdate: (profile: KeycodeProfile) => void;
+  onSave: (profile: KeycodeProfile, onProgress?: (done: number, total: number) => void) => void | Promise<void>;
+  onUpdate: (profile: KeycodeProfile, onProgress?: (done: number, total: number) => void) => void | Promise<void>;
   onDelete: (id: string) => void;
   onFetchCodes: (id: string) => Promise<KeycodeProfile | null>;
 }
@@ -122,6 +122,8 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
   const [editTab, setEditTab] = useState<EditTab>("references");
   const [icCard, setIcCard] = useState("");
   const [loadingEdit, setLoadingEdit] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveProgress, setSaveProgress] = useState<{ done: number; total: number } | null>(null);
   const itemsPerPage = 50;
 
   // --- Manual code entry / JSON merge ---
@@ -224,7 +226,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
 
   const canSave = hasChanges && !decoderHasErrors;
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     if (!editingProfile) return;
     
     // Validate required fields
@@ -234,14 +236,26 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
     }
     
     const finalProfile = { ...editingProfile, references, bittingConfig, codesData: currentCodes, configuracionVisual, profileImage, decoderConfig, icCard };
-    
-    if (isNewProfile) {
-      onSave(finalProfile);
-      toast.success("Serie importada y guardada exitosamente.");
-    } else {
-      onUpdate(finalProfile);
-      toast.success("Perfil actualizado.");
+
+    const onProgress = (done: number, total: number) => setSaveProgress({ done, total });
+    setSaving(true);
+    setSaveProgress(currentCodes.length > 3000 ? { done: 0, total: currentCodes.length } : null);
+    try {
+      if (isNewProfile) {
+        await onSave(finalProfile, onProgress);
+        toast.success("Serie importada y guardada exitosamente.");
+      } else {
+        await onUpdate(finalProfile, onProgress);
+        toast.success("Perfil actualizado.");
+      }
+    } catch {
+      toast.error("Ocurrió un error al guardar la serie. Intenta de nuevo.");
+      setSaving(false);
+      setSaveProgress(null);
+      return;
     }
+    setSaving(false);
+    setSaveProgress(null);
     // Mantener el editor abierto: actualizamos la línea base para que
     // hasChanges vuelva a false hasta que se hagan nuevos cambios.
     setEditingProfile(finalProfile);
