@@ -56,18 +56,15 @@ final class KeycodeProfileController
             ->groupBy('profile_id')
             ->pluck('total', 'profile_id');
 
-        // Dos queries para las muestras: ids mínimos → filas
-        $minIds = DB::table('keycode_codes')
-            ->whereIn('profile_id', $profileIds)
-            ->selectRaw('MIN(id) as min_id')
-            ->groupBy('profile_id')
-            ->pluck('min_id');
+        // Muestra: el código más bajo de cada perfil (usa la PK compuesta)
+        $sampleRows = collect($profileIds)->mapWithKeys(function ($pid) {
+            $row = DB::table('keycode_codes')
+                ->where('profile_id', $pid)
+                ->orderBy('codigo')
+                ->first(['codigo', 'bitting']);
+            return [$pid => $row];
+        })->filter();
 
-        $sampleRows = DB::table('keycode_codes')
-            ->whereIn('id', $minIds)
-            ->select('profile_id', 'codigo', 'bitting')
-            ->get()
-            ->keyBy('profile_id');
 
         return ApiResponse::success(
             $profiles->map(function ($p) use ($counts, $sampleRows) {
@@ -127,7 +124,7 @@ final class KeycodeProfileController
         }
 
         $count  = DB::table('keycode_codes')->where('profile_id', $id)->count();
-        $minRow = DB::table('keycode_codes')->where('profile_id', $id)->orderBy('id')->first(['codigo', 'bitting']);
+        $minRow = DB::table('keycode_codes')->where('profile_id', $id)->orderBy('codigo')->first(['codigo', 'bitting']);
         $sample = $minRow ? [['codigo' => $minRow->codigo, 'bitting' => str_split($minRow->bitting)]] : [];
 
         return ApiResponse::success($this->serializeList($profile->refresh(), $count, $sample), 'Actualizado');
@@ -156,18 +153,26 @@ final class KeycodeProfileController
     private function replaceCodes(string $profileId, array $codesData): void
     {
         DB::table('keycode_codes')->where('profile_id', $profileId)->delete();
+        $this->insertCodes($profileId, $codesData);
+    }
 
+    /** Inserta ignorando duplicados de la PK compuesta (profile_id, codigo). */
+    private function insertCodes(string $profileId, array $codesData): void
+    {
         $rows = [];
         foreach ($codesData as $c) {
-            $bitting = is_array($c['bitting']) ? implode('', $c['bitting']) : ($c['bitting'] ?? '');
-            $rows[]  = ['profile_id' => $profileId, 'codigo' => $c['codigo'] ?? '', 'bitting' => $bitting];
-            if (count($rows) >= 500) {
-                DB::table('keycode_codes')->insert($rows);
+            $codigo = (string) ($c['codigo'] ?? '');
+            if ($codigo === '') continue;
+            $bitting = is_array($c['bitting'] ?? null) ? implode('', $c['bitting']) : (string) ($c['bitting'] ?? '');
+            $rows[]  = ['profile_id' => $profileId, 'codigo' => $codigo, 'bitting' => $bitting];
+            if (count($rows) >= 2000) {
+                DB::table('keycode_codes')->insertOrIgnore($rows);
                 $rows = [];
             }
         }
-        if (!empty($rows)) DB::table('keycode_codes')->insert($rows);
+        if (!empty($rows)) DB::table('keycode_codes')->insertOrIgnore($rows);
     }
+
 
     private function buildSampleFromArray(array $codesData): array
     {
