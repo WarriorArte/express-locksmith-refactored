@@ -51,9 +51,13 @@ export default defineConfig(({ mode }) => {
     versionManifestPlugin(buildVersion),
   ].filter(Boolean),
   resolve: {
+    dedupe: ["react", "react-dom"],
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  optimizeDeps: {
+    include: ["react", "react-dom", "react-dom/client", "framer-motion"],
   },
   build: {
     target: "es2020",
