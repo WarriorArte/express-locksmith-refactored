@@ -892,12 +892,12 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                 </div>
                 <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain space-y-3 pb-2" style={{ scrollbarWidth: 'thin', scrollbarColor: 'hsl(var(--border)) transparent' }}>
                   {bittingGroups.map((group, groupIdx) => (
-                    <div key={groupIdx} className="space-y-1">
-                      <div className="flex items-center gap-2 px-1">
-                        <span className="text-xs font-bold text-foreground bg-muted px-2 py-0.5 rounded-full">
+                    <div key={groupIdx} className="space-y-2">
+                      <div className="flex items-center justify-center gap-2 px-1">
+                        <span className="text-sm font-extrabold tracking-wide text-primary bg-primary/15 px-3 py-1 rounded-full uppercase">
                           Llave {groupIdx + 1}
                         </span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs font-medium text-muted-foreground">
                           {group.length} código{group.length !== 1 ? "s" : ""}
                         </span>
                       </div>
@@ -1015,12 +1015,12 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
         ) : bittingResults.length > 0 ? (
           <div className="space-y-3 pb-2">
             {bittingGroups.map((group, groupIdx) => (
-              <div key={groupIdx} className="space-y-1">
-                <div className="flex items-center gap-2 px-1">
-                  <span className="text-xs font-bold text-foreground bg-muted px-2 py-0.5 rounded-full">
+              <div key={groupIdx} className="space-y-2">
+                <div className="flex items-center justify-center gap-2 px-1">
+                  <span className="text-sm font-extrabold tracking-wide text-primary bg-primary/15 px-3 py-1 rounded-full uppercase">
                     Llave {groupIdx + 1}
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs font-medium text-muted-foreground">
                     {group.length} código{group.length !== 1 ? "s" : ""}
                   </span>
                 </div>
