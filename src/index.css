@@ -168,6 +168,10 @@
     --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.4);
     --shadow-lg: 0 10px 24px -8px hsl(0 0% 0% / 0.5);
     --shadow-xl: 0 20px 40px -8px hsl(0 0% 0% / 0.6);
+
+    /* Resplandores muy sutiles en oscuro */
+    --shadow-glow: 0 0 10px hsl(195 100% 45% / 0.12);
+    --shadow-gold: 0 6px 16px hsl(0 0% 0% / 0.45);
   }
 }
 
