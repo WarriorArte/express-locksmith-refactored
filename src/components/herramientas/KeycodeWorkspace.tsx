@@ -942,7 +942,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                                         return (
                                           <span
                                             key={posIdx}
-                                            className={`h-6 flex items-center justify-center rounded text-[11px] font-bold ${
+                                            className={`h-6 flex items-center justify-center rounded text-[1.25rem] leading-none font-extrabold tracking-tight ${
                                               isWild
                                                 ? "bg-primary text-primary-foreground"
                                                 : isAdvanced
@@ -1065,7 +1065,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                                   return (
                                     <span
                                       key={posIdx}
-                                      className={`h-6 flex items-center justify-center rounded text-[11px] font-bold ${
+                                      className={`h-6 flex items-center justify-center rounded text-[1.25rem] leading-none font-extrabold tracking-tight ${
                                         isWild
                                           ? "bg-primary text-primary-foreground"
                                           : isAdvanced
