@@ -175,12 +175,12 @@ export function BottomNav() {
             </svg>
           )}
 
-          {/* Burbuja del tab activo, encajada en la muesca */}
+          {/* Burbuja del tab activo, flotando sobre la muesca */}
           {notchX !== null && activeItem && (
             <motion.div
-              className="pointer-events-none absolute top-[-12px] z-10 flex h-[50px] w-[50px] items-center justify-center rounded-[14px] border-4 border-background bg-primary text-primary-foreground shadow-[0_0_18px_hsl(var(--primary)/0.45),0_8px_16px_-5px_hsl(var(--primary)/0.5)]"
+              className="pointer-events-none absolute top-[-22px] z-10 flex h-[52px] w-[52px] items-center justify-center rounded-[16px] border-[5px] border-background bg-primary text-primary-foreground shadow-[0_0_18px_hsl(var(--primary)/0.45),0_8px_16px_-5px_hsl(var(--primary)/0.5)]"
               initial={false}
-              animate={{ left: getNotchCenter(barWidth, notchX) - 25, scale: 1 }}
+              animate={{ left: getNotchCenter(barWidth, notchX) - 26, scale: 1 }}
               transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.7 }}
             >
               <motion.span
@@ -189,7 +189,7 @@ export function BottomNav() {
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.14, ease: "easeOut" }}
               >
-                <activeItem.icon className="h-[21px] w-[21px]" strokeWidth={1.45} />
+                <activeItem.icon className="h-[22px] w-[22px]" strokeWidth={1.45} />
               </motion.span>
             </motion.div>
           )}
