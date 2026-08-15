@@ -34,6 +34,8 @@ interface GeneradorLlaveSVGProps {
   boxSize?: number;
   /** Ajuste por serie: tamaño de fuente (px) del número dentro de cada caja. Por defecto 14. */
   numberSize?: number;
+  /** Ajuste por serie: grosor del número (escala CSS font-weight, 100-900). Por defecto 700. */
+  numberWeight?: number;
 }
 
 function getBaseYTop(tipo: string): number {
@@ -62,8 +64,14 @@ export function GeneradorLlaveSVG({
   strokeWidth,
   boxSize = 18,
   numberSize = 14,
+  numberWeight = 700,
 }: GeneradorLlaveSVGProps) {
   const boxHalf = boxSize / 2;
+  // La caja de cada dígito mide boxSize x (boxSize + 6); el hueco reservado
+  // entre la caja y el trazo de la llave debe escalar con ese alto para que
+  // cajas grandes no invadan el dibujo.
+  const boxH = boxSize + 6;
+  const edgeGap = 4;
   const sanearCortes = (arr: number[]) =>
     arr.map(c => {
       const n = Number(c);
@@ -115,8 +123,8 @@ export function GeneradorLlaveSVG({
       const spcPrimary = primaryLen > 1 ? totalDist / (primaryLen - 1) : spacing;
       const spcSecondary = secondaryLen > 1 ? totalDist / (secondaryLen - 1) : spacing;
 
-      const yTop = topEdgeY - 28;
-      const yBottom = botEdgeY + 4;
+      const yTop = topEdgeY - boxH - edgeGap;
+      const yBottom = botEdgeY + edgeGap;
 
       valoresPrimarios!.forEach((val, i) => {
         const globalIndex = i;
@@ -146,6 +154,7 @@ export function GeneradorLlaveSVG({
             virtualKeypadMode={virtualKeypadMode}
             boxSize={boxSize}
             numberSize={numberSize}
+            numberWeight={numberWeight}
           />
         );
       });
@@ -179,6 +188,7 @@ export function GeneradorLlaveSVG({
               virtualKeypadMode={virtualKeypadMode}
               boxSize={boxSize}
               numberSize={numberSize}
+              numberWeight={numberWeight}
             />
           );
         });
@@ -189,9 +199,9 @@ export function GeneradorLlaveSVG({
       
       let inputY: number;
       if (isCanal) {
-        inputY = orientacion === 'inferior' ? botEdgeY + 4 : topEdgeY - 28;
+        inputY = orientacion === 'inferior' ? botEdgeY + edgeGap : topEdgeY - boxH - edgeGap;
       } else {
-        inputY = topEdgeY - 28;
+        inputY = topEdgeY - boxH - edgeGap;
       }
 
       const centers = valoresPrimarios!.map((_, i) => startX + i * spacing);
@@ -229,17 +239,15 @@ export function GeneradorLlaveSVG({
             virtualKeypadMode={virtualKeypadMode}
             boxSize={boxSize}
             numberSize={numberSize}
+            numberWeight={numberWeight}
           />
         );
       });
     }
 
     return nodes;
-  }, [isInteractive, config, valoresPrimarios, valoresSecundarios, onPrimaryChange, onSecondaryChange, isDualAxis, advancedMode, tileVariants, onVariantToggle, selectedGlobalIdx, onSelectCell, virtualKeypadMode, boxHalf, boxSize, numberSize]);
+  }, [isInteractive, config, valoresPrimarios, valoresSecundarios, onPrimaryChange, onSecondaryChange, isDualAxis, advancedMode, tileVariants, onVariantToggle, selectedGlobalIdx, onSelectCell, virtualKeypadMode, boxHalf, boxSize, numberSize, numberWeight, boxH, edgeGap]);
 
-  // La caja de cada dígito mide boxSize x (boxSize + 6); el margen reservado
-  // arriba/abajo de la llave debe escalar con ese alto para no recortarla.
-  const boxH = boxSize + 6;
   const inputMargin = boxH + 10 + (advancedMode ? 18 : 0);
 
   let element: React.ReactNode;

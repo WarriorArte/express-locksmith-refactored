@@ -693,6 +693,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                   strokeWidth={visualSettings.strokeWidth}
                   boxSize={profile.configuracionVisual.tamCaja}
                   numberSize={profile.configuracionVisual.tamNumero}
+                  numberWeight={profile.configuracionVisual.numeroGrosor}
                   onVariantToggle={(flatIdx, dir) => {
                     const next = [...tileVariants];
                     next[flatIdx] = { ...next[flatIdx], [dir]: !next[flatIdx][dir] };

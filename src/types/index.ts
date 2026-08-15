@@ -66,6 +66,8 @@ export interface ConfiguracionVisualLlave {
   tamCaja?: number;
   /** Ajuste por serie: tamaño de fuente (px) del número dentro de cada caja. */
   tamNumero?: number;
+  /** Ajuste por serie: grosor del número dentro de cada caja (escala CSS font-weight, 100-900). */
+  numeroGrosor?: number;
 }
 
 /** Ajustes visuales globales (aplican a todas las series de Keycode). */

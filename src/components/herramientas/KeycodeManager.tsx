@@ -663,6 +663,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                           strokeWidth={visualSettings.strokeWidth}
                           boxSize={profile.configuracionVisual.tamCaja}
                           numberSize={profile.configuracionVisual.tamNumero}
+                          numberWeight={profile.configuracionVisual.numeroGrosor}
                         />
                       </div>
                     ) : (
@@ -1050,6 +1051,16 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                           onChange={(value) => setConfiguracionVisual(c => c ? { ...c, tamNumero: value } : c)}
                         />
                       </div>
+
+                      <VisualRangeField
+                        label="Grosor del número"
+                        min={100}
+                        max={900}
+                        step={100}
+                        defaultValue={700}
+                        value={configuracionVisual.numeroGrosor ?? 700}
+                        onChange={(value) => setConfiguracionVisual(c => c ? { ...c, numeroGrosor: value } : c)}
+                      />
 
                       <Separator />
 
@@ -1499,6 +1510,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                       strokeWidth={visualSettings.strokeWidth}
                       boxSize={configuracionVisual.tamCaja}
                       numberSize={configuracionVisual.tamNumero}
+                      numberWeight={configuracionVisual.numeroGrosor}
                     />
                   </div>
                   <Button

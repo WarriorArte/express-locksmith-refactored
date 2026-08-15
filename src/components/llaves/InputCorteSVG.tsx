@@ -35,6 +35,8 @@ interface InputCorteSVGProps {
   boxSize?: number;
   /** Tamaño de fuente (px) del número dentro de la caja. Por defecto 14. */
   numberSize?: number;
+  /** Grosor del número (escala CSS font-weight, 100-900). Por defecto 700. */
+  numberWeight?: number;
 }
 
 const colorMap = {
@@ -52,7 +54,7 @@ export function InputCorteSVG({
   globalIndex, totalGlobalInputs,
   nextPrefix, prevPrefix, prevTotal,
   isSelected, onSelect, virtualKeypadMode,
-  boxSize = 18, numberSize = 14,
+  boxSize = 18, numberSize = 14, numberWeight = 700,
 }: InputCorteSVGProps) {
   const c = colorMap[color];
   const numVal = parseInt(value, 10);
@@ -167,7 +169,7 @@ export function InputCorteSVG({
             autoComplete="off"
             style={{
               width: `${boxW}px`, height: `${boxH - 2}px`, fontSize: `${numberSize}px`,
-              padding: 0, textAlign: 'center', fontWeight: 'bold',
+              padding: 0, textAlign: 'center', fontWeight: numberWeight,
               color: c.text,
               backgroundColor: isSelected ? 'hsl(var(--primary) / 0.15)' : c.bg,
               border: isSelected ? '2px solid hsl(var(--primary))' : `1px solid ${c.border}`,
