@@ -66,8 +66,9 @@ export function BackupManager() {
     let errors = 0;
 
     try {
+      const workshopCode = currentWorkshop?.code ?? "";
       const files = await phpApiRequest<Array<{ filename: string; folder?: string }>>(
-        `/uploads.php?action=list&folder=${encodeURIComponent(folderType)}`,
+        `/uploads.php?action=list&folder=${encodeURIComponent(folderType)}&workshop_code=${encodeURIComponent(workshopCode)}`,
         { method: "GET" }
       );
 
@@ -76,6 +77,7 @@ export function BackupManager() {
           const formData = new FormData();
           formData.append('filename', file.filename);
           formData.append('folder', file.folder || folderType);
+          formData.append('workshop_code', workshopCode);
 
           await phpApiRequest<null>(`/uploads.php?action=delete`, {
             method: 'POST',
