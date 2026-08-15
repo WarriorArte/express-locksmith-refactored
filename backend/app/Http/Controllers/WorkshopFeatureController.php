@@ -10,6 +10,9 @@ use Illuminate\Support\Str;
 
 final class WorkshopFeatureController
 {
+    /** Features de pago: solo SuperAdmin puede habilitarlas/deshabilitarlas. */
+    private const PREMIUM_FEATURES = ['tool_keycode', 'tool_alarmas', 'tool_immo'];
+
     public function handle(Request $request): JsonResponse
     {
         return match ($request->method()) {
@@ -36,6 +39,10 @@ final class WorkshopFeatureController
 
         $data = $request->json()->all();
         if (empty($data['feature_key'])) return ApiResponse::error('feature_key es requerido');
+
+        if (in_array($data['feature_key'], self::PREMIUM_FEATURES, true) && !$user->isSuperadmin()) {
+            return ApiResponse::error('Solo un SuperAdmin puede modificar esta funcionalidad', 403);
+        }
 
         $payload = [
             'is_enabled' => isset($data['is_enabled']) ? (int) (bool) $data['is_enabled'] : 1,
