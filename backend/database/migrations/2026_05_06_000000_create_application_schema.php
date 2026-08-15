@@ -181,22 +181,6 @@ return new class extends Migration
             ->exists();
     }
 
-    private function seedSuperadmin(): void
-    {
-        $now = now();
-
-        DB::table('superadmin_access_settings')->insertOrIgnore([
-            'id'              => (string) Str::uuid(),
-            'workshop_code'   => 'ADMINWARRIOR',
-            'email'           => 'josuevntra@gmail.com',
-            'password_hash'   => password_hash('33123312', PASSWORD_BCRYPT),
-            'login_path'      => '/auth_su',
-            'singleton_guard' => 1,
-            'created_at'      => $now,
-            'updated_at'      => $now,
-        ]);
-    }
-
     private function createSqliteSchema(): void
     {
         Schema::create('app_users', function (Blueprint $table): void {
