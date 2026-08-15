@@ -432,6 +432,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     setExactEntry(null);
     setDecoderOpen(false);
     toast.success(`Bitting decodificado: ${bitting.join('-')}`);
+    setAllowResultsSheet(true);
     // Auto-buscar coincidencias después de un microtick
     if (remoteMode && onSearchCodes) {
       setIsSearching(true);
