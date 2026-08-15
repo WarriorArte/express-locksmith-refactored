@@ -18,7 +18,6 @@ return new class extends Migration
         }
 
         $this->createPersonalAccessTokens();
-        $this->seedSuperadmin();
     }
 
     public function down(): void
