@@ -133,8 +133,6 @@ final class BackupRestoreController
             'printer_size' => $row['printer_size'] ?? '80mm',
             'currency_symbol' => $row['currency_symbol'] ?? '$',
             'auto_cut' => $this->boolInt($row['auto_cut'] ?? 1, 1),
-            'storage_endpoint' => $row['storage_endpoint'] ?? null,
-            'storage_secret_key' => $row['storage_secret_key'] ?? null,
         ]);
         $counts['business_settings']++;
     }

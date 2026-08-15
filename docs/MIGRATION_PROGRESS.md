@@ -51,7 +51,6 @@
 | `warranty-settings.php` | warranty_settings, warranty_category_settings | ✅ | POST ?action=category | ✅ | DELETE ?action=category | |
 | `inventory-movements.php` | inventory_movements, products | ✅ | ✅ | — | — | Actualiza stock en mismo request |
 | `business-settings.php` | business_settings | ✅ | ✅ | ✅ (upsert) | — | |
-| `appadmin-settings.php` | appadmin_settings | ✅ | — | ✅ | — | Solo superadmin |
 | `templates.php` | templates | ✅ | ✅ | ✅ | ✅ | No permite editar globales |
 | `template-selections.php` | workshop_template_selections | ✅ | ✅ (upsert) | — | ✅ | |
 | `dashboard-stats.php` | quotes, sales, services, products | ✅ | — | — | — | Agregados del mes + hoy |

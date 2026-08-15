@@ -127,17 +127,5 @@ class CoreSeeder extends Seeder
                 'updated_at'      => $now,
             ],
         ]);
-
-        // ── App admin settings (singleton) ────────────────────────────────────
-        DB::table('appadmin_settings')->insertOrIgnore([
-            [
-                'id'                        => '00000001-0000-0000-0005-000000000001',
-                'storage_endpoint'          => null,
-                'storage_api_key_encrypted' => null,
-                'singleton_guard'           => 1,
-                'created_at'                => $now,
-                'updated_at'                => $now,
-            ],
-        ]);
     }
 }

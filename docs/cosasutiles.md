@@ -47,15 +47,14 @@ backend/
 React llama al backend usando:
 
 VITE_PHP_API_BASE=https://tu-dominio.com/api
-7. El instalador no reemplaza migraciones
-/install ayuda a crear superadmin y datos iniciales, pero la estructura la hacen las migraciones.
+7. Ya no hay instalador web
+El instalador (`/install`) se eliminó porque la app ya está desplegada en producción. La estructura la hacen las migraciones; el superadmin se crea a mano si hace falta uno nuevo.
 
 Orden correcto:
 
 composer instalado
 .env configurado
 php artisan migrate --force
-abrir /install
 8. storage/ importa
 Laravel guarda cosas runtime ahí: logs, cache, locks, uploads si luego los usamos.
 

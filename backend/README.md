@@ -60,33 +60,18 @@ VITE_PHP_API_BASE=http://127.0.0.1:8000/api
 2. Ajustar diferencias de respuesta que aparezcan durante QA.
 3. Endurecer despliegue: desactivar/proteger `env-diagnostic.php`, configurar storage/uploads y revisar CORS.
 
-## Instalador Laravel
+## Setup inicial (sin instalador web)
 
-Existe un instalador web en:
-
-```txt
-http://127.0.0.1:8000/install
-```
-
-El instalador **consume** `backend/.env`; no crea ni modifica credenciales de entorno. Su trabajo es:
-
-- probar la conexion configurada en `backend/.env`,
-- ejecutar `php artisan migrate`,
-- crear o actualizar el unico usuario `superadmin`,
-- opcionalmente crear talleres/usuarios/demo data de ejemplo,
-- crear el lock `storage/app/installed.lock`.
-
-Para probar desde cero:
+La app ya esta desplegada en produccion, asi que el instalador web (`/install`) fue removido. Para levantar un entorno nuevo desde cero:
 
 1. Configurar `backend/.env` con una base de datos vacia ya existente.
-2. Eliminar `backend/storage/app/installed.lock` si existe.
-3. Levantar Laravel:
+2. Ejecutar migraciones:
 
 ```sh
-php artisan serve --host=127.0.0.1 --port=8000
+php artisan migrate --force
 ```
 
-4. Abrir `/install` y completar el formulario.
+3. Crear el superadmin manualmente (via `php artisan tinker` o un seeder) insertando en `app_users`, `profiles` y `global_user_roles` con `role = 'superadmin'`.
 
 ## CORS para VSCode y Lovable
 

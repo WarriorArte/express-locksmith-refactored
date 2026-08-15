@@ -18,13 +18,11 @@ const EXCLUDE_PATTERNS = [
   /(^|\\|\/)node_modules(\\|\/)/,
   /(^|\\|\/)\.git(\\|\/)/,
   /db_config\.php$/,
-  /installed\.lock$/,
   /(^|\\|\/)\.env$/,
 ];
 
 const PERSISTENT_PATHS = [
   "backend/.env",
-  "backend/storage/app/installed.lock",
   "backend/storage/logs",
   "backend/storage/framework/cache",
   "backend/storage/framework/sessions",

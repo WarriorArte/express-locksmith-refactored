@@ -82,12 +82,6 @@ El backend real sigue viviendo en:
 backend/composer.json
 ```
 
-El instalador web existe en:
-
-```txt
-http://127.0.0.1:8000/install
-```
-
 ## Comandos utiles
 
 ```sh

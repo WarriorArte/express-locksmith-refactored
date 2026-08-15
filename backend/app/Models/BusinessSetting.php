@@ -31,8 +31,6 @@ final class BusinessSetting extends Model
         'ticket_footer_sale',
         'ticket_footer_service',
         'ticket_footer_warranty',
-        'storage_endpoint',
-        'storage_secret_key',
     ];
 
     protected $casts = [

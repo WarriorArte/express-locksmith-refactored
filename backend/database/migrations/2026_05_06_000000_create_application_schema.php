@@ -49,7 +49,6 @@ return new class extends Migration
             'products',
             'tags',
             'categories',
-            'appadmin_settings',
             'business_settings',
             'workshop_features',
             'user_roles',

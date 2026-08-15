@@ -33,8 +33,6 @@ final class BusinessSettingsController
         'ticket_footer_sale',
         'ticket_footer_service',
         'ticket_footer_warranty',
-        'storage_endpoint',
-        'storage_secret_key',
     ];
 
     public function handle(Request $request): JsonResponse
@@ -93,8 +91,6 @@ final class BusinessSettingsController
             'ticket_footer_sale' => $data['ticket_footer_sale'] ?? null,
             'ticket_footer_service' => $data['ticket_footer_service'] ?? null,
             'ticket_footer_warranty' => $data['ticket_footer_warranty'] ?? null,
-            'storage_endpoint' => $data['storage_endpoint'] ?? null,
-            'storage_secret_key' => $data['storage_secret_key'] ?? null,
         ]);
 
         return ApiResponse::success($settings->refresh(), 'Configuracion creada');

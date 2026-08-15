@@ -9,7 +9,6 @@ use App\Http\Controllers\KeycodeProfileController;
 use App\Http\Controllers\KeycodeSearchController;
 use App\Http\Controllers\ToolAssignmentController;
 use App\Http\Controllers\VehicleDatabaseController;
-use App\Http\Controllers\AppAdminSettingsController;
 use App\Http\Controllers\BusinessSettingsController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CustomerController;
@@ -33,15 +32,11 @@ use App\Http\Controllers\EnvDiagnosticController;
 use App\Http\Controllers\WorkshopFeatureController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\BackupRestoreController;
-use App\Http\Controllers\InstallController;
 use App\Http\Controllers\MaintenanceController;
 use Illuminate\Support\Facades\Route;
 
 // Preflight CORS
 Route::options('/{path}', fn () => response('', 204))->where('path', '.*');
-
-// Setup (sin auth)
-Route::any('/install', [InstallController::class, 'handle']);
 
 // Login SuperAdmin aislado (sin auth para config publica y login)
 Route::get('/superadmin-auth/config', [SuperAdminAccessController::class, 'publicConfig']);
@@ -134,7 +129,6 @@ Route::middleware('legacy.auth')->group(function (): void {
     Route::match(['GET', 'POST', 'DELETE'], '/service-images.php', [ServiceImageController::class, 'handle']);
     Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/warranties.php', [WarrantyController::class, 'handle']);
     Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/warranty-settings.php', [WarrantySettingsController::class, 'handle']);
-    Route::match(['GET', 'PUT'], '/appadmin-settings.php', [AppAdminSettingsController::class, 'handle']);
     Route::match(['GET', 'PUT'], '/superadmin-access.php', [SuperAdminAccessController::class, 'handle']);
     Route::match(['GET', 'PUT', 'DELETE'], '/update-notices.php', [UpdateNoticeController::class, 'handle']);
     Route::match(['GET', 'PUT'], '/workshop-features.php', [WorkshopFeatureController::class, 'handle']);

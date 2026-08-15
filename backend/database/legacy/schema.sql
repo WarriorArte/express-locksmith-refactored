@@ -131,8 +131,6 @@ CREATE TABLE IF NOT EXISTS business_settings (
   ticket_footer_sale TEXT NULL,
   ticket_footer_service TEXT NULL,
   ticket_footer_warranty TEXT NULL,
-  storage_endpoint TEXT NULL,
-  storage_secret_key TEXT NULL,
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (id),
@@ -140,18 +138,6 @@ CREATE TABLE IF NOT EXISTS business_settings (
   CONSTRAINT fk_business_settings_workshop_id
     FOREIGN KEY (workshop_id) REFERENCES workshops(id)
     ON DELETE CASCADE
-) ENGINE=InnoDB;
-
-CREATE TABLE IF NOT EXISTS appadmin_settings (
-  id CHAR(36) NOT NULL DEFAULT (UUID()),
-  storage_endpoint TEXT NULL,
-  storage_api_key_encrypted TEXT NULL,
-  singleton_guard TINYINT(1) NOT NULL DEFAULT 1,
-  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
-  PRIMARY KEY (id),
-  UNIQUE KEY uq_appadmin_settings_singleton (singleton_guard),
-  CONSTRAINT chk_appadmin_settings_singleton CHECK (singleton_guard = 1)
 ) ENGINE=InnoDB;
 
 -- ============================================================
