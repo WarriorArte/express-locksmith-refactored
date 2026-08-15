@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ValidatesWorkshopReferences;
 use App\Support\ApiResponse;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -12,6 +13,8 @@ use Illuminate\Support\Str;
 
 final class ServiceController
 {
+    use ValidatesWorkshopReferences;
+
     private const FIELDS = [
         'customer_id', 'quote_id', 'service_type', 'status', 'description',
         'problem', 'location', 'address', 'estimated_price', 'final_price',
@@ -116,6 +119,16 @@ final class ServiceController
         }
         if (empty($data['description'])) {
             return ApiResponse::error('description es requerido');
+        }
+
+        if ($error = $this->validateWorkshopReferences($workshopId, $data, [
+            'customer_id' => 'customers',
+            'quote_id' => 'quotes',
+        ])) {
+            return $error;
+        }
+        if (is_array($data['service_products'] ?? null) && ($error = $this->validateItemProducts($workshopId, $data['service_products']))) {
+            return $error;
         }
 
         try {
