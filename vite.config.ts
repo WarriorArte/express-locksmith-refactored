@@ -58,9 +58,12 @@ export default defineConfig(({ mode }) => {
   },
   optimizeDeps: {
     include: ["react", "react-dom", "react-dom/client", "framer-motion"],
+    esbuildOptions: {
+      target: "esnext",
+    },
   },
   build: {
-    target: "es2020",
+    target: "es2022",
     cssCodeSplit: true,
     sourcemap: false,
     rollupOptions: {
