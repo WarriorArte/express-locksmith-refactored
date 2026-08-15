@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ValidatesWorkshopReferences;
 use App\Support\ApiResponse;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -11,6 +12,8 @@ use Illuminate\Support\Str;
 
 final class WarrantyController
 {
+    use ValidatesWorkshopReferences;
+
     private const DATETIME_FIELDS = ['start_date', 'end_date'];
 
     /** Punto de entrada legacy — mantiene compatibilidad con el frontend actual */
@@ -82,6 +85,14 @@ final class WarrantyController
             if (empty($data[$field])) {
                 return ApiResponse::error("{$field} es requerido");
             }
+        }
+
+        if ($error = $this->validateWorkshopReferences($workshopId, $data, [
+            'customer_id' => 'customers',
+            'sale_id' => 'sales',
+            'service_id' => 'services',
+        ])) {
+            return $error;
         }
 
         try {

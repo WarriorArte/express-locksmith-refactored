@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ValidatesWorkshopReferences;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -11,6 +12,8 @@ use Illuminate\Support\Str;
 
 final class QuoteController
 {
+    use ValidatesWorkshopReferences;
+
     private const FIELDS = [
         'customer_id',
         'customer_name',
@@ -112,6 +115,12 @@ final class QuoteController
         if (empty($data['quote_number'])) {
             return ApiResponse::error('quote_number es requerido');
         }
+        if ($error = $this->validateWorkshopReferences($workshopId, $data, ['customer_id' => 'customers'])) {
+            return $error;
+        }
+        if (is_array($data['items'] ?? null) && ($error = $this->validateItemProducts($workshopId, $data['items']))) {
+            return $error;
+        }
 
         $id = (string) Str::uuid();
         DB::transaction(function () use ($id, $workshopId, $data, $user): void {
@@ -165,6 +174,12 @@ final class QuoteController
         }
 
         $data = $request->json()->all();
+        if ($error = $this->validateWorkshopReferences($quote->workshop_id, $data, ['customer_id' => 'customers'])) {
+            return $error;
+        }
+        if (is_array($data['items'] ?? null) && ($error = $this->validateItemProducts($quote->workshop_id, $data['items']))) {
+            return $error;
+        }
         $updates = array_intersect_key($data, array_flip(self::FIELDS));
 
         DB::transaction(function () use ($id, $updates, $data): void {
