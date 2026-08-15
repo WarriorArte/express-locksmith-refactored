@@ -5,18 +5,11 @@ const runtimeApiBase =
     ? (window as Window & { __PHP_API_BASE__?: string }).__PHP_API_BASE__
     : undefined;
 
-// Backend explícito para el entorno de preview de Lovable (no hay PHP servido en el sandbox).
-// Solo se usa cuando el host es un dominio de preview de Lovable; nunca como fallback silencioso.
-const PREVIEW_API_BASE = "https://keylune.com/api";
-const isLovablePreview =
-  typeof window !== "undefined" &&
-  /(^|\.)(lovableproject\.com|lovable\.app)$/.test(window.location.hostname);
-
+// Sin dominios hardcoded: el backend se define por runtime (window.__PHP_API_BASE__),
+// por variable de entorno (VITE_PHP_API_BASE) o por el mismo origen (/api).
 const envApiBase = import.meta.env.VITE_PHP_API_BASE as string | undefined;
 const localApiBase = `${import.meta.env.BASE_URL}api`;
-const apiBaseCandidates = isLovablePreview
-  ? [runtimeApiBase, envApiBase, PREVIEW_API_BASE]
-  : [runtimeApiBase, envApiBase, localApiBase];
+const apiBaseCandidates = [runtimeApiBase, envApiBase, localApiBase];
 
 
 
