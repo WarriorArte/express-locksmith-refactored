@@ -10,6 +10,13 @@ interface UnifiedSearchInputProps {
   inputClassName?: string;
   onFocus?: () => void;
   onBlur?: () => void;
+  type?: string;
+  enterKeyHint?: "enter" | "done" | "go" | "next" | "previous" | "search" | "send";
+  inputMode?: "none" | "text" | "tel" | "url" | "email" | "numeric" | "decimal" | "search";
+  autoCapitalize?: string;
+  autoCorrect?: string;
+  spellCheck?: boolean;
+  inputRef?: React.Ref<HTMLInputElement>;
 }
 
 export function UnifiedSearchInput({
@@ -20,11 +27,25 @@ export function UnifiedSearchInput({
   inputClassName,
   onFocus,
   onBlur,
+  type,
+  enterKeyHint,
+  inputMode,
+  autoCapitalize,
+  autoCorrect,
+  spellCheck,
+  inputRef,
 }: UnifiedSearchInputProps) {
   return (
     <div className={cn("relative", className)}>
       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/45 pointer-events-none z-10" />
       <Input
+        ref={inputRef}
+        type={type}
+        enterKeyHint={enterKeyHint}
+        inputMode={inputMode}
+        autoCapitalize={autoCapitalize}
+        autoCorrect={autoCorrect}
+        spellCheck={spellCheck}
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}

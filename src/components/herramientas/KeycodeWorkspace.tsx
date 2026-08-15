@@ -105,12 +105,15 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
   const [isSearching, setIsSearching] = useState(false);
   const isMobile = useIsMobile();
   const [resultsSheetOpen, setResultsSheetOpen] = useState(false);
+  // Solo las búsquedas por bitting/decodificador deben abrir el panel de resultados
+  const [allowResultsSheet, setAllowResultsSheet] = useState(false);
+  const codeInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (isMobile && (isSearching || hasBittingSearched)) {
+    if (isMobile && allowResultsSheet && (isSearching || hasBittingSearched)) {
       setResultsSheetOpen(true);
     }
-  }, [isMobile, isSearching, hasBittingSearched]);
+  }, [isMobile, allowResultsSheet, isSearching, hasBittingSearched]);
   const [tileVariants, setTileVariants] = useState<{ up: boolean; down: boolean }[]>(() =>
     Array(bittingTotalLength).fill(null).map(() => ({ up: false, down: false }))
   );
@@ -256,6 +259,12 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     e.preventDefault();
     if (!profile || !searchTerm.trim()) return;
 
+    // Búsqueda directa por código: nunca abrir el panel de resultados
+    setAllowResultsSheet(false);
+    setResultsSheetOpen(false);
+    // Cierra el teclado del dispositivo al buscar
+    codeInputRef.current?.blur();
+
     if (remoteMode && onSearchCodes) {
       setIsSearching(true);
       const { results } = await onSearchCodes(profile.id, { codigo: searchTerm.trim(), limit: 1 });
@@ -309,6 +318,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
   const handleBittingSearch = async () => {
     if (!profile) return;
     if (!canBittingSearch) return;
+    setAllowResultsSheet(true);
     setSearchValues([...gridValues]);
     setIsSearching(true);
 
@@ -422,6 +432,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     setExactEntry(null);
     setDecoderOpen(false);
     toast.success(`Bitting decodificado: ${bitting.join('-')}`);
+    setAllowResultsSheet(true);
     // Auto-buscar coincidencias después de un microtick
     if (remoteMode && onSearchCodes) {
       setIsSearching(true);
@@ -592,6 +603,12 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
             <UnifiedSearchInput
               className="flex-1 min-w-0"
               placeholder="Codigo"
+              inputRef={codeInputRef}
+              type="search"
+              enterKeyHint="search"
+              autoCapitalize="characters"
+              autoCorrect="off"
+              spellCheck={false}
               value={searchTerm}
               onChange={(val) => {
                 setSearchTerm(val);
