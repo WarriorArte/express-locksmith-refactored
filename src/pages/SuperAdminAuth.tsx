@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router";
+import { useLocation } from "react-router";
 import { m as motion } from "framer-motion";
 import { Building2, Eye, EyeOff, Key, Loader2, Lock, Mail, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,6 @@ export default function SuperAdminAuth() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
 
