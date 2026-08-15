@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import NotFound from "./NotFound";
 
 type SuperAdminConfig = {
-  login_path: string;
+  valid: boolean;
 };
 
 type SuperAdminLoginResponse = {
@@ -50,13 +50,14 @@ export default function SuperAdminAuth() {
 
     const loadConfig = async () => {
       try {
-        const data = await phpApiRequest<SuperAdminConfig>("/superadmin-auth/config", {
-          method: "GET",
-        });
+        const data = await phpApiRequest<SuperAdminConfig>(
+          `/superadmin-auth/config?path=${encodeURIComponent(currentPath)}`,
+          { method: "GET" },
+        );
 
         if (!isMounted) return;
         setConfig(data);
-        setNotFound(data.login_path !== currentPath);
+        setNotFound(!data.valid);
       } catch (error) {
         console.error("[SuperAdminAuth] Error cargando config:", error);
         if (isMounted) setNotFound(true);
@@ -80,7 +81,7 @@ export default function SuperAdminAuth() {
       const data = await phpApiRequest<SuperAdminLoginResponse>("/superadmin-auth/login", {
         method: "POST",
         body: JSON.stringify({
-          login_path: config?.login_path ?? currentPath,
+          login_path: currentPath,
           workshop_code: workshopCode.trim().toUpperCase(),
           email: email.trim().toLowerCase(),
           password,
