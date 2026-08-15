@@ -77,6 +77,7 @@ final class UploadController
     private function index(Request $request): JsonResponse
     {
         $workshopCode = $this->folder((string) $request->query('workshop_code', '')) ?: 'misc';
+        if ($resp = $this->authorizeWorkshop($request, $workshopCode, false)) return $resp;
         $folder = $this->folder((string) $request->query('folder', 'misc'));
         $dir = public_path("uploads/{$workshopCode}/{$folder}");
 
@@ -128,6 +129,7 @@ final class UploadController
         }
 
         $workshopCode = $this->folder((string) $request->input('workshop_code', '')) ?: 'misc';
+        if ($resp = $this->authorizeWorkshop($request, $workshopCode, false)) return $resp;
         $folder = $this->folder((string) $request->input('folder', 'misc'));
         $name = Str::random(32).'.'.self::ALLOWED_MIME[$mime];
         $dir = public_path("uploads/{$workshopCode}/{$folder}");
@@ -147,6 +149,7 @@ final class UploadController
     private function destroy(Request $request): JsonResponse
     {
         $workshopCode = $this->folder((string) $request->input('workshop_code', '')) ?: 'misc';
+        if ($resp = $this->authorizeWorkshop($request, $workshopCode, false)) return $resp;
         $folder = $this->folder((string) $request->input('folder', 'misc'));
         $filename = basename((string) $request->input('filename', ''));
 
@@ -169,6 +172,7 @@ final class UploadController
     private function cleanupResponse(Request $request): JsonResponse
     {
         $workshopCode = $this->folder((string) $request->input('workshop_code', '')) ?: null;
+        if ($resp = $this->authorizeWorkshop($request, (string) $workshopCode, true)) return $resp;
         $folder = $this->folder((string) $request->input('folder', '')) ?: null;
 
         $totalDeleted = 0;
@@ -229,6 +233,40 @@ final class UploadController
         }
 
         return ['deleted' => $deleted, 'kept' => $kept];
+    }
+
+    /**
+     * Verifica que el usuario pertenezca al taller indicado por workshop_code.
+     * $admin = true exige rol de administrador del taller (borrado masivo / limpieza).
+     */
+    private function authorizeWorkshop(Request $request, string $workshopCode, bool $admin): ?JsonResponse
+    {
+        $user = $request->user();
+        if (!$user) {
+            return ApiResponse::error('No autenticado', 401);
+        }
+        if ($user->isSuperadmin()) {
+            return null;
+        }
+
+        $workshopCode = strtolower(trim($workshopCode));
+        if ($workshopCode === '' || $workshopCode === 'misc') {
+            return ApiResponse::error('workshop_code es requerido', 400);
+        }
+
+        $workshopId = DB::table('workshops')
+            ->whereRaw('LOWER(code) = ?', [$workshopCode])
+            ->value('id');
+
+        if (!$workshopId) {
+            return ApiResponse::error('Taller no encontrado', 404);
+        }
+
+        $allowed = $admin
+            ? $user->canAdminWorkshop($workshopId)
+            : $user->canAccessWorkshop($workshopId);
+
+        return $allowed ? null : ApiResponse::error('Sin acceso a los archivos de este taller', 403);
     }
 
     private function folder(string $value): string

@@ -22,10 +22,14 @@ use Illuminate\Support\Facades\DB;
  */
 final class KeycodeSearchController
 {
+    use \App\Http\Controllers\Concerns\AuthorizesTools;
+
     private const MAX_LIMIT = 1000;
 
     public function handle(Request $request): JsonResponse
     {
+        if ($resp = $this->authorizeToolsRead($request)) return $resp;
+
         $profileId = (string) $request->query('profile_id', '');
         if ($profileId === '') {
             return ApiResponse::error('profile_id requerido');
