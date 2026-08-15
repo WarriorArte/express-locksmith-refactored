@@ -21,7 +21,6 @@ final class UploadController
         'image/x-png' => 'png',
         'image/gif' => 'gif',
         'image/webp' => 'webp',
-        'image/svg+xml' => 'svg',
         'application/pdf' => 'pdf',
     ];
 
@@ -67,10 +66,27 @@ final class UploadController
             return response('', 404);
         }
 
+        // Los archivos viven en uploads/{workshop_code}/{folder}/{name}
+        $segments = explode('/', $file);
+        $workshopCode = $segments[0] ?? '';
+        if (count($segments) < 2) {
+            return response('', 404);
+        }
+        if ($resp = $this->authorizeWorkshop($request, $workshopCode, false)) {
+            return response('', $resp->getStatusCode());
+        }
+
         $mime = mime_content_type($path) ?: 'application/octet-stream';
+        $isSvg = str_contains($mime, 'svg') || strtolower(pathinfo($path, PATHINFO_EXTENSION)) === 'svg';
+
         return response()->file($path, [
-            'Content-Type' => $mime,
-            'Cache-Control' => 'public, max-age=31536000',
+            'Content-Type' => $isSvg ? 'application/octet-stream' : $mime,
+            'X-Content-Type-Options' => 'nosniff',
+            'Content-Security-Policy' => "default-src 'none'; sandbox",
+            'Content-Disposition' => $isSvg
+                ? 'attachment; filename="'.basename($path).'"'
+                : 'inline; filename="'.basename($path).'"',
+            'Cache-Control' => 'private, max-age=3600',
         ]);
     }
 

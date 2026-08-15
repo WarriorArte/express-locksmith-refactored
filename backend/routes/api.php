@@ -39,7 +39,6 @@ use Illuminate\Support\Facades\Route;
 Route::options('/{path}', fn () => response('', 204))->where('path', '.*');
 
 // Login SuperAdmin aislado (sin auth para config publica y login)
-Route::get('/superadmin-auth/config', [SuperAdminAccessController::class, 'publicConfig']);
 Route::post('/superadmin-auth/login', [SuperAdminAccessController::class, 'login']);
 
 // ──────────────────────────────────────────

@@ -11,21 +11,6 @@ use Illuminate\Support\Str;
 
 final class SuperAdminAccessController
 {
-    /**
-     * Valida (sin revelarla) la ruta oculta de acceso SuperAdmin.
-     * El cliente envia la ruta que esta visitando; la API solo responde si coincide.
-     */
-    public function publicConfig(Request $request): JsonResponse
-    {
-        $settings = $this->settings();
-        $expected = $this->normalizeLoginPath((string) ($settings?->login_path ?? '/auth_su'));
-        $candidate = $this->normalizeLoginPath((string) $request->query('path', ''));
-
-        return ApiResponse::success([
-            'valid' => hash_equals($expected, $candidate),
-        ]);
-    }
-
     public function login(Request $request): JsonResponse
     {
         $settings = $this->settings();
@@ -36,7 +21,7 @@ final class SuperAdminAccessController
 
         $requestPath = $this->normalizeLoginPath((string) $request->input('login_path', $settings->login_path));
         if ($requestPath !== $settings->login_path) {
-            return ApiResponse::error('Ruta SuperAdmin no valida', 404);
+            return ApiResponse::error('Credenciales incorrectas', 401);
         }
 
         $email = strtolower(trim((string) $request->input('email', '')));

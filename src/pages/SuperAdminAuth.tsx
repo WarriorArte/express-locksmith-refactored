@@ -1,15 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router";
+import { useMemo, useState } from "react";
+import { useLocation } from "react-router";
 import { m as motion } from "framer-motion";
 import { Building2, Eye, EyeOff, Key, Loader2, Lock, Mail, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { phpApiRequest, setPhpAuthToken } from "@/lib/phpApi";
 import { useToast } from "@/hooks/use-toast";
-import NotFound from "./NotFound";
-
-type SuperAdminConfig = {
-  valid: boolean;
-};
 
 type SuperAdminLoginResponse = {
   token: string;
@@ -28,15 +23,11 @@ function appPath(path: string): string {
 }
 
 export default function SuperAdminAuth() {
-  const [config, setConfig] = useState<SuperAdminConfig | null>(null);
-  const [isConfigLoading, setIsConfigLoading] = useState(true);
   const [workshopCode, setWorkshopCode] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [notFound, setNotFound] = useState(false);
-  const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
 
@@ -44,34 +35,6 @@ export default function SuperAdminAuth() {
     const clean = location.pathname.replace(/\/+$/, "");
     return clean || "/";
   }, [location.pathname]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadConfig = async () => {
-      try {
-        const data = await phpApiRequest<SuperAdminConfig>(
-          `/superadmin-auth/config?path=${encodeURIComponent(currentPath)}`,
-          { method: "GET" },
-        );
-
-        if (!isMounted) return;
-        setConfig(data);
-        setNotFound(!data.valid);
-      } catch (error) {
-        console.error("[SuperAdminAuth] Error cargando config:", error);
-        if (isMounted) setNotFound(true);
-      } finally {
-        if (isMounted) setIsConfigLoading(false);
-      }
-    };
-
-    void loadConfig();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [currentPath]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -97,7 +60,7 @@ export default function SuperAdminAuth() {
     } catch (error) {
       toast({
         title: "Error de autenticacion",
-        description: error instanceof Error ? error.message : "Credenciales incorrectas",
+        description: "Credenciales incorrectas",
         variant: "destructive",
       });
     } finally {
@@ -105,17 +68,6 @@ export default function SuperAdminAuth() {
     }
   };
 
-  if (isConfigLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (notFound) {
-    return <NotFound />;
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
