@@ -14,7 +14,7 @@ final class SecurityHeaders
 
         $headers = [
             'X-Content-Type-Options' => 'nosniff',
-            'X-Frame-Options' => 'SAMEORIGIN',
+            'X-Frame-Options' => 'DENY',
             'Referrer-Policy' => 'strict-origin-when-cross-origin',
             'Permissions-Policy' => 'geolocation=(), microphone=(), camera=(self), payment=(), usb=()',
             'Cross-Origin-Opener-Policy' => 'same-origin',
