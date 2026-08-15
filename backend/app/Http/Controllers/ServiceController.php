@@ -206,6 +206,15 @@ final class ServiceController
         }
 
         $data = $request->json()->all();
+        if ($error = $this->validateWorkshopReferences($row->workshop_id, $data, [
+            'customer_id' => 'customers',
+            'quote_id' => 'quotes',
+        ])) {
+            return $error;
+        }
+        if (is_array($data['service_products'] ?? null) && ($error = $this->validateItemProducts($row->workshop_id, $data['service_products']))) {
+            return $error;
+        }
         $updates = array_intersect_key($data, array_flip(self::FIELDS));
         if (array_key_exists('custom_fields', $data)) {
             $updates['custom_fields'] = json_encode($data['custom_fields']);
