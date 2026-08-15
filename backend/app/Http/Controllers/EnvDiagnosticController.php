@@ -4,12 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 final class EnvDiagnosticController
 {
-    public function handle(): JsonResponse
+    public function handle(Request $request): JsonResponse
     {
+        $user = $request->user();
+        if (!$user || !$user->isSuperadmin()) {
+            return ApiResponse::error('No disponible', 404);
+        }
+
         $keys = [
             'DB_HOST' => false,
             'DB_PORT' => false,

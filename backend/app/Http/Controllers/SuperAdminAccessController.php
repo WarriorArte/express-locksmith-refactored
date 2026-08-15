@@ -11,12 +11,18 @@ use Illuminate\Support\Str;
 
 final class SuperAdminAccessController
 {
-    public function publicConfig(): JsonResponse
+    /**
+     * Valida (sin revelarla) la ruta oculta de acceso SuperAdmin.
+     * El cliente envia la ruta que esta visitando; la API solo responde si coincide.
+     */
+    public function publicConfig(Request $request): JsonResponse
     {
         $settings = $this->settings();
+        $expected = $this->normalizeLoginPath((string) ($settings?->login_path ?? '/auth_su'));
+        $candidate = $this->normalizeLoginPath((string) $request->query('path', ''));
 
         return ApiResponse::success([
-            'login_path' => $settings?->login_path ?? '/auth_su',
+            'valid' => hash_equals($expected, $candidate),
         ]);
     }
 
