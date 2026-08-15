@@ -11,12 +11,16 @@ use Illuminate\Support\Facades\DB;
  * Autorizacion compartida para el modulo Herramientas.
  *
  * Escritura: solo SuperAdmin.
- * Lectura:   SuperAdmin, o usuarios de un taller que tenga herramientas asignadas.
- *            Un usuario sin taller (o sin asignacion) no puede leer las bases de
- *            keycodes / immo / alarmas.
+ * Lectura:   SuperAdmin, o usuarios de un taller que tenga al menos una
+ *            herramienta (keycode/immo/alarmas) habilitada en workshop_features.
+ *            No depende de que ya existan asignaciones de vehiculos: un taller
+ *            recien habilitado, o sin asignaciones todavia, debe poder entrar
+ *            al modulo y ver el estado vacio.
  */
 trait AuthorizesTools
 {
+    private const TOOL_FEATURE_KEYS = ['tool_keycode', 'tool_alarmas', 'tool_immo'];
+
     protected function authorizeToolsWrite(Request $request): ?JsonResponse
     {
         $user = $request->user();
@@ -44,11 +48,13 @@ trait AuthorizesTools
             return ApiResponse::error('Sin acceso al modulo de herramientas', 403);
         }
 
-        $hasAssignment = DB::table('tool_assignments')
+        $hasToolFeature = DB::table('workshop_features')
             ->whereIn('workshop_id', $workshopIds)
+            ->whereIn('feature_key', self::TOOL_FEATURE_KEYS)
+            ->where('is_enabled', 1)
             ->exists();
 
-        return $hasAssignment ? null : ApiResponse::error('Sin acceso al modulo de herramientas', 403);
+        return $hasToolFeature ? null : ApiResponse::error('Sin acceso al modulo de herramientas', 403);
     }
 
     /** @return string[] */

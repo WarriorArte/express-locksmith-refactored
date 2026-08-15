@@ -28,58 +28,58 @@ final class RecentActivityController
         $limit = self::LIMIT;
         $rows = Cache::remember("recent-activity:{$workshopId}", 120, fn () => DB::select("
             SELECT type, id, title, description, created_at FROM (
-                SELECT
+                (SELECT
                     'venta'      AS type,
                     id,
                     sale_number  AS title,
                     COALESCE(customer_name, 'Cliente mostrador') AS description,
                     created_at
                 FROM sales WHERE workshop_id = ?
-                ORDER BY created_at DESC LIMIT {$limit}
+                ORDER BY created_at DESC LIMIT {$limit})
 
                 UNION ALL
 
-                SELECT
+                (SELECT
                     'servicio'   AS type,
                     id,
                     service_number AS title,
                     LEFT(description, 60) AS description,
                     created_at
                 FROM services WHERE workshop_id = ?
-                ORDER BY created_at DESC LIMIT {$limit}
+                ORDER BY created_at DESC LIMIT {$limit})
 
                 UNION ALL
 
-                SELECT
+                (SELECT
                     'cotizacion' AS type,
                     id,
                     quote_number AS title,
                     CONCAT(COALESCE(customer_name, 'Sin cliente'), ' - ', total) AS description,
                     created_at
                 FROM quotes WHERE workshop_id = ?
-                ORDER BY created_at DESC LIMIT {$limit}
+                ORDER BY created_at DESC LIMIT {$limit})
 
                 UNION ALL
 
-                SELECT
+                (SELECT
                     'cliente'    AS type,
                     id,
                     name         AS title,
                     customer_type AS description,
                     created_at
                 FROM customers WHERE workshop_id = ?
-                ORDER BY created_at DESC LIMIT {$limit}
+                ORDER BY created_at DESC LIMIT {$limit})
 
                 UNION ALL
 
-                SELECT
+                (SELECT
                     'producto'   AS type,
                     id,
                     name         AS title,
                     CONCAT('Stock: ', stock_store + stock_warehouse) AS description,
                     created_at
                 FROM products WHERE workshop_id = ?
-                ORDER BY created_at DESC LIMIT {$limit}
+                ORDER BY created_at DESC LIMIT {$limit})
             ) AS combined
             ORDER BY created_at DESC
             LIMIT {$limit}", [
