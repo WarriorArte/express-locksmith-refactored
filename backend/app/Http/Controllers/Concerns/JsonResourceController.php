@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 
 abstract class JsonResourceController
 {
+    use AuthorizesTools;
+
     /** @return class-string<Model> */
     abstract protected function modelClass(): string;
 
@@ -25,23 +27,29 @@ abstract class JsonResourceController
 
     protected function authorizeWrite(Request $request): ?JsonResponse
     {
-        $user = $request->user();
-        if (!$user || !$user->isSuperadmin()) {
-            return ApiResponse::error('Se requieren permisos de SuperAdmin', 403);
-        }
-        return null;
+        return $this->authorizeToolsWrite($request);
     }
 
     private function showOrList(Request $request): JsonResponse
     {
+        if ($resp = $this->authorizeToolsRead($request)) return $resp;
+
         $model = $this->modelClass();
+        $user = $request->user();
+        $scoped = in_array('workshop_id', (new $model())->getFillable(), true) && !$user->isSuperadmin();
+        $workshopIds = $scoped ? $this->callerWorkshopIds($request) : [];
+
         $id = $request->query('id');
         if ($id) {
-            $row = $model::query()->find($id);
+            $query = $model::query()->whereKey($id);
+            if ($scoped) $query->whereIn('workshop_id', $workshopIds);
+            $row = $query->first();
             return $row ? ApiResponse::success($this->serialize($row)) : ApiResponse::error('No encontrado', 404);
         }
-        $rows = $model::query()->orderBy('created_at', 'desc')->get()
-            ->map(fn ($r) => $this->serialize($r));
+
+        $query = $model::query()->orderBy('created_at', 'desc');
+        if ($scoped) $query->whereIn('workshop_id', $workshopIds);
+        $rows = $query->get()->map(fn ($r) => $this->serialize($r));
         return ApiResponse::success($rows);
     }
 

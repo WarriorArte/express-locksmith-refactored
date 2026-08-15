@@ -10,18 +10,22 @@ use Illuminate\Support\Facades\DB;
 
 final class VehicleDatabaseController
 {
+    use \App\Http\Controllers\Concerns\AuthorizesTools;
+
     public function handle(Request $request): JsonResponse
     {
         return match ($request->method()) {
-            'GET' => $this->index(),
+            'GET' => $this->index($request),
             'POST' => $this->bulkReplace($request),
             'DELETE' => $this->truncate($request),
             default => ApiResponse::error('Metodo no permitido', 405),
         };
     }
 
-    private function index(): JsonResponse
+    private function index(Request $request): JsonResponse
     {
+        if ($resp = $this->authorizeToolsRead($request)) return $resp;
+
         $rows = VehicleDatabaseRecord::query()
             ->orderBy('make')->orderBy('model')->orderBy('year')
             ->get(['make as Make', 'model as Model', 'year as Year', 'category as Category']);

@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\DB;
 
 final class KeycodeProfileController
 {
+    use \App\Http\Controllers\Concerns\AuthorizesTools;
+
     public function handle(Request $request): JsonResponse
     {
         return match ($request->method()) {
@@ -23,17 +25,15 @@ final class KeycodeProfileController
 
     private function authorizeWrite(Request $request): ?JsonResponse
     {
-        $user = $request->user();
-        if (!$user || !$user->isSuperadmin()) {
-            return ApiResponse::error('Se requieren permisos de SuperAdmin', 403);
-        }
-        return null;
+        return $this->authorizeToolsWrite($request);
     }
 
     // ── GET ──────────────────────────────────────────────────────────────────
 
     private function showOrList(Request $request): JsonResponse
     {
+        if ($resp = $this->authorizeToolsRead($request)) return $resp;
+
         $id = $request->query('id');
 
         if ($id) {

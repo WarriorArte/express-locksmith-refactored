@@ -23,12 +23,11 @@ use Illuminate\Support\Facades\DB;
  */
 final class KeycodeCodesController
 {
+    use \App\Http\Controllers\Concerns\AuthorizesTools;
+
     public function handle(Request $request): JsonResponse
     {
-        $user = $request->user();
-        if (!$user || !$user->isSuperadmin()) {
-            return ApiResponse::error('Se requieren permisos de SuperAdmin', 403);
-        }
+        if ($resp = $this->authorizeToolsWrite($request)) return $resp;
 
         $profileId = (string) ($request->json('profile_id') ?? '');
         $mode      = (string) ($request->json('mode') ?? 'append');
