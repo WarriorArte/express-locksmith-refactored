@@ -31,6 +31,10 @@ interface InputCorteSVGProps {
   onSelect?: () => void;
   /** Disables native keyboard, used when a virtual keypad drives input */
   virtualKeypadMode?: boolean;
+  /** Ancho/alto (px) de la caja del dígito. Por defecto 18. */
+  boxSize?: number;
+  /** Tamaño de fuente (px) del número dentro de la caja. Por defecto 14. */
+  numberSize?: number;
 }
 
 const colorMap = {
@@ -48,11 +52,14 @@ export function InputCorteSVG({
   globalIndex, totalGlobalInputs,
   nextPrefix, prevPrefix, prevTotal,
   isSelected, onSelect, virtualKeypadMode,
+  boxSize = 18, numberSize = 14,
 }: InputCorteSVGProps) {
   const c = colorMap[color];
   const numVal = parseInt(value, 10);
   const canUp = value !== '' && !isNaN(numVal) && numVal < maxDepth;
   const canDown = value !== '' && !isNaN(numVal) && numVal > 1;
+  const boxW = boxSize;
+  const boxH = boxSize + 6;
 
   // Determine if we use global cyclic IDs or legacy prefix-based IDs
   const useCyclic = globalIndex !== undefined && totalGlobalInputs !== undefined;
@@ -129,7 +136,7 @@ export function InputCorteSVG({
   return (
     <>
       {showUpArrow && canUp && (
-        <foreignObject x={x} y={y - 14} width="18" height="14">
+        <foreignObject x={x} y={y - 14} width={boxW} height="14">
           <button
             onClick={onUpToggle}
             style={{
@@ -144,8 +151,8 @@ export function InputCorteSVG({
           >▲</button>
         </foreignObject>
       )}
-      <foreignObject x={x} y={y} width="18" height="24">
-        <div style={{ width: '18px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <foreignObject x={x} y={y} width={boxW} height={boxH}>
+        <div style={{ width: `${boxW}px`, height: `${boxH}px`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <input
             id={inputId}
             type="text"
@@ -159,7 +166,7 @@ export function InputCorteSVG({
             readOnly={virtualKeypadMode}
             autoComplete="off"
             style={{
-              width: '18px', height: '22px', fontSize: '14px',
+              width: `${boxW}px`, height: `${boxH - 2}px`, fontSize: `${numberSize}px`,
               padding: 0, textAlign: 'center', fontWeight: 'bold',
               color: c.text,
               backgroundColor: isSelected ? 'hsl(var(--primary) / 0.15)' : c.bg,
@@ -167,7 +174,7 @@ export function InputCorteSVG({
               borderRadius: '3px',
               outline: 'none',
               boxShadow: isSelected ? '0 0 0 3px hsl(var(--primary) / 0.25)' : '0 1px 2px rgba(0,0,0,0.05)',
-              lineHeight: '22px', display: 'block',
+              lineHeight: `${boxH - 2}px`, display: 'block',
               caretColor: 'transparent',
               cursor: 'pointer',
               userSelect: 'none',
@@ -176,7 +183,7 @@ export function InputCorteSVG({
         </div>
       </foreignObject>
       {showDownArrow && canDown && (
-        <foreignObject x={x} y={y + 24} width="18" height="14">
+        <foreignObject x={x} y={y + boxH} width={boxW} height="14">
           <button
             onClick={onDownToggle}
             style={{

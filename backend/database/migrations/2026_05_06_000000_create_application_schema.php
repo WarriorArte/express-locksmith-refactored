@@ -4,7 +4,6 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
 
 return new class extends Migration
 {
@@ -18,7 +17,6 @@ return new class extends Migration
         }
 
         $this->createPersonalAccessTokens();
-        $this->seedSuperadmin();
     }
 
     public function down(): void
@@ -180,22 +178,6 @@ return new class extends Migration
             ->where('table_name', $table)
             ->where('index_name', $name)
             ->exists();
-    }
-
-    private function seedSuperadmin(): void
-    {
-        $now = now();
-
-        DB::table('superadmin_access_settings')->insertOrIgnore([
-            'id'              => (string) Str::uuid(),
-            'workshop_code'   => 'ADMINWARRIOR',
-            'email'           => 'josuevntra@gmail.com',
-            'password_hash'   => password_hash('33123312', PASSWORD_BCRYPT),
-            'login_path'      => '/auth_su',
-            'singleton_guard' => 1,
-            'created_at'      => $now,
-            'updated_at'      => $now,
-        ]);
     }
 
     private function createSqliteSchema(): void

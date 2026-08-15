@@ -62,6 +62,17 @@ export interface ConfiguracionVisualLlave {
   corteExtra?: boolean;
   distanciaCorteExtra?: number;
   profundidadCorteExtra?: number;
+  /** Ajuste por serie: tamaño (ancho/alto en px) de la caja de cada dígito. */
+  tamCaja?: number;
+  /** Ajuste por serie: tamaño de fuente (px) del número dentro de cada caja. */
+  tamNumero?: number;
+}
+
+/** Ajustes visuales globales (aplican a todas las series de Keycode). */
+export interface KeycodeVisualSettings {
+  strokeColorLight: string;
+  strokeColorDark: string;
+  strokeWidth: number;
 }
 
 /**

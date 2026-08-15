@@ -92,7 +92,7 @@ export function LlaveUnEjeLateral({ config, cortes, inputSide = 'none', inputMar
         <line key={`guia-${i}`} x1={0} y1={g.y} x2={g.x2} y2={g.y} className="stroke-muted-foreground/20" strokeWidth="1" />
       ))}
       <path d={outlinePath} fill="none" className="stroke-muted-foreground/25" strokeWidth="2.5" />
-      <path d={trackPath} fill="none" className="stroke-primary" strokeWidth="3.0" strokeLinejoin="round" strokeLinecap="round" />
+      <path d={trackPath} fill="none" style={{ stroke: 'var(--key-stroke-color, hsl(var(--primary)))', strokeWidth: 'var(--key-stroke-width, 3.5)' }} strokeLinejoin="round" strokeLinecap="round" />
       {children}
     </svg>
   );

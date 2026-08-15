@@ -26,6 +26,14 @@ interface GeneradorLlaveSVGProps {
   onSelectCell?: (globalIdx: number) => void;
   /** Disables the native keyboard inside the SVG inputs */
   virtualKeypadMode?: boolean;
+  /** Ajuste global: color del trazo (contorno) de la llave. Por defecto usa el color primario del tema. */
+  strokeColor?: string;
+  /** Ajuste global: grosor (px) del trazo de la llave. Por defecto 3.5. */
+  strokeWidth?: number;
+  /** Ajuste por serie: ancho/alto (px) de la caja de cada dígito. Por defecto 18. */
+  boxSize?: number;
+  /** Ajuste por serie: tamaño de fuente (px) del número dentro de cada caja. Por defecto 14. */
+  numberSize?: number;
 }
 
 function getBaseYTop(tipo: string): number {
@@ -50,7 +58,12 @@ export function GeneradorLlaveSVG({
   selectedGlobalIdx,
   onSelectCell,
   virtualKeypadMode,
+  strokeColor,
+  strokeWidth,
+  boxSize = 18,
+  numberSize = 14,
 }: GeneradorLlaveSVGProps) {
+  const boxHalf = boxSize / 2;
   const sanearCortes = (arr: number[]) =>
     arr.map(c => {
       const n = Number(c);
@@ -111,7 +124,7 @@ export function GeneradorLlaveSVG({
         nodes.push(
           <InputCorteSVG
             key={`sup-${i}`}
-            x={startX + i * spcPrimary - 9}
+            x={startX + i * spcPrimary - boxHalf}
             y={yTop}
             value={val}
             onChange={(v) => onPrimaryChange!(i, v)}
@@ -131,6 +144,8 @@ export function GeneradorLlaveSVG({
             isSelected={selectedGlobalIdx === globalIndex}
             onSelect={() => onSelectCell?.(globalIndex)}
             virtualKeypadMode={virtualKeypadMode}
+            boxSize={boxSize}
+            numberSize={numberSize}
           />
         );
       });
@@ -142,7 +157,7 @@ export function GeneradorLlaveSVG({
           nodes.push(
             <InputCorteSVG
               key={`inf-${i}`}
-              x={startX + i * spcSecondary - 9}
+              x={startX + i * spcSecondary - boxHalf}
               y={yBottom}
               value={val}
               onChange={(v) => onSecondaryChange(i, v)}
@@ -162,6 +177,8 @@ export function GeneradorLlaveSVG({
               isSelected={selectedGlobalIdx === globalIndex}
               onSelect={() => onSelectCell?.(globalIndex)}
               virtualKeypadMode={virtualKeypadMode}
+              boxSize={boxSize}
+              numberSize={numberSize}
             />
           );
         });
@@ -191,7 +208,7 @@ export function GeneradorLlaveSVG({
         nodes.push(
           <InputCorteSVG
             key={`corte-${i}`}
-            x={centers[i] - 9}
+            x={centers[i] - boxHalf}
             y={inputY}
             value={val}
             onChange={(v) => onPrimaryChange!(i, v)}
@@ -210,36 +227,58 @@ export function GeneradorLlaveSVG({
             isSelected={selectedGlobalIdx === i}
             onSelect={() => onSelectCell?.(i)}
             virtualKeypadMode={virtualKeypadMode}
+            boxSize={boxSize}
+            numberSize={numberSize}
           />
         );
       });
     }
 
     return nodes;
-  }, [isInteractive, config, valoresPrimarios, valoresSecundarios, onPrimaryChange, onSecondaryChange, isDualAxis, advancedMode, tileVariants, onVariantToggle, selectedGlobalIdx, onSelectCell, virtualKeypadMode]);
+  }, [isInteractive, config, valoresPrimarios, valoresSecundarios, onPrimaryChange, onSecondaryChange, isDualAxis, advancedMode, tileVariants, onVariantToggle, selectedGlobalIdx, onSelectCell, virtualKeypadMode, boxHalf, boxSize, numberSize]);
 
-  const inputMargin = advancedMode ? 52 : 34;
+  // La caja de cada dígito mide boxSize x (boxSize + 6); el margen reservado
+  // arriba/abajo de la llave debe escalar con ese alto para no recortarla.
+  const boxH = boxSize + 6;
+  const inputMargin = boxH + 10 + (advancedMode ? 18 : 0);
 
+  let element: React.ReactNode;
   switch (config.tipo) {
     case 'doble_lado':
-      return <LlaveSimetricaDobleLado config={config} cortes={safePrimarios} inputSide={inputSide} inputMargin={inputMargin}>{inputNodes}</LlaveSimetricaDobleLado>;
+      element = <LlaveSimetricaDobleLado config={config} cortes={safePrimarios} inputSide={inputSide} inputMargin={inputMargin}>{inputNodes}</LlaveSimetricaDobleLado>;
+      break;
     case 'estandar_1_lado':
-      return <LlaveEstandarUnLado config={config} cortes={safePrimarios} inputSide={inputSide} inputMargin={inputMargin}>{inputNodes}</LlaveEstandarUnLado>;
+      element = <LlaveEstandarUnLado config={config} cortes={safePrimarios} inputSide={inputSide} inputMargin={inputMargin}>{inputNodes}</LlaveEstandarUnLado>;
+      break;
     case '2_ejes_exterior':
-      return <LlaveDobleEjeExterior config={config} cortesSup={safePrimarios} cortesInf={safeSecundarios} inputSide={inputSide} inputMargin={inputMargin}>{inputNodes}</LlaveDobleEjeExterior>;
+      element = <LlaveDobleEjeExterior config={config} cortesSup={safePrimarios} cortesInf={safeSecundarios} inputSide={inputSide} inputMargin={inputMargin}>{inputNodes}</LlaveDobleEjeExterior>;
+      break;
     case '2_ejes_internos':
-      return <LlaveDobleEjeInterior config={config} cortesPrimarios={safePrimarios} cortesSecundarios={safeSecundarios} inputSide={inputSide} inputMargin={inputMargin}>{inputNodes}</LlaveDobleEjeInterior>;
+      element = <LlaveDobleEjeInterior config={config} cortesPrimarios={safePrimarios} cortesSecundarios={safeSecundarios} inputSide={inputSide} inputMargin={inputMargin}>{inputNodes}</LlaveDobleEjeInterior>;
+      break;
     case 'pista_canal':
-      return <LlavePistaCanalUnificada config={config} cortes={safePrimarios} inputSide={inputSide} inputMargin={inputMargin}>{inputNodes}</LlavePistaCanalUnificada>;
+      element = <LlavePistaCanalUnificada config={config} cortes={safePrimarios} inputSide={inputSide} inputMargin={inputMargin}>{inputNodes}</LlavePistaCanalUnificada>;
+      break;
     case 'pista_semi_canal':
-      return <LlavePistaSemiCanal config={config} cortes={safePrimarios} inputSide={inputSide} inputMargin={inputMargin}>{inputNodes}</LlavePistaSemiCanal>;
+      element = <LlavePistaSemiCanal config={config} cortes={safePrimarios} inputSide={inputSide} inputMargin={inputMargin}>{inputNodes}</LlavePistaSemiCanal>;
+      break;
     case '1_eje_lateral':
-      return <LlaveUnEjeLateral config={config} cortes={safePrimarios} inputSide={inputSide} inputMargin={inputMargin}>{inputNodes}</LlaveUnEjeLateral>;
+      element = <LlaveUnEjeLateral config={config} cortes={safePrimarios} inputSide={inputSide} inputMargin={inputMargin}>{inputNodes}</LlaveUnEjeLateral>;
+      break;
     default:
-      return (
+      element = (
         <div className="text-center text-muted-foreground p-8">
           <p className="font-semibold">Tipo de llave no soportado o sin configurar.</p>
         </div>
       );
   }
+
+  // Los ajustes globales de color/grosor del trazo viajan como variables CSS
+  // heredadas; cada componente de llave las consume con un valor por defecto.
+  const strokeVars = {
+    ...(strokeColor ? { '--key-stroke-color': strokeColor } : {}),
+    ...(strokeWidth != null ? { '--key-stroke-width': strokeWidth } : {}),
+  } as React.CSSProperties;
+
+  return <div style={{ display: 'contents', ...strokeVars }}>{element}</div>;
 }

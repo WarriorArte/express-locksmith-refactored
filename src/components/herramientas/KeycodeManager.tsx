@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { m as motion } from "framer-motion";
-import { Key, FileJson, Database, Plus, Trash2, Edit, Check, Search, ChevronLeft, ChevronRight, Upload, ArrowLeft, Eye, Settings2, LayoutList, LayoutGrid, ImageIcon, Camera, Wand2, Loader2 } from "lucide-react";
+import { Key, FileJson, Database, Plus, Trash2, Edit, Check, Search, ChevronLeft, ChevronRight, Upload, ArrowLeft, Eye, Settings2, LayoutList, LayoutGrid, ImageIcon, Camera, Wand2, Loader2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { GeneradorLlaveSVG } from "@/components/llaves/GeneradorLlaveSVG";
 import { buildDefaultDecoderConfig, applyDecoderPreset, mapVisualTipoToDecoder } from "@/lib/decoderPresets";
+import { useKeycodeVisualSettings } from "@/hooks/useKeycodeVisualSettings";
+import { useTheme } from "@/hooks/useTheme";
 
 import type { KeycodeProfile, KeyReference, CodeEntry, BittingConfig, ConfiguracionVisualLlave, TipoLlaveSVG, DecoderConfig, DecoderTipoLlave, DecoderAlineacion } from "@/types";
 
@@ -48,19 +50,32 @@ interface VisualRangeFieldProps {
   min: number;
   max: number;
   step?: number;
+  defaultValue: number;
   onChange: (value: number) => void;
 }
 
-function VisualRangeField({ label, value, min, max, step = 1, onChange }: VisualRangeFieldProps) {
+function VisualRangeField({ label, value, min, max, step = 1, defaultValue, onChange }: VisualRangeFieldProps) {
   const safeValue = Number.isFinite(value) ? value : min;
+  const isDefault = safeValue === defaultValue;
 
   return (
     <div className="space-y-1 rounded-lg border border-border bg-muted/40 p-2">
       <div className="flex items-center justify-between gap-2">
         <Label className="text-[10px] font-bold leading-none">{label}</Label>
-        <span className="min-w-10 rounded-md bg-primary/10 px-1.5 py-0.5 text-right font-mono text-[10px] font-semibold text-primary">
-          {safeValue}
-        </span>
+        <div className="flex items-center gap-1">
+          <span className="min-w-10 rounded-md bg-primary/10 px-1.5 py-0.5 text-right font-mono text-[10px] font-semibold text-primary">
+            {safeValue}
+          </span>
+          <button
+            type="button"
+            title="Restaurar valor predeterminado"
+            onClick={() => onChange(defaultValue)}
+            disabled={isDefault}
+            className="shrink-0 p-0.5 rounded text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-25 disabled:pointer-events-none"
+          >
+            <RotateCcw className="w-3 h-3" />
+          </button>
+        </div>
       </div>
       <input
         type="range"
@@ -107,6 +122,23 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [view, setView] = useState<View>("list");
 
+  // --- Ajustes visuales universales (colores/trazo, aplican a todas las series) ---
+  const { settings: visualSettings, setSettings: setVisualSettings, saveSettings: saveVisualSettings } = useKeycodeVisualSettings();
+  const { theme } = useTheme();
+  const resolvedStrokeColor = theme === "dark" ? visualSettings.strokeColorDark : visualSettings.strokeColorLight;
+  const [savingVisualSettings, setSavingVisualSettings] = useState(false);
+  const handleSaveVisualSettings = async () => {
+    setSavingVisualSettings(true);
+    try {
+      await saveVisualSettings(visualSettings);
+      toast.success("Ajustes universales guardados.");
+    } catch {
+      toast.error("No se pudieron guardar los ajustes universales.");
+    } finally {
+      setSavingVisualSettings(false);
+    }
+  };
+
   // --- Edit state ---
   const [editingProfile, setEditingProfile] = useState<KeycodeProfile | null>(null);
   const [isNewProfile, setIsNewProfile] = useState(false);
@@ -139,6 +171,9 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
   
   // --- Preview override test ---
   const [manualPreviewInput, setManualPreviewInput] = useState("");
+  // --- Interactive preview (mirrors the workshop's key search UI) ---
+  const [previewGridValues, setPreviewGridValues] = useState<string[]>([]);
+  const [previewSelectedCellIdx, setPreviewSelectedCellIdx] = useState(0);
 
   // ── JSON import ──────────────────────────────────────────────
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -443,6 +478,37 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
     };
   }, [currentCodes, bittingConfig, editingProfile, manualPreviewInput]);
 
+  // Sincroniza las cajas interactivas de la vista previa cuando cambia el código/bitting de prueba.
+  useEffect(() => {
+    const flat = [...previewData.primary, ...(previewData.secondary ?? [])].map(String);
+    setPreviewGridValues(flat);
+    setPreviewSelectedCellIdx(0);
+  }, [previewData]);
+
+  const previewHasMultiAxes = !!(bittingConfig.axes && bittingConfig.axes.length >= 2);
+  const previewTotalLength = previewHasMultiAxes
+    ? bittingConfig.axes!.reduce((s, a) => s + a.length, 0)
+    : bittingConfig.length;
+
+  const previewPrimaryValues = previewHasMultiAxes
+    ? previewGridValues.slice(0, bittingConfig.axes![0].length)
+    : previewGridValues;
+  const previewSecondaryValues = previewHasMultiAxes
+    ? previewGridValues.slice(bittingConfig.axes![0].length)
+    : undefined;
+  const previewPrimaryNums = previewPrimaryValues.map((v) => parseInt(v, 10) || 1);
+  const previewSecondaryNums = previewSecondaryValues?.map((v) => parseInt(v, 10) || 1);
+
+  const handlePreviewPrimaryChange = (index: number, value: string) => {
+    const val = value.slice(-1);
+    setPreviewGridValues((prev) => { const n = [...prev]; n[index] = val; return n; });
+  };
+  const handlePreviewSecondaryChange = (index: number, value: string) => {
+    if (!previewHasMultiAxes) return;
+    const flatIdx = bittingConfig.axes![0].length + index;
+    const val = value.slice(-1);
+    setPreviewGridValues((prev) => { const n = [...prev]; n[flatIdx] = val; return n; });
+  };
   const filteredProfiles = useMemo(() => {
     if (!profilesSearch.trim()) return profiles;
     const q = profilesSearch.toLowerCase();
@@ -593,6 +659,10 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                           config={{ ...profile.configuracionVisual, maxDepth: profile.bittingConfig.maxDepth }}
                           cortesPrimarios={prev.primary}
                           cortesSecundarios={prev.secondary}
+                          strokeColor={resolvedStrokeColor}
+                          strokeWidth={visualSettings.strokeWidth}
+                          boxSize={profile.configuracionVisual.tamCaja}
+                          numberSize={profile.configuracionVisual.tamNumero}
                         />
                       </div>
                     ) : (
@@ -893,6 +963,46 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                     </Button>
                   </div>
 
+                  {/* Ajustes universales: colores y trazo — aplican a TODAS las series */}
+                  <div className="space-y-2.5 rounded-lg border border-dashed border-primary/40 bg-primary/5 p-2.5">
+                    <div>
+                      <p className="text-xs font-bold text-foreground">Colores y trazo</p>
+                      <p className="text-[10px] text-muted-foreground">Ajuste universal: aplica a todas las series, no solo a esta.</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="flex items-center gap-2 bg-background border border-border rounded-lg p-1.5 cursor-pointer">
+                        <input
+                          type="color"
+                          value={visualSettings.strokeColorLight}
+                          onChange={(e) => setVisualSettings((s) => ({ ...s, strokeColorLight: e.target.value }))}
+                          className="w-7 h-6 border-0 p-0 cursor-pointer bg-transparent rounded shrink-0"
+                        />
+                        <span className="text-[10px] font-medium text-foreground">Trazo (tema claro)</span>
+                      </label>
+                      <label className="flex items-center gap-2 bg-background border border-border rounded-lg p-1.5 cursor-pointer">
+                        <input
+                          type="color"
+                          value={visualSettings.strokeColorDark}
+                          onChange={(e) => setVisualSettings((s) => ({ ...s, strokeColorDark: e.target.value }))}
+                          className="w-7 h-6 border-0 p-0 cursor-pointer bg-transparent rounded shrink-0"
+                        />
+                        <span className="text-[10px] font-medium text-foreground">Trazo (tema oscuro)</span>
+                      </label>
+                    </div>
+                    <VisualRangeField
+                      label="Grosor del trazo"
+                      min={1}
+                      max={10}
+                      step={0.5}
+                      defaultValue={3.5}
+                      value={visualSettings.strokeWidth}
+                      onChange={(value) => setVisualSettings((s) => ({ ...s, strokeWidth: value }))}
+                    />
+                    <Button size="sm" className="h-7 text-xs w-full" onClick={handleSaveVisualSettings} disabled={savingVisualSettings}>
+                      {savingVisualSettings ? "Guardando..." : "Guardar ajustes universales"}
+                    </Button>
+                  </div>
+
                   {configuracionVisual && (
                     <div className="space-y-3">
                       {/* Tipo de llave */}
@@ -921,6 +1031,28 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
 
                       <Separator />
 
+                      {/* Tamaño de caja y número — ajuste por serie */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <VisualRangeField
+                          label="Tamaño de caja"
+                          min={12}
+                          max={32}
+                          defaultValue={18}
+                          value={configuracionVisual.tamCaja ?? 18}
+                          onChange={(value) => setConfiguracionVisual(c => c ? { ...c, tamCaja: value } : c)}
+                        />
+                        <VisualRangeField
+                          label="Tamaño de número"
+                          min={8}
+                          max={24}
+                          defaultValue={14}
+                          value={configuracionVisual.tamNumero ?? 14}
+                          onChange={(value) => setConfiguracionVisual(c => c ? { ...c, tamNumero: value } : c)}
+                        />
+                      </div>
+
+                      <Separator />
+
                       {/* Estructura base — compact grid */}
                       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
                         {[
@@ -935,6 +1067,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                             label={f.label}
                             min={f.min}
                             max={f.max}
+                            defaultValue={f.def}
                             value={(configuracionVisual as any)[f.key] ?? f.def}
                             onChange={(value) => setConfiguracionVisual(c => c ? { ...c, [f.key]: value } : c)}
                           />
@@ -957,6 +1090,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                                 label={f.label}
                                 min={f.min}
                                 max={f.max}
+                                defaultValue={f.def}
                                 value={(configuracionVisual as any)[f.key] ?? f.def}
                                 onChange={(value) => setConfiguracionVisual(c => c ? { ...c, [f.key]: value } : c)}
                               />
@@ -987,6 +1121,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                                 label="Dist. Corte Extra"
                                 min={4}
                                 max={40}
+                                defaultValue={Math.round((configuracionVisual.spacing ?? 18) * 0.7)}
                                 value={configuracionVisual.distanciaCorteExtra ?? Math.round((configuracionVisual.spacing ?? 18) * 0.7)}
                                 onChange={(value) => setConfiguracionVisual(c => c ? { ...c, distanciaCorteExtra: value } : c)}
                               />
@@ -994,6 +1129,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                                 label="Profundidad Extra"
                                 min={1}
                                 max={configuracionVisual.maxDepth ?? bittingConfig.maxDepth}
+                                defaultValue={1}
                                 value={configuracionVisual.profundidadCorteExtra ?? 1}
                                 onChange={(value) => setConfiguracionVisual(c => c ? { ...c, profundidadCorteExtra: value } : c)}
                               />
@@ -1008,6 +1144,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                           label="Bisel Punta"
                           min={0}
                           max={30}
+                          defaultValue={8}
                           value={configuracionVisual.biselPunta ?? 8}
                           onChange={(value) => setConfiguracionVisual(c => c ? { ...c, biselPunta: value } : c)}
                         />
@@ -1023,6 +1160,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                               label="Posición Y (%)"
                               min={0}
                               max={100}
+                              defaultValue={40}
                               value={configuracionVisual.anclaYPorcentaje ?? 40}
                               onChange={(value) => setConfiguracionVisual(c => c ? { ...c, anclaYPorcentaje: value } : c)}
                             />
@@ -1031,6 +1169,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                                 label="Sep. Base"
                                 min={5}
                                 max={60}
+                                defaultValue={28}
                                 value={configuracionVisual.separacionBase ?? 28}
                                 onChange={(value) => setConfiguracionVisual(c => c ? { ...c, separacionBase: value } : c)}
                               />
@@ -1071,6 +1210,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                                     min={f.min}
                                     max={f.max}
                                     step={f.step}
+                                    defaultValue={f.def}
                                     value={(configuracionVisual as any)[f.key] ?? f.def}
                                     onChange={(value) => setConfiguracionVisual(c => c ? { ...c, [f.key]: value } : c)}
                                   />
@@ -1099,6 +1239,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                                     min={1}
                                     max={35}
                                     step={0.5}
+                                    defaultValue={f.d}
                                     value={(configuracionVisual as any)[f.k] ?? f.d}
                                     onChange={(value) => setConfiguracionVisual(c => c ? { ...c, [f.k]: value } : c)}
                                   />
@@ -1126,6 +1267,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                                 min={0}
                                 max={35}
                                 step={f.step}
+                                defaultValue={f.def}
                                 value={(configuracionVisual as any)[f.key] ?? f.def}
                                 onChange={(value) => setConfiguracionVisual(c => c ? { ...c, [f.key]: value } : c)}
                               />
@@ -1330,14 +1472,44 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                 </Button>
               </div>
             </div>
-            <div className="flex-1 flex items-center justify-center overflow-auto pb-4">
+            <div className="flex-1 min-h-0 flex flex-col overflow-auto pb-1">
               {configuracionVisual ? (
-                <div className="w-full flex justify-center">
-                  <GeneradorLlaveSVG
-                    config={{ ...configuracionVisual, maxDepth: bittingConfig.maxDepth }}
-                    cortesPrimarios={previewData.primary}
-                    cortesSecundarios={previewData.secondary}
-                  />
+                <div className="flex-1 min-h-0 flex items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="shrink-0 text-muted-foreground hover:text-foreground -ml-1"
+                    onClick={() => setPreviewSelectedCellIdx((p) => (p > 0 ? p - 1 : previewTotalLength - 1))}
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </Button>
+                  <div className="flex-1 min-w-0 flex justify-center overflow-x-auto bg-background border border-dashed border-border rounded-lg p-1">
+                    <GeneradorLlaveSVG
+                      config={{ ...configuracionVisual, maxDepth: bittingConfig.maxDepth }}
+                      cortesPrimarios={previewPrimaryNums}
+                      cortesSecundarios={previewSecondaryNums}
+                      valoresPrimarios={previewPrimaryValues}
+                      valoresSecundarios={previewSecondaryValues}
+                      onPrimaryChange={handlePreviewPrimaryChange}
+                      onSecondaryChange={handlePreviewSecondaryChange}
+                      selectedGlobalIdx={previewSelectedCellIdx}
+                      onSelectCell={setPreviewSelectedCellIdx}
+                      strokeColor={resolvedStrokeColor}
+                      strokeWidth={visualSettings.strokeWidth}
+                      boxSize={configuracionVisual.tamCaja}
+                      numberSize={configuracionVisual.tamNumero}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="shrink-0 text-muted-foreground hover:text-foreground -mr-1"
+                    onClick={() => setPreviewSelectedCellIdx((p) => (p < previewTotalLength - 1 ? p + 1 : 0))}
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </Button>
                 </div>
               ) : (
                 <div className="text-center text-muted-foreground p-6">

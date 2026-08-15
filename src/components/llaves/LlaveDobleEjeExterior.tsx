@@ -108,7 +108,7 @@ export function LlaveDobleEjeExterior({ config, cortesSup, cortesInf, inputSide 
         <line key={`guia-${i}`} x1={0} y1={y} x2={svgWidth} y2={y} className="stroke-muted-foreground/20" strokeWidth="1" />
       ))}
       <path d={outlinePath} fill="none" className="stroke-muted-foreground/25" strokeWidth="2.5" />
-      <path d={d} fill="none" className="stroke-primary" strokeWidth="3.5" strokeLinejoin="round" strokeLinecap="round" />
+      <path d={d} fill="none" style={{ stroke: 'var(--key-stroke-color, hsl(var(--primary)))', strokeWidth: 'var(--key-stroke-width, 3.5)' }} strokeLinejoin="round" strokeLinecap="round" />
       {children}
     </svg>
   );

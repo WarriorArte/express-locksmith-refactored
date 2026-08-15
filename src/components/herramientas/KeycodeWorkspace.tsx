@@ -7,6 +7,8 @@ import { GeneradorLlaveSVG } from "@/components/llaves/GeneradorLlaveSVG";
 import { UnifiedSearchInput } from "@/components/shared/UnifiedSearchInput";
 import { KeyPhotoDecoder } from "@/components/herramientas/KeyPhotoDecoder";
 import { buildDefaultDecoderConfig } from "@/lib/decoderPresets";
+import { useKeycodeVisualSettings } from "@/hooks/useKeycodeVisualSettings";
+import { useTheme } from "@/hooks/useTheme";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -39,6 +41,10 @@ interface KeycodeWorkspaceProps {
 export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, onSearchCodes, onBack, year }: KeycodeWorkspaceProps) {
   const profileId = assignment.keycodeProfileIds?.[0] ?? (assignment as any).keycodeProfileId ?? null;
   const baseProfile = keycodeProfiles.find((p) => p.id === profileId);
+
+  const { settings: visualSettings } = useKeycodeVisualSettings();
+  const { theme } = useTheme();
+  const resolvedStrokeColor = theme === "dark" ? visualSettings.strokeColorDark : visualSettings.strokeColorLight;
 
   // Series grandes: no se descargan completas, se consultan en el servidor.
   const remoteMode = !!(
@@ -683,6 +689,10 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                   selectedGlobalIdx={selectedCellIdx}
                   onSelectCell={setSelectedCellIdx}
                   virtualKeypadMode
+                  strokeColor={resolvedStrokeColor}
+                  strokeWidth={visualSettings.strokeWidth}
+                  boxSize={profile.configuracionVisual.tamCaja}
+                  numberSize={profile.configuracionVisual.tamNumero}
                   onVariantToggle={(flatIdx, dir) => {
                     const next = [...tileVariants];
                     next[flatIdx] = { ...next[flatIdx], [dir]: !next[flatIdx][dir] };
