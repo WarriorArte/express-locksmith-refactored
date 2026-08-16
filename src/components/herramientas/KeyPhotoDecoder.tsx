@@ -446,7 +446,7 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, initialImageUrl,
     const lineYTop = marginTop;
     const lineYBottom = marginTop + gridHeight;
     const exceso = config.distanciasCortes.length >= 2
-      ? Math.abs(config.distanciasCortes[0] - config.distanciasCortes[1]) * config.escalaPixelMm
+      ? Math.abs(config.distanciasCortes[0] - config.distanciasCortes[1]) * config.escalaPixelMm * (config.extensionGrilla ?? 1)
       : 0;
     const lineYTopExtended = config.alineacion === 'hombro' ? lineYTop - exceso : lineYTop;
     const lineYBottomExtended = config.alineacion === 'punta' ? lineYBottom + exceso : lineYBottom;

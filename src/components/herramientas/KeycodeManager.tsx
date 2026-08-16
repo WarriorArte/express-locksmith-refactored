@@ -1828,6 +1828,23 @@ function DecoderEditor({ decoderConfig, setDecoderConfig, configuracionVisual, b
             className="h-8 mt-1 font-mono text-center"
           />
         </div>
+
+        <div className="col-span-2">
+          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            Extensión de la grilla más allá del corte extremo
+          </Label>
+          <Input
+            type="number"
+            step="0.1"
+            min="0"
+            value={decoderConfig.extensionGrilla ?? 1}
+            onChange={(e) => setDecoderConfig({ ...decoderConfig, extensionGrilla: parseFloat(e.target.value) || 0 })}
+            className="h-8 mt-1 font-mono text-center"
+          />
+          <p className="text-[10px] text-muted-foreground mt-1">
+            Multiplicador del excedente que se dibuja más allá del corte más lejano a la referencia. 1 = por defecto, 0 = sin excedente.
+          </p>
+        </div>
       </div>
 
       <div className={`rounded-xl border p-3 space-y-2 ${profsError ? 'border-destructive/60 bg-destructive/5' : 'border-border bg-muted/30'}`}>

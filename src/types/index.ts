@@ -110,6 +110,8 @@ export interface DecoderConfig {
   distanciasCortes: number[];
   /** Sólo usado para tipos de dos ejes (eje B / der) */
   distanciasCortesDer: number[];
+  /** Multiplicador del excedente de la grilla más allá del corte más alejado de la referencia. 1 = por defecto. */
+  extensionGrilla?: number;
   escalaPixelMm: number;
 }
 
