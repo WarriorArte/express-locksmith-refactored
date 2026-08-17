@@ -563,8 +563,10 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, initialImageUrl,
           const xPuntoIzq = centerX - distCentroIzq;
           const xPuntoDer = centerX + distCentroDer;
 
-          const startX_Izq = centerX + maxProfDist;
-          const startX_Der = centerX - maxProfDist;
+          // En dos ejes (exterior/interior) cada eje se mide por separado: la línea
+          // guía no debe cruzar hacia el eje contrario, solo llegar hasta el centro.
+          const startX_Izq = isDosEjes ? centerX : centerX + maxProfDist;
+          const startX_Der = isDosEjes ? centerX : centerX - maxProfDist;
 
           return (
             <g key={`corte-${i}`}>
