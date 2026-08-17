@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { m as motion } from "framer-motion";
-import { Key, FileJson, Database, Plus, Trash2, Edit, Check, Search, ChevronLeft, ChevronRight, Upload, ArrowLeft, Eye, Settings2, LayoutList, LayoutGrid, ImageIcon, Camera, Wand2, Loader2, RotateCcw } from "lucide-react";
+import { Key, FileJson, Database, Plus, Trash2, Edit, Check, Search, ChevronLeft, ChevronRight, Upload, ArrowLeft, Eye, Settings2, LayoutList, LayoutGrid, ImageIcon, Camera, Wand2, Loader2, RotateCcw, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -293,7 +293,8 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
     setSaveProgress(null);
     // Mantener el editor abierto: actualizamos la línea base para que
     // hasChanges vuelva a false hasta que se hagan nuevos cambios.
-    setEditingProfile(finalProfile);
+    // El guardado ya confirmó que todos los códigos llegaron, así que se limpia el flag.
+    setEditingProfile({ ...finalProfile, codesIncomplete: false });
     setIsNewProfile(false);
   };
 
@@ -611,6 +612,11 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                       <span className="font-bold text-foreground">{primaryRef.brand} {primaryRef.refCode}</span>
                       <Badge variant="secondary">Serie: {profile.series}</Badge>
                       <Badge variant="outline">IC: {profile.icCard}</Badge>
+                      {profile.codesIncomplete && (
+                        <Badge variant="destructive" className="gap-1">
+                          <AlertTriangle className="w-3 h-3" /> Carga incompleta
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {profile.codesCount ?? profile.codesData.length} códigos · {profile.dateAdded}
@@ -679,6 +685,11 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                     <div className="flex flex-wrap gap-1">
                       <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Serie: {profile.series}</Badge>
                       <Badge variant="outline" className="text-[10px] px-1.5 py-0">IC: {profile.icCard}</Badge>
+                      {profile.codesIncomplete && (
+                        <Badge variant="destructive" className="gap-1 text-[10px] px-1.5 py-0">
+                          <AlertTriangle className="w-3 h-3" /> Incompleta
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-[10px] text-muted-foreground">{profile.codesCount ?? profile.codesData.length} códigos · {profile.dateAdded}</p>
                   </div>
@@ -767,6 +778,13 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
           </Button>
 
         </div>
+
+        {editingProfile.codesIncomplete && !isNewProfile && (
+          <div className="mb-3 shrink-0 flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            Esta serie quedó con una carga de códigos incompleta (se interrumpió antes de terminar). Guarda de nuevo para volver a subir todos los códigos.
+          </div>
+        )}
 
         {/* Main content: 2 columns on desktop */}
         <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1fr,minmax(280px,360px)] gap-4">

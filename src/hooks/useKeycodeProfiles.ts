@@ -75,19 +75,25 @@ export function useKeycodeProfiles() {
     }
   }, []);
 
-  /** Sube los códigos en lotes pequeños (evita payloads gigantes y timeouts de PHP). */
+  /**
+   * Sube los códigos en lotes pequeños (evita payloads gigantes y timeouts de PHP).
+   * Al final compara el conteo confirmado por el servidor contra lo esperado: si una
+   * subida se interrumpió a medias (red caída, pestaña cerrada), lo detecta aquí en
+   * vez de dejar la serie truncada en silencio.
+   */
   const uploadCodesInChunks = useCallback(async (
     profileId: string,
     codes: CodeEntry[],
     onProgress?: (done: number, total: number) => void,
   ) => {
     const total = codes.length;
+    let serverTotal = 0;
     for (let i = 0; i < total; i += CHUNK_SIZE) {
       const chunk = codes.slice(i, i + CHUNK_SIZE).map((c) => ({
         codigo: c.codigo,
         bitting: Array.isArray(c.bitting) ? c.bitting.join("") : c.bitting,
       }));
-      await phpApiRequest("/herramientas/keycode-codes", {
+      const result = await phpApiRequest<{ inserted: number; total: number }>("/herramientas/keycode-codes", {
         method: "POST",
         body: JSON.stringify({
           profile_id: profileId,
@@ -95,6 +101,7 @@ export function useKeycodeProfiles() {
           codes: chunk,
         }),
       });
+      serverTotal = result?.total ?? serverTotal;
       onProgress?.(Math.min(i + CHUNK_SIZE, total), total);
     }
     // Serie vacía: limpiar códigos existentes
@@ -103,6 +110,10 @@ export function useKeycodeProfiles() {
         method: "POST",
         body: JSON.stringify({ profile_id: profileId, mode: "replace", codes: [] }),
       });
+      return;
+    }
+    if (serverTotal !== total) {
+      throw new Error(`Subida incompleta: se esperaban ${total} códigos pero el servidor confirma ${serverTotal}.`);
     }
   }, []);
 
@@ -116,9 +127,18 @@ export function useKeycodeProfiles() {
       const big = profile.codesData.length > CHUNK_SIZE;
       await phpApiRequest(ENDPOINT, {
         method: "POST",
-        body: JSON.stringify(big ? { ...profile, codesData: [] } : profile),
+        body: JSON.stringify(big ? { ...profile, codesData: [], codesIncomplete: true } : profile),
       });
-      if (big) await uploadCodesInChunks(profile.id, profile.codesData, onProgress);
+      if (big) {
+        await uploadCodesInChunks(profile.id, profile.codesData, onProgress);
+        // Subida completa y verificada: limpiar la marca de incompleto (servidor y estado local).
+        const { codesData: _codesData, ...meta } = profile;
+        await phpApiRequest(`${ENDPOINT}?id=${encodeURIComponent(profile.id)}`, {
+          method: "PUT",
+          body: JSON.stringify({ ...meta, codesIncomplete: false }),
+        });
+        setProfiles((p) => p.map((x) => (x.id === profile.id ? { ...x, codesIncomplete: false } : x)));
+      }
     } catch {
       setProfiles(prev);
       throw new Error("No se pudo guardar la serie");
@@ -136,9 +156,17 @@ export function useKeycodeProfiles() {
       const { codesData, ...meta } = profile;
       await phpApiRequest(`${ENDPOINT}?id=${encodeURIComponent(profile.id)}`, {
         method: "PUT",
-        body: JSON.stringify(big ? meta : profile),
+        body: JSON.stringify(big ? { ...meta, codesIncomplete: true } : profile),
       });
-      if (big) await uploadCodesInChunks(profile.id, codesData, onProgress);
+      if (big) {
+        await uploadCodesInChunks(profile.id, codesData, onProgress);
+        // Subida completa y verificada: limpiar la marca de incompleto (servidor y estado local).
+        await phpApiRequest(`${ENDPOINT}?id=${encodeURIComponent(profile.id)}`, {
+          method: "PUT",
+          body: JSON.stringify({ ...meta, codesIncomplete: false }),
+        });
+        setProfiles((p) => p.map((x) => (x.id === profile.id ? { ...x, codesIncomplete: false } : x)));
+      }
     } catch {
       setProfiles(prev);
       throw new Error("No se pudo actualizar la serie");

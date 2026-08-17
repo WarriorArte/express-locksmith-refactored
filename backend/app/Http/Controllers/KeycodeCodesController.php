@@ -40,29 +40,34 @@ final class KeycodeCodesController
             return ApiResponse::error('Perfil no encontrado', 404);
         }
 
-        if ($mode === 'replace') {
-            DB::table('keycode_codes')->where('profile_id', $profileId)->delete();
-        }
-
+        // El delete (si aplica) y los inserts del lote van en una sola transacción:
+        // así un lector concurrente nunca ve el perfil momentáneamente sin códigos
+        // entre el "replace" y el insert que le sigue.
         $inserted = 0;
-        $rows     = [];
-        foreach ($codes as $c) {
-            $codigo = (string) ($c['codigo'] ?? '');
-            if ($codigo === '') continue;
-            $bitting = is_array($c['bitting'] ?? null)
-                ? implode('', $c['bitting'])
-                : (string) ($c['bitting'] ?? '');
-            $rows[] = ['profile_id' => $profileId, 'codigo' => $codigo, 'bitting' => $bitting];
-            if (count($rows) >= 2000) {
+        DB::transaction(function () use ($mode, $profileId, $codes, &$inserted) {
+            if ($mode === 'replace') {
+                DB::table('keycode_codes')->where('profile_id', $profileId)->delete();
+            }
+
+            $rows = [];
+            foreach ($codes as $c) {
+                $codigo = (string) ($c['codigo'] ?? '');
+                if ($codigo === '') continue;
+                $bitting = is_array($c['bitting'] ?? null)
+                    ? implode('', $c['bitting'])
+                    : (string) ($c['bitting'] ?? '');
+                $rows[] = ['profile_id' => $profileId, 'codigo' => $codigo, 'bitting' => $bitting];
+                if (count($rows) >= 2000) {
+                    DB::table('keycode_codes')->insertOrIgnore($rows);
+                    $inserted += count($rows);
+                    $rows = [];
+                }
+            }
+            if (!empty($rows)) {
                 DB::table('keycode_codes')->insertOrIgnore($rows);
                 $inserted += count($rows);
-                $rows = [];
             }
-        }
-        if (!empty($rows)) {
-            DB::table('keycode_codes')->insertOrIgnore($rows);
-            $inserted += count($rows);
-        }
+        });
 
         $total = DB::table('keycode_codes')->where('profile_id', $profileId)->count();
 

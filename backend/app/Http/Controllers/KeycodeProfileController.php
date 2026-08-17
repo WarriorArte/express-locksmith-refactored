@@ -56,14 +56,18 @@ final class KeycodeProfileController
             ->groupBy('profile_id')
             ->pluck('total', 'profile_id');
 
-        // Muestra: el código más bajo de cada perfil (usa la PK compuesta)
-        $sampleRows = collect($profileIds)->mapWithKeys(function ($pid) {
-            $row = DB::table('keycode_codes')
-                ->where('profile_id', $pid)
-                ->orderBy('codigo')
-                ->first(['codigo', 'bitting']);
-            return [$pid => $row];
-        })->filter();
+        // Muestra: el código más bajo de cada perfil, en un solo query (evita
+        // hacer una consulta por perfil, que no escala con catálogos grandes).
+        $placeholders = implode(',', array_fill(0, count($profileIds), '?'));
+        $sampleRows   = collect(DB::select("
+            SELECT profile_id, codigo, bitting FROM (
+                SELECT profile_id, codigo, bitting,
+                       ROW_NUMBER() OVER (PARTITION BY profile_id ORDER BY codigo) AS rn
+                FROM keycode_codes
+                WHERE profile_id IN ($placeholders)
+            ) ranked
+            WHERE rn = 1
+        ", $profileIds))->keyBy('profile_id');
 
 
         return ApiResponse::success(
@@ -152,8 +156,12 @@ final class KeycodeProfileController
 
     private function replaceCodes(string $profileId, array $codesData): void
     {
-        DB::table('keycode_codes')->where('profile_id', $profileId)->delete();
-        $this->insertCodes($profileId, $codesData);
+        // delete + inserts en una transacción: evita que un lector concurrente
+        // vea el perfil momentáneamente vacío entre el borrado y la reinserción.
+        DB::transaction(function () use ($profileId, $codesData) {
+            DB::table('keycode_codes')->where('profile_id', $profileId)->delete();
+            $this->insertCodes($profileId, $codesData);
+        });
     }
 
     /** Inserta ignorando duplicados de la PK compuesta (profile_id, codigo). */

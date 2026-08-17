@@ -130,6 +130,8 @@ export interface KeycodeProfile {
   configuracionVisual?: ConfiguracionVisualLlave;
   profileImage?: string;
   decoderConfig?: DecoderConfig;
+  /** true mientras una subida de códigos por lotes está en curso o quedó interrumpida a medias. */
+  codesIncomplete?: boolean;
 }
 
 // Workshop type is defined canonically in @/hooks/useWorkshop.
