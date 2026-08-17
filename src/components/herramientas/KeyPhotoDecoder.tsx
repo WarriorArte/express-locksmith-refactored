@@ -453,6 +453,12 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, initialImageUrl,
     const height = gridHeight + marginTop + marginBottom + exceso;
     const maxProfDist = (config.anchoLlave / 2) * config.escalaPixelMm;
 
+    // El cartel y las etiquetas numéricas deben quedar del lado de refY que
+    // está fuera de la grilla: arriba en 'punta', abajo en 'hombro'.
+    const bannerRectY = config.alineacion === 'punta' ? refY - 34 : refY + 14;
+    const bannerTextY = config.alineacion === 'punta' ? refY - 20 : refY + 28;
+    const numberLabelY = config.alineacion === 'punta' ? lineYTop - 8 : lineYBottom + 18;
+
     const maxCortesLen = isDosEjes
       ? Math.max(config.distanciasCortes.length, config.distanciasCortesDer.length)
       : config.distanciasCortes.length;
@@ -487,8 +493,8 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, initialImageUrl,
         <rect x={centerX - (config.anchoLlave / 2 * config.escalaPixelMm) - 40} y={refY - 1.5} width={(config.anchoLlave * config.escalaPixelMm) + 80} height="3" fill="#ff0000" rx="1" />
 
         <g style={{ opacity: haInteractuado ? 0 : 1, transition: 'opacity 0.4s ease-out' }}>
-          <rect x={centerX - 80} y={refY - 34} width="160" height="20" fill="#ff0000" rx="10" />
-          <text x={centerX} y={refY - 20} fill="#ffffff" fontSize="10" fontWeight="900" textAnchor="middle" letterSpacing="1">
+          <rect x={centerX - 80} y={bannerRectY} width="160" height="20" fill="#ff0000" rx="10" />
+          <text x={centerX} y={bannerTextY} fill="#ffffff" fontSize="10" fontWeight="900" textAnchor="middle" letterSpacing="1">
             ALINEAR {config.alineacion.toUpperCase()} AQUÍ
           </text>
         </g>
@@ -518,13 +524,13 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, initialImageUrl,
               {showGuiaIzq && (
                 <>
                   <line x1={xIzq} y1={lineYTopExtended} x2={xIzq} y2={lineYBottomExtended} stroke="rgba(0, 229, 255, 0.45)" strokeWidth="0.65" />
-                  <text x={xIzq} y={lineYTop - 8} fill="rgba(200, 240, 255, 0.95)" fontSize="11" textAnchor="middle">{i + 1}</text>
+                  <text x={xIzq} y={numberLabelY} fill="rgba(200, 240, 255, 0.95)" fontSize="11" textAnchor="middle">{i + 1}</text>
                 </>
               )}
               {showGuiaDer && (
                 <>
                   <line x1={xDer} y1={lineYTopExtended} x2={xDer} y2={lineYBottomExtended} stroke="rgba(0, 229, 255, 0.45)" strokeWidth="0.65" />
-                  <text x={xDer} y={lineYTop - 8} fill="rgba(200, 240, 255, 0.95)" fontSize="11" textAnchor="middle">{i + 1}</text>
+                  <text x={xDer} y={numberLabelY} fill="rgba(200, 240, 255, 0.95)" fontSize="11" textAnchor="middle">{i + 1}</text>
                 </>
               )}
             </g>
