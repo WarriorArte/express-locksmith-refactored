@@ -4,6 +4,7 @@ import { Key, Radio, Cpu } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 
+import { resolveStorageUrl } from "@/lib/phpApi";
 import { useWorkshopFeatures } from "@/hooks/useWorkshopFeatures";
 import { KeycodeWorkspace, type KeycodeSearchFn } from "./KeycodeWorkspace";
 import { AlarmasWorkspace } from "./AlarmasWorkspace";
@@ -249,7 +250,7 @@ export function WorkshopToolView({
                         </div>
                         <h3 className="text-base font-bold text-foreground">Keycode</h3>
                       </div>
-                      <div className="grid grid-cols-2 gap-2.5">
+                      <div className="grid grid-cols-1 gap-2.5">
                         {profiles.map((p) => (
                           <button
                             key={p!.id}
@@ -258,22 +259,20 @@ export function WorkshopToolView({
                               setActiveKeycodeProfileId(p!.id);
                               onToolActive?.(true);
                             }}
-                            className="group flex flex-col gap-2 text-left"
+                            className="group flex flex-col h-28 text-left"
                           >
-                            <div className="aspect-square w-full rounded-xl overflow-hidden border border-border bg-muted/50 group-hover:border-amber-400/70 group-hover:shadow-sm transition-all">
+                            <div className="h-[65%] w-full rounded-xl overflow-hidden border border-border bg-muted/50 group-hover:border-amber-400/70 group-hover:shadow-sm transition-all flex items-center justify-center">
                               {p!.profileImage ? (
                                 <img
-                                  src={p!.profileImage}
+                                  src={resolveStorageUrl(p!.profileImage) ?? undefined}
                                   alt={`Serie ${p!.series}`}
-                                  className="w-full h-full object-cover"
+                                  className="max-w-full max-h-full object-contain mix-blend-multiply dark:mix-blend-screen dark:invert"
                                 />
                               ) : (
-                                <div className="w-full h-full flex items-center justify-center">
-                                  <Key className="w-8 h-8 text-amber-500/40" />
-                                </div>
+                                <Key className="w-8 h-8 text-amber-500/40" />
                               )}
                             </div>
-                            <div className="px-0.5">
+                            <div className="px-0.5 pt-1.5 flex-1 flex flex-col justify-center">
                               <p className="text-sm font-semibold text-foreground text-center leading-tight truncate">
                                 {p!.series || `IC ${p!.icCard}`}
                               </p>

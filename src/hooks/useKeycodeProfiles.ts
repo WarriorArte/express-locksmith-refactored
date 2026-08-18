@@ -148,17 +148,25 @@ export function useKeycodeProfiles() {
   const updateProfile = useCallback(async (
     profile: KeycodeProfile,
     onProgress?: (done: number, total: number) => void,
+    codesChanged: boolean = true,
   ) => {
     const prev = profiles;
     setProfiles((p) => p.map((x) => (x.id === profile.id ? stripCodes(profile) : x)));
     try {
       const big = profile.codesData.length > CHUNK_SIZE;
       const { codesData, ...meta } = profile;
+      // codesChanged=false: solo se editó otra pestaña (visual, decoder, referencias...).
+      // No se toca keycode_codes en absoluto, sea cual sea el tamaño de la serie.
+      const willUploadInChunks = big && codesChanged;
+
       await phpApiRequest(`${ENDPOINT}?id=${encodeURIComponent(profile.id)}`, {
         method: "PUT",
-        body: JSON.stringify(big ? { ...meta, codesIncomplete: true } : profile),
+        body: JSON.stringify(
+          !codesChanged ? meta : big ? { ...meta, codesIncomplete: true } : profile
+        ),
       });
-      if (big) {
+
+      if (willUploadInChunks) {
         await uploadCodesInChunks(profile.id, codesData, onProgress);
         // Subida completa y verificada: limpiar la marca de incompleto (servidor y estado local).
         await phpApiRequest(`${ENDPOINT}?id=${encodeURIComponent(profile.id)}`, {

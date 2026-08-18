@@ -24,6 +24,10 @@ import { GeneradorLlaveSVG } from "@/components/llaves/GeneradorLlaveSVG";
 import { buildDefaultDecoderConfig, applyDecoderPreset, mapVisualTipoToDecoder } from "@/lib/decoderPresets";
 import { useKeycodeVisualSettings } from "@/hooks/useKeycodeVisualSettings";
 import { useTheme } from "@/hooks/useTheme";
+import { useFileUpload } from "@/hooks/useFileUpload";
+import { useWorkshop } from "@/hooks/useWorkshop";
+import { phpApiDeleteFile, resolveStorageUrl } from "@/lib/phpApi";
+import { ImageGalleryDialog } from "@/components/shared/ImageGalleryDialog";
 
 import type { KeycodeProfile, KeyReference, CodeEntry, BittingConfig, ConfiguracionVisualLlave, TipoLlaveSVG, DecoderConfig, DecoderTipoLlave, DecoderAlineacion } from "@/types";
 
@@ -39,7 +43,7 @@ type EditTab = "references" | "bitting" | "visual" | "imagen" | "decoder" | "cod
 interface KeycodeManagerProps {
   profiles: KeycodeProfile[];
   onSave: (profile: KeycodeProfile, onProgress?: (done: number, total: number) => void) => void | Promise<void>;
-  onUpdate: (profile: KeycodeProfile, onProgress?: (done: number, total: number) => void) => void | Promise<void>;
+  onUpdate: (profile: KeycodeProfile, onProgress?: (done: number, total: number) => void, codesChanged?: boolean) => void | Promise<void>;
   onDelete: (id: string) => void;
   onFetchCodes: (id: string) => Promise<KeycodeProfile | null>;
 }
@@ -122,6 +126,11 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [view, setView] = useState<View>("list");
 
+  // --- Imagen del perfil: sube al servidor (carpeta "keycode") en vez de guardar base64 ---
+  const { currentWorkshop } = useWorkshop();
+  const { uploadFile, isUploading: isUploadingImage } = useFileUpload({ folder: "keycode", workshopCode: currentWorkshop?.code });
+  const [galleryOpen, setGalleryOpen] = useState(false);
+
   // --- Ajustes visuales universales (colores/trazo, aplican a todas las series) ---
   const { settings: visualSettings, setSettings: setVisualSettings, saveSettings: saveVisualSettings } = useKeycodeVisualSettings();
   const { theme } = useTheme();
@@ -145,15 +154,28 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
   const [references, setReferences] = useState<KeyReference[]>([]);
   const [bittingConfig, setBittingConfig] = useState<BittingConfig>({ length: 8, maxDepth: 9 });
   const [currentCodes, setCurrentCodes] = useState<CodeEntry[]>([]);
+  // true solo cuando la pestaña "Códigos" tuvo una modificación real (agregar/eliminar/fusionar).
+  // Evita re-subir los códigos al guardar si el usuario solo tocó otra pestaña (visual, decoder, etc.).
+  const [codesDirty, setCodesDirty] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [configuracionVisual, setConfiguracionVisual] = useState<ConfiguracionVisualLlave | undefined>(undefined);
   const [profileImage, setProfileImage] = useState<string | undefined>(undefined);
+  // Cambia/elimina la imagen del perfil y borra el archivo del servidor si ya nadie más lo usa
+  // (otras series pueden compartir la misma imagen al elegirla de la galería).
+  const replaceProfileImage = async (newUrl: string | undefined) => {
+    const oldUrl = profileImage;
+    setProfileImage(newUrl);
+    if (oldUrl && oldUrl !== newUrl) {
+      const stillUsedElsewhere = profiles.some((p) => p.id !== editingProfile?.id && p.profileImage === oldUrl);
+      if (!stillUsedElsewhere) await phpApiDeleteFile(oldUrl);
+    }
+  };
   const [decoderConfig, setDecoderConfig] = useState<DecoderConfig | undefined>(undefined);
   const [decoderHasErrors, setDecoderHasErrors] = useState(false);
   const [editTab, setEditTab] = useState<EditTab>("references");
   const [icCard, setIcCard] = useState("");
-  const [loadingEdit, setLoadingEdit] = useState(false);
+  const [loadingEditId, setLoadingEditId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveProgress, setSaveProgress] = useState<{ done: number; total: number } | null>(null);
   const itemsPerPage = 50;
@@ -219,9 +241,9 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
     // Si los códigos no están cargados (vista de lista), los traemos del servidor.
     let fullProfile = profile;
     if (!isNew && profile.codesData.length === 0 && (profile.codesCount ?? 0) > 0) {
-      setLoadingEdit(true);
+      setLoadingEditId(profile.id);
       const fetched = await onFetchCodes(profile.id);
-      setLoadingEdit(false);
+      setLoadingEditId(null);
       if (!fetched) { toast.error("No se pudieron cargar los códigos del perfil."); return; }
       fullProfile = fetched;
     }
@@ -231,6 +253,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
     setReferences([...fullProfile.references]);
     setBittingConfig({ ...fullProfile.bittingConfig });
     setCurrentCodes([...fullProfile.codesData]);
+    setCodesDirty(false);
     setConfiguracionVisual(fullProfile.configuracionVisual ? { ...fullProfile.configuracionVisual } : undefined);
     setProfileImage(fullProfile.profileImage);
     setDecoderConfig(fullProfile.decoderConfig ? { ...fullProfile.decoderConfig } : undefined);
@@ -271,16 +294,19 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
     }
     
     const finalProfile = { ...editingProfile, references, bittingConfig, codesData: currentCodes, configuracionVisual, profileImage, decoderConfig, icCard };
+    // Solo se re-suben los códigos si la pestaña "Códigos" tuvo cambios reales (o es una serie nueva).
+    // Si solo se tocó otra pestaña (visual, decoder, referencias...), nos ahorramos la subida completa.
+    const codesChanged = isNewProfile || codesDirty;
 
     const onProgress = (done: number, total: number) => setSaveProgress({ done, total });
     setSaving(true);
-    setSaveProgress(currentCodes.length > 3000 ? { done: 0, total: currentCodes.length } : null);
+    setSaveProgress(codesChanged && currentCodes.length > 3000 ? { done: 0, total: currentCodes.length } : null);
     try {
       if (isNewProfile) {
         await onSave(finalProfile, onProgress);
         toast.success("Serie importada y guardada exitosamente.");
       } else {
-        await onUpdate(finalProfile, onProgress);
+        await onUpdate(finalProfile, onProgress, codesChanged);
         toast.success("Perfil actualizado.");
       }
     } catch {
@@ -291,10 +317,12 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
     }
     setSaving(false);
     setSaveProgress(null);
+    setCodesDirty(false);
     // Mantener el editor abierto: actualizamos la línea base para que
     // hasChanges vuelva a false hasta que se hagan nuevos cambios.
-    // El guardado ya confirmó que todos los códigos llegaron, así que se limpia el flag.
-    setEditingProfile({ ...finalProfile, codesIncomplete: false });
+    // codesIncomplete solo se limpia si esta vez sí se subieron y verificaron los códigos;
+    // si no se tocaron, se conserva el estado que ya tenía en el servidor.
+    setEditingProfile(codesChanged ? { ...finalProfile, codesIncomplete: false } : finalProfile);
     setIsNewProfile(false);
   };
 
@@ -318,6 +346,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
   const confirmDeleteCode = () => {
     if (!deleteCodeTarget) return;
     setCurrentCodes((prev) => prev.filter((c) => c.codigo !== deleteCodeTarget));
+    setCodesDirty(true);
     setDeleteCodeTarget(null);
     toast.success(`Código "${deleteCodeTarget}" eliminado.`);
   };
@@ -359,6 +388,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
     }
 
     setCurrentCodes((prev) => [...prev, { codigo, bitting: bitting.split("") }]);
+    setCodesDirty(true);
     setManualCodigo("");
     setManualBitting("");
     toast.success(`Código "${codigo}" agregado.`);
@@ -395,6 +425,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
 
         if (nuevos.length > 0) {
           setCurrentCodes((prev) => [...prev, ...nuevos]);
+          setCodesDirty(true);
         }
 
         if (nuevos.length === 0 && duplicados === 0) {
@@ -624,8 +655,8 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                     </p>
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => startEdit(profile)} disabled={loadingEdit}>
-                      {loadingEdit ? <Loader2 className="w-4 h-4 animate-spin" /> : <Edit className="w-4 h-4" />}
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => startEdit(profile)} disabled={loadingEditId !== null}>
+                      {loadingEditId === profile.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Edit className="w-4 h-4" />}
                     </Button>
                     <Button
                       variant="ghost"
@@ -699,9 +730,9 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                     <button
                       className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors disabled:opacity-50"
                       onClick={() => startEdit(profile)}
-                      disabled={loadingEdit}
+                      disabled={loadingEditId !== null}
                     >
-                      {loadingEdit ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Edit className="w-3.5 h-3.5" />}
+                      {loadingEditId === profile.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Edit className="w-3.5 h-3.5" />}
                       Editar
                     </button>
                     <div className="w-px bg-border" />
@@ -924,32 +955,12 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                                 setBittingConfig(c => ({ ...c, axes: newAxes }));
                               }} className="font-mono w-16 h-7 text-sm" />
                             <span className="text-xs text-muted-foreground flex-1">pos.</span>
-                            {bittingConfig.axes!.length > 2 && (
-                              <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive"
-                                onClick={() => {
-                                  const LABELS = ["A","B","C","D","E","F"];
-                                  const newAxes = bittingConfig.axes!.filter((_, idx) => idx !== i).map((a, idx) => ({ ...a, label: LABELS[idx] }));
-                                  setBittingConfig(c => ({ ...c, axes: newAxes }));
-                                }}>
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
-                            )}
                           </div>
                         ))}
-                        <div className="flex items-center justify-between pt-1">
+                        <div className="pt-1">
                           <span className="text-[10px] text-muted-foreground">
                             Total: <span className="font-bold text-foreground">{bittingConfig.axes.reduce((s, a) => s + a.length, 0)}</span>
                           </span>
-                          {bittingConfig.axes.length < 6 && (
-                            <Button variant="ghost" size="sm" className="text-primary text-[10px] h-6"
-                              onClick={() => {
-                                const LABELS = ["A","B","C","D","E","F"];
-                                const next = { label: LABELS[bittingConfig.axes!.length], length: bittingConfig.axes![0].length };
-                                setBittingConfig(c => ({ ...c, axes: [...c.axes!, next] }));
-                              }}>
-                              <Plus className="w-3 h-3 mr-0.5" /> Eje {["A","B","C","D","E","F"][bittingConfig.axes.length]}
-                            </Button>
-                          )}
                         </div>
                       </div>
                     )}
@@ -1084,20 +1095,20 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
 
                       {/* Estructura base — compact grid */}
                       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                        {[
+                        {([
                           { label: "Grosor", key: "grosorLlave", min: 30, max: 130, def: 60 },
                           { label: "Hombro", key: "distanciaHombro", min: 0, max: 60, def: 30 },
                           { label: "Spacing", key: "spacing", min: 14, max: 50, def: 18 },
                           { label: "Punta", key: "distanciaPunta", min: 0, max: 80, def: 15 },
                           { label: "Alt. Hombro", key: "shoulderDrop", min: 0, max: 30, def: 12 },
-                        ].map(f => (
+                        ] as const).map(f => (
                           <VisualRangeField
                             key={f.key}
                             label={f.label}
                             min={f.min}
                             max={f.max}
                             defaultValue={f.def}
-                            value={(configuracionVisual as any)[f.key] ?? f.def}
+                            value={configuracionVisual[f.key] ?? f.def}
                             onChange={(value) => setConfiguracionVisual(c => c ? { ...c, [f.key]: value } : c)}
                           />
                         ))}
@@ -1109,18 +1120,18 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                           <Separator />
                           <p className="text-[10px] font-bold text-muted-foreground uppercase">Perfil de Corte</p>
                           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                            {[
+                            {([
                               { label: "Escalón", key: "depthStep", min: 1, max: 15, def: 5 },
                               { label: "A. Fondo", key: "valleyWidth", min: 2, max: 30, def: 11 },
                               { label: "A. Cresta", key: "crestWidth", min: 2, max: 30, def: 11 },
-                            ].map(f => (
+                            ] as const).map(f => (
                               <VisualRangeField
                                 key={f.key}
                                 label={f.label}
                                 min={f.min}
                                 max={f.max}
                                 defaultValue={f.def}
-                                value={(configuracionVisual as any)[f.key] ?? f.def}
+                                value={configuracionVisual[f.key] ?? f.def}
                                 onChange={(value) => setConfiguracionVisual(c => c ? { ...c, [f.key]: value } : c)}
                               />
                             ))}
@@ -1222,10 +1233,10 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                         <>
                           <Separator />
                           <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
-                            {[
+                            {([
                               { title: "Borde Sup.", prefix: "Sup", profKey: "profSup", anchoKey: "anchoSup", dinKey: "dinamismoSup" },
                               { title: "Borde Inf.", prefix: "Inf", profKey: "profInf", anchoKey: "anchoInf", dinKey: "dinamismoInf" },
-                            ].map(side => (
+                            ] as const).map(side => (
                               <div key={side.prefix} className="space-y-1.5 p-2 bg-muted/50 rounded-lg border border-border">
                                 <p className="text-[10px] font-bold text-center uppercase text-muted-foreground">{side.title}</p>
                                 {[
@@ -1240,7 +1251,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                                     max={f.max}
                                     step={f.step}
                                     defaultValue={f.def}
-                                    value={(configuracionVisual as any)[f.key] ?? f.def}
+                                    value={configuracionVisual[f.key] ?? f.def}
                                     onChange={(value) => setConfiguracionVisual(c => c ? { ...c, [f.key]: value } : c)}
                                   />
                                 ))}
@@ -1255,10 +1266,10 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                         <>
                           <Separator />
                           <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
-                            {[
+                            {([
                               { title: "Eje Sup.", fields: [{ l: "Prof.", k: "profSup", d: 4 }, { l: "Ancho", k: "anchoSup", d: 11 }] },
                               { title: "Eje Inf.", fields: [{ l: "Prof.", k: "profInf", d: 4 }, { l: "Ancho", k: "anchoInf", d: 11 }] },
-                            ].map(side => (
+                            ] as const).map(side => (
                               <div key={side.title} className="space-y-1.5 p-2 bg-muted/50 rounded-lg border border-border">
                                 <p className="text-[10px] font-bold text-center uppercase text-muted-foreground">{side.title}</p>
                                 {side.fields.map(f => (
@@ -1269,7 +1280,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                                     max={35}
                                     step={0.5}
                                     defaultValue={f.d}
-                                    value={(configuracionVisual as any)[f.k] ?? f.d}
+                                    value={configuracionVisual[f.k] ?? f.d}
                                     onChange={(value) => setConfiguracionVisual(c => c ? { ...c, [f.k]: value } : c)}
                                   />
                                 ))}
@@ -1285,11 +1296,11 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                           <Separator />
                           <p className="text-[10px] font-bold text-muted-foreground uppercase">Lado Activo</p>
                           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                            {[
+                            {([
                               { label: "Prof.", key: "profundidadActiva", def: 4, step: 0.5 },
                               { label: "Ancho", key: "anchoPlanoActivo", def: 11 },
                               { label: "Dinam.", key: "dinamismoActivo", def: 3, step: 0.5 },
-                            ].map(f => (
+                            ] as const).map(f => (
                               <VisualRangeField
                                 key={f.key}
                                 label={f.label}
@@ -1297,7 +1308,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                                 max={35}
                                 step={f.step}
                                 defaultValue={f.def}
-                                value={(configuracionVisual as any)[f.key] ?? f.def}
+                                value={configuracionVisual[f.key] ?? f.def}
                                 onChange={(value) => setConfiguracionVisual(c => c ? { ...c, [f.key]: value } : c)}
                               />
                             ))}
@@ -1320,35 +1331,50 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                     <div className="space-y-3">
                       <div className="rounded-lg border border-border overflow-hidden bg-muted/30 flex items-center justify-center p-2">
                         <img
-                          src={profileImage}
+                          src={resolveStorageUrl(profileImage) ?? undefined}
                           alt="Imagen del perfil"
                           className="max-w-full rounded object-contain"
                           style={{ maxHeight: "95px" }}
                         />
                       </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => imageInputRef.current?.click()}>
-                          <ImageIcon className="w-3.5 h-3.5 mr-1.5" /> Cambiar
+                      <div className="flex gap-2 flex-wrap">
+                        <Button variant="outline" size="sm" onClick={() => imageInputRef.current?.click()} disabled={isUploadingImage}>
+                          {isUploadingImage ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5 mr-1.5" />}
+                          Cambiar
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => setGalleryOpen(true)} disabled={isUploadingImage}>
+                          <LayoutGrid className="w-3.5 h-3.5 mr-1.5" /> Elegir de galería
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
                           className="text-destructive border-destructive/40 hover:bg-destructive/10"
-                          onClick={() => setProfileImage(undefined)}
+                          onClick={() => void replaceProfileImage(undefined)}
+                          disabled={isUploadingImage}
                         >
                           <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Eliminar
                         </Button>
                       </div>
                     </div>
                   ) : (
-                    <button
-                      onClick={() => imageInputRef.current?.click()}
-                      className="w-full border-2 border-dashed border-border rounded-xl py-12 flex flex-col items-center gap-3 text-muted-foreground hover:border-primary/40 hover:text-primary/60 transition-colors"
-                    >
-                      <ImageIcon className="w-10 h-10 opacity-30" />
-                      <span className="text-sm font-medium">Haz clic para subir imagen</span>
-                      <span className="text-xs opacity-70">PNG, JPG, WEBP · Recomendado 500 × 95 px</span>
-                    </button>
+                    <div className="flex flex-col gap-2">
+                      <button
+                        onClick={() => imageInputRef.current?.click()}
+                        disabled={isUploadingImage}
+                        className="w-full border-2 border-dashed border-border rounded-xl py-12 flex flex-col items-center gap-3 text-muted-foreground hover:border-primary/40 hover:text-primary/60 transition-colors disabled:opacity-60"
+                      >
+                        {isUploadingImage ? (
+                          <Loader2 className="w-10 h-10 opacity-30 animate-spin" />
+                        ) : (
+                          <ImageIcon className="w-10 h-10 opacity-30" />
+                        )}
+                        <span className="text-sm font-medium">{isUploadingImage ? "Subiendo…" : "Haz clic para subir imagen"}</span>
+                        <span className="text-xs opacity-70">PNG, JPG, WEBP · Recomendado 500 × 95 px</span>
+                      </button>
+                      <Button variant="outline" size="sm" onClick={() => setGalleryOpen(true)} disabled={isUploadingImage}>
+                        <LayoutGrid className="w-3.5 h-3.5 mr-1.5" /> Elegir de galería
+                      </Button>
+                    </div>
                   )}
 
                   <input
@@ -1356,14 +1382,24 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const file = e.target.files?.[0];
-                      if (!file) return;
-                      const reader = new FileReader();
-                      reader.onload = (ev) => setProfileImage(ev.target?.result as string);
-                      reader.readAsDataURL(file);
                       e.target.value = "";
+                      if (!file) return;
+                      const result = await uploadFile(file);
+                      if (result.success && result.url) {
+                        await replaceProfileImage(result.url);
+                      }
                     }}
+                  />
+
+                  <ImageGalleryDialog
+                    open={galleryOpen}
+                    onOpenChange={setGalleryOpen}
+                    folder="keycode"
+                    workshopCode={currentWorkshop?.code}
+                    onSelect={(url) => void replaceProfileImage(url)}
+                    layout="list"
                   />
                 </div>
               )}

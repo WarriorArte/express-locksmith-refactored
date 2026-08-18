@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { phpApiUpload } from "@/lib/phpApi";
 
-export type UploadFolder = "products" | "services" | "logos" | "documents" | "general" | "avatars";
+export type UploadFolder = "products" | "services" | "logos" | "documents" | "general" | "avatars" | "keycode";
 
 interface UploadResult {
   success: boolean;

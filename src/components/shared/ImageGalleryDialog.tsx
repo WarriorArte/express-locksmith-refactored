@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -6,9 +6,10 @@ import {
   DialogTitle,
 } from "@/components/ui/responsive-dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, ImageIcon, RefreshCw, Trash2 } from "lucide-react";
+import { Check, ImageIcon, RefreshCw, Search, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { UploadFolder } from "@/hooks/useFileUpload";
 import {
@@ -31,6 +32,8 @@ interface ImageGalleryDialogProps {
   folder: UploadFolder;
   workshopCode?: string;
   onSelect: (url: string) => void;
+  /** "list" muestra filas con nombre de archivo y un buscador; "grid" (default) es la vista de miniaturas clásica. */
+  layout?: "grid" | "list";
 }
 
 export function ImageGalleryDialog({
@@ -39,6 +42,7 @@ export function ImageGalleryDialog({
   folder,
   workshopCode,
   onSelect,
+  layout = "grid",
 }: ImageGalleryDialogProps) {
   const { files, loading, error, reload, deleteFile } = useGalleryFiles({
     folder,
@@ -49,11 +53,21 @@ export function ImageGalleryDialog({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [fileToDelete, setFileToDelete] = useState<GalleryFile | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [search, setSearch] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
-    if (open) setSelectedFile(null);
+    if (open) {
+      setSelectedFile(null);
+      setSearch("");
+    }
   }, [open]);
+
+  const visibleFiles = useMemo(() => {
+    if (layout !== "list" || !search.trim()) return files;
+    const term = search.trim().toLowerCase();
+    return files.filter((f) => f.filename.toLowerCase().includes(term));
+  }, [files, layout, search]);
 
   const handleSelect = () => {
     const file = files.find((f) => f.filename === selectedFile);
@@ -115,13 +129,33 @@ export function ImageGalleryDialog({
             </DialogTitle>
           </DialogHeader>
 
+          {layout === "list" && (
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar por nombre de archivo…"
+                className="pl-8 h-8 text-sm"
+              />
+            </div>
+          )}
+
           <ScrollArea className="h-[400px] pr-4">
             {loading ? (
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <Skeleton key={i} className="aspect-square rounded-lg" />
-                ))}
-              </div>
+              layout === "list" ? (
+                <div className="space-y-2">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <Skeleton key={i} className="h-14 rounded-lg" />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <Skeleton key={i} className="aspect-square rounded-lg" />
+                  ))}
+                </div>
+              )
             ) : error ? (
               <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
                 <ImageIcon className="w-12 h-12 mb-2 opacity-50" />
@@ -132,9 +166,76 @@ export function ImageGalleryDialog({
                 <ImageIcon className="w-12 h-12 mb-2 opacity-50" />
                 <p>No hay imágenes en esta carpeta</p>
               </div>
+            ) : visibleFiles.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
+                <Search className="w-12 h-12 mb-2 opacity-50" />
+                <p>Ningún archivo coincide con "{search}"</p>
+              </div>
+            ) : layout === "list" ? (
+              <div className="space-y-1.5">
+                {visibleFiles.map((file) => (
+                  <div
+                    key={`${file.filename}-${file.cacheBuster}`}
+                    className="relative group"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setSelectedFile(file.filename)}
+                      className={cn(
+                        "flex items-center gap-3 w-full rounded-lg border-2 p-1.5 pr-10 text-left transition-all",
+                        "hover:border-primary/50",
+                        selectedFile === file.filename
+                          ? "border-primary bg-primary/5"
+                          : "border-transparent bg-muted/40",
+                      )}
+                    >
+                      <div className="w-14 h-10 rounded overflow-hidden bg-muted shrink-0 flex items-center justify-center">
+                        <img
+                          key={`img-${file.filename}-${file.cacheBuster}`}
+                          src={resolveStorageUrl(file.previewUrl) ?? undefined}
+                          alt={file.filename}
+                          className="w-full h-full object-contain"
+                          loading="lazy"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            if (!target.dataset.retried) {
+                              target.dataset.retried = "true";
+                              const url = new URL(target.src);
+                              url.searchParams.set("t", Date.now().toString());
+                              target.src = url.toString();
+                            } else {
+                              target.src = "/placeholder.svg";
+                            }
+                          }}
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-foreground truncate" title={file.filename}>
+                          {file.filename}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatSize(file.size)} • {formatDate(file.modified)}
+                        </p>
+                      </div>
+                      {selectedFile === file.filename && (
+                        <div className="shrink-0 bg-primary text-primary-foreground rounded-full p-1">
+                          <Check className="w-3 h-3" />
+                        </div>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      className="absolute top-1/2 -translate-y-1/2 right-2 text-muted-foreground hover:text-destructive p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => handleDeleteClick(file, e)}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
             ) : (
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                {files.map((file) => (
+                {visibleFiles.map((file) => (
                   <div key={`${file.filename}-${file.cacheBuster}`} className="relative group">
                     <button
                       type="button"
