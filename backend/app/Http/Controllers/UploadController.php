@@ -24,6 +24,15 @@ final class UploadController
         'application/pdf' => 'pdf',
     ];
 
+    private const EXT_TO_MIME = [
+        'jpg'  => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'png'  => 'image/png',
+        'gif'  => 'image/gif',
+        'webp' => 'image/webp',
+        'pdf'  => 'application/pdf',
+    ];
+
     private const FOLDER_DB_MAP = [
         'products' => ['table' => 'products',         'column' => 'image_url'],
         'services' => ['table' => 'service_images',    'column' => 'image_url'],
@@ -47,6 +56,10 @@ final class UploadController
 
         if ($request->isMethod('POST') && ($request->query('action') === 'cleanup' || $request->input('action') === 'cleanup')) {
             return $this->cleanupResponse($request);
+        }
+
+        if ($request->isMethod('POST') && ($request->query('action') === 'meta' || $request->input('action') === 'meta')) {
+            return $this->updateMeta($request);
         }
 
         if ($request->isMethod('POST')) {
@@ -104,20 +117,38 @@ final class UploadController
         // Silently clean unused files before listing
         $this->cleanup($workshopCode, $folder);
 
+        // Un solo query para el título/descripción de todos los archivos de esta
+        // carpeta (en vez de uno por archivo).
+        $meta = DB::table('upload_file_meta')
+            ->where('workshop_code', $workshopCode)
+            ->where('folder', $folder)
+            ->get(['filename', 'title', 'description'])
+            ->keyBy('filename');
+
         $files = [];
         foreach (File::files($dir) as $file) {
+            $mtime = $file->getMTime();
+            $ext   = strtolower($file->getExtension());
+            $fileMeta = $meta->get($file->getFilename());
             $files[] = [
                 'filename' => $file->getFilename(),
                 'folder' => $folder,
                 'workshop_code' => $workshopCode,
                 'size' => $file->getSize(),
-                'mimeType' => mime_content_type($file->getPathname()) ?: 'application/octet-stream',
-                'created_at' => date('c', $file->getMTime()),
+                // Se infiere por extensión (ya la validamos al subir el archivo): evita
+                // abrir y leer cada archivo del disco solo para adivinar su tipo, que
+                // es lo que hacía lenta la galería con muchos archivos.
+                'mimeType' => self::EXT_TO_MIME[$ext] ?? 'application/octet-stream',
+                'created_at' => date('c', $mtime),
+                '_mtime' => $mtime,
                 'secure_url' => "/uploads/{$workshopCode}/{$folder}/".rawurlencode($file->getFilename()),
+                'title' => $fileMeta->title ?? null,
+                'description' => $fileMeta->description ?? null,
             ];
         }
 
-        usort($files, fn ($a, $b) => strtotime($b['created_at']) <=> strtotime($a['created_at']));
+        usort($files, fn ($a, $b) => $b['_mtime'] <=> $a['_mtime']);
+        foreach ($files as &$f) unset($f['_mtime']);
 
         return ApiResponse::success($files);
     }
@@ -182,7 +213,43 @@ final class UploadController
             return ApiResponse::error('No se pudo eliminar el archivo', 500);
         }
 
+        DB::table('upload_file_meta')
+            ->where('workshop_code', $workshopCode)
+            ->where('folder', $folder)
+            ->where('filename', $filename)
+            ->delete();
+
         return ApiResponse::success(null, 'Archivo eliminado correctamente');
+    }
+
+    private function updateMeta(Request $request): JsonResponse
+    {
+        $workshopCode = $this->folder((string) $request->input('workshop_code', '')) ?: 'misc';
+        if ($resp = $this->authorizeWorkshop($request, $workshopCode, false)) return $resp;
+        $folder = $this->folder((string) $request->input('folder', 'misc'));
+        $filename = basename((string) $request->input('filename', ''));
+
+        if ($filename === '') {
+            return ApiResponse::error('filename es requerido');
+        }
+
+        $path = public_path("uploads/{$workshopCode}/{$folder}/{$filename}");
+        if (!is_file($path)) {
+            return ApiResponse::error('Archivo no encontrado', 404);
+        }
+
+        $title = trim((string) $request->input('title', ''));
+        $description = trim((string) $request->input('description', ''));
+
+        DB::table('upload_file_meta')->updateOrInsert(
+            ['workshop_code' => $workshopCode, 'folder' => $folder, 'filename' => $filename],
+            ['title' => $title !== '' ? $title : null, 'description' => $description !== '' ? $description : null, 'updated_at' => now()],
+        );
+
+        return ApiResponse::success([
+            'title' => $title !== '' ? $title : null,
+            'description' => $description !== '' ? $description : null,
+        ], 'Guardado');
     }
 
     private function cleanupResponse(Request $request): JsonResponse
@@ -242,6 +309,11 @@ final class UploadController
 
             if ($count === 0) {
                 @unlink($file->getPathname());
+                DB::table('upload_file_meta')
+                    ->where('workshop_code', $workshopCode)
+                    ->where('folder', $folder)
+                    ->where('filename', $filename)
+                    ->delete();
                 $deleted++;
             } else {
                 $kept++;

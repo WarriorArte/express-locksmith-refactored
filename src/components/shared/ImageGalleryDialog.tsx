@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, ImageIcon, RefreshCw, Search, Trash2 } from "lucide-react";
+import { Check, ImageIcon, Pencil, RefreshCw, Search, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { UploadFolder } from "@/hooks/useFileUpload";
 import {
@@ -44,7 +44,7 @@ export function ImageGalleryDialog({
   onSelect,
   layout = "grid",
 }: ImageGalleryDialogProps) {
-  const { files, loading, error, reload, deleteFile } = useGalleryFiles({
+  const { files, loading, error, reload, deleteFile, updateMeta } = useGalleryFiles({
     folder,
     workshopCode,
     enabled: open,
@@ -54,20 +54,49 @@ export function ImageGalleryDialog({
   const [fileToDelete, setFileToDelete] = useState<GalleryFile | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [search, setSearch] = useState("");
+  const [editingFilename, setEditingFilename] = useState<string | null>(null);
+  const [titleDraft, setTitleDraft] = useState("");
+  const [descriptionDraft, setDescriptionDraft] = useState("");
+  const [savingMeta, setSavingMeta] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     if (open) {
       setSelectedFile(null);
       setSearch("");
+      setEditingFilename(null);
     }
   }, [open]);
 
   const visibleFiles = useMemo(() => {
     if (layout !== "list" || !search.trim()) return files;
     const term = search.trim().toLowerCase();
-    return files.filter((f) => f.filename.toLowerCase().includes(term));
+    return files.filter((f) =>
+      f.filename.toLowerCase().includes(term) ||
+      (f.title ?? "").toLowerCase().includes(term) ||
+      (f.description ?? "").toLowerCase().includes(term)
+    );
   }, [files, layout, search]);
+
+  const handleEditClick = (file: GalleryFile, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingFilename(file.filename);
+    setTitleDraft(file.title ?? "");
+    setDescriptionDraft(file.description ?? "");
+  };
+
+  const handleSaveMeta = async (file: GalleryFile) => {
+    setSavingMeta(true);
+    try {
+      await updateMeta(file, { title: titleDraft, description: descriptionDraft });
+      setEditingFilename(null);
+    } catch (err) {
+      console.error("Error saving image meta:", err);
+      toast({ title: "Error", description: "No se pudo guardar el título", variant: "destructive" });
+    } finally {
+      setSavingMeta(false);
+    }
+  };
 
   const handleSelect = () => {
     const file = files.find((f) => f.filename === selectedFile);
@@ -135,7 +164,7 @@ export function ImageGalleryDialog({
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por nombre de archivo…"
+                placeholder="Buscar por título o nombre de archivo…"
                 className="pl-8 h-8 text-sm"
               />
             </div>
@@ -173,65 +202,102 @@ export function ImageGalleryDialog({
               </div>
             ) : layout === "list" ? (
               <div className="space-y-1.5">
-                {visibleFiles.map((file) => (
-                  <div
-                    key={`${file.filename}-${file.cacheBuster}`}
-                    className="relative group"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setSelectedFile(file.filename)}
-                      className={cn(
-                        "flex items-center gap-3 w-full rounded-lg border-2 p-1.5 pr-10 text-left transition-all",
-                        "hover:border-primary/50",
-                        selectedFile === file.filename
-                          ? "border-primary bg-primary/5"
-                          : "border-transparent bg-muted/40",
-                      )}
+                {visibleFiles.map((file) =>
+                  editingFilename === file.filename ? (
+                    <div
+                      key={`${file.filename}-${file.cacheBuster}`}
+                      className="flex flex-col gap-1.5 w-full rounded-lg border-2 border-primary/50 bg-primary/5 p-2"
                     >
-                      <div className="w-14 h-10 rounded overflow-hidden bg-muted shrink-0 flex items-center justify-center">
-                        <img
-                          key={`img-${file.filename}-${file.cacheBuster}`}
-                          src={resolveStorageUrl(file.previewUrl) ?? undefined}
-                          alt={file.filename}
-                          className="w-full h-full object-contain"
-                          loading="lazy"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            if (!target.dataset.retried) {
-                              target.dataset.retried = "true";
-                              const url = new URL(target.src);
-                              url.searchParams.set("t", Date.now().toString());
-                              target.src = url.toString();
-                            } else {
-                              target.src = "/placeholder.svg";
-                            }
-                          }}
-                        />
+                      <Input
+                        value={titleDraft}
+                        onChange={(e) => setTitleDraft(e.target.value)}
+                        placeholder="Título (para buscarla más fácil)"
+                        className="h-8 text-sm"
+                        autoFocus
+                      />
+                      <Input
+                        value={descriptionDraft}
+                        onChange={(e) => setDescriptionDraft(e.target.value)}
+                        placeholder="Descripción (opcional)"
+                        className="h-8 text-sm"
+                      />
+                      <div className="flex gap-2 justify-end pt-0.5">
+                        <Button variant="ghost" size="sm" onClick={() => setEditingFilename(null)} disabled={savingMeta}>
+                          Cancelar
+                        </Button>
+                        <Button size="sm" onClick={() => void handleSaveMeta(file)} disabled={savingMeta}>
+                          {savingMeta ? "Guardando…" : "Guardar"}
+                        </Button>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-foreground truncate" title={file.filename}>
-                          {file.filename}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatSize(file.size)} • {formatDate(file.modified)}
-                        </p>
-                      </div>
-                      {selectedFile === file.filename && (
-                        <div className="shrink-0 bg-primary text-primary-foreground rounded-full p-1">
-                          <Check className="w-3 h-3" />
+                    </div>
+                  ) : (
+                    <div
+                      key={`${file.filename}-${file.cacheBuster}`}
+                      className="relative group"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setSelectedFile(file.filename)}
+                        className={cn(
+                          "flex items-center gap-3 w-full rounded-lg border-2 p-1.5 pr-16 text-left transition-all",
+                          "hover:border-primary/50",
+                          selectedFile === file.filename
+                            ? "border-primary bg-primary/5"
+                            : "border-transparent bg-muted/40",
+                        )}
+                      >
+                        <div className="w-14 h-10 rounded overflow-hidden bg-muted shrink-0 flex items-center justify-center">
+                          <img
+                            key={`img-${file.filename}-${file.cacheBuster}`}
+                            src={resolveStorageUrl(file.previewUrl) ?? undefined}
+                            alt={file.title || file.filename}
+                            className="w-full h-full object-contain"
+                            loading="lazy"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              if (!target.dataset.retried) {
+                                target.dataset.retried = "true";
+                                const url = new URL(target.src);
+                                url.searchParams.set("t", Date.now().toString());
+                                target.src = url.toString();
+                              } else {
+                                target.src = "/placeholder.svg";
+                              }
+                            }}
+                          />
                         </div>
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      className="absolute top-1/2 -translate-y-1/2 right-2 text-muted-foreground hover:text-destructive p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => handleDeleteClick(file, e)}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-foreground truncate" title={file.title || file.filename}>
+                            {file.title || file.filename}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {file.title && <span className="font-mono">{file.filename} · </span>}
+                            {formatSize(file.size)} • {formatDate(file.modified)}
+                          </p>
+                        </div>
+                        {selectedFile === file.filename && (
+                          <div className="shrink-0 bg-primary text-primary-foreground rounded-full p-1">
+                            <Check className="w-3 h-3" />
+                          </div>
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        className="absolute top-1/2 -translate-y-1/2 right-9 text-muted-foreground hover:text-primary p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => handleEditClick(file, e)}
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        className="absolute top-1/2 -translate-y-1/2 right-2 text-muted-foreground hover:text-destructive p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => handleDeleteClick(file, e)}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">

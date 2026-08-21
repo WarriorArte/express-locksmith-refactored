@@ -132,6 +132,8 @@ export interface KeycodeProfile {
   decoderConfig?: DecoderConfig;
   /** true mientras una subida de códigos por lotes está en curso o quedó interrumpida a medias. */
   codesIncomplete?: boolean;
+  /** Títulos de serie adicionales (p.ej. otra nomenclatura que también cubre esta serie). */
+  seriesAliases?: string[];
 }
 
 // Workshop type is defined canonically in @/hooks/useWorkshop.

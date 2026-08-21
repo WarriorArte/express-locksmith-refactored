@@ -307,6 +307,16 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
         found = profile.codesData.find((c) => extractCodigoNumeric(c.codigo) === termNumeric);
       }
     }
+    if (!found) {
+      // El prefijo también tiene dígitos (p.ej. "A70000-A75928", prefijo "A7"):
+      // compara por sufijo exacto de dígitos. Solo se acepta si hay una única
+      // coincidencia posible; con varias, no adivinamos.
+      const digits = term.replace(/\D/g, "");
+      if (digits !== "") {
+        const candidates = profile.codesData.filter((c) => c.codigo.replace(/\D/g, "").endsWith(digits));
+        if (candidates.length === 1) found = candidates[0];
+      }
+    }
     if (found) {
       const axesResult = getAxesResult(found.bitting, profile.bittingConfig);
       const flatValues = axesResult.flatMap((a) => a.values);
@@ -1092,6 +1102,11 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                     </span>
                   )}
                 </div>
+                {!!profile.seriesAliases?.length && (
+                  <p className="text-xs text-muted-foreground pt-1">
+                    Esta serie también incluye: <span className="font-semibold text-foreground">{profile.seriesAliases.join(", ")}</span>
+                  </p>
+                )}
               </div>
 
               {/* Cerraduras del vehículo */}

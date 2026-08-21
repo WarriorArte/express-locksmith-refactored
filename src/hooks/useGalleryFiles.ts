@@ -11,6 +11,8 @@ export interface GalleryFile {
   modified: number;
   folder?: string;
   cacheBuster?: number;
+  title?: string | null;
+  description?: string | null;
 }
 
 interface UseGalleryFilesOptions {
@@ -25,6 +27,7 @@ interface UseGalleryFilesResult {
   error: string | null;
   reload: () => Promise<void>;
   deleteFile: (file: GalleryFile) => Promise<void>;
+  updateMeta: (file: GalleryFile, meta: { title: string; description: string }) => Promise<void>;
 }
 
 type UploadsApiFile = {
@@ -34,6 +37,8 @@ type UploadsApiFile = {
   mimeType: string;
   created_at: string;
   folder?: string | null;
+  title?: string | null;
+  description?: string | null;
 };
 
 /**
@@ -69,6 +74,8 @@ export function useGalleryFiles({
             modified: new Date(file.created_at).getTime() / 1000,
             folder: file.folder || folder,
             cacheBuster: now,
+            title: file.title ?? null,
+            description: file.description ?? null,
           })),
         );
       } else {
@@ -97,9 +104,32 @@ export function useGalleryFiles({
     [folder, workshopCode],
   );
 
+  const updateMeta = useCallback(
+    async (file: GalleryFile, meta: { title: string; description: string }) => {
+      const formData = new FormData();
+      formData.append("filename", file.filename);
+      formData.append("folder", file.folder || folder);
+      formData.append("title", meta.title);
+      formData.append("description", meta.description);
+      if (workshopCode) formData.append("workshop_code", workshopCode);
+      await phpApiRequest<{ title: string | null; description: string | null }>(`/uploads.php?action=meta`, {
+        method: "POST",
+        body: formData,
+      });
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.filename === file.filename
+            ? { ...f, title: meta.title.trim() || null, description: meta.description.trim() || null }
+            : f,
+        ),
+      );
+    },
+    [folder, workshopCode],
+  );
+
   useEffect(() => {
     if (enabled) void reload();
   }, [enabled, reload]);
 
-  return { files, loading, error, reload, deleteFile };
+  return { files, loading, error, reload, deleteFile, updateMeta };
 }

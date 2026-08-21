@@ -272,15 +272,18 @@ export function WorkshopToolView({
                                 <Key className="w-8 h-8 text-amber-500/40" />
                               )}
                             </div>
-                            <div className="px-0.5 pt-1.5 flex-1 flex flex-col justify-center">
-                              <p className="text-sm font-semibold text-foreground text-center leading-tight truncate">
-                                {p!.series || `IC ${p!.icCard}`}
+                            <div className="px-0.5 pt-1.5 flex-1 flex items-center justify-between gap-2 min-w-0">
+                              <p className="text-xs text-muted-foreground text-left truncate">
+                                {p!.series || "—"}
                               </p>
-                              {p!.icCard && p!.series && (
-                                <p className="text-xs text-muted-foreground text-center truncate mt-0.5">
-                                  IC: {p!.icCard}
-                                </p>
-                              )}
+                              {(() => {
+                                const primaryRef = p!.references.find((r) => r.isPrimary) ?? p!.references[0];
+                                return primaryRef?.refCode ? (
+                                  <p className="text-base font-bold text-foreground text-right leading-tight truncate shrink-0">
+                                    {primaryRef.refCode}
+                                  </p>
+                                ) : null;
+                              })()}
                             </div>
                           </button>
                         ))}

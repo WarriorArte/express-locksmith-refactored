@@ -57,6 +57,23 @@ final class KeycodeSearchController
                         ->where('profile_id', $profileId)
                         ->whereRaw("CAST(REGEXP_REPLACE(codigo, '[^0-9]', '') AS UNSIGNED) = ?", [$numeric])
                         ->first(['codigo', 'bitting']);
+
+                    // Nivel 3: el prefijo también tiene dígitos (p.ej. "A70000-A75928",
+                    // prefijo "A7"): compara por sufijo exacto de dígitos. Solo se acepta
+                    // si hay una única coincidencia posible; si el usuario escribió muy
+                    // pocos dígitos y hay varias, no adivinamos (evitaría cortar la llave
+                    // equivocada).
+                    if (!$row) {
+                        $len = strlen($digits);
+                        $candidates = DB::table('keycode_codes')
+                            ->where('profile_id', $profileId)
+                            ->whereRaw("RIGHT(REGEXP_REPLACE(codigo, '[^0-9]', ''), ?) = ?", [$len, $digits])
+                            ->limit(2)
+                            ->get(['codigo', 'bitting']);
+                        if ($candidates->count() === 1) {
+                            $row = $candidates->first();
+                        }
+                    }
                 }
             }
 

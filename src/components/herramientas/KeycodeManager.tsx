@@ -175,6 +175,8 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
   const [decoderHasErrors, setDecoderHasErrors] = useState(false);
   const [editTab, setEditTab] = useState<EditTab>("references");
   const [icCard, setIcCard] = useState("");
+  const [series, setSeries] = useState("");
+  const [seriesAliases, setSeriesAliases] = useState<string[]>([]);
   const [loadingEditId, setLoadingEditId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveProgress, setSaveProgress] = useState<{ done: number; total: number } | null>(null);
@@ -260,6 +262,8 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
     setProfileImage(fullProfile.profileImage);
     setDecoderConfig(fullProfile.decoderConfig ? { ...fullProfile.decoderConfig } : undefined);
     setIcCard(fullProfile.icCard ?? "");
+    setSeries(fullProfile.series ?? "");
+    setSeriesAliases(fullProfile.seriesAliases ? [...fullProfile.seriesAliases] : []);
     setDecoderHasErrors(false);
     setSearchTerm("");
     setCurrentPage(1);
@@ -271,7 +275,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
   const hasChanges = useMemo(() => {
     if (!editingProfile) return false;
     if (isNewProfile) return true; // nueva serie: siempre puede guardarse
-    const snap = JSON.stringify({ references, bittingConfig, codesData: currentCodes, configuracionVisual, profileImage, decoderConfig, icCard });
+    const snap = JSON.stringify({ references, bittingConfig, codesData: currentCodes, configuracionVisual, profileImage, decoderConfig, icCard, series, seriesAliases });
     const orig = JSON.stringify({
       references: editingProfile.references,
       bittingConfig: editingProfile.bittingConfig,
@@ -280,9 +284,11 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
       profileImage: editingProfile.profileImage,
       decoderConfig: editingProfile.decoderConfig,
       icCard: editingProfile.icCard ?? "",
+      series: editingProfile.series ?? "",
+      seriesAliases: editingProfile.seriesAliases ?? [],
     });
     return snap !== orig;
-  }, [editingProfile, isNewProfile, references, bittingConfig, currentCodes, configuracionVisual, profileImage, decoderConfig, icCard]);
+  }, [editingProfile, isNewProfile, references, bittingConfig, currentCodes, configuracionVisual, profileImage, decoderConfig, icCard, series, seriesAliases]);
 
   const canSave = hasChanges && !decoderHasErrors;
 
@@ -295,7 +301,11 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
       return;
     }
     
-    const finalProfile = { ...editingProfile, references, bittingConfig, codesData: currentCodes, configuracionVisual, profileImage, decoderConfig, icCard };
+    const finalProfile = {
+      ...editingProfile, references, bittingConfig, codesData: currentCodes, configuracionVisual, profileImage, decoderConfig, icCard,
+      series: series.trim(),
+      seriesAliases: seriesAliases.map(a => a.trim()).filter(a => a !== ""),
+    };
     // Solo se re-suben los códigos si la pestaña "Códigos" tuvo cambios reales (o es una serie nueva).
     // Si solo se tocó otra pestaña (visual, decoder, referencias...), nos ahorramos la subida completa.
     const codesChanged = isNewProfile || codesDirty;
@@ -341,6 +351,13 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
 
   const updateReference = (id: number, field: keyof KeyReference, value: string | boolean) =>
     setReferences((prev) => prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
+
+  // ── Títulos de serie adicionales ──────────────────────────────
+  const addSeriesAlias = () => setSeriesAliases((prev) => [...prev, ""]);
+  const updateSeriesAlias = (index: number, value: string) =>
+    setSeriesAliases((prev) => prev.map((a, i) => (i === index ? value : a)));
+  const removeSeriesAlias = (index: number) =>
+    setSeriesAliases((prev) => prev.filter((_, i) => i !== index));
 
   const setPrimaryReference = (id: number) =>
     setReferences((prev) => prev.map((r) => ({ ...r, isPrimary: r.id === id })));
@@ -578,6 +595,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
     return profiles.filter((p) =>
       p.series.toLowerCase().includes(q) ||
       p.icCard.toLowerCase().includes(q) ||
+      (p.seriesAliases ?? []).some((a) => a.toLowerCase().includes(q)) ||
       p.references.some((r) => r.brand.toLowerCase().includes(q) || r.refCode.toLowerCase().includes(q))
     );
   }, [profiles, profilesSearch]);
@@ -822,7 +840,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div className="min-w-0">
-              <h2 className="text-sm font-bold text-foreground truncate">Serie: {editingProfile.series}</h2>
+              <h2 className="text-sm font-bold text-foreground truncate">Serie: {series || "—"}</h2>
               <p className="text-xs text-muted-foreground">IC: {icCard || "—"} · {currentCodes.length} códigos</p>
             </div>
           </div>
@@ -876,6 +894,43 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
               {/* ── TAB: Referencias ── */}
               {editTab === "references" && (
                 <div className="space-y-3">
+                  <div className="flex flex-col gap-1">
+                    <Label className="text-xs font-semibold text-muted-foreground">Título de la serie</Label>
+                    <Input
+                      placeholder="Ej. 70000-75928"
+                      value={series}
+                      onChange={(e) => setSeries(e.target.value)}
+                      className="h-8 text-sm font-mono"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-semibold text-muted-foreground">Títulos adicionales (opcional)</Label>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground -mt-1">
+                      Otra nomenclatura que también cubre esta serie, p.ej. si "{series || "70000-75928"}" también se conoce como "0000-5928".
+                    </p>
+                    {seriesAliases.map((alias, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <Input
+                          placeholder="Ej. 0000-5928"
+                          value={alias}
+                          onChange={(e) => updateSeriesAlias(i, e.target.value)}
+                          className="h-8 text-sm font-mono flex-1"
+                        />
+                        <Button variant="ghost" size="icon" onClick={() => removeSeriesAlias(i)} className="h-7 w-7 text-destructive hover:text-destructive">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button variant="ghost" size="sm" onClick={addSeriesAlias} className="text-primary text-xs self-start">
+                      <Plus className="w-3.5 h-3.5 mr-1" /> Agregar título adicional
+                    </Button>
+                  </div>
+
+                  <Separator />
+
                   <div className="flex flex-col gap-1">
                     <Label className="text-xs font-semibold text-muted-foreground">IC (Identificador de Corte)</Label>
                     <Input
