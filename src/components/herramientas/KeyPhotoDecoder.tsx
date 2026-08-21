@@ -77,7 +77,12 @@ interface KeyPhotoDecoderProps {
   onConfirm: (bitting: string[]) => void;
 }
 
-interface CorteState { izq: number; der: number; }
+type ProfundidadIndex = number;
+interface CorteState { izq: ProfundidadIndex; der: ProfundidadIndex; }
+
+const UNKNOWN_DEPTH = -1;
+const SIDE_SWIPE_MIN_X = 70;
+const SIDE_SWIPE_MAX_Y = 45;
 
 export function KeyPhotoDecoder({ initialConfig, bittingConfig, initialImageUrl, onClose, onConfirm }: KeyPhotoDecoderProps) {
   const [fase, setFase] = useState<'captura' | 'alineacion' | 'ajuste'>(initialImageUrl ? 'alineacion' : 'captura');
@@ -103,6 +108,7 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, initialImageUrl,
   const startPinchDistRef = useRef(0);
   const startPinchAngleRef = useRef(0);
   const baseTransformRef = useRef({ scale: 1, rotate: 0, x: 0, y: 0 });
+  const sideSwipeStartRef = useRef<{ x: number; y: number } | null>(null);
 
   // Inicializar cortes según la longitud del decoder
   const initialCortes = useMemo(() => {
@@ -118,6 +124,15 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, initialImageUrl,
   const isUnLado = config.tipoLlave === 'estandar_un' || config.tipoLlave === 'pista_canal' || config.tipoLlave === '1_eje_lateral';
   const initialLado = isUnLado ? config.ladoEstandarUn : 'izq';
   const [cursorActivo, setCursorActivo] = useState<{ corteIndex: number; lado: 'izq' | 'der' }>({ corteIndex: 0, lado: initialLado });
+
+  const getSafeDepthIndex = (raw: number | undefined, fallback = 0): number => {
+    if (raw === UNKNOWN_DEPTH) return fallback;
+    if (!Number.isFinite(raw)) return fallback;
+    return Math.max(0, Math.min(raw ?? fallback, config.profundidades.length - 1));
+  };
+
+  const currentDepthValue = cortes[cursorActivo.corteIndex]?.[cursorActivo.lado] ?? 0;
+  const currentDepthLabel = currentDepthValue === UNKNOWN_DEPTH ? "?" : String(getSafeDepthIndex(currentDepthValue) + 1);
 
   // Listener para tamaño de ventana (matemáticas precisas)
   useEffect(() => {
@@ -154,7 +169,7 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, initialImageUrl,
     const lado = cursorActivo.lado;
 
     const corte = cortes[idx] || { izq: 0, der: 0 };
-    const profIndex = Math.min(corte[lado] || 0, config.profundidades.length - 1);
+    const profIndex = getSafeDepthIndex(corte[lado], 0);
     const profVal = config.profundidades[profIndex] || 0;
 
     const distCentro = isInterior
@@ -227,8 +242,9 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, initialImageUrl,
     const isDosEjes = config.tipoLlave === 'dos_ejes_exterior' || config.tipoLlave === 'dos_ejes_interior';
     const nivelEn = (index: number, lado: 'izq' | 'der') => {
       const corte = cortes[index] || { izq: 0, der: 0 };
-      const rawIndex = corte[lado] || 0;
-      const profIndex = Math.max(0, Math.min(rawIndex, config.profundidades.length - 1));
+      const rawIndex = corte[lado];
+      if (rawIndex === UNKNOWN_DEPTH) return "?";
+      const profIndex = getSafeDepthIndex(rawIndex, 0);
       return String(profIndex + 1);
     };
 
@@ -252,6 +268,18 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, initialImageUrl,
   const getAngle = (touches: React.TouchList) => Math.atan2(touches[1].clientY - touches[0].clientY, touches[1].clientX - touches[0].clientX) * (180 / Math.PI);
 
   const iniciarGestos = (e: React.MouseEvent | React.TouchEvent) => {
+    if (fase === 'ajuste') {
+      const target = (e.target as HTMLElement | null);
+      if (target?.closest?.('button, input, textarea, select, label')) return;
+      const touches = "touches" in e ? e.touches : null;
+      if (touches && touches.length === 1) {
+        sideSwipeStartRef.current = { x: touches[0].clientX, y: touches[0].clientY };
+      } else {
+        sideSwipeStartRef.current = null;
+      }
+      return;
+    }
+
     if (fase !== 'alineacion') return;
     const target = (e.target as HTMLElement | null);
     if (target?.closest?.('button, input, textarea, select, label')) return;
@@ -310,6 +338,19 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, initialImageUrl,
   };
 
   const finalizarGestos = (e: React.MouseEvent | React.TouchEvent) => {
+    if (fase === 'ajuste') {
+      if ("changedTouches" in e && showLadoToggle && sideSwipeStartRef.current) {
+        const end = e.changedTouches[0];
+        const dx = end.clientX - sideSwipeStartRef.current.x;
+        const dy = end.clientY - sideSwipeStartRef.current.y;
+        if (Math.abs(dx) >= SIDE_SWIPE_MIN_X && Math.abs(dy) <= SIDE_SWIPE_MAX_Y) {
+          alternarLado();
+        }
+      }
+      sideSwipeStartRef.current = null;
+      return;
+    }
+
     const touches = "touches" in e ? e.touches : null;
     if (touches && touches.length > 0) {
       activeTouchesRef.current = touches.length;
@@ -385,7 +426,7 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, initialImageUrl,
       const { corteIndex, lado } = cursorActivo;
       if (!nuevos[corteIndex]) nuevos[corteIndex] = { izq: 0, der: 0 };
       const corteActualizado = { ...nuevos[corteIndex] };
-      const currentIndex = corteActualizado[lado];
+      const currentIndex = corteActualizado[lado] === UNKNOWN_DEPTH ? 0 : getSafeDepthIndex(corteActualizado[lado], 0);
 
       const isInterior = config.tipoLlave === 'dos_ejes_interior' || config.tipoLlave === 'pista_canal' || config.tipoLlave === '1_eje_lateral';
 
@@ -416,6 +457,23 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, initialImageUrl,
       if (config.tipoLlave === 'estandar_doble') {
         const otroLado: 'izq' | 'der' = lado === 'izq' ? 'der' : 'izq';
         corteActualizado[otroLado] = nuevoIndex;
+      }
+
+      nuevos[corteIndex] = corteActualizado;
+      return nuevos;
+    });
+  };
+
+  const marcarProfundidadDesconocida = () => {
+    setCortes(prev => {
+      const nuevos = [...prev];
+      const { corteIndex, lado } = cursorActivo;
+      if (!nuevos[corteIndex]) nuevos[corteIndex] = { izq: 0, der: 0 };
+      const corteActualizado = { ...nuevos[corteIndex], [lado]: UNKNOWN_DEPTH };
+
+      if (config.tipoLlave === 'estandar_doble') {
+        const otroLado: 'izq' | 'der' = lado === 'izq' ? 'der' : 'izq';
+        corteActualizado[otroLado] = UNKNOWN_DEPTH;
       }
 
       nuevos[corteIndex] = corteActualizado;
@@ -556,8 +614,10 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, initialImageUrl,
           const isRowActiveDer = fase === 'ajuste' && cursorActivo.corteIndex === i && cursorActivo.lado === 'der';
 
           const corte = cortes[i] || { izq: 0, der: 0 };
-          const profIzqIndex = Math.min(corte.izq, config.profundidades.length - 1);
-          const profDerIndex = Math.min(corte.der, config.profundidades.length - 1);
+          const hasKnownIzq = corte.izq !== UNKNOWN_DEPTH;
+          const hasKnownDer = corte.der !== UNKNOWN_DEPTH;
+          const profIzqIndex = getSafeDepthIndex(corte.izq, 0);
+          const profDerIndex = getSafeDepthIndex(corte.der, 0);
 
           const distCentroIzq = isInterior
             ? ((config.anchoLlave / 2) - config.profundidades[profIzqIndex]) * config.escalaPixelMm
@@ -580,11 +640,15 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, initialImageUrl,
                 <>
                   <line x1={startX_Izq} y1={cutYIzq} x2={centerX - maxProfDist - 15} y2={cutYIzq} stroke={isRowActiveIzq ? "#39FF14" : "rgba(0, 229, 255, 0.4)"} strokeWidth={isRowActiveIzq ? "2" : "1"} />
                   <text x={centerX - maxProfDist - 25} y={cutYIzq + 4} fill={isRowActiveIzq ? "#39FF14" : "rgba(200, 240, 255, 0.9)"} fontSize="12" textAnchor="end" fontWeight="bold">{i + 1}</text>
-                  {fase !== 'captura' && (
+                  {fase !== 'captura' && hasKnownIzq && (
                     <>
                       <circle cx={xPuntoIzq} cy={cutYIzq} r={isRowActiveIzq ? 4 : 2.5} fill={isRowActiveIzq ? "#f59e0b" : "#00E5FF"} filter={isRowActiveIzq ? "url(#neon-glow-decoder)" : ""} />
                       {isRowActiveIzq && <circle cx={xPuntoIzq} cy={cutYIzq} r={8} fill="none" stroke="#f59e0b" strokeWidth="1" className="animate-ping" style={{ transformOrigin: `${xPuntoIzq}px ${cutYIzq}px` }} />}
+                      <text x={centerX - maxProfDist - 42} y={cutYIzq + 4} fill={isRowActiveIzq ? "#FFB830" : "rgba(200, 240, 255, 0.95)"} fontSize="13" textAnchor="end" fontWeight="900">{profIzqIndex + 1}</text>
                     </>
+                  )}
+                  {fase !== 'captura' && !hasKnownIzq && (
+                    <text x={centerX - maxProfDist - 42} y={cutYIzq + 4} fill={isRowActiveIzq ? "#FFB830" : "rgba(255, 184, 48, 0.72)"} fontSize="13" textAnchor="end" fontWeight="900">?</text>
                   )}
                 </>
               )}
@@ -592,11 +656,15 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, initialImageUrl,
                 <>
                   <line x1={startX_Der} y1={cutYDer} x2={centerX + maxProfDist + 15} y2={cutYDer} stroke={isRowActiveDer ? "#39FF14" : "rgba(0, 229, 255, 0.4)"} strokeWidth={isRowActiveDer ? "2" : "1"} />
                   <text x={centerX + maxProfDist + 25} y={cutYDer + 4} fill={isRowActiveDer ? "#39FF14" : "rgba(200, 240, 255, 0.9)"} fontSize="12" textAnchor="start" fontWeight="bold">{i + 1}</text>
-                  {fase !== 'captura' && (
+                  {fase !== 'captura' && hasKnownDer && (
                     <>
                       <circle cx={xPuntoDer} cy={cutYDer} r={isRowActiveDer ? 4 : 2.5} fill={isRowActiveDer ? "#f59e0b" : "#00E5FF"} filter={isRowActiveDer ? "url(#neon-glow-decoder)" : ""} />
                       {isRowActiveDer && <circle cx={xPuntoDer} cy={cutYDer} r={8} fill="none" stroke="#f59e0b" strokeWidth="1" className="animate-ping" style={{ transformOrigin: `${xPuntoDer}px ${cutYDer}px` }} />}
+                      <text x={centerX + maxProfDist + 42} y={cutYDer + 4} fill={isRowActiveDer ? "#FFB830" : "rgba(200, 240, 255, 0.95)"} fontSize="13" textAnchor="start" fontWeight="900">{profDerIndex + 1}</text>
                     </>
+                  )}
+                  {fase !== 'captura' && !hasKnownDer && (
+                    <text x={centerX + maxProfDist + 42} y={cutYDer + 4} fill={isRowActiveDer ? "#FFB830" : "rgba(255, 184, 48, 0.72)"} fontSize="13" textAnchor="start" fontWeight="900">?</text>
                   )}
                 </>
               )}
@@ -698,7 +766,7 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, initialImageUrl,
               <div className="absolute right-3 sm:right-5 top-[calc(100%+100px)] -translate-y-1/2 z-[70] flex flex-col gap-4 pointer-events-none items-center">
                 <div className="flex flex-col items-center justify-center w-[54px] sm:w-[60px] h-[54px] sm:h-[60px] bg-[#14141A] backdrop-blur-sm rounded-[1.25rem] border border-[#00E5A0]/20 shadow-xl pointer-events-auto">
                   <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Nivel</span>
-                  <span className="text-xl font-black text-[#00E5A0] leading-none">{(cortes[cursorActivo.corteIndex]?.[cursorActivo.lado] || 0) + 1}</span>
+                  <span className="text-xl font-black text-[#00E5A0] leading-none">{currentDepthLabel}</span>
                 </div>
               </div>
               <div className="absolute right-3 sm:right-5 top-[60%] -translate-y-1/2 flex flex-col gap-3 pointer-events-none items-center">
@@ -741,7 +809,17 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, initialImageUrl,
             <div className="grid grid-cols-3 gap-2 w-[160px] h-[160px] pointer-events-none">
               <div /><button onClick={() => moverCursor(1)} className="pointer-events-auto flex items-center justify-center bg-[#14141A] rounded-2xl text-gray-300 active:bg-[#00E5A0] active:text-[#0a0a0f] transition-colors shadow-lg border border-[#00E5A0]/20"><ChevronUp size={28} /></button><div />
               <button onClick={() => ajustarProfundidad('izq')} className="pointer-events-auto flex items-center justify-center bg-[#14141A] rounded-2xl text-gray-300 active:bg-[#FFB830] active:text-[#0a0a0f] transition-colors shadow-lg border border-[#00E5A0]/20"><ChevronLeft size={28} /></button>
-              <div className="pointer-events-auto flex items-center justify-center bg-[#0A0A10]/80 rounded-2xl border border-[#00E5A0]/20 shadow-inner"><Crosshair size={22} className="text-gray-600" /></div>
+              <button
+                onClick={marcarProfundidadDesconocida}
+                className={`pointer-events-auto flex items-center justify-center rounded-2xl transition-colors shadow-inner border font-black text-2xl ${
+                  currentDepthValue === UNKNOWN_DEPTH
+                    ? "bg-[#FFB830] text-[#0a0a0f] border-[#FFB830]"
+                    : "bg-[#0A0A10]/80 text-[#FFB830] border-[#00E5A0]/20 active:bg-[#FFB830] active:text-[#0a0a0f]"
+                }`}
+                title="Marcar profundidad desconocida"
+              >
+                ?
+              </button>
               <button onClick={() => ajustarProfundidad('der')} className="pointer-events-auto flex items-center justify-center bg-[#14141A] rounded-2xl text-gray-300 active:bg-[#FFB830] active:text-[#0a0a0f] transition-colors shadow-lg border border-[#00E5A0]/20"><ChevronRight size={28} /></button>
               <div /><button onClick={() => moverCursor(-1)} className="pointer-events-auto flex items-center justify-center bg-[#14141A] rounded-2xl text-gray-300 active:bg-[#00E5A0] active:text-[#0a0a0f] transition-colors shadow-lg border border-[#00E5A0]/20"><ChevronDown size={28} /></button><div />
             </div>
