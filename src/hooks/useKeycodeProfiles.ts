@@ -54,14 +54,19 @@ export function useKeycodeProfiles() {
     }
   }, []);
 
-  /** Búsqueda server-side de códigos (series grandes). positions: null = comodín, string[] = valores aceptados (±1). */
+  /**
+   * Búsqueda server-side de códigos (series grandes). positions: null = comodín,
+   * string[] = valores aceptados (±1). partial: secuencia de dígitos que debe
+   * aparecer contigua en el bitting, en cualquier posición.
+   */
   const searchCodes = useCallback(async (
     profileId: string,
-    opts: { codigo?: string; positions?: (string[] | null)[]; limit?: number; offset?: number },
+    opts: { codigo?: string; positions?: (string[] | null)[]; partial?: string; limit?: number; offset?: number },
   ): Promise<{ total: number; results: CodeEntry[] }> => {
     const params = new URLSearchParams({ profile_id: profileId });
     if (opts.codigo) params.set("codigo", opts.codigo);
     if (opts.positions) params.set("positions", JSON.stringify(opts.positions));
+    if (opts.partial) params.set("partial", opts.partial);
     if (opts.limit != null) params.set("limit", String(opts.limit));
     if (opts.offset != null) params.set("offset", String(opts.offset));
     try {

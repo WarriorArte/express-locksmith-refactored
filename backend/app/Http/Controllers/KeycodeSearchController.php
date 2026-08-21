@@ -16,6 +16,9 @@ use Illuminate\Support\Facades\DB;
  *   positions   JSON: array de longitud = largo del bitting.
  *               Cada posición es null/"" (comodín) o un array de caracteres aceptados
  *               (para el modo ±1 se envían p.ej. ["3","2","4"]).
+ *   partial     búsqueda parcial: secuencia de dígitos que debe aparecer de forma
+ *               contigua en el bitting, en cualquier posición (p.ej. "13112433"
+ *               encuentra bittings como "433131124332" o "413112433413").
  *   limit/offset paginación (limit máx. 1000, por defecto 300)
  *
  * Respuesta: { total, limit, offset, results: [{ codigo, bitting: [..] }] }
@@ -42,6 +45,21 @@ final class KeycodeSearchController
                 ->where('codigo', strtoupper($codigo))
                 ->first(['codigo', 'bitting']);
 
+            // Sin match exacto: compara por el valor numérico puro (ignora prefijos
+            // de letras y ceros a la izquierda), p.ej. "8100" == "HA00008100".
+            // Solo se paga este costo (sin usar el índice) cuando el match rápido falla.
+            if (!$row) {
+                $digits = preg_replace('/\D/', '', $codigo) ?? '';
+                if ($digits !== '') {
+                    $numeric = ltrim($digits, '0');
+                    if ($numeric === '') $numeric = '0';
+                    $row = DB::table('keycode_codes')
+                        ->where('profile_id', $profileId)
+                        ->whereRaw("CAST(REGEXP_REPLACE(codigo, '[^0-9]', '') AS UNSIGNED) = ?", [$numeric])
+                        ->first(['codigo', 'bitting']);
+                }
+            }
+
             return ApiResponse::success([
                 'total'   => $row ? 1 : 0,
                 'limit'   => 1,
@@ -50,9 +68,41 @@ final class KeycodeSearchController
             ]);
         }
 
+        $partial = trim((string) $request->query('partial', ''));
+        if ($partial !== '') {
+            $digits = preg_replace('/\D/', '', $partial) ?? '';
+            if ($digits === '') {
+                return ApiResponse::error('Se requiere al menos un dígito');
+            }
+
+            $limit  = min(max((int) $request->query('limit', 300), 1), self::MAX_LIMIT);
+            $offset = max((int) $request->query('offset', 0), 0);
+
+            // Sin índice utilizable (comodín al inicio del LIKE): acotado por profile_id,
+            // recorre solo los códigos de esta serie, no toda la tabla.
+            $query = DB::table('keycode_codes')
+                ->where('profile_id', $profileId)
+                ->where('bitting', 'like', '%' . $digits . '%');
+
+            $total = (clone $query)->count();
+
+            $rows = $query
+                ->orderBy('codigo')
+                ->offset($offset)
+                ->limit($limit)
+                ->get(['codigo', 'bitting']);
+
+            return ApiResponse::success([
+                'total'   => $total,
+                'limit'   => $limit,
+                'offset'  => $offset,
+                'results' => $rows->map(fn ($r) => $this->serialize($r))->all(),
+            ]);
+        }
+
         $positions = $this->parsePositions($request->query('positions'));
         if ($positions === null) {
-            return ApiResponse::error('Se requiere codigo o positions');
+            return ApiResponse::error('Se requiere codigo, partial o positions');
         }
 
         $limit  = min(max((int) $request->query('limit', 300), 1), self::MAX_LIMIT);

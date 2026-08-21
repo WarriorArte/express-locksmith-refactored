@@ -190,6 +190,8 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
   const [profilesViewMode, setProfilesViewMode] = useState<"list" | "grid">("list");
   const [deleteProfileId, setDeleteProfileId] = useState<string | null>(null);
   const [deleteCodeTarget, setDeleteCodeTarget] = useState<string | null>(null);
+  const [confirmDeleteAllCodesOpen, setConfirmDeleteAllCodesOpen] = useState(false);
+  const [deletingAllCodes, setDeletingAllCodes] = useState(false);
   
   // --- Preview override test ---
   const [manualPreviewInput, setManualPreviewInput] = useState("");
@@ -356,6 +358,35 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
     onDelete(deleteProfileId);
     setDeleteProfileId(null);
     toast.success("Serie eliminada.");
+  };
+
+  // Vacía por completo los códigos de la serie y lo persiste de inmediato (no
+  // espera al botón "Guardar" general), para asegurar que no queden códigos
+  // huérfanos en la base de datos si se cargó un JSON equivocado.
+  const confirmDeleteAllCodes = async () => {
+    if (isNewProfile || !editingProfile) {
+      setCurrentCodes([]);
+      setCodesDirty(true);
+      setConfirmDeleteAllCodesOpen(false);
+      toast.success("Códigos eliminados.");
+      return;
+    }
+    setDeletingAllCodes(true);
+    try {
+      const finalProfile: KeycodeProfile = {
+        ...editingProfile, references, bittingConfig, codesData: [], configuracionVisual, profileImage, decoderConfig, icCard,
+      };
+      await onUpdate(finalProfile, undefined, true);
+      setCurrentCodes([]);
+      setCodesDirty(false);
+      setEditingProfile(finalProfile);
+      toast.success("Todos los códigos fueron eliminados de la base de datos.");
+    } catch {
+      toast.error("No se pudieron eliminar los códigos. Intenta de nuevo.");
+    } finally {
+      setDeletingAllCodes(false);
+      setConfirmDeleteAllCodesOpen(false);
+    }
   };
 
   // Longitud total de bitting esperada según la config actual (suma de ejes si está dividido).
@@ -1453,6 +1484,23 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                     <input ref={mergeFileInputRef} type="file" accept=".json" className="hidden" onChange={handleMergeFileChange} />
                   </div>
 
+                  {/* Eliminar todos los códigos de la serie */}
+                  <div className="flex items-center justify-between gap-2 p-2.5 rounded-lg border border-destructive/30 bg-destructive/5">
+                    <div className="min-w-0">
+                      <Label className="text-xs font-semibold text-destructive block">Eliminar todos los códigos</Label>
+                      <p className="text-[10px] text-muted-foreground">Borra permanentemente todos los códigos de esta serie de la base de datos. Útil si cargaste el JSON equivocado.</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 shrink-0 text-destructive border-destructive/40 hover:bg-destructive/10"
+                      onClick={() => setConfirmDeleteAllCodesOpen(true)}
+                      disabled={currentCodes.length === 0}
+                    >
+                      <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Eliminar todos
+                    </Button>
+                  </div>
+
                   <div className="relative">
                     <Search className="w-4 h-4 text-muted-foreground absolute left-2.5 top-2" />
                     <Input placeholder="Buscar código..." value={searchTerm}
@@ -1600,6 +1648,27 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
               <AlertDialogCancel>Cancelar</AlertDialogCancel>
               <AlertDialogAction onClick={confirmDeleteCode} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                 Eliminar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={confirmDeleteAllCodesOpen} onOpenChange={(open) => !open && !deletingAllCodes && setConfirmDeleteAllCodesOpen(false)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Eliminar TODOS los códigos de esta serie?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Se eliminarán permanentemente los {currentCodes.length} código(s) de esta serie de la base de datos. Esta acción no se puede deshacer.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deletingAllCodes}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => { e.preventDefault(); confirmDeleteAllCodes(); }}
+                disabled={deletingAllCodes}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deletingAllCodes ? "Eliminando..." : "Eliminar todos"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

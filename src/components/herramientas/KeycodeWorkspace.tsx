@@ -1,7 +1,7 @@
 import { useState, useRef, useMemo, useCallback, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { m as motion, AnimatePresence } from "framer-motion";
-import { Key, ArrowLeft, CheckCircle2, X, Info, Settings2, Loader2, Camera, Lock, Search, List, ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
+import { Key, ArrowLeft, CheckCircle2, X, Info, Settings2, Loader2, Camera, Lock, Search, List, ChevronLeft, ChevronRight, ImageIcon, ScanSearch } from "lucide-react";
 import { toast } from "sonner";
 import { GeneradorLlaveSVG } from "@/components/llaves/GeneradorLlaveSVG";
 import { UnifiedSearchInput } from "@/components/shared/UnifiedSearchInput";
@@ -11,6 +11,7 @@ import { useKeycodeVisualSettings } from "@/hooks/useKeycodeVisualSettings";
 import { useTheme } from "@/hooks/useTheme";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { AccountMenu } from "@/components/layout/AccountMenu";
 import { Separator } from "@/components/ui/separator";
@@ -21,13 +22,25 @@ import { LOCK_LABELS, LOCK_ORDER } from "@/types";
 
 export type KeycodeSearchFn = (
   profileId: string,
-  opts: { codigo?: string; positions?: (string[] | null)[]; limit?: number; offset?: number },
+  opts: { codigo?: string; positions?: (string[] | null)[]; partial?: string; limit?: number; offset?: number },
 ) => Promise<{ total: number; results: { codigo: string; bitting: string[] }[] }>;
 
 /** A partir de este número de códigos la serie se busca en el servidor en vez de descargarse completa. */
 const REMOTE_SEARCH_THRESHOLD = 5000;
 /** Máximo de coincidencias que traemos del servidor por búsqueda de bitting. */
 const REMOTE_RESULT_LIMIT = 500;
+
+/**
+ * Extrae el valor numérico puro de un código (quita prefijos de letras y ceros
+ * a la izquierda), p.ej. "HA00008100" → "8100". Devuelve null si no hay dígitos.
+ * Permite que "8100", "008100" y "HA00008100" encuentren el mismo código.
+ */
+function extractCodigoNumeric(codigo: string): string | null {
+  const digits = codigo.replace(/\D/g, "");
+  if (!digits) return null;
+  const trimmed = digits.replace(/^0+/, "");
+  return trimmed === "" ? "0" : trimmed;
+}
 
 interface KeycodeWorkspaceProps {
   assignment: ToolAssignment;
@@ -39,7 +52,7 @@ interface KeycodeWorkspaceProps {
 }
 
 export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, onSearchCodes, onBack, year }: KeycodeWorkspaceProps) {
-  const profileId = assignment.keycodeProfileIds?.[0] ?? (assignment as any).keycodeProfileId ?? null;
+  const profileId = assignment.keycodeProfileIds?.[0] ?? assignment.keycodeProfileId ?? null;
   const baseProfile = keycodeProfiles.find((p) => p.id === profileId);
 
   const { settings: visualSettings } = useKeycodeVisualSettings();
@@ -105,6 +118,11 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
   const [hasBittingSearched, setHasBittingSearched] = useState(false);
   const [infoModalOpen, setInfoModalOpen] = useState(false);
   const [advancedMode, setAdvancedMode] = useState(false);
+  // Búsqueda parcial: encuentra bittings que contengan esta secuencia de dígitos
+  // en cualquier posición (a diferencia de la búsqueda por celdas, que es posicional).
+  const [partialSearchMode, setPartialSearchMode] = useState(false);
+  const [partialSearchInput, setPartialSearchInput] = useState("");
+  const [isPartialResults, setIsPartialResults] = useState(false);
   const [decoderOpen, setDecoderOpen] = useState(false);
   const [capturaModalOpen, setCapturaModalOpen] = useState(false);
   const [decoderImageUrl, setDecoderImageUrl] = useState<string | null>(null);
@@ -243,6 +261,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     setBittingResults([]);
     setBittingGroups([]);
     setHasBittingSearched(false);
+    setIsPartialResults(false);
   };
 
   /** Construye el arreglo de posiciones aceptadas para la búsqueda remota. */
@@ -279,9 +298,15 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
       return;
     }
 
-    const found = profile.codesData.find(
-      (c) => c.codigo.toUpperCase() === searchTerm.toUpperCase().trim()
-    );
+    const term = searchTerm.toUpperCase().trim();
+    let found = profile.codesData.find((c) => c.codigo.toUpperCase() === term);
+    if (!found) {
+      // Sin match exacto: compara por el valor numérico puro (ignora prefijos y ceros a la izquierda).
+      const termNumeric = extractCodigoNumeric(term);
+      if (termNumeric !== null) {
+        found = profile.codesData.find((c) => extractCodigoNumeric(c.codigo) === termNumeric);
+      }
+    }
     if (found) {
       const axesResult = getAxesResult(found.bitting, profile.bittingConfig);
       const flatValues = axesResult.flatMap((a) => a.values);
@@ -295,6 +320,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     setBittingResults([]);
     setBittingGroups([]);
     setHasBittingSearched(false);
+    setIsPartialResults(false);
   };
 
   // Handle digit change from SVG inline inputs
@@ -325,6 +351,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     if (!profile) return;
     if (!canBittingSearch) return;
     setAllowResultsSheet(true);
+    setIsPartialResults(false);
     setSearchValues([...gridValues]);
     setIsSearching(true);
 
@@ -385,6 +412,39 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     }, 50);
   };
 
+  /** Búsqueda parcial: encuentra bittings que contengan esta secuencia de dígitos, sin importar la posición. */
+  const handlePartialSearch = async () => {
+    if (!profile) return;
+    const digits = partialSearchInput.replace(/\D/g, "");
+    if (digits.length < Math.ceil(bittingTotalLength * 0.5)) return;
+    setAllowResultsSheet(true);
+    setIsPartialResults(true);
+    setIsSearching(true);
+
+    if (remoteMode && onSearchCodes) {
+      const { total, results } = await onSearchCodes(profile.id, { partial: digits, limit: REMOTE_RESULT_LIMIT });
+      setBittingResults(results);
+      setBittingGroups([]);
+      setHasBittingSearched(true);
+      setIsSearching(false);
+      if (total > results.length) {
+        toast.info(`Se encontraron ${total} coincidencias. Mostrando las primeras ${results.length}.`);
+      }
+      return;
+    }
+
+    setTimeout(() => {
+      const results = profile.codesData.filter((entry) => {
+        const bittingStr = Array.isArray(entry.bitting) ? entry.bitting.join("") : entry.bitting;
+        return bittingStr.includes(digits);
+      });
+      setBittingResults(results);
+      setBittingGroups([]);
+      setHasBittingSearched(true);
+      setIsSearching(false);
+    }, 50);
+  };
+
   const handleClear = () => {
     setGridValues(Array(bittingTotalLength).fill("?"));
     setSearchValues(Array(bittingTotalLength).fill("?"));
@@ -396,6 +456,8 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     setHasBittingSearched(false);
     setTileVariants(Array(bittingTotalLength).fill(null).map(() => ({ up: false, down: false })));
     setResultsSheetOpen(false);
+    setPartialSearchInput("");
+    setIsPartialResults(false);
   };
 
   const loadEntry = (entry: { codigo: string; bitting: string[] }) => {
@@ -439,6 +501,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     setDecoderOpen(false);
     toast.success(`Bitting decodificado: ${bitting.join('-')}`);
     setAllowResultsSheet(true);
+    setIsPartialResults(false);
     // Auto-buscar coincidencias después de un microtick
     if (remoteMode && onSearchCodes) {
       setIsSearching(true);
@@ -535,7 +598,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
 
   const ranges = getAxesQueryRanges();
   const showAxisLabels = ranges.length >= 2;
-  const hasAnyValue = gridValues.some((v) => v.trim() !== "" && v !== "?") || searchTerm.trim() !== "";
+  const hasAnyValue = gridValues.some((v) => v.trim() !== "" && v !== "?") || searchTerm.trim() !== "" || partialSearchInput.trim() !== "";
   const filledCells = gridValues.filter((v) => v.trim() !== "" && v !== "?").length;
   const canBittingSearch = (codeState !== "exact" || advancedMode) && filledCells >= Math.ceil(bittingTotalLength * 0.5);
   const hasMultiAxes = profile.bittingConfig.axes && profile.bittingConfig.axes.length >= 2;
@@ -561,6 +624,97 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     const flatIdx = profile.bittingConfig.axes![0].length + index;
     handleSVGInputChange(flatIdx, value);
   };
+
+  const partialDigits = partialSearchInput.replace(/\D/g, "");
+  const partialMinDigits = Math.ceil(bittingTotalLength * 0.5);
+  const canPartialSearch = partialDigits.length >= partialMinDigits;
+
+  /**
+   * Tarjeta de un resultado (código + cajas de bitting), compartida entre la
+   * búsqueda posicional (agrupada por "llave") y la búsqueda parcial (lista
+   * plana, sin esa agrupación). `getHighlightState` decide, por posición,
+   * si se resalta como comodín/coincidencia (isWild) o como variante ±1 (isAdvanced).
+   */
+  const renderResultEntry = (
+    entry: { codigo: string; bitting: string[] },
+    delay: number,
+    getHighlightState: (flatIdx: number, val: string) => { isWild: boolean; isAdvanced: boolean },
+  ) => {
+    const axesDisplay = getAxesResult(entry.bitting, profile!.bittingConfig);
+    const isSelected = exactEntry?.codigo === entry.codigo;
+    return (
+      <motion.button
+        key={entry.codigo}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay }}
+        onClick={() => loadEntry(entry)}
+        className={`w-full flex flex-col gap-1.5 px-3 py-2.5 text-left transition-colors ${
+          isSelected ? "bg-primary/8" : "hover:bg-muted/60"
+        }`}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <span className={`font-mono text-sm font-semibold ${isSelected ? "text-primary" : "text-foreground"}`}>
+            {entry.codigo}
+          </span>
+          {isSelected && <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />}
+        </div>
+        <div className="flex flex-col gap-1 w-full">
+          {axesDisplay.map((axis, aIdx) => (
+            <div key={aIdx} className="flex items-center gap-1.5 w-full">
+              {showAxisLabels && (
+                <span className="text-[10px] font-bold text-muted-foreground shrink-0 w-3">
+                  {axis.label}:
+                </span>
+              )}
+              <div
+                className="grid"
+                style={{ gridTemplateColumns: `repeat(${axis.values.length}, 1.75rem)`, gap: '2px' }}
+              >
+                {axis.values.map((val, posIdx) => {
+                  const flatIdx = (ranges[aIdx]?.start ?? 0) + posIdx;
+                  const { isWild, isAdvanced } = getHighlightState(flatIdx, val);
+                  return (
+                    <span
+                      key={posIdx}
+                      className={`h-6 flex items-center justify-center rounded text-[1.25rem] leading-none font-extrabold tracking-tight ${
+                        isWild
+                          ? "bg-primary text-primary-foreground"
+                          : isAdvanced
+                            ? "bg-amber-400/25 text-amber-600 dark:text-amber-400"
+                            : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {val}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </motion.button>
+    );
+  };
+
+  /** Resalta la secuencia buscada como si fuera comodín, sin importar en qué posición cayó. */
+  const partialHighlight = (entry: { codigo: string; bitting: string[] }) => {
+    const bittingStr = Array.isArray(entry.bitting) ? entry.bitting.join("") : entry.bitting;
+    const matchStart = partialDigits ? bittingStr.indexOf(partialDigits) : -1;
+    return (flatIdx: number) => ({
+      isWild: matchStart >= 0 && flatIdx >= matchStart && flatIdx < matchStart + partialDigits.length,
+      isAdvanced: false,
+    });
+  };
+
+  // Lista plana para resultados de búsqueda parcial: mismas tarjetas que la
+  // búsqueda normal, sin la agrupación por "llave" (que solo aplica a
+  // búsquedas posicionales con comodines).
+  const renderPartialResults = () => (
+    <div className="rounded-lg border border-border overflow-hidden divide-y divide-border">
+      {bittingResults.map((entry, idx) => renderResultEntry(entry, idx * 0.03, partialHighlight(entry)))}
+    </div>
+  );
 
   return (
     <>
@@ -805,7 +959,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
         <Card>
           <CardContent className="px-4 pb-4 pt-4 space-y-4">
             {/* Teclado Virtual Numérico / Profundidades */}
-            {profile && (
+            {profile && !partialSearchMode && (
               <div className="flex flex-wrap justify-center gap-2 sm:max-w-md sm:mx-auto mt-4 mb-4">
                 {Array.from(allowedValues).map((keyVal) => (
                   <Button
@@ -829,15 +983,33 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
               </div>
             )}
 
+            {/* Búsqueda parcial: secuencia de dígitos, sin importar la posición */}
+            {partialSearchMode && (
+              <div className="flex flex-col gap-1 sm:max-w-md sm:mx-auto">
+                <Input
+                  value={partialSearchInput}
+                  onChange={(e) => setPartialSearchInput(e.target.value.replace(/\D/g, ""))}
+                  placeholder={`Mínimo ${partialMinDigits} dígitos, ej. 13112433`}
+                  inputMode="numeric"
+                  className="font-mono text-center"
+                />
+                {partialDigits.length > 0 && !canPartialSearch && (
+                  <p className="text-[11px] text-white/60 text-center">
+                    Ingresa al menos {partialMinDigits} dígitos ({partialDigits.length}/{partialMinDigits}).
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* Acciones */}
             <div className="flex gap-2 sm:max-w-md sm:mx-auto">
               <Button
                 type="button"
                 size="icon"
-                onClick={handleBittingSearch}
+                onClick={partialSearchMode ? handlePartialSearch : handleBittingSearch}
                 variant={hasBittingSearched ? "outline" : "default"}
-                title={hasBittingSearched ? "Actualizar búsqueda" : "Buscar coincidencias"}
-                disabled={!canBittingSearch}
+                title={partialSearchMode ? "Buscar secuencia" : (hasBittingSearched ? "Actualizar búsqueda" : "Buscar coincidencias")}
+                disabled={partialSearchMode ? !canPartialSearch : !canBittingSearch}
                 className="shrink-0"
               >
                 <Key className="w-4 h-4" />
@@ -863,6 +1035,19 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                 className="shrink-0 ml-auto"
               >
                 <Settings2 className="w-4 h-4" />
+              </Button>
+              <Button
+                type="button"
+                variant={partialSearchMode ? "default" : "outline"}
+                size="icon"
+                onClick={() => {
+                  setPartialSearchMode((v) => !v);
+                  if (partialSearchMode) { setPartialSearchInput(""); setIsPartialResults(false); }
+                }}
+                title={partialSearchMode ? "Desactivar búsqueda parcial" : "Activar búsqueda parcial (secuencia de dígitos)"}
+                className="shrink-0"
+              >
+                <ScanSearch className="w-4 h-4" />
               </Button>
               <Button
                 type="button"
@@ -1014,12 +1199,16 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                   <CheckCircle2 className="w-4 h-4 text-green-600" />
                   <span className="text-sm font-semibold text-green-700 dark:text-green-400">
                     {bittingResults.length} código{bittingResults.length !== 1 ? "s" : ""}
-                    {" · "}
-                    {bittingGroups.length} llave{bittingGroups.length !== 1 ? "s" : ""} necesaria{bittingGroups.length !== 1 ? "s" : ""}
+                    {!isPartialResults && (
+                      <>
+                        {" · "}
+                        {bittingGroups.length} llave{bittingGroups.length !== 1 ? "s" : ""} necesaria{bittingGroups.length !== 1 ? "s" : ""}
+                      </>
+                    )}
                   </span>
                 </div>
                 <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain space-y-3 pb-2" style={{ scrollbarWidth: 'thin', scrollbarColor: 'hsl(var(--border)) transparent' }}>
-                  {bittingGroups.map((group, groupIdx) => (
+                  {isPartialResults ? renderPartialResults() : bittingGroups.map((group, groupIdx) => (
                     <div key={groupIdx} className="space-y-2">
                       <div className="flex items-center justify-center gap-2 px-1">
                         <span className="text-sm font-extrabold tracking-wide text-primary bg-primary/15 px-3 py-1 rounded-full uppercase">
@@ -1030,65 +1219,14 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                         </span>
                       </div>
                       <div className="rounded-lg border border-border overflow-hidden divide-y divide-border">
-                        {group.map((entry, entryIdx) => {
-                          const axesDisplay = getAxesResult(entry.bitting, profile.bittingConfig);
-                          const isSelected = exactEntry?.codigo === entry.codigo;
-                          return (
-                            <motion.button
-                              key={entry.codigo}
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              transition={{ delay: (groupIdx * 4 + entryIdx) * 0.03 }}
-                              onClick={() => loadEntry(entry)}
-                              className={`w-full flex flex-col gap-1.5 px-3 py-2.5 text-left transition-colors ${
-                                isSelected ? "bg-primary/8" : "hover:bg-muted/60"
-                              }`}
-                            >
-                              <div className="flex items-center justify-between gap-2">
-                                <span className={`font-mono text-sm font-semibold ${isSelected ? "text-primary" : "text-foreground"}`}>
-                                  {entry.codigo}
-                                </span>
-                                {isSelected && <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />}
-                              </div>
-                              <div className="flex flex-col gap-1 w-full">
-                                {axesDisplay.map((axis, aIdx) => (
-                                  <div key={aIdx} className="flex items-center gap-1.5 w-full">
-                                    {showAxisLabels && (
-                                      <span className="text-[10px] font-bold text-muted-foreground shrink-0 w-3">
-                                        {axis.label}:
-                                      </span>
-                                    )}
-                                    <div
-                                      className="grid"
-                                      style={{ gridTemplateColumns: `repeat(${axis.values.length}, 1.75rem)`, gap: '2px' }}
-                                    >
-                                      {axis.values.map((val, posIdx) => {
-                                        const flatIdx = ranges[aIdx]?.start + posIdx;
-                                        const searchVal = searchValues[flatIdx] ?? "";
-                                        const isWild = !searchVal.trim() || searchVal === "?";
-                                        const isAdvanced = advancedMode && !isWild && val !== searchVal;
-                                        return (
-                                          <span
-                                            key={posIdx}
-                                            className={`h-6 flex items-center justify-center rounded text-[1.25rem] leading-none font-extrabold tracking-tight ${
-                                              isWild
-                                                ? "bg-primary text-primary-foreground"
-                                                : isAdvanced
-                                                  ? "bg-amber-400/25 text-amber-600 dark:text-amber-400"
-                                                  : "bg-muted text-muted-foreground"
-                                            }`}
-                                          >
-                                            {val}
-                                          </span>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </motion.button>
-                          );
-                        })}
+                        {group.map((entry, entryIdx) =>
+                          renderResultEntry(entry, (groupIdx * 4 + entryIdx) * 0.03, (flatIdx, val) => {
+                            const searchVal = searchValues[flatIdx] ?? "";
+                            const isWild = !searchVal.trim() || searchVal === "?";
+                            const isAdvanced = advancedMode && !isWild && val !== searchVal;
+                            return { isWild, isAdvanced };
+                          })
+                        )}
                       </div>
                     </div>
                   ))}
@@ -1125,8 +1263,12 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                 <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
                 <span className="text-green-700 dark:text-green-400">
                   {bittingResults.length} código{bittingResults.length !== 1 ? "s" : ""}
-                  {" · "}
-                  {bittingGroups.length} llave{bittingGroups.length !== 1 ? "s" : ""} necesaria{bittingGroups.length !== 1 ? "s" : ""}
+                  {!isPartialResults && (
+                    <>
+                      {" · "}
+                      {bittingGroups.length} llave{bittingGroups.length !== 1 ? "s" : ""} necesaria{bittingGroups.length !== 1 ? "s" : ""}
+                    </>
+                  )}
                 </span>
               </>
             ) : (
@@ -1142,7 +1284,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
           </div>
         ) : bittingResults.length > 0 ? (
           <div className="space-y-3 pb-2">
-            {bittingGroups.map((group, groupIdx) => (
+            {isPartialResults ? renderPartialResults() : bittingGroups.map((group, groupIdx) => (
               <div key={groupIdx} className="space-y-2">
                 <div className="flex items-center justify-center gap-2 px-1">
                   <span className="text-sm font-extrabold tracking-wide text-primary bg-primary/15 px-3 py-1 rounded-full uppercase">
@@ -1153,65 +1295,14 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                   </span>
                 </div>
                 <div className="rounded-lg border border-border overflow-hidden divide-y divide-border">
-                  {group.map((entry, entryIdx) => {
-                    const axesDisplay = getAxesResult(entry.bitting, profile!.bittingConfig);
-                    const isSelected = exactEntry?.codigo === entry.codigo;
-                    return (
-                      <motion.button
-                        key={entry.codigo}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: (groupIdx * 4 + entryIdx) * 0.03 }}
-                        onClick={() => loadEntry(entry)}
-                        className={`w-full flex flex-col gap-1.5 px-3 py-2.5 text-left transition-colors ${
-                          isSelected ? "bg-primary/8" : "hover:bg-muted/60"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className={`font-mono text-sm font-semibold ${isSelected ? "text-primary" : "text-foreground"}`}>
-                            {entry.codigo}
-                          </span>
-                          {isSelected && <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />}
-                        </div>
-                        <div className="flex flex-col gap-1 w-full">
-                          {axesDisplay.map((axis, aIdx) => (
-                            <div key={aIdx} className="flex items-center gap-1.5 w-full">
-                              {showAxisLabels && (
-                                <span className="text-[10px] font-bold text-muted-foreground shrink-0 w-3">
-                                  {axis.label}:
-                                </span>
-                              )}
-                              <div
-                                className="grid"
-                                style={{ gridTemplateColumns: `repeat(${axis.values.length}, 1.75rem)`, gap: '2px' }}
-                              >
-                                {axis.values.map((val, posIdx) => {
-                                  const flatIdx = ranges[aIdx]?.start + posIdx;
-                                  const searchVal = searchValues[flatIdx] ?? "";
-                                  const isWild = !searchVal.trim() || searchVal === "?";
-                                  const isAdvanced = advancedMode && !isWild && val !== searchVal;
-                                  return (
-                                    <span
-                                      key={posIdx}
-                                      className={`h-6 flex items-center justify-center rounded text-[1.25rem] leading-none font-extrabold tracking-tight ${
-                                        isWild
-                                          ? "bg-primary text-primary-foreground"
-                                          : isAdvanced
-                                            ? "bg-amber-400/25 text-amber-600 dark:text-amber-400"
-                                            : "bg-muted text-muted-foreground"
-                                      }`}
-                                    >
-                                      {val}
-                                    </span>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </motion.button>
-                    );
-                  })}
+                  {group.map((entry, entryIdx) =>
+                    renderResultEntry(entry, (groupIdx * 4 + entryIdx) * 0.03, (flatIdx, val) => {
+                      const searchVal = searchValues[flatIdx] ?? "";
+                      const isWild = !searchVal.trim() || searchVal === "?";
+                      const isAdvanced = advancedMode && !isWild && val !== searchVal;
+                      return { isWild, isAdvanced };
+                    })
+                  )}
                 </div>
               </div>
             ))}
