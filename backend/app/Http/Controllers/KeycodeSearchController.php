@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
  *
  * GET /herramientas/keycode-search
  *   profile_id  (requerido)
- *   codigo      búsqueda exacta por código
+ *   codigo      búsqueda exacta por código (respeta multiPrefixes del perfil, ver findCodigo)
  *   positions   JSON: array de longitud = largo del bitting.
  *               Cada posición es null/"" (comodín) o un array de caracteres aceptados
  *               (para el modo ±1 se envían p.ej. ["3","2","4"]).
@@ -42,42 +42,7 @@ final class KeycodeSearchController
 
         $codigo = trim((string) $request->query('codigo', ''));
         if ($codigo !== '') {
-            $row = DB::table('keycode_codes')
-                ->where('profile_id', $profileId)
-                ->where('codigo', strtoupper($codigo))
-                ->first(['codigo', 'bitting']);
-
-            // Sin match exacto: compara por el valor numérico puro (ignora prefijos
-            // de letras y ceros a la izquierda), p.ej. "8100" == "HA00008100".
-            // Solo se paga este costo (sin usar el índice) cuando el match rápido falla.
-            if (!$row) {
-                $digits = preg_replace('/\D/', '', $codigo) ?? '';
-                if ($digits !== '') {
-                    $numeric = ltrim($digits, '0');
-                    if ($numeric === '') $numeric = '0';
-                    $row = DB::table('keycode_codes')
-                        ->where('profile_id', $profileId)
-                        ->whereRaw("CAST(REGEXP_REPLACE(codigo, '[^0-9]', '') AS UNSIGNED) = ?", [$numeric])
-                        ->first(['codigo', 'bitting']);
-
-                    // Nivel 3: el prefijo también tiene dígitos (p.ej. "A70000-A75928",
-                    // prefijo "A7"): compara por sufijo exacto de dígitos. Solo se acepta
-                    // si hay una única coincidencia posible; si el usuario escribió muy
-                    // pocos dígitos y hay varias, no adivinamos (evitaría cortar la llave
-                    // equivocada).
-                    if (!$row) {
-                        $len = strlen($digits);
-                        $candidates = DB::table('keycode_codes')
-                            ->where('profile_id', $profileId)
-                            ->whereRaw("RIGHT(REGEXP_REPLACE(codigo, '[^0-9]', ''), ?) = ?", [$len, $digits])
-                            ->limit(2)
-                            ->get(['codigo', 'bitting']);
-                        if ($candidates->count() === 1) {
-                            $row = $candidates->first();
-                        }
-                    }
-                }
-            }
+            $row = $this->findCodigo($profileId, $codigo);
 
             // El código Valet es el mismo texto que el normal, con bitting distinto:
             // si hay match normal, se busca su contraparte valet (si existe) y se
@@ -159,6 +124,93 @@ final class KeycodeSearchController
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
+
+    /**
+     * Busca un código exacto respetando "multi-prefijo": si la serie tiene prefijos
+     * registrados (multiPrefixes), los códigos se guardan "pelones" (sin prefijo) y
+     * solo se acepta el texto tal cual (sin prefijo) o quitando uno de los prefijos
+     * de la lista — un prefijo no registrado NO hace match, para no cortar la llave
+     * equivocada por un prefijo mal tecleado. Sin multiPrefixes, comportamiento de
+     * siempre (normalización numérica, sin distinguir prefijos).
+     */
+    private function findCodigo(string $profileId, string $codigo): ?object
+    {
+        $term = strtoupper(trim($codigo));
+        $multiPrefixes = $this->getMultiPrefixes($profileId);
+
+        if (empty($multiPrefixes)) {
+            return $this->findCodigoTiers($profileId, $term);
+        }
+
+        $candidates = [$term];
+        usort($multiPrefixes, fn ($a, $b) => strlen($b) <=> strlen($a));
+        foreach ($multiPrefixes as $prefix) {
+            if ($prefix !== '' && str_starts_with($term, $prefix)) {
+                $candidates[] = substr($term, strlen($prefix));
+            }
+        }
+
+        foreach (array_unique($candidates) as $candidate) {
+            if ($candidate === '') continue;
+            $row = $this->findCodigoTiers($profileId, $candidate);
+            if ($row) return $row;
+        }
+
+        return null;
+    }
+
+    /** Los 3 niveles de normalización de siempre: exacto, numérico puro, sufijo único. */
+    private function findCodigoTiers(string $profileId, string $term): ?object
+    {
+        $row = DB::table('keycode_codes')
+            ->where('profile_id', $profileId)
+            ->where('codigo', $term)
+            ->first(['codigo', 'bitting']);
+        if ($row) return $row;
+
+        // Sin match exacto: compara por el valor numérico puro (ignora prefijos
+        // de letras y ceros a la izquierda), p.ej. "8100" == "HA00008100".
+        // Solo se paga este costo (sin usar el índice) cuando el match rápido falla.
+        $digits = preg_replace('/\D/', '', $term) ?? '';
+        if ($digits === '') return null;
+
+        $numeric = ltrim($digits, '0');
+        if ($numeric === '') $numeric = '0';
+        $row = DB::table('keycode_codes')
+            ->where('profile_id', $profileId)
+            ->whereRaw("CAST(REGEXP_REPLACE(codigo, '[^0-9]', '') AS UNSIGNED) = ?", [$numeric])
+            ->first(['codigo', 'bitting']);
+        if ($row) return $row;
+
+        // Nivel 3: el prefijo también tiene dígitos (p.ej. "A70000-A75928",
+        // prefijo "A7"): compara por sufijo exacto de dígitos. Solo se acepta
+        // si hay una única coincidencia posible; si el usuario escribió muy
+        // pocos dígitos y hay varias, no adivinamos (evitaría cortar la llave
+        // equivocada).
+        $len = strlen($digits);
+        $candidates = DB::table('keycode_codes')
+            ->where('profile_id', $profileId)
+            ->whereRaw("RIGHT(REGEXP_REPLACE(codigo, '[^0-9]', ''), ?) = ?", [$len, $digits])
+            ->limit(2)
+            ->get(['codigo', 'bitting']);
+
+        return $candidates->count() === 1 ? $candidates->first() : null;
+    }
+
+    /** @return string[] Prefijos registrados para la serie (mayúsculas, sin vacíos). */
+    private function getMultiPrefixes(string $profileId): array
+    {
+        $json = DB::table('keycode_profiles')->where('id', $profileId)->value('data');
+        if (!$json) return [];
+        $data = json_decode((string) $json, true);
+        $prefixes = $data['multiPrefixes'] ?? [];
+        if (!is_array($prefixes)) return [];
+
+        return array_values(array_unique(array_filter(array_map(
+            fn ($p) => strtoupper(trim((string) $p)),
+            $prefixes
+        ), fn ($p) => $p !== '')));
+    }
 
     /** Serializa una página de resultados adjuntando el bitting Valet (si existe) por código, en un solo query. */
     private function serializeRows(string $profileId, \Illuminate\Support\Collection $rows): array

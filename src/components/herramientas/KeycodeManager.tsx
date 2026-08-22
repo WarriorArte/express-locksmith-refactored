@@ -184,6 +184,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
   const [icCard, setIcCard] = useState("");
   const [series, setSeries] = useState("");
   const [seriesAliases, setSeriesAliases] = useState<string[]>([]);
+  const [multiPrefixes, setMultiPrefixes] = useState<string[]>([]);
   const [loadingEditId, setLoadingEditId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveProgress, setSaveProgress] = useState<{ done: number; total: number } | null>(null);
@@ -278,6 +279,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
     setIcCard(fullProfile.icCard ?? "");
     setSeries(fullProfile.series ?? "");
     setSeriesAliases(fullProfile.seriesAliases ? [...fullProfile.seriesAliases] : []);
+    setMultiPrefixes(fullProfile.multiPrefixes ? [...fullProfile.multiPrefixes] : []);
     setValetCodes(fullProfile.valetCodesData ? [...fullProfile.valetCodesData] : []);
     setValetCodesDirty(false);
     setDecoderHasErrors(false);
@@ -291,7 +293,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
   const hasChanges = useMemo(() => {
     if (!editingProfile) return false;
     if (isNewProfile) return true; // nueva serie: siempre puede guardarse
-    const snap = JSON.stringify({ references, bittingConfig, codesData: currentCodes, valetCodesData: valetCodes, configuracionVisual, profileImage, decoderConfig, icCard, series, seriesAliases });
+    const snap = JSON.stringify({ references, bittingConfig, codesData: currentCodes, valetCodesData: valetCodes, configuracionVisual, profileImage, decoderConfig, icCard, series, seriesAliases, multiPrefixes });
     const orig = JSON.stringify({
       references: editingProfile.references,
       bittingConfig: editingProfile.bittingConfig,
@@ -303,9 +305,10 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
       icCard: editingProfile.icCard ?? "",
       series: editingProfile.series ?? "",
       seriesAliases: editingProfile.seriesAliases ?? [],
+      multiPrefixes: editingProfile.multiPrefixes ?? [],
     });
     return snap !== orig;
-  }, [editingProfile, isNewProfile, references, bittingConfig, currentCodes, valetCodes, configuracionVisual, profileImage, decoderConfig, icCard, series, seriesAliases]);
+  }, [editingProfile, isNewProfile, references, bittingConfig, currentCodes, valetCodes, configuracionVisual, profileImage, decoderConfig, icCard, series, seriesAliases, multiPrefixes]);
 
   const canSave = hasChanges && !decoderHasErrors;
 
@@ -325,6 +328,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
       ...profileWithoutValet, references, bittingConfig, codesData: currentCodes, configuracionVisual, profileImage, decoderConfig, icCard,
       series: series.trim(),
       seriesAliases: seriesAliases.map(a => a.trim()).filter(a => a !== ""),
+      multiPrefixes: multiPrefixes.map(p => p.trim().toUpperCase()).filter(p => p !== ""),
     };
     // Solo se re-suben los códigos si la pestaña "Códigos" tuvo cambios reales (o es una serie nueva).
     // Si solo se tocó otra pestaña (visual, decoder, referencias...), nos ahorramos la subida completa.
@@ -405,6 +409,13 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
     setSeriesAliases((prev) => prev.map((a, i) => (i === index ? value : a)));
   const removeSeriesAlias = (index: number) =>
     setSeriesAliases((prev) => prev.filter((_, i) => i !== index));
+
+  // ── Multi-prefijo (códigos guardados sin prefijo, varios prefijos comparten bitting) ──
+  const addMultiPrefix = () => setMultiPrefixes((prev) => [...prev, ""]);
+  const updateMultiPrefix = (index: number, value: string) =>
+    setMultiPrefixes((prev) => prev.map((p, i) => (i === index ? value : p)));
+  const removeMultiPrefix = (index: number) =>
+    setMultiPrefixes((prev) => prev.filter((_, i) => i !== index));
 
   const setPrimaryReference = (id: number) =>
     setReferences((prev) => prev.map((r) => ({ ...r, isPrimary: r.id === id })));
@@ -1017,6 +1028,33 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                     ))}
                     <Button variant="ghost" size="sm" onClick={addSeriesAlias} className="text-primary text-xs self-start">
                       <Plus className="w-3.5 h-3.5 mr-1" /> Agregar título adicional
+                    </Button>
+                  </div>
+
+                  <Separator />
+
+                  <div className="flex flex-col gap-1.5">
+                    <Label className="text-xs font-semibold text-muted-foreground">Multi-prefijo (opcional)</Label>
+                    <p className="text-[10px] text-muted-foreground -mt-1">
+                      Usa esto solo si varios prefijos comparten el mismo bitting (p.ej. M0001 y V0001 cortan igual).
+                      Los códigos se cargan sin prefijo (p.ej. "0001") y aquí registras qué prefijos son válidos para
+                      esta serie. Al buscar "V0001", se acepta si "V" está en la lista; un prefijo no listado no encuentra el código.
+                    </p>
+                    {multiPrefixes.map((prefix, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <Input
+                          placeholder="Ej. V"
+                          value={prefix}
+                          onChange={(e) => updateMultiPrefix(i, e.target.value)}
+                          className="h-8 text-sm font-mono flex-1 uppercase"
+                        />
+                        <Button variant="ghost" size="icon" onClick={() => removeMultiPrefix(i)} className="h-7 w-7 text-destructive hover:text-destructive">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button variant="ghost" size="sm" onClick={addMultiPrefix} className="text-primary text-xs self-start">
+                      <Plus className="w-3.5 h-3.5 mr-1" /> Agregar prefijo
                     </Button>
                   </div>
 

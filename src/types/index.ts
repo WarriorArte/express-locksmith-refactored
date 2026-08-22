@@ -138,6 +138,14 @@ export interface KeycodeProfile {
   codesIncomplete?: boolean;
   /** Títulos de serie adicionales (p.ej. otra nomenclatura que también cubre esta serie). */
   seriesAliases?: string[];
+  /**
+   * Prefijos válidos para esta serie cuando los códigos se guardan "pelones" (sin
+   * prefijo) porque varios prefijos comparten el mismo bitting (p.ej. M0001 y V0001
+   * son el mismo corte). Si está vacío, la búsqueda funciona como siempre (sin
+   * distinguir prefijos). Si tiene valores, solo esos prefijos (o ningún prefijo)
+   * hacen match — cualquier otro prefijo no listado no encuentra el código.
+   */
+  multiPrefixes?: string[];
   /** Códigos "Valet": mismo código que codesData, pero con bitting distinto (llave de acceso restringido). */
   valetCodesData?: CodeEntry[];
   /** Total de códigos Valet en DB (presente en respuestas de lista, donde valetCodesData llega vacío). */

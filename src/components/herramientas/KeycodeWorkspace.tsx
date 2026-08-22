@@ -18,7 +18,7 @@ import { AccountMenu } from "@/components/layout/AccountMenu";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/responsive-dialog";
 
-import type { ToolAssignment, KeycodeProfile, BittingConfig } from "@/types";
+import type { ToolAssignment, KeycodeProfile, BittingConfig, CodeEntry } from "@/types";
 import { LOCK_LABELS, LOCK_ORDER } from "@/types";
 
 /** Un resultado de búsqueda: código + bitting, con el bitting Valet (si existe) cuando el backend lo adjunta. */
@@ -44,6 +44,59 @@ function extractCodigoNumeric(codigo: string): string | null {
   if (!digits) return null;
   const trimmed = digits.replace(/^0+/, "");
   return trimmed === "" ? "0" : trimmed;
+}
+
+/** Los 3 niveles de normalización de siempre (exacto, numérico puro, sufijo único), en memoria. */
+function findCodigoTiersLocal(codesData: CodeEntry[], term: string): CodeEntry | null {
+  const exact = codesData.find((c) => c.codigo.toUpperCase() === term);
+  if (exact) return exact;
+
+  const termNumeric = extractCodigoNumeric(term);
+  if (termNumeric !== null) {
+    const numericMatch = codesData.find((c) => extractCodigoNumeric(c.codigo) === termNumeric);
+    if (numericMatch) return numericMatch;
+  }
+
+  // El prefijo también tiene dígitos (p.ej. "A70000-A75928", prefijo "A7"):
+  // compara por sufijo exacto de dígitos. Solo se acepta si hay una única
+  // coincidencia posible; con varias, no adivinamos.
+  const digits = term.replace(/\D/g, "");
+  if (digits !== "") {
+    const candidates = codesData.filter((c) => c.codigo.replace(/\D/g, "").endsWith(digits));
+    if (candidates.length === 1) return candidates[0];
+  }
+  return null;
+}
+
+/**
+ * Búsqueda de código exacto respetando "multi-prefijo" (mismo criterio que
+ * KeycodeSearchController::findCodigo en el backend, para series chicas que se
+ * buscan en memoria): sin prefijos registrados, comportamiento de siempre; con
+ * prefijos, solo el texto sin prefijo o con uno de los prefijos registrados
+ * quitado hace match — un prefijo no listado no encuentra el código.
+ */
+function findCodigoLocal(codesData: CodeEntry[], rawTerm: string, multiPrefixes: string[] | undefined): CodeEntry | null {
+  const term = rawTerm.toUpperCase().trim();
+  if (!multiPrefixes || multiPrefixes.length === 0) {
+    return findCodigoTiersLocal(codesData, term);
+  }
+
+  const candidates = [term];
+  const sortedPrefixes = multiPrefixes
+    .map((p) => p.toUpperCase())
+    .sort((a, b) => b.length - a.length);
+  for (const prefix of sortedPrefixes) {
+    if (prefix && term.startsWith(prefix)) {
+      candidates.push(term.slice(prefix.length));
+    }
+  }
+
+  for (const candidate of Array.from(new Set(candidates))) {
+    if (!candidate) continue;
+    const found = findCodigoTiersLocal(codesData, candidate);
+    if (found) return found;
+  }
+  return null;
 }
 
 interface KeycodeWorkspaceProps {
@@ -302,25 +355,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
       return;
     }
 
-    const term = searchTerm.toUpperCase().trim();
-    let found = profile.codesData.find((c) => c.codigo.toUpperCase() === term);
-    if (!found) {
-      // Sin match exacto: compara por el valor numérico puro (ignora prefijos y ceros a la izquierda).
-      const termNumeric = extractCodigoNumeric(term);
-      if (termNumeric !== null) {
-        found = profile.codesData.find((c) => extractCodigoNumeric(c.codigo) === termNumeric);
-      }
-    }
-    if (!found) {
-      // El prefijo también tiene dígitos (p.ej. "A70000-A75928", prefijo "A7"):
-      // compara por sufijo exacto de dígitos. Solo se acepta si hay una única
-      // coincidencia posible; con varias, no adivinamos.
-      const digits = term.replace(/\D/g, "");
-      if (digits !== "") {
-        const candidates = profile.codesData.filter((c) => c.codigo.replace(/\D/g, "").endsWith(digits));
-        if (candidates.length === 1) found = candidates[0];
-      }
-    }
+    const found = findCodigoLocal(profile.codesData, searchTerm, profile.multiPrefixes);
     if (found) {
       const axesResult = getAxesResult(found.bitting, profile.bittingConfig);
       const flatValues = axesResult.flatMap((a) => a.values);
