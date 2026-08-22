@@ -204,7 +204,10 @@ export function GeneradorLlaveSVG({
         inputY = topEdgeY - boxH - edgeGap;
       }
 
-      const centers = valoresPrimarios!.map((_, i) => startX + i * spacing);
+      // Solo doble_lado: la última posición puede tener una separación extra (ver KeycodeManager → Visual).
+      const lastIdx = valoresPrimarios!.length - 1;
+      const extraLastGap = config.tipo === 'doble_lado' && config.separacionUltimoCorteActiva ? (config.separacionUltimoCorte ?? 0) : 0;
+      const centers = valoresPrimarios!.map((_, i) => startX + i * spacing + (i === lastIdx ? extraLastGap : 0));
 
       let idPrefix = 'corte';
       if (config.tipo === 'doble_lado') idPrefix = 'simDoble';

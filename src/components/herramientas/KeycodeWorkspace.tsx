@@ -12,6 +12,7 @@ import { useTheme } from "@/hooks/useTheme";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { AccountMenu } from "@/components/layout/AccountMenu";
 import { Separator } from "@/components/ui/separator";
@@ -23,7 +24,7 @@ import { LOCK_LABELS, LOCK_ORDER } from "@/types";
 export type KeycodeSearchFn = (
   profileId: string,
   opts: { codigo?: string; positions?: (string[] | null)[]; partial?: string; limit?: number; offset?: number },
-) => Promise<{ total: number; results: { codigo: string; bitting: string[] }[] }>;
+) => Promise<{ total: number; results: { codigo: string; bitting: string[]; valetBitting?: string[] | null }[] }>;
 
 /** A partir de este número de códigos la serie se busca en el servidor en vez de descargarse completa. */
 const REMOTE_SEARCH_THRESHOLD = 5000;
@@ -112,6 +113,8 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
   const [searchValues, setSearchValues] = useState<string[]>(() => Array(bittingTotalLength).fill("?"));
   const [codeState, setCodeState] = useState<"idle" | "exact" | "notfound">("idle");
   const [exactEntry, setExactEntry] = useState<{ codigo: string; bitting: string[] } | null>(null);
+  // Bitting Valet (mismo código, cortes distintos para llave de acceso restringido), si existe.
+  const [valetEntry, setValetEntry] = useState<{ codigo: string; bitting: string[] } | null>(null);
 
   const [bittingResults, setBittingResults] = useState<{ codigo: string; bitting: string[] }[]>([]);
   const [bittingGroups, setBittingGroups] = useState<{ codigo: string; bitting: string[] }[][]>([]);
@@ -246,17 +249,22 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     return chains.map((c) => c.entries);
   };
 
-  const applyCodeResult = (found: { codigo: string; bitting: string[] } | null | undefined) => {
+  const applyCodeResult = (
+    found: { codigo: string; bitting: string[] } | null | undefined,
+    valetBitting?: string[] | null,
+  ) => {
     if (!profile) return;
     if (found) {
       const axesResult = getAxesResult(found.bitting, profile.bittingConfig);
       const flatValues = axesResult.flatMap((a) => a.values);
       setGridValues(flatValues);
       setExactEntry(found);
+      setValetEntry(valetBitting ? { codigo: found.codigo, bitting: valetBitting } : null);
       setCodeState("exact");
     } else {
       setCodeState("notfound");
       setExactEntry(null);
+      setValetEntry(null);
     }
     setBittingResults([]);
     setBittingGroups([]);
@@ -294,7 +302,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
       setIsSearching(true);
       const { results } = await onSearchCodes(profile.id, { codigo: searchTerm.trim(), limit: 1 });
       setIsSearching(false);
-      applyCodeResult(results[0] ?? null);
+      applyCodeResult(results[0] ?? null, results[0]?.valetBitting);
       return;
     }
 
@@ -322,10 +330,13 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
       const flatValues = axesResult.flatMap((a) => a.values);
       setGridValues(flatValues);
       setExactEntry(found);
+      const valetMatch = profile.valetCodesData?.find((v) => v.codigo === found!.codigo);
+      setValetEntry(valetMatch ? { codigo: valetMatch.codigo, bitting: valetMatch.bitting } : null);
       setCodeState("exact");
     } else {
       setCodeState("notfound");
       setExactEntry(null);
+      setValetEntry(null);
     }
     setBittingResults([]);
     setBittingGroups([]);
@@ -343,13 +354,14 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     if (codeState === "exact") {
       setCodeState("idle");
       setExactEntry(null);
+      setValetEntry(null);
     }
   };
 
   const handleVirtualKeypad = (val: string) => {
     if (!profile) return;
     const flatIdx = selectedCellIdx;
-    if (codeState === 'exact') { setCodeState('idle'); setExactEntry(null); }
+    if (codeState === 'exact') { setCodeState('idle'); setExactEntry(null); setValetEntry(null); }
 
     // "?" actúa como comodín: marca la celda como faltante y avanza
     setGridValues((prev) => { const n = [...prev]; n[flatIdx] = val; return n; });
@@ -475,6 +487,8 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     const flatValues = axesResult.flatMap((a) => a.values);
     setGridValues(flatValues);
     setExactEntry(entry);
+    const valetMatch = profile!.valetCodesData?.find((v) => v.codigo === entry.codigo);
+    setValetEntry(valetMatch ? { codigo: valetMatch.codigo, bitting: valetMatch.bitting } : null);
     setCodeState("exact");
     setSearchTerm(entry.codigo);
     setResultsSheetOpen(false);
@@ -811,6 +825,14 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
             <p className="mt-1.5 text-xs text-white/60">
               El código <span className="font-mono font-semibold">{searchTerm.toUpperCase()}</span> no existe en esta serie.
             </p>
+          )}
+          {codeState === "exact" && valetEntry && (
+            <div className="mt-2 flex items-center gap-2">
+              <Badge className="bg-amber-400 text-amber-950 hover:bg-amber-400 text-[10px] px-1.5 py-0 font-bold shrink-0">
+                VALET
+              </Badge>
+              <span className="font-mono text-xs tracking-widest text-white/80">{valetEntry.bitting.join(" ")}</span>
+            </div>
           )}
         </section>
       </div>

@@ -62,6 +62,10 @@ export interface ConfiguracionVisualLlave {
   corteExtra?: boolean;
   distanciaCorteExtra?: number;
   profundidadCorteExtra?: number;
+  /** Solo 'doble_lado': activa la separación extra antes de la última posición de corte. */
+  separacionUltimoCorteActiva?: boolean;
+  /** Solo 'doble_lado': separación extra (px) antes de la última posición de corte. */
+  separacionUltimoCorte?: number;
   /** Ajuste por serie: tamaño (ancho/alto en px) de la caja de cada dígito. */
   tamCaja?: number;
   /** Ajuste por serie: tamaño de fuente (px) del número dentro de cada caja. */
@@ -134,6 +138,10 @@ export interface KeycodeProfile {
   codesIncomplete?: boolean;
   /** Títulos de serie adicionales (p.ej. otra nomenclatura que también cubre esta serie). */
   seriesAliases?: string[];
+  /** Códigos "Valet": mismo código que codesData, pero con bitting distinto (llave de acceso restringido). */
+  valetCodesData?: CodeEntry[];
+  /** Total de códigos Valet en DB (presente en respuestas de lista, donde valetCodesData llega vacío). */
+  valetCodesCount?: number;
 }
 
 // Workshop type is defined canonically in @/hooks/useWorkshop.

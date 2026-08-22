@@ -56,6 +56,12 @@ final class KeycodeProfileController
             ->groupBy('profile_id')
             ->pluck('total', 'profile_id');
 
+        $valetCounts = DB::table('keycode_valet_codes')
+            ->whereIn('profile_id', $profileIds)
+            ->selectRaw('profile_id, COUNT(*) as total')
+            ->groupBy('profile_id')
+            ->pluck('total', 'profile_id');
+
         // Muestra: el código más bajo de cada perfil, en un solo query (evita
         // hacer una consulta por perfil, que no escala con catálogos grandes).
         $placeholders = implode(',', array_fill(0, count($profileIds), '?'));
@@ -71,11 +77,12 @@ final class KeycodeProfileController
 
 
         return ApiResponse::success(
-            $profiles->map(function ($p) use ($counts, $sampleRows) {
-                $count  = (int) $counts->get($p->id, 0);
-                $row    = $sampleRows->get($p->id);
-                $sample = $row ? [['codigo' => $row->codigo, 'bitting' => str_split($row->bitting)]] : [];
-                return $this->serializeList($p, $count, $sample);
+            $profiles->map(function ($p) use ($counts, $valetCounts, $sampleRows) {
+                $count      = (int) $counts->get($p->id, 0);
+                $valetCount = (int) $valetCounts->get($p->id, 0);
+                $row        = $sampleRows->get($p->id);
+                $sample     = $row ? [['codigo' => $row->codigo, 'bitting' => str_split($row->bitting)]] : [];
+                return $this->serializeList($p, $count, $sample, $valetCount);
             })
         );
     }
@@ -86,9 +93,11 @@ final class KeycodeProfileController
     {
         if ($resp = $this->authorizeWrite($request)) return $resp;
 
-        $payload   = $request->json()->all();
-        $codesData = $payload['codesData'] ?? [];
+        $payload        = $request->json()->all();
+        $codesData      = $payload['codesData'] ?? [];
+        $valetCodesData = $payload['valetCodesData'] ?? [];
         unset($payload['codesData'], $payload['codesCount'], $payload['codeSample']);
+        unset($payload['valetCodesData'], $payload['valetCodesCount']);
 
         $profile       = new KeycodeProfile();
         if (!empty($payload['id'])) $profile->id = $payload['id'];
@@ -97,10 +106,12 @@ final class KeycodeProfileController
         $profile->save();
 
         $this->replaceCodes($profile->id, $codesData);
+        if (!empty($valetCodesData)) $this->replaceValetCodes($profile->id, $valetCodesData);
 
-        $count  = count($codesData);
-        $sample = $this->buildSampleFromArray($codesData);
-        return ApiResponse::success($this->serializeList($profile->refresh(), $count, $sample), 'Creado');
+        $count      = count($codesData);
+        $valetCount = count($valetCodesData);
+        $sample     = $this->buildSampleFromArray($codesData);
+        return ApiResponse::success($this->serializeList($profile->refresh(), $count, $sample, $valetCount), 'Creado');
     }
 
     // ── PUT ──────────────────────────────────────────────────────────────────
@@ -115,9 +126,11 @@ final class KeycodeProfileController
         $profile = KeycodeProfile::query()->find($id);
         if (!$profile) return ApiResponse::error('No encontrado', 404);
 
-        $payload   = $request->json()->all();
-        $codesData = $payload['codesData'] ?? null;
+        $payload        = $request->json()->all();
+        $codesData      = $payload['codesData'] ?? null;
+        $valetCodesData = $payload['valetCodesData'] ?? null;
         unset($payload['codesData'], $payload['codesCount'], $payload['codeSample']);
+        unset($payload['valetCodesData'], $payload['valetCodesCount']);
 
         $profile->name = $payload['series'] ?? $profile->name;
         $profile->data = $payload;
@@ -126,12 +139,16 @@ final class KeycodeProfileController
         if ($codesData !== null) {
             $this->replaceCodes($id, $codesData);
         }
+        if ($valetCodesData !== null) {
+            $this->replaceValetCodes($id, $valetCodesData);
+        }
 
-        $count  = DB::table('keycode_codes')->where('profile_id', $id)->count();
-        $minRow = DB::table('keycode_codes')->where('profile_id', $id)->orderBy('codigo')->first(['codigo', 'bitting']);
-        $sample = $minRow ? [['codigo' => $minRow->codigo, 'bitting' => str_split($minRow->bitting)]] : [];
+        $count      = DB::table('keycode_codes')->where('profile_id', $id)->count();
+        $valetCount = DB::table('keycode_valet_codes')->where('profile_id', $id)->count();
+        $minRow     = DB::table('keycode_codes')->where('profile_id', $id)->orderBy('codigo')->first(['codigo', 'bitting']);
+        $sample     = $minRow ? [['codigo' => $minRow->codigo, 'bitting' => str_split($minRow->bitting)]] : [];
 
-        return ApiResponse::success($this->serializeList($profile->refresh(), $count, $sample), 'Actualizado');
+        return ApiResponse::success($this->serializeList($profile->refresh(), $count, $sample, $valetCount), 'Actualizado');
     }
 
     // ── DELETE ───────────────────────────────────────────────────────────────
@@ -147,6 +164,7 @@ final class KeycodeProfileController
         if (!$profile) return ApiResponse::error('No encontrado', 404);
 
         DB::table('keycode_codes')->where('profile_id', $id)->delete();
+        DB::table('keycode_valet_codes')->where('profile_id', $id)->delete();
         $profile->delete();
 
         return ApiResponse::success(null, 'Eliminado');
@@ -160,12 +178,20 @@ final class KeycodeProfileController
         // vea el perfil momentáneamente vacío entre el borrado y la reinserción.
         DB::transaction(function () use ($profileId, $codesData) {
             DB::table('keycode_codes')->where('profile_id', $profileId)->delete();
-            $this->insertCodes($profileId, $codesData);
+            $this->insertCodes('keycode_codes', $profileId, $codesData);
+        });
+    }
+
+    private function replaceValetCodes(string $profileId, array $codesData): void
+    {
+        DB::transaction(function () use ($profileId, $codesData) {
+            DB::table('keycode_valet_codes')->where('profile_id', $profileId)->delete();
+            $this->insertCodes('keycode_valet_codes', $profileId, $codesData);
         });
     }
 
     /** Inserta ignorando duplicados de la PK compuesta (profile_id, codigo). */
-    private function insertCodes(string $profileId, array $codesData): void
+    private function insertCodes(string $table, string $profileId, array $codesData): void
     {
         $rows = [];
         foreach ($codesData as $c) {
@@ -174,11 +200,11 @@ final class KeycodeProfileController
             $bitting = is_array($c['bitting'] ?? null) ? implode('', $c['bitting']) : (string) ($c['bitting'] ?? '');
             $rows[]  = ['profile_id' => $profileId, 'codigo' => $codigo, 'bitting' => $bitting];
             if (count($rows) >= 2000) {
-                DB::table('keycode_codes')->insertOrIgnore($rows);
+                DB::table($table)->insertOrIgnore($rows);
                 $rows = [];
             }
         }
-        if (!empty($rows)) DB::table('keycode_codes')->insertOrIgnore($rows);
+        if (!empty($rows)) DB::table($table)->insertOrIgnore($rows);
     }
 
 
@@ -200,21 +226,31 @@ final class KeycodeProfileController
         $codes = $rows->map(fn($r) => ['codigo' => $r->codigo, 'bitting' => str_split($r->bitting)])->all();
         $count = count($codes);
 
-        $data               = $profile->getAttribute('data') ?? [];
-        $data['id']         = $profile->getKey();
-        $data['codesData']  = $codes;
-        $data['codesCount'] = $count;
-        $data['codeSample'] = $count > 0 ? [$codes[intdiv($count, 2)]] : [];
+        $valetRows = DB::table('keycode_valet_codes')
+            ->where('profile_id', $profile->id)
+            ->orderBy('codigo')
+            ->get(['codigo', 'bitting']);
+        $valetCodes = $valetRows->map(fn($r) => ['codigo' => $r->codigo, 'bitting' => str_split($r->bitting)])->all();
+
+        $data                    = $profile->getAttribute('data') ?? [];
+        $data['id']              = $profile->getKey();
+        $data['codesData']       = $codes;
+        $data['codesCount']      = $count;
+        $data['codeSample']      = $count > 0 ? [$codes[intdiv($count, 2)]] : [];
+        $data['valetCodesData']  = $valetCodes;
+        $data['valetCodesCount'] = count($valetCodes);
         return $data;
     }
 
-    private function serializeList(KeycodeProfile $profile, int $count, array $sample): array
+    private function serializeList(KeycodeProfile $profile, int $count, array $sample, int $valetCount = 0): array
     {
-        $data               = $profile->getAttribute('data') ?? [];
-        $data['id']         = $profile->getKey();
-        $data['codesData']  = [];
-        $data['codesCount'] = $count;
-        $data['codeSample'] = $sample;
+        $data                    = $profile->getAttribute('data') ?? [];
+        $data['id']              = $profile->getKey();
+        $data['codesData']       = [];
+        $data['codesCount']      = $count;
+        $data['codeSample']      = $sample;
+        $data['valetCodesData']  = [];
+        $data['valetCodesCount'] = $valetCount;
         return $data;
     }
 }

@@ -6,6 +6,11 @@ const ENDPOINT = "/herramientas/keycode-profiles";
 /** Tamaño de lote para subir códigos (series grandes). */
 const CHUNK_SIZE = 3000;
 
+/** Resultado de búsqueda por código: incluye el bitting Valet si existe para ese mismo código. */
+export interface KeycodeSearchResult extends CodeEntry {
+  valetBitting?: string[] | null;
+}
+
 function migrate(items: KeycodeProfile[]): KeycodeProfile[] {
   return items.map((p) => {
     if (!p.bittingConfig) {
@@ -62,7 +67,7 @@ export function useKeycodeProfiles() {
   const searchCodes = useCallback(async (
     profileId: string,
     opts: { codigo?: string; positions?: (string[] | null)[]; partial?: string; limit?: number; offset?: number },
-  ): Promise<{ total: number; results: CodeEntry[] }> => {
+  ): Promise<{ total: number; results: KeycodeSearchResult[] }> => {
     const params = new URLSearchParams({ profile_id: profileId });
     if (opts.codigo) params.set("codigo", opts.codigo);
     if (opts.positions) params.set("positions", JSON.stringify(opts.positions));
@@ -70,7 +75,7 @@ export function useKeycodeProfiles() {
     if (opts.limit != null) params.set("limit", String(opts.limit));
     if (opts.offset != null) params.set("offset", String(opts.offset));
     try {
-      const data = await phpApiRequest<{ total: number; results: CodeEntry[] }>(
+      const data = await phpApiRequest<{ total: number; results: KeycodeSearchResult[] }>(
         `/herramientas/keycode-search?${params.toString()}`,
         { method: "GET" },
       );
@@ -85,11 +90,14 @@ export function useKeycodeProfiles() {
    * Al final compara el conteo confirmado por el servidor contra lo esperado: si una
    * subida se interrumpió a medias (red caída, pestaña cerrada), lo detecta aquí en
    * vez de dejar la serie truncada en silencio.
+   * `dataset`: "normal" (keycode_codes) o "valet" (keycode_valet_codes, mismo código
+   * con bitting distinto — llave de acceso restringido).
    */
   const uploadCodesInChunks = useCallback(async (
     profileId: string,
     codes: CodeEntry[],
     onProgress?: (done: number, total: number) => void,
+    dataset: "normal" | "valet" = "normal",
   ) => {
     const total = codes.length;
     let serverTotal = 0;
@@ -103,6 +111,7 @@ export function useKeycodeProfiles() {
         body: JSON.stringify({
           profile_id: profileId,
           mode: i === 0 ? "replace" : "append",
+          dataset,
           codes: chunk,
         }),
       });
@@ -113,7 +122,7 @@ export function useKeycodeProfiles() {
     if (total === 0) {
       await phpApiRequest("/herramientas/keycode-codes", {
         method: "POST",
-        body: JSON.stringify({ profile_id: profileId, mode: "replace", codes: [] }),
+        body: JSON.stringify({ profile_id: profileId, mode: "replace", dataset, codes: [] }),
       });
       return;
     }

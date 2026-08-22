@@ -46,6 +46,13 @@ interface KeycodeManagerProps {
   onUpdate: (profile: KeycodeProfile, onProgress?: (done: number, total: number) => void, codesChanged?: boolean) => void | Promise<void>;
   onDelete: (id: string) => void;
   onFetchCodes: (id: string) => Promise<KeycodeProfile | null>;
+  /** Sube códigos (normal o "valet") por lotes directamente, sin pasar por el flujo de Guardar. */
+  onUploadValetCodes: (
+    profileId: string,
+    codes: CodeEntry[],
+    onProgress?: (done: number, total: number) => void,
+    dataset?: "normal" | "valet",
+  ) => Promise<void>;
 }
 
 interface VisualRangeFieldProps {
@@ -194,7 +201,14 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
   const [deleteCodeTarget, setDeleteCodeTarget] = useState<string | null>(null);
   const [confirmDeleteAllCodesOpen, setConfirmDeleteAllCodesOpen] = useState(false);
   const [deletingAllCodes, setDeletingAllCodes] = useState(false);
-  
+
+  // --- Códigos Valet (mismo código, bitting distinto) ---
+  const [valetCodes, setValetCodes] = useState<CodeEntry[]>([]);
+  const [uploadingValet, setUploadingValet] = useState(false);
+  const valetFileInputRef = useRef<HTMLInputElement>(null);
+  const [confirmDeleteAllValetOpen, setConfirmDeleteAllValetOpen] = useState(false);
+  const [deletingAllValet, setDeletingAllValet] = useState(false);
+
   // --- Preview override test ---
   const [manualPreviewInput, setManualPreviewInput] = useState("");
   // --- Interactive preview (mirrors the workshop's key search UI) ---
@@ -264,6 +278,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
     setIcCard(fullProfile.icCard ?? "");
     setSeries(fullProfile.series ?? "");
     setSeriesAliases(fullProfile.seriesAliases ? [...fullProfile.seriesAliases] : []);
+    setValetCodes(fullProfile.valetCodesData ? [...fullProfile.valetCodesData] : []);
     setDecoderHasErrors(false);
     setSearchTerm("");
     setCurrentPage(1);
@@ -403,6 +418,73 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
     } finally {
       setDeletingAllCodes(false);
       setConfirmDeleteAllCodesOpen(false);
+    }
+  };
+
+  // ── Códigos Valet: cargar JSON (reemplaza el set completo) ──────
+  // Igual que los códigos normales, el mismo código puede tener un bitting
+  // distinto para la llave de valet. Se sube y persiste de inmediato (no
+  // pasa por el flujo de "Guardar" general) porque requiere que la serie
+  // ya exista en el servidor.
+  const handleValetFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!editingProfile || isNewProfile) {
+      toast.error("Guarda la serie primero para poder cargar códigos Valet.");
+      e.target.value = "";
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      try {
+        const parsed = JSON.parse(ev.target?.result as string) as JsonSerieImport;
+        if (!Array.isArray(parsed.registros)) {
+          toast.error("El JSON no tiene el formato esperado (registros).");
+          return;
+        }
+        const codesData: CodeEntry[] = parsed.registros
+          .filter((r) => r.code && r.bitting)
+          .map((r) => ({ codigo: r.code, bitting: r.bitting.split("") }));
+
+        setUploadingValet(true);
+        try {
+          await onUploadValetCodes(editingProfile.id, codesData, undefined, "valet");
+          setValetCodes(codesData);
+          setEditingProfile((prev) => (prev ? { ...prev, valetCodesData: codesData, valetCodesCount: codesData.length } : prev));
+          toast.success(`${codesData.length} código(s) Valet cargado(s).`);
+        } catch {
+          toast.error("No se pudieron subir los códigos Valet. Intenta de nuevo.");
+        } finally {
+          setUploadingValet(false);
+        }
+      } catch {
+        toast.error("Error al leer el archivo JSON. Verifica que sea un JSON válido.");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
+
+  // Vacía por completo los códigos Valet de la serie y lo persiste de inmediato,
+  // mismo patrón que "Eliminar todos los códigos" para no dejar cadáveres en BD.
+  const confirmDeleteAllValetCodes = async () => {
+    if (isNewProfile || !editingProfile) {
+      setValetCodes([]);
+      setConfirmDeleteAllValetOpen(false);
+      toast.success("Códigos Valet eliminados.");
+      return;
+    }
+    setDeletingAllValet(true);
+    try {
+      await onUploadValetCodes(editingProfile.id, [], undefined, "valet");
+      setValetCodes([]);
+      setEditingProfile((prev) => (prev ? { ...prev, valetCodesData: [], valetCodesCount: 0 } : prev));
+      toast.success("Todos los códigos Valet fueron eliminados de la base de datos.");
+    } catch {
+      toast.error("No se pudieron eliminar los códigos Valet. Intenta de nuevo.");
+    } finally {
+      setDeletingAllValet(false);
+      setConfirmDeleteAllValetOpen(false);
     }
   };
 
@@ -1264,6 +1346,35 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                         </>
                       )}
 
+                      {/* Separación extra en la última posición (solo doble_lado) */}
+                      {configuracionVisual.tipo === 'doble_lado' && (
+                        <>
+                          <Separator />
+                          <div className="flex items-center justify-between">
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase">Separación Extra Última Posición</p>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant={configuracionVisual.separacionUltimoCorteActiva ? "default" : "outline"}
+                              className="h-6 text-[10px] px-2"
+                              onClick={() => setConfiguracionVisual(c => c ? { ...c, separacionUltimoCorteActiva: !c.separacionUltimoCorteActiva } : c)}
+                            >
+                              {configuracionVisual.separacionUltimoCorteActiva ? "Activado" : "Desactivado"}
+                            </Button>
+                          </div>
+                          {configuracionVisual.separacionUltimoCorteActiva && (
+                            <VisualRangeField
+                              label="Separación extra"
+                              min={0}
+                              max={30}
+                              defaultValue={0}
+                              value={configuracionVisual.separacionUltimoCorte ?? 0}
+                              onChange={(value) => setConfiguracionVisual(c => c ? { ...c, separacionUltimoCorte: value } : c)}
+                            />
+                          )}
+                        </>
+                      )}
+
                       {/* Bisel punta */}
                       {configuracionVisual.tipo !== 'doble_lado' && configuracionVisual.tipo !== 'estandar_1_lado' && (
                         <VisualRangeField
@@ -1556,6 +1667,45 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                     </Button>
                   </div>
 
+                  {/* Códigos Valet: mismo código, bitting distinto (llave de acceso restringido) */}
+                  <div className="flex flex-col gap-2 p-2.5 rounded-lg border border-amber-500/30 bg-amber-500/5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <Label className="text-xs font-semibold text-amber-700 dark:text-amber-400 block">Códigos Valet</Label>
+                        <p className="text-[10px] text-muted-foreground">
+                          Mismo código, bitting distinto (llave de acceso restringido). Al buscar, si existe se mostrará marcado como Valet.
+                          {isNewProfile && " Guarda la serie primero para poder cargarlos."}
+                        </p>
+                      </div>
+                      <Badge variant="secondary" className="text-[10px] shrink-0">
+                        {valetCodes.length} cargado(s)
+                      </Badge>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 shrink-0"
+                        onClick={() => valetFileInputRef.current?.click()}
+                        disabled={isNewProfile || uploadingValet}
+                      >
+                        <Upload className="w-3.5 h-3.5 mr-1.5" /> {uploadingValet ? "Subiendo..." : "Cargar JSON de Valet"}
+                      </Button>
+                      {valetCodes.length > 0 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 shrink-0 text-destructive border-destructive/40 hover:bg-destructive/10"
+                          onClick={() => setConfirmDeleteAllValetOpen(true)}
+                          disabled={uploadingValet}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Eliminar todos
+                        </Button>
+                      )}
+                    </div>
+                    <input ref={valetFileInputRef} type="file" accept=".json" className="hidden" onChange={handleValetFileChange} />
+                  </div>
+
                   <div className="relative">
                     <Search className="w-4 h-4 text-muted-foreground absolute left-2.5 top-2" />
                     <Input placeholder="Buscar código..." value={searchTerm}
@@ -1724,6 +1874,27 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 {deletingAllCodes ? "Eliminando..." : "Eliminar todos"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={confirmDeleteAllValetOpen} onOpenChange={(open) => !open && !deletingAllValet && setConfirmDeleteAllValetOpen(false)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Eliminar TODOS los códigos Valet de esta serie?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Se eliminarán permanentemente los {valetCodes.length} código(s) Valet de esta serie de la base de datos. Esta acción no se puede deshacer.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deletingAllValet}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => { e.preventDefault(); confirmDeleteAllValetCodes(); }}
+                disabled={deletingAllValet}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deletingAllValet ? "Eliminando..." : "Eliminar todos"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -2084,7 +2255,7 @@ function DecoderEditor({ decoderConfig, setDecoderConfig, configuracionVisual, b
             className={`w-full bg-background border rounded-md p-2 font-mono text-[11px] resize-none ${distsError ? 'border-destructive' : 'border-input'}`}
           />
           <p className="text-[10px] text-muted-foreground">
-            Debe contener exactamente <span className="font-semibold">{expectedDistsLen}</span> valores (uno por corte del bitting), estrictamente crecientes o decrecientes.
+            Debe contener exactamente <span className="font-semibold">{expectedDistsLen}</span> valores (uno por corte del bitting), estrictamente crecientes si la alineacion es a hombro o decrecientes si es a punta.
           </p>
           {distsError && <p className="text-[10px] text-destructive font-semibold">⚠ {distsError}</p>}
         </div>

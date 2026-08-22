@@ -35,11 +35,15 @@ export function LlaveSimetricaDobleLado({ config, cortes, inputSide = 'none', in
     Array.from({ length: maxDepth }).flatMap((_, i) => [baseYTop + i * depthStep, baseYBottom - i * depthStep])
   )];
 
+  // Separación extra antes de la última posición de corte (opcional, solo doble_lado).
+  const separacionUltimoCorte = config.separacionUltimoCorteActiva ? (config.separacionUltimoCorte ?? 0) : 0;
+  const lastCorteIdx = safeCortes.length - 1;
+
   const profile = (() => {
     const maxD = (maxDepth - 1) * depthStep;
     const pts: { x: number; d: number }[] = [];
     safeCortes.forEach((cv, i) => {
-      const cx = startX + i * spacing;
+      const cx = startX + i * spacing + (i === lastCorteIdx ? separacionUltimoCorte : 0);
       const d = (cv - 1) * depthStep;
       const currentWidth = maxD > 0 ? crestWidth + (d / maxD) * (valleyWidth - crestWidth) : crestWidth;
       const safeWidth = Math.min(currentWidth, spacing);

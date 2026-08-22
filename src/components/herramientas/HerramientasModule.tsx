@@ -45,7 +45,7 @@ interface HerramientasModuleProps {
 
 export function HerramientasModule({ superAdminView }: HerramientasModuleProps) {
   const { isSuperAdmin } = useWorkshop();
-  const { profiles, addProfile, updateProfile, deleteProfile, fetchProfileWithCodes, searchCodes } = useKeycodeProfiles();
+  const { profiles, addProfile, updateProfile, deleteProfile, fetchProfileWithCodes, searchCodes, uploadCodesInChunks } = useKeycodeProfiles();
   const { assignments, addAssignment, updateAssignment, deleteAssignment } = useToolAssignments();
   const vehicleDb = useVehicleDatabase({ readOnly: !isSuperAdmin });
   const { profiles: alarmaProfiles, addProfile: addAlarmaProfile, updateProfile: updateAlarmaProfile, deleteProfile: deleteAlarmaProfile } = useAlarmaProfiles();
@@ -175,7 +175,7 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
               >
                 <TabsContent value="perfiles" className="flex-1 m-0 min-h-0 overflow-hidden outline-none data-[state=inactive]:hidden flex flex-col border rounded-xl bg-card shadow-sm">
                   <div className="flex-1 overflow-auto p-4 pb-mobile-nav custom-scrollbar">
-                    <KeycodeManager profiles={profiles} onSave={addProfile} onUpdate={updateProfile} onDelete={deleteProfile} onFetchCodes={fetchProfileWithCodes} />
+                    <KeycodeManager profiles={profiles} onSave={addProfile} onUpdate={updateProfile} onDelete={deleteProfile} onFetchCodes={fetchProfileWithCodes} onUploadValetCodes={uploadCodesInChunks} />
                   </div>
                 </TabsContent>
 

@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
  * body: {
  *   profile_id: string,
  *   mode: "replace" | "append",   // replace borra los códigos previos antes de insertar
+ *   dataset: "normal" | "valet",  // opcional, default "normal"
  *   codes: [{ codigo: string, bitting: string|string[] }, ...]
  * }
  *
@@ -25,6 +26,11 @@ final class KeycodeCodesController
 {
     use \App\Http\Controllers\Concerns\AuthorizesTools;
 
+    private const TABLES = [
+        'normal' => 'keycode_codes',
+        'valet'  => 'keycode_valet_codes',
+    ];
+
     public function handle(Request $request): JsonResponse
     {
         if ($resp = $this->authorizeToolsWrite($request)) return $resp;
@@ -32,9 +38,12 @@ final class KeycodeCodesController
         $profileId = (string) ($request->json('profile_id') ?? '');
         $mode      = (string) ($request->json('mode') ?? 'append');
         $codes     = $request->json('codes') ?? [];
+        $dataset   = (string) ($request->json('dataset') ?? 'normal');
+        $table     = self::TABLES[$dataset] ?? null;
 
         if ($profileId === '') return ApiResponse::error('profile_id requerido');
         if (!is_array($codes)) return ApiResponse::error('codes debe ser un arreglo');
+        if (!$table) return ApiResponse::error('dataset invalido');
 
         if (!KeycodeProfile::query()->whereKey($profileId)->exists()) {
             return ApiResponse::error('Perfil no encontrado', 404);
@@ -44,9 +53,9 @@ final class KeycodeCodesController
         // así un lector concurrente nunca ve el perfil momentáneamente sin códigos
         // entre el "replace" y el insert que le sigue.
         $inserted = 0;
-        DB::transaction(function () use ($mode, $profileId, $codes, &$inserted) {
+        DB::transaction(function () use ($mode, $profileId, $codes, $table, &$inserted) {
             if ($mode === 'replace') {
-                DB::table('keycode_codes')->where('profile_id', $profileId)->delete();
+                DB::table($table)->where('profile_id', $profileId)->delete();
             }
 
             $rows = [];
@@ -58,18 +67,18 @@ final class KeycodeCodesController
                     : (string) ($c['bitting'] ?? '');
                 $rows[] = ['profile_id' => $profileId, 'codigo' => $codigo, 'bitting' => $bitting];
                 if (count($rows) >= 2000) {
-                    DB::table('keycode_codes')->insertOrIgnore($rows);
+                    DB::table($table)->insertOrIgnore($rows);
                     $inserted += count($rows);
                     $rows = [];
                 }
             }
             if (!empty($rows)) {
-                DB::table('keycode_codes')->insertOrIgnore($rows);
+                DB::table($table)->insertOrIgnore($rows);
                 $inserted += count($rows);
             }
         });
 
-        $total = DB::table('keycode_codes')->where('profile_id', $profileId)->count();
+        $total = DB::table($table)->where('profile_id', $profileId)->count();
 
         return ApiResponse::success(['inserted' => $inserted, 'total' => $total], 'OK');
     }

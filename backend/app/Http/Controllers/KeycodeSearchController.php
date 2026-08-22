@@ -21,7 +21,9 @@ use Illuminate\Support\Facades\DB;
  *               encuentra bittings como "433131124332" o "413112433413").
  *   limit/offset paginación (limit máx. 1000, por defecto 300)
  *
- * Respuesta: { total, limit, offset, results: [{ codigo, bitting: [..] }] }
+ * Respuesta: { total, limit, offset, results: [{ codigo, bitting: [..], valetBitting: [..]|null }] }
+ * valetBitting solo se llena en búsqueda por "codigo" cuando existe una
+ * contraparte Valet para ese mismo código.
  */
 final class KeycodeSearchController
 {
@@ -77,11 +79,23 @@ final class KeycodeSearchController
                 }
             }
 
+            // El código Valet es el mismo texto que el normal, con bitting distinto:
+            // si hay match normal, se busca su contraparte valet (si existe) y se
+            // adjunta al resultado, marcada como tal.
+            $valetBitting = null;
+            if ($row) {
+                $valetRow = DB::table('keycode_valet_codes')
+                    ->where('profile_id', $profileId)
+                    ->where('codigo', $row->codigo)
+                    ->first(['bitting']);
+                $valetBitting = $valetRow->bitting ?? null;
+            }
+
             return ApiResponse::success([
                 'total'   => $row ? 1 : 0,
                 'limit'   => 1,
                 'offset'  => 0,
-                'results' => $row ? [$this->serialize($row)] : [],
+                'results' => $row ? [$this->serialize($row, $valetBitting)] : [],
             ]);
         }
 
@@ -211,11 +225,12 @@ final class KeycodeSearchController
         }
     }
 
-    private function serialize(object $row): array
+    private function serialize(object $row, ?string $valetBitting = null): array
     {
         return [
             'codigo'  => $row->codigo,
             'bitting' => str_split($row->bitting),
+            'valetBitting' => $valetBitting !== null ? str_split($valetBitting) : null,
         ];
     }
 }
