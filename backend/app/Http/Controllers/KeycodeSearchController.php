@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\DB;
  *   limit/offset paginación (limit máx. 1000, por defecto 300)
  *
  * Respuesta: { total, limit, offset, results: [{ codigo, bitting: [..], valetBitting: [..]|null }] }
- * valetBitting solo se llena en búsqueda por "codigo" cuando existe una
+ * valetBitting se llena (en cualquier tipo de búsqueda) cuando existe una
  * contraparte Valet para ese mismo código.
  */
 final class KeycodeSearchController
@@ -127,7 +127,7 @@ final class KeycodeSearchController
                 'total'   => $total,
                 'limit'   => $limit,
                 'offset'  => $offset,
-                'results' => $rows->map(fn ($r) => $this->serialize($r))->all(),
+                'results' => $this->serializeRows($profileId, $rows),
             ]);
         }
 
@@ -154,11 +154,26 @@ final class KeycodeSearchController
             'total'   => $total,
             'limit'   => $limit,
             'offset'  => $offset,
-            'results' => $rows->map(fn ($r) => $this->serialize($r))->all(),
+            'results' => $this->serializeRows($profileId, $rows),
         ]);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
+
+    /** Serializa una página de resultados adjuntando el bitting Valet (si existe) por código, en un solo query. */
+    private function serializeRows(string $profileId, \Illuminate\Support\Collection $rows): array
+    {
+        $codigos = $rows->pluck('codigo')->all();
+        $valetMap = $codigos === []
+            ? []
+            : DB::table('keycode_valet_codes')
+                ->where('profile_id', $profileId)
+                ->whereIn('codigo', $codigos)
+                ->pluck('bitting', 'codigo')
+                ->all();
+
+        return $rows->map(fn ($r) => $this->serialize($r, $valetMap[$r->codigo] ?? null))->all();
+    }
 
     /** @return array<int, array<int, string>>|null  Lista de sets aceptados ([] = comodín). */
     private function parsePositions(mixed $raw): ?array

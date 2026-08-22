@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useCallback, useEffect } from "react";
+import { Fragment, useState, useRef, useMemo, useCallback, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { m as motion, AnimatePresence } from "framer-motion";
 import { Key, ArrowLeft, CheckCircle2, X, Info, Settings2, Loader2, Camera, Lock, Search, List, ChevronLeft, ChevronRight, ImageIcon, ScanSearch } from "lucide-react";
@@ -21,10 +21,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import type { ToolAssignment, KeycodeProfile, BittingConfig } from "@/types";
 import { LOCK_LABELS, LOCK_ORDER } from "@/types";
 
+/** Un resultado de búsqueda: código + bitting, con el bitting Valet (si existe) cuando el backend lo adjunta. */
+type KeyResultEntry = { codigo: string; bitting: string[]; valetBitting?: string[] | null };
+
 export type KeycodeSearchFn = (
   profileId: string,
   opts: { codigo?: string; positions?: (string[] | null)[]; partial?: string; limit?: number; offset?: number },
-) => Promise<{ total: number; results: { codigo: string; bitting: string[]; valetBitting?: string[] | null }[] }>;
+) => Promise<{ total: number; results: KeyResultEntry[] }>;
 
 /** A partir de este número de códigos la serie se busca en el servidor en vez de descargarse completa. */
 const REMOTE_SEARCH_THRESHOLD = 5000;
@@ -112,12 +115,10 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
   const [gridValues, setGridValues] = useState<string[]>(() => Array(bittingTotalLength).fill("?"));
   const [searchValues, setSearchValues] = useState<string[]>(() => Array(bittingTotalLength).fill("?"));
   const [codeState, setCodeState] = useState<"idle" | "exact" | "notfound">("idle");
-  const [exactEntry, setExactEntry] = useState<{ codigo: string; bitting: string[] } | null>(null);
-  // Bitting Valet (mismo código, cortes distintos para llave de acceso restringido), si existe.
-  const [valetEntry, setValetEntry] = useState<{ codigo: string; bitting: string[] } | null>(null);
+  const [exactEntry, setExactEntry] = useState<KeyResultEntry | null>(null);
 
-  const [bittingResults, setBittingResults] = useState<{ codigo: string; bitting: string[] }[]>([]);
-  const [bittingGroups, setBittingGroups] = useState<{ codigo: string; bitting: string[] }[][]>([]);
+  const [bittingResults, setBittingResults] = useState<KeyResultEntry[]>([]);
+  const [bittingGroups, setBittingGroups] = useState<KeyResultEntry[][]>([]);
   const [hasBittingSearched, setHasBittingSearched] = useState(false);
   const [infoModalOpen, setInfoModalOpen] = useState(false);
   const [advancedMode, setAdvancedMode] = useState(false);
@@ -249,22 +250,17 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     return chains.map((c) => c.entries);
   };
 
-  const applyCodeResult = (
-    found: { codigo: string; bitting: string[] } | null | undefined,
-    valetBitting?: string[] | null,
-  ) => {
+  const applyCodeResult = (found: KeyResultEntry | null | undefined) => {
     if (!profile) return;
     if (found) {
       const axesResult = getAxesResult(found.bitting, profile.bittingConfig);
       const flatValues = axesResult.flatMap((a) => a.values);
       setGridValues(flatValues);
       setExactEntry(found);
-      setValetEntry(valetBitting ? { codigo: found.codigo, bitting: valetBitting } : null);
       setCodeState("exact");
     } else {
       setCodeState("notfound");
       setExactEntry(null);
-      setValetEntry(null);
     }
     setBittingResults([]);
     setBittingGroups([]);
@@ -302,7 +298,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
       setIsSearching(true);
       const { results } = await onSearchCodes(profile.id, { codigo: searchTerm.trim(), limit: 1 });
       setIsSearching(false);
-      applyCodeResult(results[0] ?? null, results[0]?.valetBitting);
+      applyCodeResult(results[0] ?? null);
       return;
     }
 
@@ -330,13 +326,10 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
       const flatValues = axesResult.flatMap((a) => a.values);
       setGridValues(flatValues);
       setExactEntry(found);
-      const valetMatch = profile.valetCodesData?.find((v) => v.codigo === found!.codigo);
-      setValetEntry(valetMatch ? { codigo: valetMatch.codigo, bitting: valetMatch.bitting } : null);
       setCodeState("exact");
     } else {
       setCodeState("notfound");
       setExactEntry(null);
-      setValetEntry(null);
     }
     setBittingResults([]);
     setBittingGroups([]);
@@ -354,14 +347,13 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     if (codeState === "exact") {
       setCodeState("idle");
       setExactEntry(null);
-      setValetEntry(null);
     }
   };
 
   const handleVirtualKeypad = (val: string) => {
     if (!profile) return;
     const flatIdx = selectedCellIdx;
-    if (codeState === 'exact') { setCodeState('idle'); setExactEntry(null); setValetEntry(null); }
+    if (codeState === 'exact') { setCodeState('idle'); setExactEntry(null); }
 
     // "?" actúa como comodín: marca la celda como faltante y avanza
     setGridValues((prev) => { const n = [...prev]; n[flatIdx] = val; return n; });
@@ -482,13 +474,11 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     setIsPartialResults(false);
   };
 
-  const loadEntry = (entry: { codigo: string; bitting: string[] }) => {
+  const loadEntry = (entry: KeyResultEntry) => {
     const axesResult = getAxesResult(entry.bitting, profile!.bittingConfig);
     const flatValues = axesResult.flatMap((a) => a.values);
     setGridValues(flatValues);
     setExactEntry(entry);
-    const valetMatch = profile!.valetCodesData?.find((v) => v.codigo === entry.codigo);
-    setValetEntry(valetMatch ? { codigo: valetMatch.codigo, bitting: valetMatch.bitting } : null);
     setCodeState("exact");
     setSearchTerm(entry.codigo);
     setResultsSheetOpen(false);
@@ -659,16 +649,30 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
    * plana, sin esa agrupación). `getHighlightState` decide, por posición,
    * si se resalta como comodín/coincidencia (isWild) o como variante ±1 (isAdvanced).
    */
+  // La serie tiene un set de códigos Valet cargado (valetCodesCount cubre listas
+  // grandes donde valetCodesData llega vacío; valetCodesData cubre series chicas ya cargadas).
+  const seriesHasValet = (profile?.valetCodesCount ?? profile?.valetCodesData?.length ?? 0) > 0;
+
+  /**
+   * Bitting Valet para un resultado, si existe: lo trae el backend (positions/partial
+   * remotos) o, si la serie está cargada localmente, se busca en valetCodesData.
+   */
+  const getValetBitting = (entry: KeyResultEntry): string[] | null => {
+    if (entry.valetBitting !== undefined) return entry.valetBitting;
+    return profile?.valetCodesData?.find((v) => v.codigo === entry.codigo)?.bitting ?? null;
+  };
+
   const renderResultEntry = (
     entry: { codigo: string; bitting: string[] },
     delay: number,
     getHighlightState: (flatIdx: number, val: string) => { isWild: boolean; isAdvanced: boolean },
+    badge?: "MASTER" | "VALET",
   ) => {
     const axesDisplay = getAxesResult(entry.bitting, profile!.bittingConfig);
-    const isSelected = exactEntry?.codigo === entry.codigo;
+    const isSelected = exactEntry?.codigo === entry.codigo && exactEntry?.bitting.join("") === entry.bitting.join("");
     return (
       <motion.button
-        key={entry.codigo}
+        key={badge ? `${entry.codigo}-${badge}` : entry.codigo}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay }}
@@ -678,9 +682,22 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
         }`}
       >
         <div className="flex items-center justify-between gap-2">
-          <span className={`font-mono text-sm font-semibold ${isSelected ? "text-primary" : "text-foreground"}`}>
-            {entry.codigo}
-          </span>
+          <div className="flex items-center gap-1.5">
+            {badge && (
+              <Badge
+                className={`text-[9px] px-1.5 py-0 font-bold shrink-0 ${
+                  badge === "MASTER"
+                    ? "bg-amber-400 text-amber-950 hover:bg-amber-400"
+                    : "bg-slate-400 text-slate-950 hover:bg-slate-400"
+                }`}
+              >
+                {badge}
+              </Badge>
+            )}
+            <span className={`font-mono text-sm font-semibold ${isSelected ? "text-primary" : "text-foreground"}`}>
+              {entry.codigo}
+            </span>
+          </div>
           {isSelected && <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />}
         </div>
         <div className="flex flex-col gap-1 w-full">
@@ -721,6 +738,28 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     );
   };
 
+  /**
+   * Tarjeta(s) de un resultado: si la serie tiene códigos Valet cargados, la normal
+   * se marca "MASTER" y, si este código en particular tiene contraparte Valet, se
+   * agrega justo debajo su propia tarjeta marcada "VALET" con ese bitting.
+   */
+  const renderResultPair = (
+    entry: KeyResultEntry,
+    delay: number,
+    getHighlightStateFor: (e: { codigo: string; bitting: string[] }) => (flatIdx: number, val: string) => { isWild: boolean; isAdvanced: boolean },
+  ) => {
+    const valetBitting = getValetBitting(entry);
+    return (
+      <Fragment key={entry.codigo}>
+        {renderResultEntry(entry, delay, getHighlightStateFor(entry), seriesHasValet ? "MASTER" : undefined)}
+        {valetBitting && (() => {
+          const valetEntry = { codigo: entry.codigo, bitting: valetBitting };
+          return renderResultEntry(valetEntry, delay, getHighlightStateFor(valetEntry), "VALET");
+        })()}
+      </Fragment>
+    );
+  };
+
   /** Resalta la secuencia buscada como si fuera comodín, sin importar en qué posición cayó. */
   const partialHighlight = (entry: { codigo: string; bitting: string[] }) => {
     const bittingStr = Array.isArray(entry.bitting) ? entry.bitting.join("") : entry.bitting;
@@ -736,7 +775,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
   // búsquedas posicionales con comodines).
   const renderPartialResults = () => (
     <div className="rounded-lg border border-border overflow-hidden divide-y divide-border">
-      {bittingResults.map((entry, idx) => renderResultEntry(entry, idx * 0.03, partialHighlight(entry)))}
+      {bittingResults.map((entry, idx) => renderResultPair(entry, idx * 0.03, partialHighlight))}
     </div>
   );
 
@@ -825,14 +864,6 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
             <p className="mt-1.5 text-xs text-white/60">
               El código <span className="font-mono font-semibold">{searchTerm.toUpperCase()}</span> no existe en esta serie.
             </p>
-          )}
-          {codeState === "exact" && valetEntry && (
-            <div className="mt-2 flex items-center gap-2">
-              <Badge className="bg-amber-400 text-amber-950 hover:bg-amber-400 text-[10px] px-1.5 py-0 font-bold shrink-0">
-                VALET
-              </Badge>
-              <span className="font-mono text-xs tracking-widest text-white/80">{valetEntry.bitting.join(" ")}</span>
-            </div>
           )}
         </section>
       </div>
@@ -1257,7 +1288,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                       </div>
                       <div className="rounded-lg border border-border overflow-hidden divide-y divide-border">
                         {group.map((entry, entryIdx) =>
-                          renderResultEntry(entry, (groupIdx * 4 + entryIdx) * 0.03, (flatIdx, val) => {
+                          renderResultPair(entry, (groupIdx * 4 + entryIdx) * 0.03, () => (flatIdx, val) => {
                             const searchVal = searchValues[flatIdx] ?? "";
                             const isWild = !searchVal.trim() || searchVal === "?";
                             const isAdvanced = advancedMode && !isWild && val !== searchVal;
@@ -1333,7 +1364,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                 </div>
                 <div className="rounded-lg border border-border overflow-hidden divide-y divide-border">
                   {group.map((entry, entryIdx) =>
-                    renderResultEntry(entry, (groupIdx * 4 + entryIdx) * 0.03, (flatIdx, val) => {
+                    renderResultPair(entry, (groupIdx * 4 + entryIdx) * 0.03, () => (flatIdx, val) => {
                       const searchVal = searchValues[flatIdx] ?? "";
                       const isWild = !searchVal.trim() || searchVal === "?";
                       const isAdvanced = advancedMode && !isWild && val !== searchVal;

@@ -128,7 +128,7 @@ function getProfilePreviewData(profile: KeycodeProfile): { primary: number[]; se
   return { primary: flat.map(v => parseInt(v, 10) || 1), secondary: undefined };
 }
 
-export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCodes }: KeycodeManagerProps) {
+export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCodes, onUploadValetCodes }: KeycodeManagerProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [view, setView] = useState<View>("list");
@@ -204,10 +204,10 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
 
   // --- Códigos Valet (mismo código, bitting distinto) ---
   const [valetCodes, setValetCodes] = useState<CodeEntry[]>([]);
-  const [uploadingValet, setUploadingValet] = useState(false);
+  // true cuando se cargó/vació el JSON de Valet en memoria pero aún no se confirmó con "Guardar".
+  const [valetCodesDirty, setValetCodesDirty] = useState(false);
   const valetFileInputRef = useRef<HTMLInputElement>(null);
   const [confirmDeleteAllValetOpen, setConfirmDeleteAllValetOpen] = useState(false);
-  const [deletingAllValet, setDeletingAllValet] = useState(false);
 
   // --- Preview override test ---
   const [manualPreviewInput, setManualPreviewInput] = useState("");
@@ -279,6 +279,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
     setSeries(fullProfile.series ?? "");
     setSeriesAliases(fullProfile.seriesAliases ? [...fullProfile.seriesAliases] : []);
     setValetCodes(fullProfile.valetCodesData ? [...fullProfile.valetCodesData] : []);
+    setValetCodesDirty(false);
     setDecoderHasErrors(false);
     setSearchTerm("");
     setCurrentPage(1);
@@ -290,11 +291,12 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
   const hasChanges = useMemo(() => {
     if (!editingProfile) return false;
     if (isNewProfile) return true; // nueva serie: siempre puede guardarse
-    const snap = JSON.stringify({ references, bittingConfig, codesData: currentCodes, configuracionVisual, profileImage, decoderConfig, icCard, series, seriesAliases });
+    const snap = JSON.stringify({ references, bittingConfig, codesData: currentCodes, valetCodesData: valetCodes, configuracionVisual, profileImage, decoderConfig, icCard, series, seriesAliases });
     const orig = JSON.stringify({
       references: editingProfile.references,
       bittingConfig: editingProfile.bittingConfig,
       codesData: editingProfile.codesData,
+      valetCodesData: editingProfile.valetCodesData ?? [],
       configuracionVisual: editingProfile.configuracionVisual,
       profileImage: editingProfile.profileImage,
       decoderConfig: editingProfile.decoderConfig,
@@ -303,7 +305,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
       seriesAliases: editingProfile.seriesAliases ?? [],
     });
     return snap !== orig;
-  }, [editingProfile, isNewProfile, references, bittingConfig, currentCodes, configuracionVisual, profileImage, decoderConfig, icCard, series, seriesAliases]);
+  }, [editingProfile, isNewProfile, references, bittingConfig, currentCodes, valetCodes, configuracionVisual, profileImage, decoderConfig, icCard, series, seriesAliases]);
 
   const canSave = hasChanges && !decoderHasErrors;
 
@@ -316,14 +318,20 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
       return;
     }
     
+    // valetCodesData se maneja aparte (subida propia, ver más abajo): nunca se manda
+    // dentro del payload principal para no reinsertar un set grande en cada guardado.
+    const { valetCodesData: _origValetCodesData, ...profileWithoutValet } = editingProfile;
     const finalProfile = {
-      ...editingProfile, references, bittingConfig, codesData: currentCodes, configuracionVisual, profileImage, decoderConfig, icCard,
+      ...profileWithoutValet, references, bittingConfig, codesData: currentCodes, configuracionVisual, profileImage, decoderConfig, icCard,
       series: series.trim(),
       seriesAliases: seriesAliases.map(a => a.trim()).filter(a => a !== ""),
     };
     // Solo se re-suben los códigos si la pestaña "Códigos" tuvo cambios reales (o es una serie nueva).
     // Si solo se tocó otra pestaña (visual, decoder, referencias...), nos ahorramos la subida completa.
     const codesChanged = isNewProfile || codesDirty;
+    // Los códigos Valet (nueva carga de JSON o "eliminar todos") solo se confirman al guardar,
+    // igual que los códigos normales — no se persisten al momento de cargarlos.
+    const valetChanged = !isNewProfile && valetCodesDirty;
 
     const onProgress = (done: number, total: number) => setSaveProgress({ done, total });
     setSaving(true);
@@ -331,10 +339,8 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
     try {
       if (isNewProfile) {
         await onSave(finalProfile, onProgress);
-        toast.success("Serie importada y guardada exitosamente.");
       } else {
         await onUpdate(finalProfile, onProgress, codesChanged);
-        toast.success("Perfil actualizado.");
       }
     } catch {
       toast.error("Ocurrió un error al guardar la serie. Intenta de nuevo.");
@@ -342,14 +348,40 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
       setSaveProgress(null);
       return;
     }
+
+    let valetOk = true;
+    if (valetChanged) {
+      setSaveProgress(valetCodes.length > 3000 ? { done: 0, total: valetCodes.length } : null);
+      try {
+        await onUploadValetCodes(finalProfile.id, valetCodes, onProgress, "valet");
+      } catch {
+        valetOk = false;
+      }
+    }
+
     setSaving(false);
     setSaveProgress(null);
     setCodesDirty(false);
+    if (valetOk) setValetCodesDirty(false);
+
+    if (valetChanged && !valetOk) {
+      toast.error("La serie se guardó, pero no se pudieron subir los códigos Valet. Vuelve a intentarlo desde la pestaña Códigos.");
+    } else if (isNewProfile) {
+      toast.success("Serie importada y guardada exitosamente.");
+    } else {
+      toast.success("Perfil actualizado.");
+    }
+
     // Mantener el editor abierto: actualizamos la línea base para que
     // hasChanges vuelva a false hasta que se hagan nuevos cambios.
     // codesIncomplete solo se limpia si esta vez sí se subieron y verificaron los códigos;
     // si no se tocaron, se conserva el estado que ya tenía en el servidor.
-    setEditingProfile(codesChanged ? { ...finalProfile, codesIncomplete: false } : finalProfile);
+    setEditingProfile({
+      ...finalProfile,
+      codesIncomplete: codesChanged ? false : finalProfile.codesIncomplete,
+      valetCodesData: valetOk ? valetCodes : (editingProfile.valetCodesData ?? []),
+      valetCodesCount: valetOk ? valetCodes.length : (editingProfile.valetCodesCount ?? 0),
+    });
     setIsNewProfile(false);
   };
 
@@ -423,9 +455,9 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
 
   // ── Códigos Valet: cargar JSON (reemplaza el set completo) ──────
   // Igual que los códigos normales, el mismo código puede tener un bitting
-  // distinto para la llave de valet. Se sube y persiste de inmediato (no
-  // pasa por el flujo de "Guardar" general) porque requiere que la serie
-  // ya exista en el servidor.
+  // distinto para la llave de valet. Se queda en memoria (igual que "Importar
+  // JSON (fusiona)" para los códigos normales) y solo se sube al servidor
+  // cuando se pulsa "Guardar".
   const handleValetFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -435,7 +467,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
       return;
     }
     const reader = new FileReader();
-    reader.onload = async (ev) => {
+    reader.onload = (ev) => {
       try {
         const parsed = JSON.parse(ev.target?.result as string) as JsonSerieImport;
         if (!Array.isArray(parsed.registros)) {
@@ -446,17 +478,9 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
           .filter((r) => r.code && r.bitting)
           .map((r) => ({ codigo: r.code, bitting: r.bitting.split("") }));
 
-        setUploadingValet(true);
-        try {
-          await onUploadValetCodes(editingProfile.id, codesData, undefined, "valet");
-          setValetCodes(codesData);
-          setEditingProfile((prev) => (prev ? { ...prev, valetCodesData: codesData, valetCodesCount: codesData.length } : prev));
-          toast.success(`${codesData.length} código(s) Valet cargado(s).`);
-        } catch {
-          toast.error("No se pudieron subir los códigos Valet. Intenta de nuevo.");
-        } finally {
-          setUploadingValet(false);
-        }
+        setValetCodes(codesData);
+        setValetCodesDirty(true);
+        toast.info(`${codesData.length} código(s) Valet cargado(s). Pulsa "Guardar" para confirmar los cambios.`);
       } catch {
         toast.error("Error al leer el archivo JSON. Verifica que sea un JSON válido.");
       }
@@ -465,27 +489,12 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
     e.target.value = "";
   };
 
-  // Vacía por completo los códigos Valet de la serie y lo persiste de inmediato,
-  // mismo patrón que "Eliminar todos los códigos" para no dejar cadáveres en BD.
-  const confirmDeleteAllValetCodes = async () => {
-    if (isNewProfile || !editingProfile) {
-      setValetCodes([]);
-      setConfirmDeleteAllValetOpen(false);
-      toast.success("Códigos Valet eliminados.");
-      return;
-    }
-    setDeletingAllValet(true);
-    try {
-      await onUploadValetCodes(editingProfile.id, [], undefined, "valet");
-      setValetCodes([]);
-      setEditingProfile((prev) => (prev ? { ...prev, valetCodesData: [], valetCodesCount: 0 } : prev));
-      toast.success("Todos los códigos Valet fueron eliminados de la base de datos.");
-    } catch {
-      toast.error("No se pudieron eliminar los códigos Valet. Intenta de nuevo.");
-    } finally {
-      setDeletingAllValet(false);
-      setConfirmDeleteAllValetOpen(false);
-    }
+  // Vacía los códigos Valet en memoria; se confirma en el servidor al pulsar "Guardar".
+  const confirmDeleteAllValetCodes = () => {
+    setValetCodes([]);
+    setValetCodesDirty(true);
+    setConfirmDeleteAllValetOpen(false);
+    toast.success('Códigos Valet quitados. Pulsa "Guardar" para confirmar los cambios.');
   };
 
   // Longitud total de bitting esperada según la config actual (suma de ejes si está dividido).
@@ -1674,6 +1683,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                         <Label className="text-xs font-semibold text-amber-700 dark:text-amber-400 block">Códigos Valet</Label>
                         <p className="text-[10px] text-muted-foreground">
                           Mismo código, bitting distinto (llave de acceso restringido). Al buscar, si existe se mostrará marcado como Valet.
+                          Los cambios se aplican al pulsar "Guardar".
                           {isNewProfile && " Guarda la serie primero para poder cargarlos."}
                         </p>
                       </div>
@@ -1687,9 +1697,9 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                         size="sm"
                         className="h-8 shrink-0"
                         onClick={() => valetFileInputRef.current?.click()}
-                        disabled={isNewProfile || uploadingValet}
+                        disabled={isNewProfile}
                       >
-                        <Upload className="w-3.5 h-3.5 mr-1.5" /> {uploadingValet ? "Subiendo..." : "Cargar JSON de Valet"}
+                        <Upload className="w-3.5 h-3.5 mr-1.5" /> Cargar JSON de Valet
                       </Button>
                       {valetCodes.length > 0 && (
                         <Button
@@ -1697,7 +1707,6 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                           size="sm"
                           className="h-8 shrink-0 text-destructive border-destructive/40 hover:bg-destructive/10"
                           onClick={() => setConfirmDeleteAllValetOpen(true)}
-                          disabled={uploadingValet}
                         >
                           <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Eliminar todos
                         </Button>
@@ -1879,22 +1888,21 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
           </AlertDialogContent>
         </AlertDialog>
 
-        <AlertDialog open={confirmDeleteAllValetOpen} onOpenChange={(open) => !open && !deletingAllValet && setConfirmDeleteAllValetOpen(false)}>
+        <AlertDialog open={confirmDeleteAllValetOpen} onOpenChange={(open) => !open && setConfirmDeleteAllValetOpen(false)}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>¿Eliminar TODOS los códigos Valet de esta serie?</AlertDialogTitle>
+              <AlertDialogTitle>¿Quitar TODOS los códigos Valet de esta serie?</AlertDialogTitle>
               <AlertDialogDescription>
-                Se eliminarán permanentemente los {valetCodes.length} código(s) Valet de esta serie de la base de datos. Esta acción no se puede deshacer.
+                Se quitarán los {valetCodes.length} código(s) Valet de esta serie. El cambio no se aplica en la base de datos hasta que pulses "Guardar".
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={deletingAllValet}>Cancelar</AlertDialogCancel>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
               <AlertDialogAction
                 onClick={(e) => { e.preventDefault(); confirmDeleteAllValetCodes(); }}
-                disabled={deletingAllValet}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
-                {deletingAllValet ? "Eliminando..." : "Eliminar todos"}
+                Eliminar todos
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
