@@ -71,9 +71,11 @@ function findCodigoTiersLocal(codesData: CodeEntry[], term: string): CodeEntry |
 /**
  * Búsqueda de código exacto respetando "multi-prefijo" (mismo criterio que
  * KeycodeSearchController::findCodigo en el backend, para series chicas que se
- * buscan en memoria): sin prefijos registrados, comportamiento de siempre; con
- * prefijos, solo el texto sin prefijo o con uno de los prefijos registrados
- * quitado hace match — un prefijo no listado no encuentra el código.
+ * buscan en memoria). Los niveles permisivos (numérico, sufijo) SOLO corren
+ * sobre la parte pelona: si el texto tiene alguna letra, esa letra debe
+ * coincidir con uno de los prefijos registrados (se quita y se procesa el
+ * resto); si no coincide con ninguno, no hay match — nunca se procesan los
+ * dígitos ignorando una letra no registrada, porque eso anularía la lista blanca.
  */
 function findCodigoLocal(codesData: CodeEntry[], rawTerm: string, multiPrefixes: string[] | undefined): CodeEntry | null {
   const term = rawTerm.toUpperCase().trim();
@@ -81,20 +83,25 @@ function findCodigoLocal(codesData: CodeEntry[], rawTerm: string, multiPrefixes:
     return findCodigoTiersLocal(codesData, term);
   }
 
-  const candidates = [term];
+  const exact = codesData.find((c) => c.codigo.toUpperCase() === term);
+  if (exact) return exact;
+
+  // Sin ninguna letra: es el código pelón tal cual (sin prefijo).
+  if (!/[A-Z]/.test(term)) {
+    return findCodigoTiersLocal(codesData, term);
+  }
+
+  // Con letras: solo es válido si coincide con uno de los prefijos registrados.
   const sortedPrefixes = multiPrefixes
     .map((p) => p.toUpperCase())
     .sort((a, b) => b.length - a.length);
   for (const prefix of sortedPrefixes) {
     if (prefix && term.startsWith(prefix)) {
-      candidates.push(term.slice(prefix.length));
+      const bare = term.slice(prefix.length);
+      if (bare === "") continue;
+      const found = findCodigoTiersLocal(codesData, bare);
+      if (found) return found;
     }
-  }
-
-  for (const candidate of Array.from(new Set(candidates))) {
-    if (!candidate) continue;
-    const found = findCodigoTiersLocal(codesData, candidate);
-    if (found) return found;
   }
   return null;
 }
@@ -842,7 +849,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                   className="ce-hero-title mt-1.5 text-[clamp(1.55rem,5.4vw,2.15rem)] lg:mt-2 lg:text-[clamp(1.75rem,3vw,2.5rem)]"
                 >
                   {codeState === "exact" && exactEntry
-                    ? <span className="text-primary">{exactEntry.codigo}</span>
+                    ? <span className="text-primary">{searchTerm.trim().toUpperCase() || exactEntry.codigo}</span>
                     : profile.series
                       ? <>Serie <span className="text-primary">{profile.series}</span></>
                       : <>IC <span className="text-primary">{profile.icCard}</span></>

@@ -127,11 +127,13 @@ final class KeycodeSearchController
 
     /**
      * Busca un código exacto respetando "multi-prefijo": si la serie tiene prefijos
-     * registrados (multiPrefixes), los códigos se guardan "pelones" (sin prefijo) y
-     * solo se acepta el texto tal cual (sin prefijo) o quitando uno de los prefijos
-     * de la lista — un prefijo no registrado NO hace match, para no cortar la llave
-     * equivocada por un prefijo mal tecleado. Sin multiPrefixes, comportamiento de
-     * siempre (normalización numérica, sin distinguir prefijos).
+     * registrados (multiPrefixes), los códigos se guardan "pelones" (sin prefijo).
+     * Los niveles permisivos (numérico, sufijo) SOLO corren sobre la parte pelona:
+     * si el texto tiene alguna letra, esa letra debe coincidir con uno de los
+     * prefijos registrados (se quita y se procesa el resto); si no coincide con
+     * ninguno, no hay match — nunca se procesan los dígitos ignorando una letra
+     * no registrada, porque eso anularía la lista blanca. Sin multiPrefixes,
+     * comportamiento de siempre (normalización numérica, sin distinguir prefijos).
      */
     private function findCodigo(string $profileId, string $codigo): ?object
     {
@@ -142,18 +144,32 @@ final class KeycodeSearchController
             return $this->findCodigoTiers($profileId, $term);
         }
 
-        $candidates = [$term];
-        usort($multiPrefixes, fn ($a, $b) => strlen($b) <=> strlen($a));
-        foreach ($multiPrefixes as $prefix) {
-            if ($prefix !== '' && str_starts_with($term, $prefix)) {
-                $candidates[] = substr($term, strlen($prefix));
-            }
+        // Match exacto tal cual siempre se prueba primero (por si el código
+        // guardado coincide 1:1 con lo escrito).
+        $exact = DB::table('keycode_codes')
+            ->where('profile_id', $profileId)
+            ->where('codigo', $term)
+            ->first(['codigo', 'bitting']);
+        if ($exact) return $exact;
+
+        // Sin ninguna letra: es el código pelón tal cual (sin prefijo), se le
+        // aplican los niveles permisivos completos.
+        if (!preg_match('/[A-Z]/', $term)) {
+            return $this->findCodigoTiers($profileId, $term);
         }
 
-        foreach (array_unique($candidates) as $candidate) {
-            if ($candidate === '') continue;
-            $row = $this->findCodigoTiers($profileId, $candidate);
-            if ($row) return $row;
+        // Con letras: solo es válido si son exactamente uno de los prefijos
+        // registrados. Se prueban del más largo al más corto para prefijos
+        // que se puedan solapar (p.ej. "T1" antes que "T").
+        $sorted = $multiPrefixes;
+        usort($sorted, fn ($a, $b) => strlen($b) <=> strlen($a));
+        foreach ($sorted as $prefix) {
+            if ($prefix !== '' && str_starts_with($term, $prefix)) {
+                $bare = substr($term, strlen($prefix));
+                if ($bare === '') continue;
+                $row = $this->findCodigoTiers($profileId, $bare);
+                if ($row) return $row;
+            }
         }
 
         return null;
