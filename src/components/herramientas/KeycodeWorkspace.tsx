@@ -51,10 +51,13 @@ function findCodigoTiersLocal(codesData: CodeEntry[], term: string): CodeEntry |
   const exact = codesData.find((c) => c.codigo.toUpperCase() === term);
   if (exact) return exact;
 
+  // Igual que el nivel de sufijo: solo se acepta si hay una única coincidencia
+  // posible (series como "K021/L021/M021/N021" comparten el mismo valor numérico
+  // con prefijos que sí son parte real del código — ahí no hay que adivinar).
   const termNumeric = extractCodigoNumeric(term);
   if (termNumeric !== null) {
-    const numericMatch = codesData.find((c) => extractCodigoNumeric(c.codigo) === termNumeric);
-    if (numericMatch) return numericMatch;
+    const numericCandidates = codesData.filter((c) => extractCodigoNumeric(c.codigo) === termNumeric);
+    if (numericCandidates.length === 1) return numericCandidates[0];
   }
 
   // El prefijo también tiene dígitos (p.ej. "A70000-A75928", prefijo "A7"):
@@ -789,12 +792,16 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     entry: KeyResultEntry,
     delay: number,
     getHighlightStateFor: (e: { codigo: string; bitting: string[] }) => (flatIdx: number, val: string) => { isWild: boolean; isAdvanced: boolean },
+    // Si se da, el Valet solo se muestra cuando SU bitting también cumple la búsqueda
+    // — que el Master haya coincidido no implica que el Valet también lo haga.
+    matchesQuery?: (bitting: string[]) => boolean,
   ) => {
     const valetBitting = getValetBitting(entry);
+    const showValet = valetBitting && (!matchesQuery || matchesQuery(valetBitting));
     return (
       <Fragment key={entry.codigo}>
         {renderResultEntry(entry, delay, getHighlightStateFor(entry), seriesHasValet ? "MASTER" : undefined)}
-        {valetBitting && (() => {
+        {showValet && (() => {
           const valetEntry = { codigo: entry.codigo, bitting: valetBitting };
           return renderResultEntry(valetEntry, delay, getHighlightStateFor(valetEntry), "VALET");
         })()}
@@ -817,7 +824,12 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
   // búsquedas posicionales con comodines).
   const renderPartialResults = () => (
     <div className="rounded-lg border border-border overflow-hidden divide-y divide-border">
-      {bittingResults.map((entry, idx) => renderResultPair(entry, idx * 0.03, partialHighlight))}
+      {bittingResults.map((entry, idx) => renderResultPair(
+        entry,
+        idx * 0.03,
+        partialHighlight,
+        (bitting) => partialDigits !== "" && bitting.join("").includes(partialDigits),
+      ))}
     </div>
   );
 

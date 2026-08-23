@@ -187,16 +187,20 @@ final class KeycodeSearchController
         // Sin match exacto: compara por el valor numérico puro (ignora prefijos
         // de letras y ceros a la izquierda), p.ej. "8100" == "HA00008100".
         // Solo se paga este costo (sin usar el índice) cuando el match rápido falla.
+        // Igual que el nivel 3: solo se acepta si hay una única coincidencia posible
+        // (series como "K021/L021/M021/N021" comparten el mismo valor numérico con
+        // prefijos que sí son parte real del código — ahí no hay que adivinar).
         $digits = preg_replace('/\D/', '', $term) ?? '';
         if ($digits === '') return null;
 
         $numeric = ltrim($digits, '0');
         if ($numeric === '') $numeric = '0';
-        $row = DB::table('keycode_codes')
+        $numericCandidates = DB::table('keycode_codes')
             ->where('profile_id', $profileId)
             ->whereRaw("CAST(REGEXP_REPLACE(codigo, '[^0-9]', '') AS UNSIGNED) = ?", [$numeric])
-            ->first(['codigo', 'bitting']);
-        if ($row) return $row;
+            ->limit(2)
+            ->get(['codigo', 'bitting']);
+        if ($numericCandidates->count() === 1) return $numericCandidates->first();
 
         // Nivel 3: el prefijo también tiene dígitos (p.ej. "A70000-A75928",
         // prefijo "A7"): compara por sufijo exacto de dígitos. Solo se acepta
