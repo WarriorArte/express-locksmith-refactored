@@ -183,6 +183,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
   const [editTab, setEditTab] = useState<EditTab>("references");
   const [icCard, setIcCard] = useState("");
   const [series, setSeries] = useState("");
+  const [internalReference, setInternalReference] = useState("");
   const [seriesAliases, setSeriesAliases] = useState<string[]>([]);
   const [multiPrefixes, setMultiPrefixes] = useState<string[]>([]);
   const [loadingEditId, setLoadingEditId] = useState<string | null>(null);
@@ -278,6 +279,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
     setDecoderConfig(fullProfile.decoderConfig ? { ...fullProfile.decoderConfig } : undefined);
     setIcCard(fullProfile.icCard ?? "");
     setSeries(fullProfile.series ?? "");
+    setInternalReference(fullProfile.internalReference ?? "");
     setSeriesAliases(fullProfile.seriesAliases ? [...fullProfile.seriesAliases] : []);
     setMultiPrefixes(fullProfile.multiPrefixes ? [...fullProfile.multiPrefixes] : []);
     setValetCodes(fullProfile.valetCodesData ? [...fullProfile.valetCodesData] : []);
@@ -293,7 +295,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
   const hasChanges = useMemo(() => {
     if (!editingProfile) return false;
     if (isNewProfile) return true; // nueva serie: siempre puede guardarse
-    const snap = JSON.stringify({ references, bittingConfig, codesData: currentCodes, valetCodesData: valetCodes, configuracionVisual, profileImage, decoderConfig, icCard, series, seriesAliases, multiPrefixes });
+    const snap = JSON.stringify({ references, bittingConfig, codesData: currentCodes, valetCodesData: valetCodes, configuracionVisual, profileImage, decoderConfig, icCard, series, internalReference, seriesAliases, multiPrefixes });
     const orig = JSON.stringify({
       references: editingProfile.references,
       bittingConfig: editingProfile.bittingConfig,
@@ -304,11 +306,12 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
       decoderConfig: editingProfile.decoderConfig,
       icCard: editingProfile.icCard ?? "",
       series: editingProfile.series ?? "",
+      internalReference: editingProfile.internalReference ?? "",
       seriesAliases: editingProfile.seriesAliases ?? [],
       multiPrefixes: editingProfile.multiPrefixes ?? [],
     });
     return snap !== orig;
-  }, [editingProfile, isNewProfile, references, bittingConfig, currentCodes, valetCodes, configuracionVisual, profileImage, decoderConfig, icCard, series, seriesAliases, multiPrefixes]);
+  }, [editingProfile, isNewProfile, references, bittingConfig, currentCodes, valetCodes, configuracionVisual, profileImage, decoderConfig, icCard, series, internalReference, seriesAliases, multiPrefixes]);
 
   const canSave = hasChanges && !decoderHasErrors;
 
@@ -327,6 +330,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
     const finalProfile = {
       ...profileWithoutValet, references, bittingConfig, codesData: currentCodes, configuracionVisual, profileImage, decoderConfig, icCard,
       series: series.trim(),
+      internalReference: internalReference.trim(),
       seriesAliases: seriesAliases.map(a => a.trim()).filter(a => a !== ""),
       multiPrefixes: multiPrefixes.map(p => p.trim().toUpperCase()).filter(p => p !== ""),
     };
@@ -449,7 +453,18 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
     setDeletingAllCodes(true);
     try {
       const finalProfile: KeycodeProfile = {
-        ...editingProfile, references, bittingConfig, codesData: [], configuracionVisual, profileImage, decoderConfig, icCard,
+        ...editingProfile,
+        references,
+        bittingConfig,
+        codesData: [],
+        configuracionVisual,
+        profileImage,
+        decoderConfig,
+        icCard,
+        series: series.trim(),
+        internalReference: internalReference.trim(),
+        seriesAliases: seriesAliases.map(a => a.trim()).filter(a => a !== ""),
+        multiPrefixes: multiPrefixes.map(p => p.trim().toUpperCase()).filter(p => p !== ""),
       };
       await onUpdate(finalProfile, undefined, true);
       setCurrentCodes([]);
@@ -694,12 +709,13 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
   const filteredProfiles = useMemo(() => {
     if (!profilesSearch.trim()) return profiles;
     const q = profilesSearch.toLowerCase();
-    return profiles.filter((p) =>
-      p.series.toLowerCase().includes(q) ||
-      p.icCard.toLowerCase().includes(q) ||
+    const matchesProfileSearch = (p: KeycodeProfile) =>
+      (p.series || "").toLowerCase().includes(q) ||
+      (p.icCard || "").toLowerCase().includes(q) ||
+      (p.internalReference || "").toLowerCase().includes(q) ||
       (p.seriesAliases ?? []).some((a) => a.toLowerCase().includes(q)) ||
-      p.references.some((r) => r.brand.toLowerCase().includes(q) || r.refCode.toLowerCase().includes(q))
-    );
+      p.references.some((r) => r.brand.toLowerCase().includes(q) || r.refCode.toLowerCase().includes(q));
+    return profiles.filter(matchesProfileSearch);
   }, [profiles, profilesSearch]);
 
   // ════════════════════════════════════════════════════════════
@@ -719,7 +735,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             <Input
-              placeholder="Buscar serie, IC, marca..."
+              placeholder="Buscar serie, IC, referencia..."
               value={profilesSearch}
               onChange={(e) => setProfilesSearch(e.target.value)}
               className="pl-9 w-52"
@@ -800,6 +816,11 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                         </Badge>
                       )}
                     </div>
+                    {profile.internalReference && (
+                      <p className="text-xs font-medium text-foreground/80 mt-1 truncate">
+                        Ref. interna: {profile.internalReference}
+                      </p>
+                    )}
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {profile.codesCount ?? profile.codesData.length} códigos · {profile.dateAdded}
                       {profile.references.length > 1 && ` · ${profile.references.length - 1} ref. alternativa(s)`}
@@ -873,6 +894,11 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                         </Badge>
                       )}
                     </div>
+                    {profile.internalReference && (
+                      <p className="text-[10px] font-medium text-foreground/80 truncate">
+                        {profile.internalReference}
+                      </p>
+                    )}
                     <p className="text-[10px] text-muted-foreground">{profile.codesCount ?? profile.codesData.length} códigos · {profile.dateAdded}</p>
                   </div>
 
@@ -1003,6 +1029,16 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                       value={series}
                       onChange={(e) => setSeries(e.target.value)}
                       className="h-8 text-sm font-mono"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <Label className="text-xs font-semibold text-muted-foreground">Referencia interna</Label>
+                    <Input
+                      placeholder="Ej. Forester 2005, Corolla brasileño"
+                      value={internalReference}
+                      onChange={(e) => setInternalReference(e.target.value)}
+                      className="h-8 text-sm"
                     />
                   </div>
 

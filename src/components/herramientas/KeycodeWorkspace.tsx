@@ -22,7 +22,12 @@ import type { ToolAssignment, KeycodeProfile, BittingConfig, CodeEntry } from "@
 import { LOCK_LABELS, LOCK_ORDER } from "@/types";
 
 /** Un resultado de búsqueda: código + bitting, con el bitting Valet (si existe) cuando el backend lo adjunta. */
-type KeyResultEntry = { codigo: string; bitting: string[]; valetBitting?: string[] | null };
+type KeyResultEntry = {
+  codigo: string;
+  bitting: string[];
+  valetBitting?: string[] | null;
+  matchSource?: "master" | "valet";
+};
 
 export type KeycodeSearchFn = (
   profileId: string,
@@ -347,6 +352,19 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     });
   };
 
+  const entryMatchesAcceptableSets = (
+    bitting: string[],
+    acceptableSets: (Set<string> | null)[],
+  ): boolean => {
+    if (!profile) return false;
+    const axesResult = getAxesResult(bitting, profile.bittingConfig);
+    const allValues = axesResult.flatMap((a) => a.values);
+    return acceptableSets.every((accepted, i) => {
+      if (!accepted) return true;
+      return accepted.has(allValues[i]?.toUpperCase() ?? "");
+    });
+  };
+
   const handleCodeSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile || !searchTerm.trim()) return;
@@ -451,14 +469,19 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
         return accepted;
       });
 
-      const results = profile.codesData.filter((entry) => {
-        const axesResult = getAxesResult(entry.bitting, profile.bittingConfig);
-        const allValues = axesResult.flatMap((a) => a.values);
-        return acceptableSets.every((accepted, i) => {
-          if (!accepted) return true;
-          return accepted.has(allValues[i]?.toUpperCase() ?? "");
-        });
-      });
+      const masterResults = profile.codesData
+        .filter((entry) => entryMatchesAcceptableSets(entry.bitting, acceptableSets))
+        .map((entry) => ({ ...entry, matchSource: "master" as const }));
+      const masterCodes = new Set(masterResults.map((entry) => entry.codigo));
+      const valetOnlyResults = (profile.valetCodesData ?? [])
+        .filter((entry) => !masterCodes.has(entry.codigo))
+        .filter((entry) => entryMatchesAcceptableSets(entry.bitting, acceptableSets))
+        .map((entry) => ({
+          ...entry,
+          valetBitting: entry.bitting,
+          matchSource: "valet" as const,
+        }));
+      const results = [...masterResults, ...valetOnlyResults];
       setBittingResults(results);
       setBittingGroups(groupByKey(results, gridValues));
       setHasBittingSearched(true);
@@ -493,10 +516,23 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     }
 
     setTimeout(() => {
-      const results = profile.codesData.filter((entry) => {
+      const matchesPartial = (entry: CodeEntry) => {
         const bittingStr = Array.isArray(entry.bitting) ? entry.bitting.join("") : entry.bitting;
         return bittingStr.includes(digits);
-      });
+      };
+      const masterResults = profile.codesData
+        .filter(matchesPartial)
+        .map((entry) => ({ ...entry, matchSource: "master" as const }));
+      const masterCodes = new Set(masterResults.map((entry) => entry.codigo));
+      const valetOnlyResults = (profile.valetCodesData ?? [])
+        .filter((entry) => !masterCodes.has(entry.codigo))
+        .filter(matchesPartial)
+        .map((entry) => ({
+          ...entry,
+          valetBitting: entry.bitting,
+          matchSource: "valet" as const,
+        }));
+      const results = [...masterResults, ...valetOnlyResults];
       setBittingResults(results);
       setBittingGroups([]);
       setHasBittingSearched(true);
@@ -555,10 +591,10 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     const flat: string[] = [];
     for (let i = 0; i < total; i++) flat.push(bitting[i] ?? "");
     setGridValues(flat);
+    setSearchValues(flat);
     setCodeState("idle");
     setExactEntry(null);
     setDecoderOpen(false);
-    toast.success(`Bitting decodificado: ${bitting.join('-')}`);
     setAllowResultsSheet(true);
     setIsPartialResults(false);
     // Auto-buscar coincidencias después de un microtick
@@ -590,14 +626,19 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
           accepted.add(String(parseInt(q.trim(), 10)));
           return accepted;
         });
-        const results = profile.codesData.filter((entry) => {
-          const axesResult = getAxesResult(entry.bitting, profile.bittingConfig);
-          const allValues = axesResult.flatMap((a) => a.values);
-          return acceptableSets.every((accepted, i) => {
-            if (!accepted) return true;
-            return accepted.has(allValues[i]?.toUpperCase() ?? "");
-          });
-        });
+        const masterResults = profile.codesData
+          .filter((entry) => entryMatchesAcceptableSets(entry.bitting, acceptableSets))
+          .map((entry) => ({ ...entry, matchSource: "master" as const }));
+        const masterCodes = new Set(masterResults.map((entry) => entry.codigo));
+        const valetOnlyResults = (profile.valetCodesData ?? [])
+          .filter((entry) => !masterCodes.has(entry.codigo))
+          .filter((entry) => entryMatchesAcceptableSets(entry.bitting, acceptableSets))
+          .map((entry) => ({
+            ...entry,
+            valetBitting: entry.bitting,
+            matchSource: "valet" as const,
+          }));
+        const results = [...masterResults, ...valetOnlyResults];
         setBittingResults(results);
         setBittingGroups(groupByKey(results, flat));
         setHasBittingSearched(true);
@@ -707,6 +748,32 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     return profile?.valetCodesData?.find((v) => v.codigo === entry.codigo)?.bitting ?? null;
   };
 
+  const matchesCurrentPositionalQuery = (bitting: string[]): boolean => {
+    if (!profile) return false;
+    const query = searchValues.some((q) => q.trim() !== "" && q !== "?") ? searchValues : gridValues;
+    const axesResult = getAxesResult(bitting, profile.bittingConfig);
+    const allValues = axesResult.flatMap((a) => a.values);
+    const maxDepth = profile.bittingConfig.maxDepth;
+
+    return query.every((q, i) => {
+      const clean = q.trim().toUpperCase();
+      if (!clean || clean === "?") return true;
+
+      const val = (allValues[i] ?? "").toUpperCase();
+      const base = parseInt(clean, 10);
+      if (isNaN(base)) return val === clean;
+      if (val === String(base)) return true;
+
+      if (advancedMode) {
+        const variants = tileVariants[i];
+        if (variants?.up && base + 1 <= maxDepth && val === String(base + 1)) return true;
+        if (variants?.down && base - 1 >= 1 && val === String(base - 1)) return true;
+      }
+
+      return false;
+    });
+  };
+
   const renderResultEntry = (
     entry: { codigo: string; bitting: string[] },
     delay: number,
@@ -796,6 +863,14 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     // — que el Master haya coincidido no implica que el Valet también lo haga.
     matchesQuery?: (bitting: string[]) => boolean,
   ) => {
+    if (entry.matchSource === "valet") {
+      return (
+        <Fragment key={`${entry.codigo}-valet-only`}>
+          {renderResultEntry(entry, delay, getHighlightStateFor(entry), "VALET")}
+        </Fragment>
+      );
+    }
+
     const valetBitting = getValetBitting(entry);
     const showValet = valetBitting && (!matchesQuery || matchesQuery(valetBitting));
     return (
@@ -1347,7 +1422,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                             const isWild = !searchVal.trim() || searchVal === "?";
                             const isAdvanced = advancedMode && !isWild && val !== searchVal;
                             return { isWild, isAdvanced };
-                          })
+                          }, matchesCurrentPositionalQuery)
                         )}
                       </div>
                     </div>
@@ -1423,7 +1498,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                       const isWild = !searchVal.trim() || searchVal === "?";
                       const isAdvanced = advancedMode && !isWild && val !== searchVal;
                       return { isWild, isAdvanced };
-                    })
+                    }, matchesCurrentPositionalQuery)
                   )}
                 </div>
               </div>

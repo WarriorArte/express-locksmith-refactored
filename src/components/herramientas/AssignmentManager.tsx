@@ -262,7 +262,7 @@ function AssignmentForm({
                       key={pid} 
                       className="inline-flex items-center gap-1 bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded text-xs font-medium"
                     >
-                      IC: {p.icCard} · {p.series}
+                      IC: {p.icCard} · {p.series}{p.internalReference ? ` · ${p.internalReference}` : ""}
                       <button
                         type="button"
                         onClick={(e) => {
@@ -294,7 +294,7 @@ function AssignmentForm({
                     <input 
                       autoFocus
                       type="text"
-                      placeholder="Buscar serie o IC Card..."
+                      placeholder="Buscar serie, IC o referencia..."
                       className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
                       value={profileSearch}
                       onChange={(e) => setProfileSearch(e.target.value)}
@@ -304,7 +304,8 @@ function AssignmentForm({
                     {keycodeProfiles
                       .filter(p => 
                         (p.series || "").toLowerCase().includes(profileSearch.toLowerCase()) || 
-                        (p.icCard || "").toLowerCase().includes(profileSearch.toLowerCase())
+                        (p.icCard || "").toLowerCase().includes(profileSearch.toLowerCase()) ||
+                        (p.internalReference || "").toLowerCase().includes(profileSearch.toLowerCase())
                       )
                       .map(p => {
                         const isSelected = selectedProfileIds.includes(p.id);
@@ -319,6 +320,9 @@ function AssignmentForm({
                             </div>
                             <span className="font-medium text-xs">IC: {p.icCard}</span>
                             <span className="text-muted-foreground text-xs">· {p.series}</span>
+                            {p.internalReference && (
+                              <span className="text-muted-foreground text-xs truncate">· {p.internalReference}</span>
+                            )}
                           </div>
                         );
                     })}
@@ -327,7 +331,8 @@ function AssignmentForm({
                     )}
                     {keycodeProfiles.length > 0 && keycodeProfiles.filter(p => 
                         (p.series || "").toLowerCase().includes(profileSearch.toLowerCase()) || 
-                        (p.icCard || "").toLowerCase().includes(profileSearch.toLowerCase())
+                        (p.icCard || "").toLowerCase().includes(profileSearch.toLowerCase()) ||
+                        (p.internalReference || "").toLowerCase().includes(profileSearch.toLowerCase())
                       ).length === 0 && (
                         <div className="p-4 text-center text-sm text-muted-foreground">No se encontraron resultados.</div>
                     )}
@@ -364,6 +369,12 @@ function AssignmentForm({
                     <Badge variant="secondary" className="font-mono">IC {profile.icCard}</Badge>
                     <span className="text-muted-foreground">·</span>
                     <span className="font-medium">{profile.series}</span>
+                    {profile.internalReference && (
+                      <>
+                        <span className="text-muted-foreground">·</span>
+                        <span className="font-medium text-foreground/80">{profile.internalReference}</span>
+                      </>
+                    )}
                     <span className="text-muted-foreground">· {totalLen} cortes{isDosEjes ? ` (${axes![0].label}:${axes![0].length} / ${axes![1].label}:${axes![1].length})` : ''}</span>
                   </div>
 

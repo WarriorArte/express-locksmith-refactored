@@ -9,6 +9,7 @@ const CHUNK_SIZE = 3000;
 /** Resultado de búsqueda por código: incluye el bitting Valet si existe para ese mismo código. */
 export interface KeycodeSearchResult extends CodeEntry {
   valetBitting?: string[] | null;
+  matchSource?: "master" | "valet";
 }
 
 function migrate(items: KeycodeProfile[]): KeycodeProfile[] {

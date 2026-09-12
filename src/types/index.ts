@@ -124,6 +124,8 @@ export interface KeycodeProfile {
   references: KeyReference[];
   icCard: string;
   series: string;
+  /** Nota interna para identificar/diferenciar la serie en administración. */
+  internalReference?: string;
   bittingConfig: BittingConfig;
   codesData: CodeEntry[];
   /** Total de códigos en DB (presente en respuestas de lista, donde codesData llega vacío). */

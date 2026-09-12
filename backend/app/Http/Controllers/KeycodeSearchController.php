@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\DB;
  *               encuentra bittings como "433131124332" o "413112433413").
  *   limit/offset paginación (limit máx. 1000, por defecto 300)
  *
- * Respuesta: { total, limit, offset, results: [{ codigo, bitting: [..], valetBitting: [..]|null }] }
+ * Respuesta: { total, limit, offset, results: [{ codigo, bitting: [..], valetBitting: [..]|null, matchSource }] }
  * valetBitting se llena (en cualquier tipo de búsqueda) cuando existe una
  * contraparte Valet para ese mismo código.
  */
@@ -76,17 +76,17 @@ final class KeycodeSearchController
 
             // Sin índice utilizable (comodín al inicio del LIKE): acotado por profile_id,
             // recorre solo los códigos de esta serie, no toda la tabla.
-            $query = DB::table('keycode_codes')
-                ->where('profile_id', $profileId)
-                ->where('bitting', 'like', '%' . $digits . '%');
+            $total = DB::query()
+                ->fromSub($this->buildPartialMatchesQuery($profileId, $digits), 'matched_codes')
+                ->count();
 
-            $total = (clone $query)->count();
-
-            $rows = $query
+            $rows = DB::query()
+                ->fromSub($this->buildPartialMatchesQuery($profileId, $digits), 'matched_codes')
                 ->orderBy('codigo')
+                ->orderByRaw("CASE match_source WHEN 'master' THEN 0 ELSE 1 END")
                 ->offset($offset)
                 ->limit($limit)
-                ->get(['codigo', 'bitting']);
+                ->get(['codigo', 'bitting', 'match_source']);
 
             return ApiResponse::success([
                 'total'   => $total,
@@ -104,16 +104,17 @@ final class KeycodeSearchController
         $limit  = min(max((int) $request->query('limit', 300), 1), self::MAX_LIMIT);
         $offset = max((int) $request->query('offset', 0), 0);
 
-        $query = DB::table('keycode_codes')->where('profile_id', $profileId);
-        $this->applyPositions($query, $positions);
+        $total = DB::query()
+            ->fromSub($this->buildPositionMatchesQuery($profileId, $positions), 'matched_codes')
+            ->count();
 
-        $total = (clone $query)->count();
-
-        $rows = $query
+        $rows = DB::query()
+            ->fromSub($this->buildPositionMatchesQuery($profileId, $positions), 'matched_codes')
             ->orderBy('codigo')
+            ->orderByRaw("CASE match_source WHEN 'master' THEN 0 ELSE 1 END")
             ->offset($offset)
             ->limit($limit)
-            ->get(['codigo', 'bitting']);
+            ->get(['codigo', 'bitting', 'match_source']);
 
         return ApiResponse::success([
             'total'   => $total,
@@ -232,19 +233,78 @@ final class KeycodeSearchController
         ), fn ($p) => $p !== '')));
     }
 
-    /** Serializa una página de resultados adjuntando el bitting Valet (si existe) por código, en un solo query. */
+    /** Busca en master y agrega resultados valet-only cuando el master del mismo código no coincide. */
+    private function buildPartialMatchesQuery(string $profileId, string $digits): \Illuminate\Database\Query\Builder
+    {
+        $master = DB::table('keycode_codes')
+            ->where('profile_id', $profileId)
+            ->where('bitting', 'like', '%' . $digits . '%')
+            ->select(['codigo', 'bitting'])
+            ->selectRaw("'master' as match_source");
+
+        $valet = DB::table('keycode_valet_codes as v')
+            ->where('v.profile_id', $profileId)
+            ->where('v.bitting', 'like', '%' . $digits . '%')
+            ->whereNotExists(function ($q) use ($digits): void {
+                $q->selectRaw('1')
+                    ->from('keycode_codes as m')
+                    ->whereColumn('m.profile_id', 'v.profile_id')
+                    ->whereColumn('m.codigo', 'v.codigo')
+                    ->where('m.bitting', 'like', '%' . $digits . '%');
+            })
+            ->select(['v.codigo', 'v.bitting'])
+            ->selectRaw("'valet' as match_source");
+
+        return $master->unionAll($valet);
+    }
+
+    private function buildPositionMatchesQuery(string $profileId, array $positions): \Illuminate\Database\Query\Builder
+    {
+        $master = DB::table('keycode_codes')
+            ->where('profile_id', $profileId);
+        $this->applyPositions($master, $positions);
+        $master->select(['codigo', 'bitting'])
+            ->selectRaw("'master' as match_source");
+
+        $valet = DB::table('keycode_valet_codes as v')
+            ->where('v.profile_id', $profileId);
+        $this->applyPositions($valet, $positions, 'v.bitting');
+        $valet->whereNotExists(function ($q) use ($positions): void {
+            $q->selectRaw('1')
+                ->from('keycode_codes as m')
+                ->whereColumn('m.profile_id', 'v.profile_id')
+                ->whereColumn('m.codigo', 'v.codigo');
+            $this->applyPositions($q, $positions, 'm.bitting');
+        });
+        $valet->select(['v.codigo', 'v.bitting'])
+            ->selectRaw("'valet' as match_source");
+
+        return $master->unionAll($valet);
+    }
+
     private function serializeRows(string $profileId, \Illuminate\Support\Collection $rows): array
     {
-        $codigos = $rows->pluck('codigo')->all();
-        $valetMap = $codigos === []
+        $masterCodigos = $rows
+            ->filter(fn ($r) => (($r->match_source ?? 'master') === 'master'))
+            ->pluck('codigo')
+            ->all();
+
+        $valetMap = $masterCodigos === []
             ? []
             : DB::table('keycode_valet_codes')
                 ->where('profile_id', $profileId)
-                ->whereIn('codigo', $codigos)
+                ->whereIn('codigo', $masterCodigos)
                 ->pluck('bitting', 'codigo')
                 ->all();
 
-        return $rows->map(fn ($r) => $this->serialize($r, $valetMap[$r->codigo] ?? null))->all();
+        return $rows->map(function ($r) use ($valetMap) {
+            $source = $r->match_source ?? 'master';
+            if ($source === 'valet') {
+                return $this->serialize($r, $r->bitting, 'valet');
+            }
+
+            return $this->serialize($r, $valetMap[$r->codigo] ?? null, 'master');
+        })->all();
     }
 
     /** @return array<int, array<int, string>>|null  Lista de sets aceptados ([] = comodín). */
@@ -283,7 +343,7 @@ final class KeycodeSearchController
     }
 
     /** Aplica LIKE (aprovecha el índice profile_id+bitting) y REGEXP sólo si hay sets múltiples. */
-    private function applyPositions(\Illuminate\Database\Query\Builder $query, array $positions): void
+    private function applyPositions(\Illuminate\Database\Query\Builder $query, array $positions, string $column = 'bitting'): void
     {
         $like    = '';
         $regex   = '';
@@ -305,19 +365,20 @@ final class KeycodeSearchController
             $regex  .= '[' . implode('', $set) . ']';
         }
 
-        $query->where('bitting', 'like', $like);
+        $query->where($column, 'like', $like);
 
         if ($needsRe) {
-            $query->whereRaw('bitting REGEXP ?', ['^' . $regex . '$']);
+            $query->whereRaw($column . ' REGEXP ?', ['^' . $regex . '$']);
         }
     }
 
-    private function serialize(object $row, ?string $valetBitting = null): array
+    private function serialize(object $row, ?string $valetBitting = null, string $matchSource = 'master'): array
     {
         return [
             'codigo'  => $row->codigo,
             'bitting' => str_split($row->bitting),
             'valetBitting' => $valetBitting !== null ? str_split($valetBitting) : null,
+            'matchSource' => $matchSource,
         ];
     }
 }
