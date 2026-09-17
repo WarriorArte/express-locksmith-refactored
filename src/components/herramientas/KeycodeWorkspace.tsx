@@ -951,7 +951,19 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                   : <>{assignment.make} {assignment.model}{year ? ` · ${year}` : ""}</>}
               </p>
             </div>
-            {!previewMode && (
+            {previewMode ? (
+              <Button
+                type="button"
+                variant="secondary"
+                size="icon"
+                onClick={onBack}
+                title="Salir de la prueba"
+                aria-label="Salir de la prueba"
+                className="shrink-0 mt-1 h-9 w-9 border border-border shadow-sm"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            ) : (
               <div className="shrink-0 mt-1">
                 <AccountMenu />
               </div>
