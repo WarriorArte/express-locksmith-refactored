@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { m as motion } from "framer-motion";
-import { Key, FileJson, Database, Plus, Trash2, Edit, Check, Search, ChevronLeft, ChevronRight, Upload, ArrowLeft, Eye, Settings2, LayoutList, LayoutGrid, ImageIcon, Camera, Wand2, Loader2, RotateCcw, AlertTriangle } from "lucide-react";
+import { Key, FileJson, Database, Plus, Trash2, Edit, Check, Search, ChevronLeft, ChevronRight, Upload, ArrowLeft, Eye, Settings2, LayoutList, LayoutGrid, ImageIcon, Camera, Wand2, Loader2, RotateCcw, AlertTriangle, Play } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -29,8 +29,9 @@ import { useFileUpload } from "@/hooks/useFileUpload";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import { phpApiDeleteFile, resolveStorageUrl } from "@/lib/phpApi";
 import { ImageGalleryDialog } from "@/components/shared/ImageGalleryDialog";
+import { KeycodeWorkspace } from "@/components/herramientas/KeycodeWorkspace";
 
-import type { KeycodeProfile, KeyReference, CodeEntry, BittingConfig, ConfiguracionVisualLlave, TipoLlaveSVG, DecoderConfig, DecoderTipoLlave, DecoderAlineacion } from "@/types";
+import type { KeycodeProfile, KeyReference, CodeEntry, BittingConfig, ConfiguracionVisualLlave, TipoLlaveSVG, DecoderConfig, DecoderTipoLlave, DecoderAlineacion, ToolAssignment } from "@/types";
 
 interface JsonSerieImport {
   id: string;
@@ -133,6 +134,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [view, setView] = useState<View>("list");
+  const [testingSeries, setTestingSeries] = useState(false);
 
   // --- Imagen del perfil: sube al servidor (carpeta "keycode") en vez de guardar base64 ---
   const { currentWorkshop } = useWorkshop();
@@ -289,6 +291,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
     setSearchTerm("");
     setCurrentPage(1);
     setEditTab("references");
+    setTestingSeries(false);
     setView("edit");
   };
 
@@ -719,6 +722,49 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
     return profiles.filter(matchesProfileSearch);
   }, [profiles, profilesSearch]);
 
+  if (testingSeries && editingProfile) {
+    const draftProfile: KeycodeProfile = {
+      ...editingProfile,
+      references,
+      bittingConfig,
+      codesData: currentCodes,
+      codesCount: currentCodes.length,
+      valetCodesData: valetCodes,
+      valetCodesCount: valetCodes.length,
+      configuracionVisual,
+      profileImage,
+      decoderConfig,
+      icCard: icCard.trim(),
+      series: series.trim(),
+      internalReference: internalReference.trim(),
+      seriesAliases: seriesAliases.map((alias) => alias.trim()).filter(Boolean),
+      multiPrefixes: multiPrefixes.map((prefix) => prefix.trim().toUpperCase()).filter(Boolean),
+    };
+    const primaryReference = references.find((reference) => reference.isPrimary) ?? references[0];
+    const previewYear = new Date().getFullYear();
+    const previewAssignment: ToolAssignment = {
+      id: `keycode-preview-${draftProfile.id}`,
+      make: primaryReference?.brand.trim() || "Vista de prueba",
+      model: internalReference.trim() || primaryReference?.refCode.trim() || series.trim() || "Serie en edicion",
+      yearStart: previewYear,
+      yearEnd: previewYear,
+      tools: ["keycode"],
+      workshops: [],
+      dateAdded: draftProfile.dateAdded,
+      keycodeProfileIds: [draftProfile.id],
+    };
+
+    return (
+      <KeycodeWorkspace
+        assignment={previewAssignment}
+        keycodeProfiles={[draftProfile]}
+        onFetchCodes={async () => draftProfile}
+        onBack={() => setTestingSeries(false)}
+        previewMode
+      />
+    );
+  }
+
   // ════════════════════════════════════════════════════════════
   // VISTA: Lista de series
   // ════════════════════════════════════════════════════════════
@@ -974,18 +1020,32 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
               <p className="text-xs text-muted-foreground">IC: {icCard || "—"} · {currentCodes.length} códigos</p>
             </div>
           </div>
-          <Button onClick={saveEdit} size="sm" className="shrink-0" disabled={!canSave || saving}>
-            {saving ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                {saveProgress
-                  ? `Subiendo ${Math.round((saveProgress.done / Math.max(saveProgress.total, 1)) * 100)}%`
-                  : "Guardando…"}
-              </>
-            ) : (
-              <><Check className="w-4 h-4 mr-1" /> Guardar</>
-            )}
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setTestingSeries(true)}
+              disabled={saving}
+              title="Probar serie como usuario"
+              aria-label="Probar serie como usuario"
+            >
+              <Play className="w-4 h-4 sm:mr-1" />
+              <span className="hidden sm:inline">Probar serie</span>
+            </Button>
+            <Button onClick={saveEdit} size="sm" className="shrink-0" disabled={!canSave || saving}>
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                  {saveProgress
+                    ? `Subiendo ${Math.round((saveProgress.done / Math.max(saveProgress.total, 1)) * 100)}%`
+                    : "Guardando…"}
+                </>
+              ) : (
+                <><Check className="w-4 h-4 mr-1" /> Guardar</>
+              )}
+            </Button>
+          </div>
 
         </div>
 

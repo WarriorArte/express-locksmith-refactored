@@ -588,13 +588,13 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, initialImageUrl,
               {showGuiaIzq && (
                 <>
                   <line x1={xIzq} y1={lineYTopExtended} x2={xIzq} y2={lineYBottomExtended} stroke="rgba(0, 229, 255, 0.45)" strokeWidth="0.65" />
-                  <text x={xIzq} y={numberLabelY} fill="rgba(200, 240, 255, 0.95)" fontSize="11" textAnchor="middle">{i + 1}</text>
+                  <text x={xIzq} y={numberLabelY} fill="rgba(200, 240, 255, 0.95)" fontSize="11" textAnchor="middle">{depthIndexToBitting(i)}</text>
                 </>
               )}
               {showGuiaDer && (
                 <>
                   <line x1={xDer} y1={lineYTopExtended} x2={xDer} y2={lineYBottomExtended} stroke="rgba(0, 229, 255, 0.45)" strokeWidth="0.65" />
-                  <text x={xDer} y={numberLabelY} fill="rgba(200, 240, 255, 0.95)" fontSize="11" textAnchor="middle">{i + 1}</text>
+                  <text x={xDer} y={numberLabelY} fill="rgba(200, 240, 255, 0.95)" fontSize="11" textAnchor="middle">{depthIndexToBitting(i)}</text>
                 </>
               )}
             </g>
@@ -650,7 +650,7 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, initialImageUrl,
                     <>
                       <circle cx={xPuntoIzq} cy={cutYIzq} r={isRowActiveIzq ? 4 : 2.5} fill={isRowActiveIzq ? "#f59e0b" : "#00E5FF"} filter={isRowActiveIzq ? "url(#neon-glow-decoder)" : ""} />
                       {isRowActiveIzq && <circle cx={xPuntoIzq} cy={cutYIzq} r={8} fill="none" stroke="#f59e0b" strokeWidth="1" className="animate-ping" style={{ transformOrigin: `${xPuntoIzq}px ${cutYIzq}px` }} />}
-                      <text x={centerX - maxProfDist - 42} y={cutYIzq + 4} fill={isRowActiveIzq ? "#FFB830" : "rgba(200, 240, 255, 0.95)"} fontSize="13" textAnchor="end" fontWeight="900">{profIzqIndex + 1}</text>
+                      <text x={centerX - maxProfDist - 42} y={cutYIzq + 4} fill={isRowActiveIzq ? "#FFB830" : "rgba(200, 240, 255, 0.95)"} fontSize="13" textAnchor="end" fontWeight="900">{depthIndexToBitting(profIzqIndex)}</text>
                     </>
                   )}
                   {fase !== 'captura' && !hasKnownIzq && (
@@ -666,7 +666,7 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, initialImageUrl,
                     <>
                       <circle cx={xPuntoDer} cy={cutYDer} r={isRowActiveDer ? 4 : 2.5} fill={isRowActiveDer ? "#f59e0b" : "#00E5FF"} filter={isRowActiveDer ? "url(#neon-glow-decoder)" : ""} />
                       {isRowActiveDer && <circle cx={xPuntoDer} cy={cutYDer} r={8} fill="none" stroke="#f59e0b" strokeWidth="1" className="animate-ping" style={{ transformOrigin: `${xPuntoDer}px ${cutYDer}px` }} />}
-                      <text x={centerX + maxProfDist + 42} y={cutYDer + 4} fill={isRowActiveDer ? "#FFB830" : "rgba(200, 240, 255, 0.95)"} fontSize="13" textAnchor="start" fontWeight="900">{profDerIndex + 1}</text>
+                      <text x={centerX + maxProfDist + 42} y={cutYDer + 4} fill={isRowActiveDer ? "#FFB830" : "rgba(200, 240, 255, 0.95)"} fontSize="13" textAnchor="start" fontWeight="900">{depthIndexToBitting(profDerIndex)}</text>
                     </>
                   )}
                   {fase !== 'captura' && !hasKnownDer && (

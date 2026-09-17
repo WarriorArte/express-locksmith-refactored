@@ -121,9 +121,11 @@ interface KeycodeWorkspaceProps {
   onSearchCodes?: KeycodeSearchFn;
   onBack: () => void;
   year?: number;
+  /** Ajusta solo el contexto de navegacion cuando el SuperAdmin prueba un borrador. */
+  previewMode?: boolean;
 }
 
-export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, onSearchCodes, onBack, year }: KeycodeWorkspaceProps) {
+export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, onSearchCodes, onBack, year, previewMode = false }: KeycodeWorkspaceProps) {
   const profileId = assignment.keycodeProfileIds?.[0] ?? assignment.keycodeProfileId ?? null;
   const baseProfile = keycodeProfiles.find((p) => p.id === profileId);
 
@@ -924,7 +926,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                 className="ce-hero-eyebrow inline-flex items-center gap-1.5 hover:opacity-70 transition-opacity"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                Herramientas
+                {previewMode ? "Cerrar prueba" : "Herramientas"}
               </button>
               <AnimatePresence mode="wait">
                 <motion.h1
@@ -943,11 +945,17 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                   }
                 </motion.h1>
               </AnimatePresence>
-              <p className="ce-hero-meta mt-2">{assignment.make} {assignment.model}{year ? ` · ${year}` : ""}</p>
+              <p className="ce-hero-meta mt-2">
+                {previewMode
+                  ? "Vista de prueba · cambios sin guardar"
+                  : <>{assignment.make} {assignment.model}{year ? ` · ${year}` : ""}</>}
+              </p>
             </div>
-            <div className="shrink-0 mt-1">
-              <AccountMenu />
-            </div>
+            {!previewMode && (
+              <div className="shrink-0 mt-1">
+                <AccountMenu />
+              </div>
+            )}
           </div>
 
           {/* ── Barra de búsqueda ── */}
