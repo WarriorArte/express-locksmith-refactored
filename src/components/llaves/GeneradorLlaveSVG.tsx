@@ -8,6 +8,7 @@ import { LlavePistaCanalUnificada } from './LlavePistaCanalUnificada';
 import { LlavePistaSemiCanal } from './LlavePistaSemiCanal';
 import { LlaveUnEjeLateral } from './LlaveUnEjeLateral';
 import { InputCorteSVG } from './InputCorteSVG';
+import { translateDepth } from '@/lib/depthInversion';
 
 interface GeneradorLlaveSVGProps {
   config: ConfiguracionVisualLlave;
@@ -36,6 +37,8 @@ interface GeneradorLlaveSVGProps {
   numberSize?: number;
   /** Ajuste por serie: grosor del número (escala CSS font-weight, 100-900). Por defecto 700. */
   numberWeight?: number;
+  /** Invierte la profundidad fisica del trazo sin cambiar el valor mostrado. */
+  invertDepths?: boolean;
 }
 
 function getBaseYTop(tipo: string): number {
@@ -65,6 +68,7 @@ export function GeneradorLlaveSVG({
   boxSize = 18,
   numberSize = 14,
   numberWeight = 700,
+  invertDepths = false,
 }: GeneradorLlaveSVGProps) {
   const boxHalf = boxSize / 2;
   // La caja de cada dígito mide boxSize x (boxSize + 6); el hueco reservado
@@ -75,13 +79,14 @@ export function GeneradorLlaveSVG({
   const sanearCortes = (arr: number[]) =>
     arr.map(c => {
       const n = Number(c);
-      return isNaN(n) || n < 1 ? 1 : n > config.maxDepth ? config.maxDepth : n;
+      const safeDepth = isNaN(n) || n < 1 ? 1 : n > config.maxDepth ? config.maxDepth : n;
+      return translateDepth(safeDepth, config.maxDepth, invertDepths);
     });
 
-  const safePrimarios = useMemo(() => sanearCortes(cortesPrimarios), [cortesPrimarios, config.maxDepth]);
+  const safePrimarios = useMemo(() => sanearCortes(cortesPrimarios), [cortesPrimarios, config.maxDepth, invertDepths]);
   const safeSecundarios = useMemo(
     () => (cortesSecundarios ? sanearCortes(cortesSecundarios) : []),
-    [cortesSecundarios, config.maxDepth]
+    [cortesSecundarios, config.maxDepth, invertDepths]
   );
 
   const isInteractive = !!(valoresPrimarios && onPrimaryChange);

@@ -1026,6 +1026,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                   config={{ ...profile.configuracionVisual, maxDepth: profile.bittingConfig.maxDepth }}
                   cortesPrimarios={primaryNums}
                   cortesSecundarios={secondaryNums}
+                  invertDepths={profile.bittingConfig.invertDepths}
                   valoresPrimarios={primaryValues}
                   valoresSecundarios={secondaryValues}
                   onPrimaryChange={handlePrimaryChange}

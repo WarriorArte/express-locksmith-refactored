@@ -18,6 +18,7 @@ import {
 import { m as motion, AnimatePresence } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import type { DecoderConfig, BittingConfig } from "@/types";
+import { translateDepth } from "@/lib/depthInversion";
 
 // --- COMPONENTE: DESLIZADOR VERTICAL (intacto, sólo colores) ---
 const ControlDeslizanteVertical = ({
@@ -132,7 +133,12 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, initialImageUrl,
   };
 
   const currentDepthValue = cortes[cursorActivo.corteIndex]?.[cursorActivo.lado] ?? 0;
-  const currentDepthLabel = currentDepthValue === UNKNOWN_DEPTH ? "?" : String(getSafeDepthIndex(currentDepthValue) + 1);
+  const depthIndexToBitting = (depthIndex: number): string => String(
+    translateDepth(depthIndex + 1, bittingConfig.maxDepth, bittingConfig.invertDepths),
+  );
+  const currentDepthLabel = currentDepthValue === UNKNOWN_DEPTH
+    ? "?"
+    : depthIndexToBitting(getSafeDepthIndex(currentDepthValue));
 
   // Listener para tamaño de ventana (matemáticas precisas)
   useEffect(() => {
@@ -245,7 +251,7 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, initialImageUrl,
       const rawIndex = corte[lado];
       if (rawIndex === UNKNOWN_DEPTH) return "?";
       const profIndex = getSafeDepthIndex(rawIndex, 0);
-      return String(profIndex + 1);
+      return depthIndexToBitting(profIndex);
     };
 
     if (isDosEjes) {

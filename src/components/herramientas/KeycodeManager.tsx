@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -868,6 +869,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                           config={{ ...profile.configuracionVisual, maxDepth: profile.bittingConfig.maxDepth }}
                           cortesPrimarios={prev.primary}
                           cortesSecundarios={prev.secondary}
+                          invertDepths={profile.bittingConfig.invertDepths}
                           strokeColor={resolvedStrokeColor}
                           strokeWidth={visualSettings.strokeWidth}
                           boxSize={profile.configuracionVisual.tamCaja}
@@ -1150,6 +1152,21 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                       <Input type="number" min="1" max="9" value={bittingConfig.maxDepth}
                         onChange={(e) => setBittingConfig((c) => ({ ...c, maxDepth: parseInt(e.target.value) || 9 }))} className="font-mono h-8" />
                     </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-muted/30 px-3 py-2.5">
+                    <div className="min-w-0 space-y-0.5">
+                      <Label htmlFor="invert-depths" className="text-xs font-bold cursor-pointer">Invertir profundidades</Label>
+                      <p className="text-[11px] leading-snug text-muted-foreground">
+                        El nivel 1 usa la profundidad {bittingConfig.maxDepth} y viceversa.
+                      </p>
+                    </div>
+                    <Switch
+                      id="invert-depths"
+                      checked={bittingConfig.invertDepths ?? false}
+                      onCheckedChange={(checked) => setBittingConfig((c) => ({ ...c, invertDepths: checked }))}
+                      aria-label="Invertir profundidades"
+                    />
                   </div>
 
                   {/* Mapeo de profundidades */}
@@ -1890,6 +1907,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                       config={{ ...configuracionVisual, maxDepth: bittingConfig.maxDepth }}
                       cortesPrimarios={previewPrimaryNums}
                       cortesSecundarios={previewSecondaryNums}
+                      invertDepths={bittingConfig.invertDepths}
                       valoresPrimarios={previewPrimaryValues}
                       valoresSecundarios={previewSecondaryValues}
                       onPrimaryChange={handlePreviewPrimaryChange}

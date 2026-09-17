@@ -17,6 +17,8 @@ export interface AxisConfig {
 export interface BittingConfig {
   length: number;
   maxDepth: number;
+  /** Interpreta los niveles en orden inverso: 1 corresponde a maxDepth y viceversa. */
+  invertDepths?: boolean;
   depthMapping?: DepthMapping;
   axes?: AxisConfig[];
 }
