@@ -33,6 +33,7 @@ use App\Http\Controllers\EnvDiagnosticController;
 use App\Http\Controllers\WorkshopFeatureController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\BackupRestoreController;
+use App\Http\Controllers\SystemResetController;
 use App\Http\Controllers\MaintenanceController;
 use Illuminate\Support\Facades\Route;
 
@@ -137,6 +138,7 @@ Route::middleware('legacy.auth')->group(function (): void {
     Route::get('/env-diagnostic.php', [EnvDiagnosticController::class, 'handle']);
     Route::match(['GET', 'POST'], '/uploads.php', [UploadController::class, 'handle']);
     Route::post('/backup-restore.php', [BackupRestoreController::class, 'handle']);
+    Route::post('/system-reset.php', [SystemResetController::class, 'handle']);
 
     // ── Modulo Herramientas (SuperAdmin) ─────────────────────────────
     Route::match(['GET', 'POST', 'PUT', 'DELETE'], '/herramientas/alarma-profiles', [AlarmaProfileController::class, 'handle']);

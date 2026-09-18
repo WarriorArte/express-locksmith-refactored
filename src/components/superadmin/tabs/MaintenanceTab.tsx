@@ -1,12 +1,16 @@
-import { useState, useCallback } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialog, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
-  AlertDialogTitle, AlertDialogTrigger,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, RefreshCw, Trash2, KeyRound, Bell, Shield, Link2, Car } from "lucide-react";
+import { Loader2, RefreshCw, Trash2, KeyRound, Bell, Shield, Link2, Car, AlertTriangle } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { phpApiRequest } from "@/lib/phpApi";
 
@@ -20,11 +24,27 @@ type MaintenanceStats = {
 
 type Module = "keycode" | "alarmas" | "immo" | "assignments" | "vehicles";
 
+interface PurgeLog {
+  message: string;
+  type: "info" | "success" | "error";
+}
+
+// Los perfiles (Keycode/Alarmas/Immo) estan referenciados desde las
+// asignaciones por su id, guardado dentro de un JSON sin FK de base de datos.
+// Si se purgan sin purgar tambien "Asignaciones", esas asignaciones quedan
+// apuntando a perfiles que ya no existen (roto en silencio).
+const PROFILE_MODULES: Module[] = ["keycode", "alarmas", "immo"];
+
 export function MaintenanceTab() {
   const { toast } = useToast();
   const [stats, setStats] = useState<MaintenanceStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
-  const [purging, setPurging] = useState<Module | null>(null);
+  const [selected, setSelected] = useState<Partial<Record<Module, boolean>>>({});
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [isPurging, setIsPurging] = useState(false);
+  const [purgeLogs, setPurgeLogs] = useState<PurgeLog[]>([]);
+  const [purgeComplete, setPurgeComplete] = useState(false);
 
   const fetchStats = useCallback(async () => {
     setLoadingStats(true);
@@ -41,23 +61,6 @@ export function MaintenanceTab() {
       setLoadingStats(false);
     }
   }, [toast]);
-
-  const handlePurge = async (module: Module) => {
-    setPurging(module);
-    try {
-      await phpApiRequest(`/herramientas/maintenance?module=${module}`, { method: "DELETE" });
-      toast({ title: "Módulo purgado correctamente" });
-      await fetchStats();
-    } catch (err) {
-      toast({
-        title: "Error al purgar",
-        description: err instanceof Error ? err.message : "Error desconocido",
-        variant: "destructive",
-      });
-    } finally {
-      setPurging(null);
-    }
-  };
 
   const modules: {
     id: Module;
@@ -115,6 +118,87 @@ export function MaintenanceTab() {
     },
   ];
 
+  const toggleModule = (mod: Module, checked: boolean) => {
+    setSelected((prev) => {
+      const next = { ...prev, [mod]: checked };
+      // Auto-incluir: purgar perfiles sin purgar asignaciones deja vinculos
+      // rotos, asi que se marca Asignaciones automaticamente. El usuario
+      // puede desmarcarla despues; se avisa pero no se bloquea.
+      if (checked && PROFILE_MODULES.includes(mod)) {
+        next.assignments = true;
+      }
+      return next;
+    });
+  };
+
+  const selectedModules = useMemo(
+    () => (Object.keys(selected) as Module[]).filter((m) => selected[m]),
+    [selected],
+  );
+
+  const hasOrphanRisk = useMemo(
+    () => PROFILE_MODULES.some((m) => selected[m]) && !selected.assignments,
+    [selected],
+  );
+
+  const selectedTotal = stats
+    ? selectedModules.reduce((sum, id) => {
+        const mod = modules.find((m) => m.id === id);
+        return sum + (mod ? mod.total(stats) : 0);
+      }, 0)
+    : 0;
+
+  const addLog = (message: string, type: PurgeLog["type"] = "info") => {
+    setPurgeLogs((prev) => [...prev, { message, type }]);
+  };
+
+  const handleConfirmPurge = async () => {
+    if (confirmText !== "PURGAR" || selectedModules.length === 0 || isPurging) return;
+
+    setIsPurging(true);
+    setPurgeLogs([]);
+    setPurgeComplete(false);
+
+    try {
+      addLog(`Purgando ${selectedModules.length} módulo(s)...`, "info");
+
+      const result = await phpApiRequest<{ modules: string[]; deleted: Record<string, Record<string, number>> }>(
+        `/herramientas/maintenance`,
+        { method: "DELETE", body: JSON.stringify({ modules: selectedModules }) },
+      );
+
+      for (const [mod, counts] of Object.entries(result.deleted)) {
+        const label = modules.find((m) => m.id === mod)?.label ?? mod;
+        const total = Object.values(counts).reduce((a, b) => a + b, 0);
+        addLog(`✓ ${label}: ${total.toLocaleString()} registros eliminados`, "success");
+      }
+
+      addLog("✅ Purga completada correctamente", "success");
+      setPurgeComplete(true);
+      setSelected({});
+      await fetchStats();
+
+      toast({ title: "Módulos purgados correctamente" });
+    } catch (err) {
+      addLog(`Error: ${err instanceof Error ? err.message : "desconocido"}`, "error");
+      toast({
+        title: "Error al purgar",
+        description: err instanceof Error ? err.message : "Error desconocido",
+        variant: "destructive",
+      });
+    } finally {
+      setIsPurging(false);
+    }
+  };
+
+  const closeConfirmDialog = () => {
+    if (isPurging) return;
+    setConfirmOpen(false);
+    setConfirmText("");
+    setPurgeLogs([]);
+    setPurgeComplete(false);
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -126,7 +210,8 @@ export function MaintenanceTab() {
                 Mantenimiento de Datos
               </CardTitle>
               <CardDescription>
-                Consulta y limpia los datos de cada módulo para evitar registros huérfanos durante la carga
+                Marca los módulos globales que quieres purgar y confirma una sola vez. Estos datos son
+                compartidos por todos los talleres.
               </CardDescription>
             </div>
             <Button
@@ -146,89 +231,174 @@ export function MaintenanceTab() {
         </CardHeader>
 
         {stats && (
-          <CardContent>
+          <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {modules.map((mod) => {
                 const lines = mod.statsLines(stats);
                 const total = mod.total(stats);
-                const isPurging = purging === mod.id;
+                const isChecked = selected[mod.id] === true;
+                const isAutoIncluded = mod.id === "assignments" && isChecked
+                  && PROFILE_MODULES.some((m) => selected[m]);
 
                 return (
-                  <Card key={mod.id} className="border">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        {mod.icon}
-                        {mod.label}
-                      </CardTitle>
-                      <CardDescription className="text-xs">{mod.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="space-y-1">
-                        {lines.map((line) => (
-                          <div key={line.label} className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">{line.label}</span>
-                            <span className={`font-medium tabular-nums ${line.value === 0 ? "text-muted-foreground" : ""}`}>
-                              {line.value.toLocaleString()}
-                            </span>
-                          </div>
-                        ))}
+                  <label
+                    key={mod.id}
+                    className={cn(
+                      "block rounded-lg border p-4 cursor-pointer transition-colors",
+                      isChecked ? "border-destructive/60 bg-destructive/5" : "hover:bg-muted/50",
+                      total === 0 && "opacity-60 cursor-not-allowed",
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        checked={isChecked}
+                        disabled={total === 0}
+                        onCheckedChange={(checked) => toggleModule(mod.id, checked === true)}
+                        className="mt-0.5"
+                      />
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-2">
+                          {mod.icon}
+                          <span className="font-semibold text-base">{mod.label}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{mod.description}</p>
+                        <div className="space-y-1">
+                          {lines.map((line) => (
+                            <div key={line.label} className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">{line.label}</span>
+                              <span className={`font-medium tabular-nums ${line.value === 0 ? "text-muted-foreground" : ""}`}>
+                                {line.value.toLocaleString()}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                        {isAutoIncluded && (
+                          <p className="text-xs text-primary">Incluido automáticamente (vinculada a los perfiles marcados)</p>
+                        )}
+                        {total === 0 && <p className="text-xs text-muted-foreground">Sin datos</p>}
                       </div>
-
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            className="w-full gap-2"
-                            disabled={isPurging || total === 0}
-                          >
-                            {isPurging ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                              <Trash2 className="h-3 w-3" />
-                            )}
-                            {total === 0 ? "Sin datos" : `Purgar ${total.toLocaleString()} registros`}
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>¿Purgar módulo {mod.label}?</AlertDialogTitle>
-                            <AlertDialogDescription asChild>
-                              <div className="space-y-3">
-                                <p>Esta acción eliminará permanentemente todos los datos del módulo:</p>
-                                <div className="rounded-md bg-muted p-3 space-y-1">
-                                  {lines.map((line) => (
-                                    <div key={line.label} className="flex justify-between text-sm">
-                                      <span>{line.label}</span>
-                                      <span className="font-semibold">{line.value.toLocaleString()}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                                <p className="text-destructive font-medium">
-                                  Esta operación no se puede deshacer.
-                                </p>
-                              </div>
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              onClick={() => handlePurge(mod.id)}
-                            >
-                              Sí, purgar
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </label>
                 );
               })}
+            </div>
+
+            {hasOrphanRisk && (
+              <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400">
+                <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                <p>
+                  Vas a eliminar perfiles sin eliminar <strong>Asignaciones</strong>: las asignaciones
+                  existentes quedarán con vínculos rotos a esos perfiles.
+                </p>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30">
+              <span className="text-sm text-muted-foreground">
+                {selectedModules.length === 0
+                  ? "Ningún módulo seleccionado"
+                  : `${selectedModules.length} módulo(s) seleccionado(s) · ${selectedTotal.toLocaleString()} registros`}
+              </span>
+              <Button
+                variant="destructive"
+                className="gap-2"
+                disabled={selectedModules.length === 0}
+                onClick={() => setConfirmOpen(true)}
+              >
+                <Trash2 className="h-4 w-4" />
+                Purgar seleccionados
+              </Button>
             </div>
           </CardContent>
         )}
       </Card>
+
+      <AlertDialog open={confirmOpen} onOpenChange={closeConfirmDialog}>
+        <AlertDialogContent className="max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="w-5 h-5" />
+              {purgeComplete ? "¡Purga completada!" : "¿Purgar módulos seleccionados?"}
+            </AlertDialogTitle>
+            {!isPurging && !purgeComplete && (
+              <AlertDialogDescription asChild>
+                <div className="space-y-3">
+                  <p>Esta acción eliminará permanentemente, para TODOS los talleres:</p>
+                  <div className="rounded-md bg-muted p-3 space-y-1">
+                    {selectedModules.map((id) => (
+                      <div key={id} className="flex justify-between text-sm">
+                        <span>{modules.find((m) => m.id === id)?.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {hasOrphanRisk && (
+                    <p className="text-amber-600 dark:text-amber-400 text-sm">
+                      ⚠️ Quedarán asignaciones con referencias rotas a los perfiles eliminados.
+                    </p>
+                  )}
+                  <p className="text-destructive font-medium">Esta operación no se puede deshacer.</p>
+                </div>
+              </AlertDialogDescription>
+            )}
+          </AlertDialogHeader>
+
+          {!isPurging && !purgeComplete && (
+            <div className="space-y-1.5">
+              <Label htmlFor="purge-confirm-text" className="text-xs">
+                Escribe <strong>PURGAR</strong> para continuar
+              </Label>
+              <Input
+                id="purge-confirm-text"
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                placeholder="PURGAR"
+              />
+            </div>
+          )}
+
+          {(isPurging || purgeComplete) && purgeLogs.length > 0 && (
+            <div className="flex-1 overflow-hidden">
+              <div className="bg-muted/50 rounded-lg p-3 h-56 overflow-y-auto font-mono text-xs space-y-1">
+                {purgeLogs.map((log, index) => (
+                  <div
+                    key={index}
+                    className={cn(
+                      log.type === "success" && "text-foreground dark:text-success",
+                      log.type === "error" && "text-destructive",
+                      log.type === "info" && "text-muted-foreground",
+                    )}
+                  >
+                    {log.message}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <AlertDialogFooter>
+            {purgeComplete ? (
+              <Button onClick={closeConfirmDialog} className="bg-success text-success-foreground hover:bg-success/90">
+                Cerrar
+              </Button>
+            ) : (
+              <>
+                <AlertDialogCancel onClick={() => setConfirmText("")} disabled={isPurging}>
+                  Cancelar
+                </AlertDialogCancel>
+                <Button
+                  onClick={handleConfirmPurge}
+                  disabled={confirmText !== "PURGAR" || isPurging}
+                  variant="destructive"
+                  className="gap-2"
+                >
+                  {isPurging && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {isPurging ? "Procesando..." : "Sí, purgar"}
+                </Button>
+              </>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

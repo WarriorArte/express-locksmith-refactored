@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -12,7 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Download, Upload, Trash2, Loader2, AlertTriangle } from "lucide-react";
+import { Download, Upload, Trash2, Loader2, AlertTriangle, Settings2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useWorkshop } from "@/hooks/useWorkshop";
@@ -35,6 +36,72 @@ interface ResetLog {
   timestamp: Date;
 }
 
+type ResetSectionKey =
+  | "customers"
+  | "products"
+  | "categories_tags"
+  | "quotes"
+  | "sales"
+  | "services"
+  | "warranties"
+  | "business_settings"
+  | "warranty_settings"
+  | "quote_doc_settings";
+
+type ResetSection = {
+  key: ResetSectionKey;
+  label: string;
+  note?: string;
+  defaultChecked: boolean;
+};
+
+// Datos operativos del taller: lo que ya cubria "Restaurar Sistema" antes,
+// ahora seleccionable. Marcados por defecto para conservar el comportamiento
+// previo (todo se borraba).
+const DATA_SECTIONS: ResetSection[] = [
+  { key: "customers", label: "Clientes", defaultChecked: true },
+  { key: "products", label: "Productos e inventario", note: "Incluye stock y movimientos de inventario: van siempre juntos", defaultChecked: true },
+  { key: "categories_tags", label: "Categorías y etiquetas", note: "Si hay plazos de garantía por categoría, también se eliminan", defaultChecked: true },
+  { key: "quotes", label: "Cotizaciones", defaultChecked: true },
+  { key: "sales", label: "Ventas", defaultChecked: true },
+  { key: "services", label: "Servicios", note: "Incluye las fotos adjuntas", defaultChecked: true },
+  { key: "warranties", label: "Garantías", note: "Registros otorgados a clientes", defaultChecked: true },
+];
+
+// Configuracion del taller: hoy nunca se borra con el reset rapido, se deja
+// fuera por defecto para no sorprender a nadie.
+const CONFIG_SECTIONS: ResetSection[] = [
+  { key: "business_settings", label: "Datos del negocio", note: "Nombre, logo, contacto", defaultChecked: false },
+  { key: "warranty_settings", label: "Configuración de garantías", note: "Plazos por defecto y términos", defaultChecked: false },
+  { key: "quote_doc_settings", label: "Configuración de cotización/ticket", note: "Colores y textos del documento", defaultChecked: false },
+];
+
+const ALL_SECTIONS = [...DATA_SECTIONS, ...CONFIG_SECTIONS];
+
+const COUNT_LABELS: Record<string, string> = {
+  customers: "Clientes",
+  products: "Productos",
+  inventory_movements: "Movimientos de inventario",
+  categories: "Categorías",
+  tags: "Etiquetas",
+  warranty_category_settings: "Config. de garantías por categoría",
+  quotes: "Cotizaciones",
+  sales: "Ventas",
+  services: "Servicios",
+  warranties: "Garantías",
+  business_settings: "Datos del negocio",
+  warranty_settings: "Configuración de garantías",
+  quote_doc_settings: "Configuración de cotización/ticket",
+  media_files: "Archivos multimedia",
+};
+
+function defaultSelection(): Record<ResetSectionKey, boolean> {
+  return ALL_SECTIONS.reduce((acc, section) => {
+    acc[section.key] = section.defaultChecked;
+    return acc;
+  }, {} as Record<ResetSectionKey, boolean>);
+}
+
 export function BackupManager() {
   const [isExporting, setIsExporting] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
@@ -43,8 +110,18 @@ export function BackupManager() {
   const [isResetting, setIsResetting] = useState(false);
   const [resetLogs, setResetLogs] = useState<ResetLog[]>([]);
   const [resetComplete, setResetComplete] = useState(false);
+  const [selection, setSelection] = useState<Record<ResetSectionKey, boolean>>(defaultSelection);
   const { toast } = useToast();
   const { currentWorkshop } = useWorkshop();
+
+  const selectedKeys = useMemo(
+    () => (Object.keys(selection) as ResetSectionKey[]).filter((key) => selection[key]),
+    [selection],
+  );
+
+  const toggleSection = (key: ResetSectionKey, checked: boolean) => {
+    setSelection((prev) => ({ ...prev, [key]: checked }));
+  };
 
   const getWorkshopQuery = () => {
     if (!currentWorkshop?.id) {
@@ -57,44 +134,6 @@ export function BackupManager() {
     setResetLogs(prev => [...prev, { message, type, timestamp: new Date() }]);
   };
 
-  const deleteWorkshopFolder = async (folderType: string): Promise<{ deleted: number; errors: number }> => {
-    if (!currentWorkshop?.id) {
-      return { deleted: 0, errors: 0 };
-    }
-
-    let deleted = 0;
-    let errors = 0;
-
-    try {
-      const workshopCode = currentWorkshop?.code ?? "";
-      const files = await phpApiRequest<Array<{ filename: string; folder?: string }>>(
-        `/uploads.php?action=list&folder=${encodeURIComponent(folderType)}&workshop_code=${encodeURIComponent(workshopCode)}`,
-        { method: "GET" }
-      );
-
-      for (const file of files) {
-        try {
-          const formData = new FormData();
-          formData.append('filename', file.filename);
-          formData.append('folder', file.folder || folderType);
-          formData.append('workshop_code', workshopCode);
-
-          await phpApiRequest<null>(`/uploads.php?action=delete`, {
-            method: 'POST',
-            body: formData,
-          });
-          deleted++;
-        } catch {
-          errors++;
-        }
-      }
-    } catch (error) {
-      console.error(`[Reset] Error deleting folder ${folderType}:`, error);
-    }
-
-    return { deleted, errors };
-  };
-
   const exportEndpoints = [
     { key: "business_settings", endpoint: "/business-settings.php" },
     { key: "categories", endpoint: "/categories.php" },
@@ -105,7 +144,6 @@ export function BackupManager() {
     { key: "services", endpoint: "/services.php" },
     { key: "inventory_movements", endpoint: "/inventory-movements.php" },
     { key: "tags", endpoint: "/tags.php" },
-    { key: "templates", endpoint: "/templates.php" },
     { key: "warranties", endpoint: "/warranties.php" },
     { key: "warranty_settings_bundle", endpoint: "/warranty-settings.php" },
   ];
@@ -193,83 +231,57 @@ export function BackupManager() {
   };
 
   const handleReset = async () => {
-    if (resetConfirmText !== "RESTAURAR") return;
+    if (resetConfirmText !== "RESTAURAR" || selectedKeys.length === 0 || isResetting) return;
+    if (!currentWorkshop?.id) {
+      toast({ title: "No hay taller seleccionado", variant: "destructive" });
+      return;
+    }
 
     setIsResetting(true);
     setResetLogs([]);
     setResetComplete(false);
-    
+
     try {
       addLog("Iniciando restauración del sistema...", "info");
-      const workshopQuery = getWorkshopQuery();
+      addLog(`Secciones seleccionadas: ${selectedKeys.length}`, "info");
 
-      const resetResources: Array<{ label: string; endpoint: string }> = [
-        { label: "garantías", endpoint: "/warranties.php" },
-        { label: "servicios", endpoint: "/services.php" },
-        { label: "ventas", endpoint: "/sales.php" },
-        { label: "cotizaciones", endpoint: "/quotes.php" },
-        { label: "productos", endpoint: "/products.php" },
-        { label: "clientes", endpoint: "/customers.php" },
-        { label: "etiquetas", endpoint: "/tags.php" },
-        { label: "categorías", endpoint: "/categories.php" },
-        { label: "plantillas", endpoint: "/templates.php" },
-      ];
+      const sections = selectedKeys.reduce((acc, key) => {
+        acc[key] = true;
+        return acc;
+      }, {} as Record<string, boolean>);
 
-      addLog("Eliminando registros de base de datos...", "info");
-      for (const resource of resetResources) {
-        try {
-          const rows = await phpApiRequest<Array<{ id: string }>>(
-            `${resource.endpoint}?${workshopQuery}`,
-            { method: "GET" }
-          );
+      const result = await phpApiRequest<{
+        restored_at: string;
+        workshop_id: string;
+        sections: string[];
+        counts: Record<string, number>;
+      }>("/system-reset.php", {
+        method: "POST",
+        body: JSON.stringify({ workshop_id: currentWorkshop.id, sections }),
+      });
 
-          let deletedCount = 0;
-          for (const row of rows || []) {
-            if (!row?.id) continue;
-            await phpApiRequest<null>(`${resource.endpoint}?id=${encodeURIComponent(row.id)}`, {
-              method: "DELETE",
-            });
-            deletedCount++;
-          }
-
-          addLog(`✓ ${resource.label}: ${deletedCount} registros eliminados`, "success");
-        } catch (error) {
-          addLog(`⚠️ Error en ${resource.label}: ${getErrorMessage(error, "desconocido")}`, "error");
-        }
-      }
-
-      addLog("Eliminando archivos multimedia...", "info");
-      const folderTypes = ['services', 'products', 'customers', 'general'];
-      let totalDeleted = 0;
-      let totalErrors = 0;
-
-      for (const folderType of folderTypes) {
-        addLog(`  Procesando carpeta ${folderType}...`, "info");
-        const result = await deleteWorkshopFolder(folderType);
-        totalDeleted += result.deleted;
-        totalErrors += result.errors;
-        if (result.deleted > 0) {
-          addLog(`  ✓ ${result.deleted} archivos eliminados de ${folderType}`, "success");
-        }
+      addLog("Eliminando registros seleccionados...", "info");
+      // Se recorre en el orden de COUNT_LABELS (no el de result.counts) para
+      // que el log se lea siempre igual, sin importar el orden interno en que
+      // el backend fue contando cada tabla.
+      for (const key of Object.keys(COUNT_LABELS)) {
+        if (!(key in result.counts)) continue;
+        addLog(`✓ ${COUNT_LABELS[key]}: ${result.counts[key].toLocaleString()} eliminados`, "success");
       }
 
       addLog("", "info");
       addLog("═══════════════════════════════════════", "info");
       addLog("✅ RESTAURACIÓN COMPLETADA EXITOSAMENTE", "success");
-      addLog(`📊 Archivos multimedia eliminados: ${totalDeleted}`, "info");
-      if (totalErrors > 0) {
-        addLog(`⚠️ Errores encontrados: ${totalErrors}`, "error");
-      }
       addLog("═══════════════════════════════════════", "info");
 
       setResetComplete(true);
 
       toast({
         title: "Sistema restaurado",
-        description: `Los datos principales del taller han sido eliminados. ${totalDeleted} archivos multimedia eliminados.`,
+        description: `Se restauraron ${selectedKeys.length} secciones seleccionadas.`,
       });
     } catch (error) {
-      addLog(`Error cr�tico: ${getErrorMessage(error, "Error desconocido")}`, "error");
+      addLog(`Error crítico: ${getErrorMessage(error, "Error desconocido")}`, "error");
       toast({
         title: "Error al restaurar sistema",
         description: getErrorMessage(error, "Error desconocido"),
@@ -280,14 +292,35 @@ export function BackupManager() {
   };
 
   const handleCloseResetDialog = () => {
+    if (isResetting) return;
     if (resetComplete) {
       window.location.reload();
     } else {
       setResetDialogOpen(false);
       setResetConfirmText("");
       setResetLogs([]);
+      setSelection(defaultSelection());
     }
   };
+
+  const renderSectionRow = (section: ResetSection) => (
+    <label
+      key={section.key}
+      className="flex items-start gap-2.5 rounded-md border p-2.5 cursor-pointer hover:bg-muted/50"
+    >
+      <Checkbox
+        checked={selection[section.key]}
+        onCheckedChange={(checked) => toggleSection(section.key, checked === true)}
+        className="mt-0.5"
+      />
+      <span className="space-y-0.5">
+        <span className="block text-sm font-medium leading-none">{section.label}</span>
+        {section.note && (
+          <span className="block text-xs text-muted-foreground">{section.note}</span>
+        )}
+      </span>
+    </label>
+  );
 
   return (
     <div className="space-y-6">
@@ -359,7 +392,9 @@ export function BackupManager() {
             Restaurar Sistema
           </Button>
           <p className="text-sm text-muted-foreground mt-2">
-            Elimina todos los datos del sistema incluyendo archivos multimedia (irreversible)
+            Elige qué datos de este taller eliminar (irreversible). Los usuarios y los datos globales
+            de Herramientas (Keycode, Alarmas, Immo, asignaciones, base de vehículos) no se ven
+            afectados desde aquí.
           </p>
         </div>
       </div>
@@ -369,23 +404,58 @@ export function BackupManager() {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-destructive">
               <AlertTriangle className="w-5 h-5" />
-              {resetComplete ? "¡Restauración Completada!" : "¿Restaurar el sistema?"}
+              {resetComplete ? "¡Restauración Completada!" : "Restaurar Sistema"}
             </AlertDialogTitle>
             {!isResetting && !resetComplete && (
               <AlertDialogDescription>
-                Esta acción eliminará TODOS los datos del sistema (clientes, productos, ventas, servicios, garantías, archivos multimedia, etc.).
-                Esta operación es IRREVERSIBLE. Los usuarios y sus roles no serán eliminados.
-                <br /><br />
-                Para continuar, escribe <strong>RESTAURAR</strong> en el campo de abajo:
+                Selecciona qué datos de <strong>{currentWorkshop?.name ?? "este taller"}</strong> quieres
+                eliminar. Esta operación es IRREVERSIBLE.
               </AlertDialogDescription>
             )}
           </AlertDialogHeader>
-          
+
+          {!isResetting && !resetComplete && (
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1 -mr-1">
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                  Datos operativos
+                </p>
+                <div className="space-y-2">
+                  {DATA_SECTIONS.map(renderSectionRow)}
+                </div>
+              </div>
+
+              <Separator />
+
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                  <Settings2 className="w-3.5 h-3.5" />
+                  Configuración (normalmente se conserva)
+                </p>
+                <div className="space-y-2">
+                  {CONFIG_SECTIONS.map(renderSectionRow)}
+                </div>
+              </div>
+
+              <div className="space-y-1.5 pt-1">
+                <Label htmlFor="reset-confirm-text" className="text-xs">
+                  Escribe <strong>RESTAURAR</strong> para continuar
+                </Label>
+                <Input
+                  id="reset-confirm-text"
+                  value={resetConfirmText}
+                  onChange={(e) => setResetConfirmText(e.target.value)}
+                  placeholder="RESTAURAR"
+                />
+              </div>
+            </div>
+          )}
+
           {(isResetting || resetComplete) && resetLogs.length > 0 && (
             <div className="flex-1 overflow-hidden">
               <div className="bg-muted/50 rounded-lg p-3 h-64 overflow-y-auto font-mono text-xs space-y-1">
                 {resetLogs.map((log, index) => (
-                  <div 
+                  <div
                     key={index}
                     className={cn(
                       log.type === "success" && "text-foreground dark:text-success",
@@ -399,37 +469,29 @@ export function BackupManager() {
               </div>
             </div>
           )}
-          
-          {!isResetting && !resetComplete && (
-            <Input
-              value={resetConfirmText}
-              onChange={(e) => setResetConfirmText(e.target.value)}
-              placeholder="RESTAURAR"
-              className="mt-2"
-            />
-          )}
-          
+
           <AlertDialogFooter>
             {resetComplete ? (
-              <AlertDialogAction 
+              <Button
                 onClick={handleCloseResetDialog}
                 className="bg-success text-success-foreground hover:bg-success/90"
               >
                 Recargar Aplicación
-              </AlertDialogAction>
+              </Button>
             ) : (
               <>
                 <AlertDialogCancel onClick={() => setResetConfirmText("")} disabled={isResetting}>
                   Cancelar
                 </AlertDialogCancel>
-                <AlertDialogAction
+                <Button
                   onClick={handleReset}
-                  disabled={resetConfirmText !== "RESTAURAR" || isResetting}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  disabled={resetConfirmText !== "RESTAURAR" || isResetting || selectedKeys.length === 0}
+                  variant="destructive"
+                  className="gap-2"
                 >
-                  {isResetting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  {isResetting ? "Procesando..." : "Confirmar Restauración"}
-                </AlertDialogAction>
+                  {isResetting && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {isResetting ? "Procesando..." : `Eliminar ${selectedKeys.length} ${selectedKeys.length === 1 ? "sección" : "secciones"}`}
+                </Button>
               </>
             )}
           </AlertDialogFooter>
