@@ -5,6 +5,13 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   AlertDialog,
   AlertDialogCancel,
   AlertDialogContent,
@@ -13,7 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Download, Upload, Trash2, Loader2, AlertTriangle, Settings2, Globe2 } from "lucide-react";
+import { Download, Upload, Trash2, Loader2, AlertTriangle, Settings2, Globe2, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useWorkshop } from "@/hooks/useWorkshop";
@@ -143,12 +150,24 @@ export function BackupManager() {
   const [resetComplete, setResetComplete] = useState(false);
   const [selection, setSelection] = useState<Record<ResetSectionKey, boolean>>(defaultSelection);
   const [toolSelection, setToolSelection] = useState<Partial<Record<ToolModuleKey, boolean>>>({});
+  const [deleteWorkshopOpen, setDeleteWorkshopOpen] = useState(false);
+  const [workshopToDeleteId, setWorkshopToDeleteId] = useState("");
+  const [deleteWorkshopConfirmText, setDeleteWorkshopConfirmText] = useState("");
+  const [isDeletingWorkshop, setIsDeletingWorkshop] = useState(false);
   const { toast } = useToast();
-  const { currentWorkshop, isSuperAdmin } = useWorkshop();
+  const { currentWorkshop, isSuperAdmin, workshops, refreshWorkshops } = useWorkshop();
 
+  const workshopToDelete = workshops.find((w) => w.id === workshopToDeleteId) ?? null;
+
+  // Un SuperAdmin no administra los datos operativos de un taller puntual (eso
+  // es trabajo del admin de ese taller): aunque `selection` conserve sus
+  // valores por defecto internamente, para SuperAdmin se ignoran por completo
+  // para que nunca se envien sin que la UI los muestre.
   const selectedKeys = useMemo(
-    () => (Object.keys(selection) as ResetSectionKey[]).filter((key) => selection[key]),
-    [selection],
+    () => isSuperAdmin
+      ? []
+      : (Object.keys(selection) as ResetSectionKey[]).filter((key) => selection[key]),
+    [selection, isSuperAdmin],
   );
 
   const selectedToolModules = useMemo(
@@ -381,6 +400,49 @@ export function BackupManager() {
     }
   };
 
+  const handleDeleteWorkshop = async () => {
+    if (!workshopToDelete || deleteWorkshopConfirmText !== workshopToDelete.code || isDeletingWorkshop) return;
+
+    setIsDeletingWorkshop(true);
+    try {
+      await phpApiRequest<null>(`/workshops.php?id=${encodeURIComponent(workshopToDelete.id)}`, {
+        method: "DELETE",
+      });
+
+      toast({
+        title: "Taller eliminado",
+        description: `"${workshopToDelete.name}" y todos sus datos fueron eliminados permanentemente.`,
+      });
+
+      const wasCurrentWorkshop = workshopToDelete.id === currentWorkshop?.id;
+      setDeleteWorkshopOpen(false);
+      setWorkshopToDeleteId("");
+      setDeleteWorkshopConfirmText("");
+
+      if (wasCurrentWorkshop) {
+        // El taller activo ya no existe: recargar es la forma mas simple de
+        // dejar la app en un estado consistente (elige otro taller o desloguea).
+        window.location.reload();
+      } else {
+        await refreshWorkshops();
+      }
+    } catch (error) {
+      toast({
+        title: "Error al eliminar taller",
+        description: getErrorMessage(error, "Error desconocido"),
+        variant: "destructive",
+      });
+    }
+    setIsDeletingWorkshop(false);
+  };
+
+  const closeDeleteWorkshopDialog = () => {
+    if (isDeletingWorkshop) return;
+    setDeleteWorkshopOpen(false);
+    setWorkshopToDeleteId("");
+    setDeleteWorkshopConfirmText("");
+  };
+
   const renderSectionRow = (section: ResetSection) => (
     <label
       key={section.key}
@@ -470,13 +532,29 @@ export function BackupManager() {
             Restaurar Sistema
           </Button>
           <p className="text-sm text-muted-foreground mt-2">
-            Elige qué datos de este taller eliminar (irreversible). Los usuarios nunca se ven afectados
-            desde aquí.
             {isSuperAdmin
-              ? " Como SuperAdmin también puedes purgar aquí los datos globales de Herramientas (Keycode, Alarmas, Immo, asignaciones, base de vehículos)."
-              : " Los datos globales de Herramientas (Keycode, Alarmas, Immo, asignaciones, base de vehículos) los administra un SuperAdmin desde Mantenimiento."}
+              ? "Purga aquí los datos globales de Herramientas (Keycode, Alarmas, Immo, asignaciones, base de vehículos), compartidos por todos los talleres. Para eliminar los datos operativos de un taller, hazlo con la cuenta admin de ese taller."
+              : "Elige qué datos de este taller eliminar (irreversible). Los usuarios nunca se ven afectados desde aquí."}
           </p>
         </div>
+
+        {isSuperAdmin && (
+          <div className="border-t pt-4">
+            <Button
+              onClick={() => setDeleteWorkshopOpen(true)}
+              variant="destructive"
+              className="gap-2"
+            >
+              <Building2 className="w-4 h-4" />
+              Eliminar un Taller
+            </Button>
+            <p className="text-sm text-muted-foreground mt-2">
+              Elimina un taller completo (cualquiera del sistema) y todo lo que le pertenece:
+              clientes, productos, ventas, servicios, garantías, archivos y el acceso de sus
+              empleados. No afecta a otros talleres ni a los datos globales de Herramientas.
+            </p>
+          </div>
+        )}
       </div>
 
       <AlertDialog open={resetDialogOpen} onOpenChange={handleCloseResetDialog}>
@@ -488,80 +566,81 @@ export function BackupManager() {
             </AlertDialogTitle>
             {!isResetting && !resetComplete && (
               <AlertDialogDescription>
-                Selecciona qué datos de <strong>{currentWorkshop?.name ?? "este taller"}</strong> quieres
-                eliminar. Esta operación es IRREVERSIBLE.
+                {isSuperAdmin
+                  ? "Selecciona qué módulos globales de Herramientas quieres purgar. Afecta a TODOS los talleres."
+                  : <>Selecciona qué datos de <strong>{currentWorkshop?.name ?? "este taller"}</strong> quieres eliminar.</>}
+                {" "}Esta operación es IRREVERSIBLE.
               </AlertDialogDescription>
             )}
           </AlertDialogHeader>
 
           {!isResetting && !resetComplete && (
             <div className="flex-1 overflow-y-auto space-y-4 pr-1 -mr-1">
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                  Datos operativos
-                </p>
-                <div className="space-y-2">
-                  {DATA_SECTIONS.map(renderSectionRow)}
+              {isSuperAdmin ? (
+                <div>
+                  <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                    <Globe2 className="w-3.5 h-3.5" />
+                    Herramientas — afecta a TODOS los talleres
+                  </p>
+                  <div className="space-y-2">
+                    {TOOL_SECTIONS.map((section) => {
+                      const isChecked = toolSelection[section.key] === true;
+                      const isAutoIncluded = section.key === "assignments" && isChecked
+                        && PROFILE_TOOL_MODULES.some((m) => toolSelection[m]);
+                      return (
+                        <label
+                          key={section.key}
+                          className="flex items-start gap-2.5 rounded-md border border-amber-500/30 p-2.5 cursor-pointer hover:bg-amber-500/5"
+                        >
+                          <Checkbox
+                            checked={isChecked}
+                            onCheckedChange={(checked) => toggleToolModule(section.key, checked === true)}
+                            className="mt-0.5"
+                          />
+                          <span className="space-y-0.5">
+                            <span className="block text-sm font-medium leading-none">{section.label}</span>
+                            <span className="block text-xs text-muted-foreground">{section.note}</span>
+                            {isAutoIncluded && (
+                              <span className="block text-xs text-primary">
+                                Incluido automáticamente (vinculada a los perfiles marcados)
+                              </span>
+                            )}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  {toolOrphanRisk && (
+                    <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2.5 mt-2 text-xs text-amber-700 dark:text-amber-400">
+                      <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                      <p>
+                        Vas a eliminar perfiles sin eliminar <strong>Asignaciones</strong>: quedarán
+                        vínculos rotos a esos perfiles.
+                      </p>
+                    </div>
+                  )}
                 </div>
-              </div>
-
-              <Separator />
-
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                  <Settings2 className="w-3.5 h-3.5" />
-                  Configuración (normalmente se conserva)
-                </p>
-                <div className="space-y-2">
-                  {CONFIG_SECTIONS.map(renderSectionRow)}
-                </div>
-              </div>
-
-              {isSuperAdmin && (
+              ) : (
                 <>
-                  <Separator />
                   <div>
-                    <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                      <Globe2 className="w-3.5 h-3.5" />
-                      Herramientas — afecta a TODOS los talleres
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                      Datos operativos
                     </p>
                     <div className="space-y-2">
-                      {TOOL_SECTIONS.map((section) => {
-                        const isChecked = toolSelection[section.key] === true;
-                        const isAutoIncluded = section.key === "assignments" && isChecked
-                          && PROFILE_TOOL_MODULES.some((m) => toolSelection[m]);
-                        return (
-                          <label
-                            key={section.key}
-                            className="flex items-start gap-2.5 rounded-md border border-amber-500/30 p-2.5 cursor-pointer hover:bg-amber-500/5"
-                          >
-                            <Checkbox
-                              checked={isChecked}
-                              onCheckedChange={(checked) => toggleToolModule(section.key, checked === true)}
-                              className="mt-0.5"
-                            />
-                            <span className="space-y-0.5">
-                              <span className="block text-sm font-medium leading-none">{section.label}</span>
-                              <span className="block text-xs text-muted-foreground">{section.note}</span>
-                              {isAutoIncluded && (
-                                <span className="block text-xs text-primary">
-                                  Incluido automáticamente (vinculada a los perfiles marcados)
-                                </span>
-                              )}
-                            </span>
-                          </label>
-                        );
-                      })}
+                      {DATA_SECTIONS.map(renderSectionRow)}
                     </div>
-                    {toolOrphanRisk && (
-                      <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2.5 mt-2 text-xs text-amber-700 dark:text-amber-400">
-                        <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                        <p>
-                          Vas a eliminar perfiles sin eliminar <strong>Asignaciones</strong>: quedarán
-                          vínculos rotos a esos perfiles.
-                        </p>
-                      </div>
-                    )}
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                      <Settings2 className="w-3.5 h-3.5" />
+                      Configuración (normalmente se conserva)
+                    </p>
+                    <div className="space-y-2">
+                      {CONFIG_SECTIONS.map(renderSectionRow)}
+                    </div>
                   </div>
                 </>
               )}
@@ -626,6 +705,84 @@ export function BackupManager() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {isSuperAdmin && (
+        <AlertDialog open={deleteWorkshopOpen} onOpenChange={closeDeleteWorkshopDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="w-5 h-5" />
+                Eliminar un Taller
+              </AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-3">
+                  <p>
+                    Esto elimina PERMANENTEMENTE el taller elegido y todo lo que le pertenece: clientes,
+                    productos, cotizaciones, ventas, servicios, garantías, archivos multimedia y el
+                    acceso de sus empleados. No afecta a otros talleres ni a los datos globales de
+                    Herramientas.
+                  </p>
+                  <p className="text-destructive font-medium">
+                    Esta operación no se puede deshacer. Si no tienes un backup exportado, esa
+                    información se pierde para siempre.
+                  </p>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="delete-workshop-select" className="text-xs">
+                      Taller a eliminar
+                    </Label>
+                    <Select
+                      value={workshopToDeleteId}
+                      onValueChange={(value) => {
+                        setWorkshopToDeleteId(value);
+                        setDeleteWorkshopConfirmText("");
+                      }}
+                    >
+                      <SelectTrigger id="delete-workshop-select">
+                        <SelectValue placeholder="Selecciona un taller" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {workshops.map((w) => (
+                          <SelectItem key={w.id} value={w.id}>
+                            {w.name} ({w.code})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {workshopToDelete && (
+                    <div className="space-y-1.5 pt-1">
+                      <Label htmlFor="delete-workshop-confirm" className="text-xs">
+                        Escribe el código <strong>{workshopToDelete.code}</strong> para continuar
+                      </Label>
+                      <Input
+                        id="delete-workshop-confirm"
+                        value={deleteWorkshopConfirmText}
+                        onChange={(e) => setDeleteWorkshopConfirmText(e.target.value)}
+                        placeholder={workshopToDelete.code}
+                        autoComplete="off"
+                      />
+                    </div>
+                  )}
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeletingWorkshop}>Cancelar</AlertDialogCancel>
+              <Button
+                variant="destructive"
+                className="gap-2"
+                disabled={!workshopToDelete || deleteWorkshopConfirmText !== workshopToDelete.code || isDeletingWorkshop}
+                onClick={handleDeleteWorkshop}
+              >
+                {isDeletingWorkshop && <Loader2 className="h-4 w-4 animate-spin" />}
+                {isDeletingWorkshop ? "Eliminando..." : "Sí, eliminar taller"}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 }

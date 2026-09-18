@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Support\ApiResponse;
+use App\Support\Uploads\WorkshopFolder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -359,7 +360,7 @@ final class UploadController
 
     private function folder(string $value): string
     {
-        return preg_replace('/[^a-z0-9_\-]/', '', strtolower($value)) ?: 'misc';
+        return WorkshopFolder::slug($value);
     }
 
     private function uploadErrorMessage(int $error): string

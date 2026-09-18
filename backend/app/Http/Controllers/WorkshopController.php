@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Workshop;
 use App\Support\ApiResponse;
+use App\Support\Uploads\WorkshopFolder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 
 final class WorkshopController
 {
@@ -154,7 +156,31 @@ final class WorkshopController
             return ApiResponse::error('Se requieren permisos de superadmin', 403);
         }
 
-        Workshop::query()->whereKey($id)->delete();
+        $workshop = Workshop::query()->find($id);
+        if (!$workshop) {
+            return ApiResponse::error('Taller no encontrado', 404);
+        }
+
+        $workshopCode = $workshop->code ? WorkshopFolder::slug($workshop->code) : null;
+
+        DB::transaction(function () use ($id): void {
+            // warranty_settings no tiene FK hacia workshops (a diferencia del
+            // resto de tablas del taller, que sí tienen ON DELETE CASCADE), asi
+            // que se limpia a mano para no dejar una fila huerfana.
+            DB::table('warranty_settings')->where('workshop_id', $id)->delete();
+
+            Workshop::query()->whereKey($id)->delete();
+        });
+
+        // 'misc' es el bucket generico de uploads sin workshop_code: nunca debe
+        // borrarse como si fuera la carpeta de un taller.
+        if ($workshopCode && $workshopCode !== 'misc') {
+            $dir = public_path("uploads/{$workshopCode}");
+            if (File::isDirectory($dir)) {
+                File::deleteDirectory($dir);
+            }
+            DB::table('upload_file_meta')->where('workshop_code', $workshopCode)->delete();
+        }
 
         return ApiResponse::success(null, 'Taller eliminado');
     }

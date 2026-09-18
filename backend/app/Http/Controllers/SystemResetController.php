@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesWorkshop;
 use App\Support\ApiResponse;
+use App\Support\Uploads\WorkshopFolder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -86,7 +87,12 @@ final class SystemResetController
             if (isset($selectedSet['quote_doc_settings'])) $this->resetQuoteDocSettings($workshopId, $counts);
         });
 
-        $counts['media_files'] = $workshopCode ? $this->wipeSelectedFolders($workshopCode, $selectedSet) : 0;
+        $workshopFolder = $workshopCode ? WorkshopFolder::slug($workshopCode) : null;
+        // 'misc' es el bucket generico de uploads sin workshop_code: nunca debe
+        // tratarse como si fuera la carpeta de un taller.
+        $counts['media_files'] = ($workshopFolder && $workshopFolder !== 'misc')
+            ? $this->wipeSelectedFolders($workshopFolder, $selectedSet)
+            : 0;
 
         return ApiResponse::success([
             'restored_at' => now()->toIso8601String(),
