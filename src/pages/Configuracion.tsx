@@ -18,6 +18,7 @@ import {
   Moon,
   Bell,
   LogOut,
+  Wrench,
   type LucideIcon,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
@@ -52,6 +53,7 @@ import { useWorkshop } from "@/hooks/useWorkshop";
 import { ImageUploader } from "@/components/shared/ImageUploader";
 import { phpApiUpload } from "@/lib/phpApi";
 import { BackupManager } from "@/components/settings/BackupManager";
+import { MaintenanceManager } from "@/components/settings/MaintenanceManager";
 import { QuoteDocSettingsPanel, QuoteDocSettingsPreview } from "@/components/settings/QuoteDocSettingsPanel";
 import { UpdateCheckCard } from "@/components/settings/UpdateCheckCard";
 import { useQuoteDocSettings } from "@/hooks/useQuoteDocSettings";
@@ -82,7 +84,7 @@ export default function Configuracion() {
     typeof window !== "undefined" && window.innerWidth >= 1024 ? "perfil" : "",
   );
   const { isAdmin, user, profile, signOut } = useAuth();
-  const { currentWorkshop } = useWorkshop();
+  const { currentWorkshop, isSuperAdmin } = useWorkshop();
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   // Business settings
@@ -212,6 +214,7 @@ export default function Configuracion() {
 
         <MobileConfigTabs
           isAdmin={isAdmin}
+          isSuperAdmin={isSuperAdmin}
           theme={theme}
           setTheme={setTheme}
           businessForm={businessForm}
@@ -237,7 +240,10 @@ export default function Configuracion() {
             subtitle="Administra tu negocio y personaliza la app"
             className="mb-5"
           />
-          <TabsList className={cn("grid gap-2 h-auto p-1 bg-muted", isAdmin ? "grid-cols-7" : "grid-cols-5")}>
+          <TabsList className={cn(
+            "grid gap-2 h-auto p-1 bg-muted",
+            isSuperAdmin ? "grid-cols-8" : isAdmin ? "grid-cols-7" : "grid-cols-5",
+          )}>
             <TabsTrigger value="perfil" className="gap-2 py-3">
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">Perfil</span>
@@ -269,6 +275,12 @@ export default function Configuracion() {
                   <span className="hidden sm:inline">Backup</span>
                 </TabsTrigger>
               </>
+            )}
+            {isSuperAdmin && (
+              <TabsTrigger value="mantenimiento" className="gap-2 py-3">
+                <Wrench className="w-4 h-4" />
+                <span className="hidden sm:inline">Mantenimiento</span>
+              </TabsTrigger>
             )}
           </TabsList>
           </div>
@@ -685,6 +697,15 @@ export default function Configuracion() {
             </TabsContent>
           )}
 
+          {/* Mantenimiento Tab (SuperAdmin: datos globales de Herramientas + eliminar talleres) */}
+          {isSuperAdmin && (
+            <TabsContent value="mantenimiento">
+              <div className="card-elevated p-6">
+                <MaintenanceManager />
+              </div>
+            </TabsContent>
+          )}
+
         </Tabs>
       </motion.div>
 
@@ -694,6 +715,7 @@ export default function Configuracion() {
 
 type MobileConfigTabsProps = {
   isAdmin: boolean;
+  isSuperAdmin: boolean;
   theme: string;
   setTheme: (theme: "light" | "dark" | "system") => void;
   businessForm: BusinessFormState;
@@ -708,6 +730,7 @@ type MobileConfigTabsProps = {
 /* MOBILE: v2-style tabs */
 function MobileConfigTabs({
   isAdmin,
+  isSuperAdmin,
   theme,
   setTheme,
   businessForm,
@@ -935,6 +958,7 @@ function MobileConfigTabs({
           {/* Backup as list-item card */}
           <div className="bg-card rounded-2xl border border-border overflow-hidden">
             {isAdmin && <SystemRow icon={Shield} label="Respaldo de datos" sub="Copia de seguridad" onClick={() => document.getElementById("__cfg_backup")?.scrollIntoView({ behavior: "smooth" })} />}
+            {isSuperAdmin && <SystemRow icon={Wrench} label="Mantenimiento" sub="Herramientas globales y talleres" onClick={() => document.getElementById("__cfg_maintenance")?.scrollIntoView({ behavior: "smooth" })} divider />}
             <SystemRow icon={Bell} label="Notificaciones" sub="Alertas de stock y servicios" onClick={() => {}} divider />
           </div>
 
@@ -947,6 +971,12 @@ function MobileConfigTabs({
           {isAdmin && (
             <div id="__cfg_backup" className="pt-4">
               <BackupManager />
+            </div>
+          )}
+
+          {isSuperAdmin && (
+            <div id="__cfg_maintenance" className="pt-4">
+              <MaintenanceManager />
             </div>
           )}
 
