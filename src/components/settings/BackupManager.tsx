@@ -90,18 +90,27 @@ const ALL_SECTIONS = [...DATA_SECTIONS, ...CONFIG_SECTIONS];
 // normal nunca los ve ni puede tocarlos desde aqui.
 type ToolModuleKey = "keycode" | "alarmas" | "immo" | "assignments" | "vehicles";
 
+type ToolStats = {
+  keycode: { profiles: number; codes: number };
+  alarmas: { profiles: number };
+  immo: { profiles: number; catalogItems: number };
+  assignments: number;
+  vehicles: number;
+};
+
 type ToolSection = {
   key: ToolModuleKey;
   label: string;
   note: string;
+  total: (s: ToolStats) => number;
 };
 
 const TOOL_SECTIONS: ToolSection[] = [
-  { key: "keycode", label: "Keycode", note: "Perfiles de llaves y sus códigos de bitting" },
-  { key: "alarmas", label: "Alarmas (diagramas)", note: "Perfiles y diagramas de programación de alarmas" },
-  { key: "immo", label: "Immo Info", note: "Perfiles y catálogo de inmovilizadores" },
-  { key: "assignments", label: "Asignaciones", note: "Vínculos vehículo → herramientas" },
-  { key: "vehicles", label: "Base de vehículos", note: "Listado usado para buscar vehículos" },
+  { key: "keycode", label: "Keycode", note: "Perfiles de llaves y sus códigos de bitting", total: (s) => s.keycode.profiles + s.keycode.codes },
+  { key: "alarmas", label: "Alarmas (diagramas)", note: "Perfiles y diagramas de programación de alarmas", total: (s) => s.alarmas.profiles },
+  { key: "immo", label: "Immo Info", note: "Perfiles y catálogo de inmovilizadores", total: (s) => s.immo.profiles + s.immo.catalogItems },
+  { key: "assignments", label: "Asignaciones", note: "Vínculos vehículo → herramientas", total: (s) => s.assignments },
+  { key: "vehicles", label: "Base de vehículos", note: "Listado usado para buscar vehículos", total: (s) => s.vehicles },
 ];
 
 // Perfiles referenciados desde las asignaciones por id, dentro de un JSON sin
@@ -154,6 +163,8 @@ export function BackupManager() {
   const [workshopToDeleteId, setWorkshopToDeleteId] = useState("");
   const [deleteWorkshopConfirmText, setDeleteWorkshopConfirmText] = useState("");
   const [isDeletingWorkshop, setIsDeletingWorkshop] = useState(false);
+  const [toolStats, setToolStats] = useState<ToolStats | null>(null);
+  const [loadingToolStats, setLoadingToolStats] = useState(false);
   const { toast } = useToast();
   const { currentWorkshop, isSuperAdmin, workshops, refreshWorkshops } = useWorkshop();
 
@@ -207,6 +218,26 @@ export function BackupManager() {
 
   const addLog = (message: string, type: "info" | "success" | "error" = "info") => {
     setResetLogs(prev => [...prev, { message, type, timestamp: new Date() }]);
+  };
+
+  const fetchToolStats = async () => {
+    setLoadingToolStats(true);
+    try {
+      const data = await phpApiRequest<ToolStats>("/herramientas/maintenance");
+      setToolStats(data);
+    } catch (error) {
+      toast({
+        title: "Error al cargar estadísticas de Herramientas",
+        description: getErrorMessage(error, "Error desconocido"),
+        variant: "destructive",
+      });
+    }
+    setLoadingToolStats(false);
+  };
+
+  const openResetDialog = () => {
+    setResetDialogOpen(true);
+    if (isSuperAdmin) void fetchToolStats();
   };
 
   const exportEndpoints = [
@@ -307,10 +338,6 @@ export function BackupManager() {
 
   const handleReset = async () => {
     if (resetConfirmText !== "RESTAURAR" || totalSelectedCount === 0 || isResetting) return;
-    if (!currentWorkshop?.id) {
-      toast({ title: "No hay taller seleccionado", variant: "destructive" });
-      return;
-    }
 
     setIsResetting(true);
     setResetLogs([]);
@@ -320,6 +347,13 @@ export function BackupManager() {
       addLog("Iniciando restauración del sistema...", "info");
 
       if (selectedKeys.length > 0) {
+        // El taller solo hace falta para /system-reset.php (datos de este
+        // taller). Los modulos de Herramientas son globales y no lo usan, asi
+        // que este chequeo no debe bloquear una purga que sea solo de eso.
+        if (!currentWorkshop?.id) {
+          throw new Error("No hay taller seleccionado");
+        }
+
         addLog(`Restaurando ${selectedKeys.length} sección(es) de este taller...`, "info");
 
         const sections = selectedKeys.reduce((acc, key) => {
@@ -524,7 +558,7 @@ export function BackupManager() {
 
         <div className="border-t pt-4">
           <Button
-            onClick={() => setResetDialogOpen(true)}
+            onClick={openResetDialog}
             variant="destructive"
             className="gap-2"
           >
@@ -541,7 +575,14 @@ export function BackupManager() {
         {isSuperAdmin && (
           <div className="border-t pt-4">
             <Button
-              onClick={() => setDeleteWorkshopOpen(true)}
+              onClick={() => {
+                // La lista de talleres de este hook no usa React Query, asi
+                // que no se refresca sola si se creo/edito un taller desde la
+                // pestaña Talleres (SuperAdmin) en otra pantalla. Se refresca
+                // aqui para no mostrar una lista desactualizada.
+                void refreshWorkshops();
+                setDeleteWorkshopOpen(true);
+              }}
               variant="destructive"
               className="gap-2"
             >
@@ -581,24 +622,38 @@ export function BackupManager() {
                   <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
                     <Globe2 className="w-3.5 h-3.5" />
                     Herramientas — afecta a TODOS los talleres
+                    {loadingToolStats && <Loader2 className="w-3 h-3 animate-spin" />}
                   </p>
                   <div className="space-y-2">
                     {TOOL_SECTIONS.map((section) => {
                       const isChecked = toolSelection[section.key] === true;
                       const isAutoIncluded = section.key === "assignments" && isChecked
                         && PROFILE_TOOL_MODULES.some((m) => toolSelection[m]);
+                      const total = toolStats ? section.total(toolStats) : null;
+                      const isEmpty = total === 0;
                       return (
                         <label
                           key={section.key}
-                          className="flex items-start gap-2.5 rounded-md border border-amber-500/30 p-2.5 cursor-pointer hover:bg-amber-500/5"
+                          className={cn(
+                            "flex items-start gap-2.5 rounded-md border border-amber-500/30 p-2.5 cursor-pointer hover:bg-amber-500/5",
+                            isEmpty && "opacity-60 cursor-not-allowed",
+                          )}
                         >
                           <Checkbox
                             checked={isChecked}
+                            disabled={isEmpty}
                             onCheckedChange={(checked) => toggleToolModule(section.key, checked === true)}
                             className="mt-0.5"
                           />
-                          <span className="space-y-0.5">
-                            <span className="block text-sm font-medium leading-none">{section.label}</span>
+                          <span className="flex-1 space-y-0.5">
+                            <span className="flex items-center justify-between gap-2">
+                              <span className="text-sm font-medium leading-none">{section.label}</span>
+                              {total !== null && (
+                                <span className={cn("text-xs tabular-nums", isEmpty ? "text-muted-foreground" : "font-medium")}>
+                                  {isEmpty ? "Sin datos" : total.toLocaleString()}
+                                </span>
+                              )}
+                            </span>
                             <span className="block text-xs text-muted-foreground">{section.note}</span>
                             {isAutoIncluded && (
                               <span className="block text-xs text-primary">
