@@ -13,7 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Download, Upload, Trash2, Loader2, AlertTriangle, Settings2 } from "lucide-react";
+import { Download, Upload, Trash2, Loader2, AlertTriangle, Settings2, Globe2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useWorkshop } from "@/hooks/useWorkshop";
@@ -78,6 +78,37 @@ const CONFIG_SECTIONS: ResetSection[] = [
 
 const ALL_SECTIONS = [...DATA_SECTIONS, ...CONFIG_SECTIONS];
 
+// Datos GLOBALES del modulo Herramientas: compartidos por TODOS los talleres
+// (no tienen workshop_id). Solo se muestran a SuperAdmin; un admin de taller
+// normal nunca los ve ni puede tocarlos desde aqui.
+type ToolModuleKey = "keycode" | "alarmas" | "immo" | "assignments" | "vehicles";
+
+type ToolSection = {
+  key: ToolModuleKey;
+  label: string;
+  note: string;
+};
+
+const TOOL_SECTIONS: ToolSection[] = [
+  { key: "keycode", label: "Keycode", note: "Perfiles de llaves y sus códigos de bitting" },
+  { key: "alarmas", label: "Alarmas (diagramas)", note: "Perfiles y diagramas de programación de alarmas" },
+  { key: "immo", label: "Immo Info", note: "Perfiles y catálogo de inmovilizadores" },
+  { key: "assignments", label: "Asignaciones", note: "Vínculos vehículo → herramientas" },
+  { key: "vehicles", label: "Base de vehículos", note: "Listado usado para buscar vehículos" },
+];
+
+// Perfiles referenciados desde las asignaciones por id, dentro de un JSON sin
+// FK: purgarlos sin purgar tambien "Asignaciones" deja vinculos rotos.
+const PROFILE_TOOL_MODULES: ToolModuleKey[] = ["keycode", "alarmas", "immo"];
+
+const TOOL_MODULE_LABELS: Record<string, string> = {
+  keycode: "Keycode",
+  alarmas: "Alarmas",
+  immo: "Immo Info",
+  assignments: "Asignaciones",
+  vehicles: "Base de vehículos",
+};
+
 const COUNT_LABELS: Record<string, string> = {
   customers: "Clientes",
   products: "Productos",
@@ -111,16 +142,41 @@ export function BackupManager() {
   const [resetLogs, setResetLogs] = useState<ResetLog[]>([]);
   const [resetComplete, setResetComplete] = useState(false);
   const [selection, setSelection] = useState<Record<ResetSectionKey, boolean>>(defaultSelection);
+  const [toolSelection, setToolSelection] = useState<Partial<Record<ToolModuleKey, boolean>>>({});
   const { toast } = useToast();
-  const { currentWorkshop } = useWorkshop();
+  const { currentWorkshop, isSuperAdmin } = useWorkshop();
 
   const selectedKeys = useMemo(
     () => (Object.keys(selection) as ResetSectionKey[]).filter((key) => selection[key]),
     [selection],
   );
 
+  const selectedToolModules = useMemo(
+    () => (Object.keys(toolSelection) as ToolModuleKey[]).filter((key) => toolSelection[key]),
+    [toolSelection],
+  );
+
+  const toolOrphanRisk = useMemo(
+    () => PROFILE_TOOL_MODULES.some((m) => toolSelection[m]) && !toolSelection.assignments,
+    [toolSelection],
+  );
+
+  const totalSelectedCount = selectedKeys.length + selectedToolModules.length;
+
   const toggleSection = (key: ResetSectionKey, checked: boolean) => {
     setSelection((prev) => ({ ...prev, [key]: checked }));
+  };
+
+  const toggleToolModule = (key: ToolModuleKey, checked: boolean) => {
+    setToolSelection((prev) => {
+      const next = { ...prev, [key]: checked };
+      // Auto-incluir: purgar perfiles sin purgar asignaciones deja vinculos
+      // rotos. Se puede desmarcar despues; se avisa pero no se bloquea.
+      if (checked && PROFILE_TOOL_MODULES.includes(key)) {
+        next.assignments = true;
+      }
+      return next;
+    });
   };
 
   const getWorkshopQuery = () => {
@@ -231,7 +287,7 @@ export function BackupManager() {
   };
 
   const handleReset = async () => {
-    if (resetConfirmText !== "RESTAURAR" || selectedKeys.length === 0 || isResetting) return;
+    if (resetConfirmText !== "RESTAURAR" || totalSelectedCount === 0 || isResetting) return;
     if (!currentWorkshop?.id) {
       toast({ title: "No hay taller seleccionado", variant: "destructive" });
       return;
@@ -243,30 +299,51 @@ export function BackupManager() {
 
     try {
       addLog("Iniciando restauración del sistema...", "info");
-      addLog(`Secciones seleccionadas: ${selectedKeys.length}`, "info");
 
-      const sections = selectedKeys.reduce((acc, key) => {
-        acc[key] = true;
-        return acc;
-      }, {} as Record<string, boolean>);
+      if (selectedKeys.length > 0) {
+        addLog(`Restaurando ${selectedKeys.length} sección(es) de este taller...`, "info");
 
-      const result = await phpApiRequest<{
-        restored_at: string;
-        workshop_id: string;
-        sections: string[];
-        counts: Record<string, number>;
-      }>("/system-reset.php", {
-        method: "POST",
-        body: JSON.stringify({ workshop_id: currentWorkshop.id, sections }),
-      });
+        const sections = selectedKeys.reduce((acc, key) => {
+          acc[key] = true;
+          return acc;
+        }, {} as Record<string, boolean>);
 
-      addLog("Eliminando registros seleccionados...", "info");
-      // Se recorre en el orden de COUNT_LABELS (no el de result.counts) para
-      // que el log se lea siempre igual, sin importar el orden interno en que
-      // el backend fue contando cada tabla.
-      for (const key of Object.keys(COUNT_LABELS)) {
-        if (!(key in result.counts)) continue;
-        addLog(`✓ ${COUNT_LABELS[key]}: ${result.counts[key].toLocaleString()} eliminados`, "success");
+        const result = await phpApiRequest<{
+          restored_at: string;
+          workshop_id: string;
+          sections: string[];
+          counts: Record<string, number>;
+        }>("/system-reset.php", {
+          method: "POST",
+          body: JSON.stringify({ workshop_id: currentWorkshop.id, sections }),
+        });
+
+        // Se recorre en el orden de COUNT_LABELS (no el de result.counts) para
+        // que el log se lea siempre igual, sin importar el orden interno en
+        // que el backend fue contando cada tabla.
+        for (const key of Object.keys(COUNT_LABELS)) {
+          if (!(key in result.counts)) continue;
+          addLog(`✓ ${COUNT_LABELS[key]}: ${result.counts[key].toLocaleString()} eliminados`, "success");
+        }
+      }
+
+      if (selectedToolModules.length > 0) {
+        addLog(`Purgando ${selectedToolModules.length} módulo(s) globales de Herramientas...`, "info");
+
+        const result = await phpApiRequest<{
+          modules: string[];
+          deleted: Record<string, Record<string, number>>;
+        }>("/herramientas/maintenance", {
+          method: "DELETE",
+          body: JSON.stringify({ modules: selectedToolModules }),
+        });
+
+        for (const mod of selectedToolModules) {
+          const counts = result.deleted[mod];
+          if (!counts) continue;
+          const total = Object.values(counts).reduce((a, b) => a + b, 0);
+          addLog(`✓ ${TOOL_MODULE_LABELS[mod] ?? mod}: ${total.toLocaleString()} eliminados`, "success");
+        }
       }
 
       addLog("", "info");
@@ -278,7 +355,7 @@ export function BackupManager() {
 
       toast({
         title: "Sistema restaurado",
-        description: `Se restauraron ${selectedKeys.length} secciones seleccionadas.`,
+        description: `Se restauraron ${totalSelectedCount} elementos seleccionados.`,
       });
     } catch (error) {
       addLog(`Error crítico: ${getErrorMessage(error, "Error desconocido")}`, "error");
@@ -300,6 +377,7 @@ export function BackupManager() {
       setResetConfirmText("");
       setResetLogs([]);
       setSelection(defaultSelection());
+      setToolSelection({});
     }
   };
 
@@ -392,9 +470,11 @@ export function BackupManager() {
             Restaurar Sistema
           </Button>
           <p className="text-sm text-muted-foreground mt-2">
-            Elige qué datos de este taller eliminar (irreversible). Los usuarios y los datos globales
-            de Herramientas (Keycode, Alarmas, Immo, asignaciones, base de vehículos) no se ven
-            afectados desde aquí.
+            Elige qué datos de este taller eliminar (irreversible). Los usuarios nunca se ven afectados
+            desde aquí.
+            {isSuperAdmin
+              ? " Como SuperAdmin también puedes purgar aquí los datos globales de Herramientas (Keycode, Alarmas, Immo, asignaciones, base de vehículos)."
+              : " Los datos globales de Herramientas (Keycode, Alarmas, Immo, asignaciones, base de vehículos) los administra un SuperAdmin desde Mantenimiento."}
           </p>
         </div>
       </div>
@@ -436,6 +516,55 @@ export function BackupManager() {
                   {CONFIG_SECTIONS.map(renderSectionRow)}
                 </div>
               </div>
+
+              {isSuperAdmin && (
+                <>
+                  <Separator />
+                  <div>
+                    <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                      <Globe2 className="w-3.5 h-3.5" />
+                      Herramientas — afecta a TODOS los talleres
+                    </p>
+                    <div className="space-y-2">
+                      {TOOL_SECTIONS.map((section) => {
+                        const isChecked = toolSelection[section.key] === true;
+                        const isAutoIncluded = section.key === "assignments" && isChecked
+                          && PROFILE_TOOL_MODULES.some((m) => toolSelection[m]);
+                        return (
+                          <label
+                            key={section.key}
+                            className="flex items-start gap-2.5 rounded-md border border-amber-500/30 p-2.5 cursor-pointer hover:bg-amber-500/5"
+                          >
+                            <Checkbox
+                              checked={isChecked}
+                              onCheckedChange={(checked) => toggleToolModule(section.key, checked === true)}
+                              className="mt-0.5"
+                            />
+                            <span className="space-y-0.5">
+                              <span className="block text-sm font-medium leading-none">{section.label}</span>
+                              <span className="block text-xs text-muted-foreground">{section.note}</span>
+                              {isAutoIncluded && (
+                                <span className="block text-xs text-primary">
+                                  Incluido automáticamente (vinculada a los perfiles marcados)
+                                </span>
+                              )}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {toolOrphanRisk && (
+                      <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2.5 mt-2 text-xs text-amber-700 dark:text-amber-400">
+                        <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                        <p>
+                          Vas a eliminar perfiles sin eliminar <strong>Asignaciones</strong>: quedarán
+                          vínculos rotos a esos perfiles.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
 
               <div className="space-y-1.5 pt-1">
                 <Label htmlFor="reset-confirm-text" className="text-xs">
@@ -485,12 +614,12 @@ export function BackupManager() {
                 </AlertDialogCancel>
                 <Button
                   onClick={handleReset}
-                  disabled={resetConfirmText !== "RESTAURAR" || isResetting || selectedKeys.length === 0}
+                  disabled={resetConfirmText !== "RESTAURAR" || isResetting || totalSelectedCount === 0}
                   variant="destructive"
                   className="gap-2"
                 >
                   {isResetting && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {isResetting ? "Procesando..." : `Eliminar ${selectedKeys.length} ${selectedKeys.length === 1 ? "sección" : "secciones"}`}
+                  {isResetting ? "Procesando..." : `Eliminar ${totalSelectedCount} ${totalSelectedCount === 1 ? "elemento" : "elementos"}`}
                 </Button>
               </>
             )}
