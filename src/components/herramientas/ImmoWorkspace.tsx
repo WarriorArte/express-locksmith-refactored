@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { m as motion, useMotionTemplate, useMotionValue, useTransform } from "framer-motion";
 import { ArrowLeft, Cpu, Radio, Wrench, ShieldCheck, Check, StickyNote } from "lucide-react";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { ImageViewDialog } from "@/components/shared/ImageViewDialog";
 import { FormattedText } from "@/components/herramientas/RichTextField";
 import { resolveStorageUrl } from "@/lib/phpApi";
 import type { ImmoProfile, ImmoAssignmentDetail, ImmoCatalogItem } from "@/types";
@@ -22,26 +22,54 @@ function SectionLabel({ icon, text }: { icon: React.ReactNode; text: string }) {
 }
 
 function SelectedChips({ ids, catalog, narrow = false }: { ids: string[]; catalog: ImmoCatalogItem[]; narrow?: boolean }) {
-  const [selectedItem, setSelectedItem] = useState<ImmoCatalogItem | null>(null);
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const items = ids.map((id) => catalog.find((c) => c.id === id)).filter(Boolean) as ImmoCatalogItem[];
   if (items.length === 0) return <span className="text-xs text-muted-foreground italic">—</span>;
 
+  // Solo los elementos con imagen entran a la galería del lightbox (los que no
+  // tienen imagen no son "ampliables").
+  const imageItems = items.filter((item) => !!item.image);
+  const viewerImages = imageItems.map((item) => ({ url: item.image!, description: item.label }));
+  const openViewerFor = (item: ImmoCatalogItem) => {
+    const idx = imageItems.findIndex((i) => i.id === item.id);
+    if (idx !== -1) setViewerIndex(idx);
+  };
+
+  const viewer = (
+    <ImageViewDialog
+      open={viewerIndex !== null}
+      onOpenChange={(open) => !open && setViewerIndex(null)}
+      images={viewerImages}
+      initialIndex={viewerIndex ?? 0}
+    />
+  );
+
   if (narrow) {
     return (
-      <div className="grid grid-cols-2 gap-1.5">
-        {items.map((item) => (
-          <div key={item.id} className="flex flex-col items-center gap-0.5">
-            <div className="aspect-square w-full rounded-lg overflow-hidden border border-primary/15 bg-primary/5 flex items-center justify-center">
-              {item.image ? (
-                <img src={item.image} alt={item.label} className="w-full h-full object-cover" />
-              ) : (
-                <Check className="w-3 h-3 text-primary/40" />
-              )}
-            </div>
-            <p className="text-[9px] font-medium text-foreground text-center leading-tight w-full truncate">{item.label}</p>
-          </div>
-        ))}
-      </div>
+      <>
+        <div className="grid grid-cols-2 gap-1.5">
+          {items.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => item.image && openViewerFor(item)}
+              disabled={!item.image}
+              aria-label={item.image ? `Ver ${item.label} ampliado` : item.label}
+              className="flex flex-col items-center gap-0.5 disabled:cursor-default"
+            >
+              <div className="aspect-square w-full rounded-lg overflow-hidden border border-primary/15 bg-primary/5 flex items-center justify-center">
+                {item.image ? (
+                  <img src={resolveStorageUrl(item.image) ?? undefined} alt={item.label} className="w-full h-full object-cover" />
+                ) : (
+                  <Check className="w-3 h-3 text-primary/40" />
+                )}
+              </div>
+              <p className="text-[9px] font-medium text-foreground text-center leading-tight w-full truncate">{item.label}</p>
+            </button>
+          ))}
+        </div>
+        {viewer}
+      </>
     );
   }
 
@@ -56,14 +84,15 @@ function SelectedChips({ ids, catalog, narrow = false }: { ids: string[]; catalo
         <button
           key={item.id}
           type="button"
-          onClick={() => setSelectedItem(item)}
-          aria-label={`Ver ${item.label} ampliado`}
-          className="group flex w-[4.5rem] shrink-0 snap-start flex-col items-center gap-1 rounded-lg p-1 text-center outline-none transition-colors hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-primary"
+          onClick={() => item.image && openViewerFor(item)}
+          disabled={!item.image}
+          aria-label={item.image ? `Ver ${item.label} ampliado` : item.label}
+          className="group flex w-[4.5rem] shrink-0 snap-start flex-col items-center gap-1 rounded-lg p-1 text-center outline-none transition-colors hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-default"
         >
           <span className="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-lg border border-primary/20 bg-primary/5">
             {item.image ? (
               <img
-                src={item.image}
+                src={resolveStorageUrl(item.image) ?? undefined}
                 alt=""
                 className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105 group-active:scale-95"
               />
@@ -77,27 +106,7 @@ function SelectedChips({ ids, catalog, narrow = false }: { ids: string[]; catalo
         </button>
       ))}
       </div>
-
-      <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
-        <DialogContent className="max-w-[min(92vw,34rem)] p-3 sm:p-4">
-          {selectedItem && (
-            <>
-              <DialogTitle className="pr-8 text-left text-sm">{selectedItem.label}</DialogTitle>
-              <div className="flex min-h-52 items-center justify-center overflow-hidden rounded-xl border border-border bg-muted/20 p-3 sm:min-h-72">
-                {selectedItem.image ? (
-                  <img
-                    src={selectedItem.image}
-                    alt={selectedItem.label}
-                    className="max-h-[70vh] max-w-full object-contain"
-                  />
-                ) : (
-                  <Check className="h-12 w-12 text-primary/50" />
-                )}
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      {viewer}
     </>
   );
 }
@@ -128,6 +137,7 @@ const OVERVIEW_MERGE_RANGE = 96;
 
 export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: ImmoWorkspaceProps) {
   const title = profileTitle(profile);
+  const [mainImageViewerOpen, setMainImageViewerOpen] = useState(false);
   const generacionRemoto = profile.generacionRemoto ?? [];
   const hasGenFields = generacionRemoto.some((f) => f.value.trim());
 
@@ -220,14 +230,19 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
             />
 
             {profile.mainImage && (
-              <div className="flex min-h-0 items-start justify-center overflow-hidden rounded-xl bg-muted/30">
+              <button
+                type="button"
+                onClick={() => setMainImageViewerOpen(true)}
+                aria-label={`Ver ${title} ampliado`}
+                className="flex min-h-0 items-start justify-center overflow-hidden rounded-xl bg-muted/30 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
                 <motion.img
                   src={resolveStorageUrl(profile.mainImage) ?? undefined}
                   alt={title}
                   className="w-full object-contain"
                   style={{ maxHeight: imageMaxHeightStyle }}
                 />
-              </div>
+              </button>
             )}
 
             <section className="min-w-0">
@@ -365,6 +380,14 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
           </div>
         </div>
       </div>
+
+      {profile.mainImage && (
+        <ImageViewDialog
+          open={mainImageViewerOpen}
+          onOpenChange={setMainImageViewerOpen}
+          images={[{ url: profile.mainImage, description: title }]}
+        />
+      )}
     </div>
   );
 }
