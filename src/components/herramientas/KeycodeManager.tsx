@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { m as motion } from "framer-motion";
-import { Key, FileJson, Database, Plus, Trash2, Edit, Check, Search, ChevronLeft, ChevronRight, Upload, ArrowLeft, Eye, Settings2, LayoutList, LayoutGrid, ImageIcon, Camera, Wand2, Loader2, RotateCcw, AlertTriangle, Play } from "lucide-react";
+import { Key, FileJson, Database, Plus, Trash2, Edit, Check, Search, ChevronLeft, ChevronRight, Upload, ArrowLeft, Eye, Settings2, LayoutList, LayoutGrid, ImageIcon, Camera, Wand2, Loader2, RotateCcw, AlertTriangle, Play, Copy } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -190,6 +190,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
   const [seriesAliases, setSeriesAliases] = useState<string[]>([]);
   const [multiPrefixes, setMultiPrefixes] = useState<string[]>([]);
   const [loadingEditId, setLoadingEditId] = useState<string | null>(null);
+  const [loadingDuplicateId, setLoadingDuplicateId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveProgress, setSaveProgress] = useState<{ done: number; total: number } | null>(null);
   const itemsPerPage = 50;
@@ -260,7 +261,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
   };
 
   // ── Edit ─────────────────────────────────────────────────────
-  const startEdit = async (profile: KeycodeProfile, isNew = false) => {
+  const startEdit = async (profile: KeycodeProfile, isNew = false, initialValetDirty = false) => {
     // Si los códigos no están cargados (vista de lista), los traemos del servidor.
     let fullProfile = profile;
     if (!isNew && profile.codesData.length === 0 && (profile.codesCount ?? 0) > 0) {
@@ -286,13 +287,84 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
     setSeriesAliases(fullProfile.seriesAliases ? [...fullProfile.seriesAliases] : []);
     setMultiPrefixes(fullProfile.multiPrefixes ? [...fullProfile.multiPrefixes] : []);
     setValetCodes(fullProfile.valetCodesData ? [...fullProfile.valetCodesData] : []);
-    setValetCodesDirty(false);
+    setValetCodesDirty(initialValetDirty);
     setDecoderHasErrors(false);
     setSearchTerm("");
     setCurrentPage(1);
     setEditTab("references");
     setTestingSeries(false);
     setView("edit");
+  };
+
+  const duplicateProfile = async (profile: KeycodeProfile) => {
+    if (loadingEditId !== null || loadingDuplicateId !== null) return;
+
+    setLoadingDuplicateId(profile.id);
+    try {
+      const source = await onFetchCodes(profile.id);
+      if (!source) {
+        toast.error("No se pudo cargar la serie completa para duplicarla.");
+        return;
+      }
+
+      const referenceSeed = Date.now();
+      const codesData = source.codesData.map((entry) => ({
+        ...entry,
+        bitting: [...entry.bitting],
+      }));
+      const valetCodesData = (source.valetCodesData ?? []).map((entry) => ({
+        ...entry,
+        bitting: [...entry.bitting],
+      }));
+      const duplicate: KeycodeProfile = {
+        ...source,
+        id: crypto.randomUUID(),
+        references: source.references.map((reference, index) => ({
+          ...reference,
+          id: referenceSeed + index,
+        })),
+        series: source.series ? `${source.series} (Copia)` : "Copia",
+        internalReference: source.internalReference
+          ? `${source.internalReference} (Copia)`
+          : "",
+        bittingConfig: {
+          ...source.bittingConfig,
+          depthMapping: source.bittingConfig.depthMapping
+            ? { ...source.bittingConfig.depthMapping }
+            : undefined,
+          axes: source.bittingConfig.axes?.map((axis) => ({ ...axis })),
+        },
+        codesData,
+        codesCount: codesData.length,
+        codeSample: codesData.length > 0
+          ? [{ ...codesData[Math.floor(codesData.length / 2)], bitting: [...codesData[Math.floor(codesData.length / 2)].bitting] }]
+          : [],
+        configuracionVisual: source.configuracionVisual
+          ? { ...source.configuracionVisual }
+          : undefined,
+        decoderConfig: source.decoderConfig
+          ? {
+              ...source.decoderConfig,
+              profundidades: [...source.decoderConfig.profundidades],
+              distanciasCortes: [...source.decoderConfig.distanciasCortes],
+              distanciasCortesDer: [...source.decoderConfig.distanciasCortesDer],
+            }
+          : undefined,
+        seriesAliases: source.seriesAliases ? [...source.seriesAliases] : [],
+        multiPrefixes: source.multiPrefixes ? [...source.multiPrefixes] : [],
+        valetCodesData,
+        valetCodesCount: valetCodesData.length,
+        codesIncomplete: false,
+        dateAdded: new Date().toLocaleDateString(),
+      };
+
+      await startEdit(duplicate, true, valetCodesData.length > 0);
+      toast.info("Copia preparada. Revisa los datos y pulsa Guardar para crearla.");
+    } catch {
+      toast.error("No se pudo preparar la copia de la serie.");
+    } finally {
+      setLoadingDuplicateId(null);
+    }
   };
 
   // Detecta cambios en cualquiera de las pestañas comparando con el perfil original.
@@ -343,7 +415,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
     const codesChanged = isNewProfile || codesDirty;
     // Los códigos Valet (nueva carga de JSON o "eliminar todos") solo se confirman al guardar,
     // igual que los códigos normales — no se persisten al momento de cargarlos.
-    const valetChanged = !isNewProfile && valetCodesDirty;
+    const valetChanged = valetCodesDirty;
 
     const onProgress = (done: number, total: number) => setSaveProgress({ done, total });
     setSaving(true);
@@ -379,7 +451,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
     if (valetChanged && !valetOk) {
       toast.error("La serie se guardó, pero no se pudieron subir los códigos Valet. Vuelve a intentarlo desde la pestaña Códigos.");
     } else if (isNewProfile) {
-      toast.success("Serie importada y guardada exitosamente.");
+      toast.success("Serie nueva guardada exitosamente.");
     } else {
       toast.success("Perfil actualizado.");
     }
@@ -874,14 +946,38 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                     </p>
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => startEdit(profile)} disabled={loadingEditId !== null}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => startEdit(profile)}
+                      disabled={loadingEditId !== null || loadingDuplicateId !== null}
+                      title="Editar serie"
+                      aria-label="Editar serie"
+                    >
                       {loadingEditId === profile.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Edit className="w-4 h-4" />}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => void duplicateProfile(profile)}
+                      disabled={loadingEditId !== null || loadingDuplicateId !== null}
+                      title="Duplicar serie"
+                      aria-label="Duplicar serie"
+                    >
+                      {loadingDuplicateId === profile.id
+                        ? <Loader2 className="w-4 h-4 animate-spin" />
+                        : <Copy className="w-4 h-4" />}
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-destructive hover:text-destructive"
                       onClick={() => setDeleteProfileId(profile.id)}
+                      disabled={loadingEditId !== null || loadingDuplicateId !== null}
+                      title="Eliminar serie"
+                      aria-label="Eliminar serie"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -955,15 +1051,27 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                     <button
                       className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors disabled:opacity-50"
                       onClick={() => startEdit(profile)}
-                      disabled={loadingEditId !== null}
+                      disabled={loadingEditId !== null || loadingDuplicateId !== null}
                     >
                       {loadingEditId === profile.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Edit className="w-3.5 h-3.5" />}
                       Editar
                     </button>
                     <div className="w-px bg-border" />
                     <button
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors disabled:opacity-50"
+                      onClick={() => void duplicateProfile(profile)}
+                      disabled={loadingEditId !== null || loadingDuplicateId !== null}
+                    >
+                      {loadingDuplicateId === profile.id
+                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        : <Copy className="w-3.5 h-3.5" />}
+                      Duplicar
+                    </button>
+                    <div className="w-px bg-border" />
+                    <button
                       className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors"
                       onClick={() => setDeleteProfileId(profile.id)}
+                      disabled={loadingEditId !== null || loadingDuplicateId !== null}
                     >
                       <Trash2 className="w-3.5 h-3.5" /> Eliminar
                     </button>
