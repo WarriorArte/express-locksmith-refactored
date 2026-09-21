@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { ArrowLeft, Cpu, Radio, Wrench, ShieldCheck, Check } from "lucide-react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import type { ImmoProfile, ImmoAssignmentDetail, ImmoCatalogItem } from "@/types";
 
 function profileTitle(p: ImmoProfile) {
@@ -17,6 +19,7 @@ function SectionLabel({ icon, text }: { icon: React.ReactNode; text: string }) {
 }
 
 function SelectedChips({ ids, catalog, narrow = false }: { ids: string[]; catalog: ImmoCatalogItem[]; narrow?: boolean }) {
+  const [selectedItem, setSelectedItem] = useState<ImmoCatalogItem | null>(null);
   const items = ids.map((id) => catalog.find((c) => c.id === id)).filter(Boolean) as ImmoCatalogItem[];
   if (items.length === 0) return <span className="text-xs text-muted-foreground italic">—</span>;
 
@@ -40,20 +43,59 @@ function SelectedChips({ ids, catalog, narrow = false }: { ids: string[]; catalo
   }
 
   return (
-    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
+    <>
+      <div
+        className="flex flex-nowrap gap-2 overflow-x-auto overscroll-x-contain touch-pan-x snap-x snap-mandatory no-scrollbar pb-1"
+        role="list"
+        aria-label="Elementos disponibles"
+      >
       {items.map((item) => (
-        <div key={item.id} className="flex flex-col items-center gap-1">
-          <div className="aspect-square w-full rounded-xl overflow-hidden border border-primary/20 bg-primary/5 flex items-center justify-center">
+        <button
+          key={item.id}
+          type="button"
+          onClick={() => setSelectedItem(item)}
+          aria-label={`Ver ${item.label} ampliado`}
+          className="group flex w-[4.5rem] shrink-0 snap-start flex-col items-center gap-1 rounded-lg p-1 text-center outline-none transition-colors hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <span className="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-lg border border-primary/20 bg-primary/5">
             {item.image ? (
-              <img src={item.image} alt={item.label} className="w-full h-full object-cover" />
+              <img
+                src={item.image}
+                alt=""
+                className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105 group-active:scale-95"
+              />
             ) : (
-              <Check className="w-4 h-4 text-primary/50" />
+              <Check className="h-4 w-4 text-primary/50" />
             )}
-          </div>
-          <p className="text-[10px] font-semibold text-foreground text-center leading-tight w-full truncate">{item.label}</p>
-        </div>
+          </span>
+          <span className="w-full truncate text-[10px] font-semibold leading-tight text-foreground">
+            {item.label}
+          </span>
+        </button>
       ))}
-    </div>
+      </div>
+
+      <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
+        <DialogContent className="max-w-[min(92vw,34rem)] p-3 sm:p-4">
+          {selectedItem && (
+            <>
+              <DialogTitle className="pr-8 text-left text-sm">{selectedItem.label}</DialogTitle>
+              <div className="flex min-h-52 items-center justify-center overflow-hidden rounded-xl border border-border bg-muted/20 p-3 sm:min-h-72">
+                {selectedItem.image ? (
+                  <img
+                    src={selectedItem.image}
+                    alt={selectedItem.label}
+                    className="max-h-[70vh] max-w-full object-contain"
+                  />
+                ) : (
+                  <Check className="h-12 w-12 text-primary/50" />
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -90,13 +132,15 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
   const hasEquiposRemoto = equiposRemotoIds.length > 0;
   const hasEquiposTransponder = equiposTransponderIds.length > 0;
   const hasTransponder = !!(detail?.transponder?.trim());
+  const hasTransponderNotes = !!(detail?.transponderNotes?.trim());
+  const hasTransponderInfo = hasTransponder || hasTransponderNotes;
   const hasProgramacion = hasEquiposRemoto || hasEquiposTransponder ||
     detail?.programacionManual || detail?.programacionOBD ||
     !!(detail?.procedimientoProgramacion?.trim());
-  const bothCols = hasGenFields && (hasTransponder || hasGeneradoCon);
+  const bothCols = hasGenFields && (hasTransponderInfo || hasGeneradoCon);
 
   return (
-    <div className="flex flex-col min-h-0 max-w-2xl md:max-w-4xl mx-auto w-full">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden max-w-2xl md:max-w-4xl mx-auto w-full">
       {/* Sticky header */}
       <div className="sticky top-0 z-10 flex items-center gap-3 px-4 py-3 bg-background/95 backdrop-blur-sm border-b border-border shrink-0">
         <button onClick={onBack} className="flex items-center justify-center w-9 h-9 rounded-full bg-muted hover:bg-muted/80 transition-colors shrink-0">
@@ -124,7 +168,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
         )}
 
         {/* Content — scrollable */}
-        <div className="flex-1 overflow-y-auto min-h-0">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain touch-pan-y pb-mobile-nav">
         <div className="px-3 py-3 space-y-4">
 
           {/* Detalles del Remoto — compact card */}
@@ -154,11 +198,11 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
           </section>
 
           {/* Generación de Remoto + Transponder — unified card */}
-          {(hasGenFields || hasTransponder || hasGeneradoCon) && (
+          {(hasGenFields || hasTransponderInfo || hasGeneradoCon) && (
             <div className="rounded-xl border border-border overflow-hidden">
               {/* Top 2-col row: Generación | Transponder */}
-              {(hasGenFields || hasTransponder) && (
-                <div className={`grid items-start ${bothCols && hasTransponder ? "grid-cols-2 divide-x divide-border" : "grid-cols-1"}`}>
+              {(hasGenFields || hasTransponderInfo) && (
+                <div className={`grid items-start ${bothCols && hasTransponderInfo ? "grid-cols-2 divide-x divide-border" : "grid-cols-1"}`}>
                   {hasGenFields && (
                     <div className="p-2.5 space-y-2.5">
                       <div className="flex items-center gap-1.5 min-w-0">
@@ -172,13 +216,19 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
                       </div>
                     </div>
                   )}
-                  {hasTransponder && (
+                  {hasTransponderInfo && (
                     <div className="p-2.5 space-y-2.5">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <Cpu className="w-3 h-3 text-primary/60 shrink-0" />
                         <span className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground leading-none truncate">Transponder</span>
                       </div>
-                      <CompactRow label="Tipo" value={detail!.transponder} />
+                      {hasTransponder && <CompactRow label="Tipo" value={detail!.transponder} />}
+                      {hasTransponderNotes && (
+                        <div className="space-y-0.5">
+                          <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground/70 leading-none">Notas</p>
+                          <p className="text-xs text-foreground leading-snug whitespace-pre-wrap">{detail!.transponderNotes}</p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -186,7 +236,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
 
               {/* Full-width "Se genera con" row — chips span the full card width */}
               {hasGeneradoCon && (
-                <div className={`px-2.5 pb-2.5 space-y-1.5 ${(hasGenFields || hasTransponder) ? "border-t border-border pt-2.5" : "pt-2.5"}`}>
+                <div className={`px-2.5 pb-2.5 space-y-1.5 ${(hasGenFields || hasTransponderInfo) ? "border-t border-border pt-2.5" : "pt-2.5"}`}>
                   <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground/70 leading-none">Se genera con</p>
                   <SelectedChips ids={generadoConIds} catalog={catalog} />
                 </div>

@@ -8,6 +8,7 @@ function migrate(items: any[]): ToolAssignment[] {
       (a.immoProfileIds ?? []).map((id: string) => ({
         profileId: id,
         transponder: "",
+        transponderNotes: "",
         generadoConIds: [],
         equiposRemotoIds: [],
         equiposTransponderIds: [],

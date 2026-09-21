@@ -239,6 +239,8 @@ export interface ImmoProfile {
 export interface ImmoAssignmentDetail {
   profileId: string;
   transponder: string;
+  /** Optional notes shown alongside the transponder details. */
+  transponderNotes?: string;
   generadoConIds: string[];
   equiposRemotoIds: string[];
   equiposTransponderIds: string[];

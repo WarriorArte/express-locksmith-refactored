@@ -52,6 +52,7 @@ function emptyProfile(): Omit<ImmoProfile, "id" | "dateAdded"> {
 function emptyDetail(): Omit<ImmoAssignmentDetail, "profileId"> {
   return {
     transponder: "",
+    transponderNotes: "",
     generadoConIds: [],
     equiposRemotoIds: [],
     equiposTransponderIds: [],
@@ -486,6 +487,7 @@ export function ImmoAssignmentManager({
     details.forEach((d) => {
       map[d.profileId] = {
         transponder: d.transponder,
+        transponderNotes: d.transponderNotes ?? "",
         generadoConIds: d.generadoConIds ?? [],
         equiposRemotoIds: d.equiposRemotoIds ?? [],
         equiposTransponderIds: d.equiposTransponderIds ?? [],
@@ -671,10 +673,22 @@ export function ImmoAssignmentManager({
                       {/* Accordion body */}
                       {isExpanded && (
                         <div className="px-3 pb-4 space-y-4 border-t border-border/50 pt-3">
+                          <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2">
                           {/* Transponder */}
                           <div className="space-y-1">
                             <Label className="text-xs font-bold">Transponder</Label>
                             <Input value={detail.transponder} onChange={(e) => updateDetail(id, "transponder", e.target.value)} placeholder="Philips ID46…" className="h-8 text-sm font-mono" />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs font-bold">Notas del transponder</Label>
+                            <Textarea
+                              value={detail.transponderNotes ?? ""}
+                              onChange={(e) => updateDetail(id, "transponderNotes", e.target.value)}
+                              placeholder="Notas breves para el técnico…"
+                              rows={2}
+                              className="text-sm resize-none"
+                            />
+                          </div>
                           </div>
                           {/* Se genera con */}
                           <div className="space-y-1.5">

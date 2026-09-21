@@ -535,7 +535,7 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
       )}
       <div className={
         toolActive
-          ? "flex-1 min-h-0"
+          ? "flex-1 min-h-0 overflow-hidden"
           : "flex-1 min-h-0 overflow-auto overscroll-y-contain px-5 lg:px-6 pb-mobile-nav no-scrollbar"
       }>
         <WorkshopToolView
