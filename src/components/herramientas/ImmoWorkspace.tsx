@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { m as motion, useMotionTemplate, useMotionValue, useTransform } from "framer-motion";
-import { ArrowLeft, Cpu, Radio, Wrench, ShieldCheck, Check } from "lucide-react";
+import { ArrowLeft, Cpu, Radio, Wrench, ShieldCheck, Check, StickyNote } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { FormattedText } from "@/components/herramientas/RichTextField";
 import { resolveStorageUrl } from "@/lib/phpApi";
@@ -143,6 +143,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
   const hasProgramacion = hasEquiposRemoto || hasEquiposTransponder ||
     detail?.programacionManual || detail?.programacionOBD ||
     !!(detail?.procedimientoProgramacion?.trim());
+  const hasNotasGenerales = !!(detail?.notasGenerales?.trim());
   const bothCols = hasGenFields && (hasTransponderInfo || hasGeneradoCon);
 
   // Progreso continuo de scroll (0 → 1): nada de estado ni umbral, solo sigue el dedo.
@@ -346,6 +347,16 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
                     </div>
                   </div>
                 )}
+              </div>
+            </section>
+          )}
+
+          {/* Notas Generales */}
+          {hasNotasGenerales && (
+            <section>
+              <SectionLabel icon={<StickyNote className="w-3 h-3" />} text="Notas Generales" />
+              <div className="rounded-xl bg-muted/30 border border-border p-3">
+                <FormattedText text={detail!.notasGenerales!} className="text-sm text-foreground leading-relaxed space-y-1" />
               </div>
             </section>
           )}

@@ -15,6 +15,7 @@ function migrate(items: any[]): ToolAssignment[] {
         programacionManual: false,
         programacionOBD: false,
         procedimientoProgramacion: "",
+        notasGenerales: "",
       }));
     return {
       ...a,

@@ -247,6 +247,8 @@ export interface ImmoAssignmentDetail {
   programacionManual: boolean;
   programacionOBD: boolean;
   procedimientoProgramacion: string;
+  /** Notas generales de esta asignación (independientes del transponder o el procedimiento). */
+  notasGenerales?: string;
 }
 
 // ── Auto Alarmas ─────────────────────────────────────────────────────────────

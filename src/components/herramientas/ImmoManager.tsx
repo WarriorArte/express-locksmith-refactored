@@ -64,6 +64,7 @@ function emptyDetail(): Omit<ImmoAssignmentDetail, "profileId"> {
     programacionManual: false,
     programacionOBD: false,
     procedimientoProgramacion: "",
+    notasGenerales: "",
   };
 }
 
@@ -551,6 +552,7 @@ export function ImmoAssignmentManager({
         programacionManual: d.programacionManual,
         programacionOBD: d.programacionOBD,
         procedimientoProgramacion: d.procedimientoProgramacion,
+        notasGenerales: d.notasGenerales ?? "",
       };
     });
     setDetailMap(map);
@@ -780,6 +782,16 @@ export function ImmoAssignmentManager({
                               onChange={(v) => updateDetail(id, "procedimientoProgramacion", v)}
                               placeholder="Describe el procedimiento paso a paso…"
                               rows={4}
+                              className="text-sm"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs font-bold">Notas Generales</Label>
+                            <RichTextEditor
+                              value={detail.notasGenerales ?? ""}
+                              onChange={(v) => updateDetail(id, "notasGenerales", v)}
+                              placeholder="Cualquier otra observación para el técnico…"
+                              rows={3}
                               className="text-sm"
                             />
                           </div>
