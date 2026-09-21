@@ -321,7 +321,7 @@ export function WorkshopToolView({
                             <div className="aspect-square w-full rounded-xl overflow-hidden border border-border bg-muted/50 group-hover:border-primary/70 group-hover:shadow-sm transition-all">
                               {p!.mainImage ? (
                                 <img
-                                  src={p!.mainImage}
+                                  src={resolveStorageUrl(p!.mainImage) ?? undefined}
                                   alt=""
                                   className="w-full h-full object-cover"
                                 />

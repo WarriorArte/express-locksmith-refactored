@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { m as motion, useMotionTemplate, useMotionValue, useTransform } from "framer-motion";
 import { ArrowLeft, Cpu, Radio, Wrench, ShieldCheck, Check } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { resolveStorageUrl } from "@/lib/phpApi";
 import type { ImmoProfile, ImmoAssignmentDetail, ImmoCatalogItem } from "@/types";
 
 function profileTitle(p: ImmoProfile) {
@@ -120,6 +122,9 @@ interface ImmoWorkspaceProps {
   onBack: () => void;
 }
 
+// Distancia de scroll (px) sobre la que ocurre la fusión imagen + detalles.
+const OVERVIEW_MERGE_RANGE = 96;
+
 export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: ImmoWorkspaceProps) {
   const title = profileTitle(profile);
   const generacionRemoto = profile.generacionRemoto ?? [];
@@ -139,6 +144,22 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
     !!(detail?.procedimientoProgramacion?.trim());
   const bothCols = hasGenFields && (hasTransponderInfo || hasGeneradoCon);
 
+  // Progreso continuo de scroll (0 → 1): nada de estado ni umbral, solo sigue el dedo.
+  const scrollTop = useMotionValue(0);
+  const mergeProgress = useTransform(scrollTop, [0, OVERVIEW_MERGE_RANGE], [0, 1], { clamp: true });
+  const imageFr = useTransform(mergeProgress, [0, 1], [1, 0.78]);
+  const detailFr = useTransform(mergeProgress, [0, 1], [1, 1.22]);
+  const overviewGridTemplate = useMotionTemplate`minmax(0, ${imageFr}fr) minmax(0, ${detailFr}fr)`;
+  const overviewPadding = useTransform(mergeProgress, [0, 1], [0, 8]);
+  const overviewPaddingStyle = useMotionTemplate`${overviewPadding}px`;
+  const overviewScale = useTransform(mergeProgress, [0, 1], [1, 0.985]);
+  const imageMaxHeight = useTransform(mergeProgress, [0, 1], [208, 112]);
+  const imageMaxHeightStyle = useMotionTemplate`${imageMaxHeight}px`;
+
+  const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    scrollTop.set(event.currentTarget.scrollTop);
+  };
+
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden max-w-2xl md:max-w-4xl mx-auto w-full">
       {/* Sticky header */}
@@ -157,47 +178,66 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
         </div>
       </div>
 
-      {/* Body — stacked on mobile, side-by-side on desktop */}
-      <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
+      {/* Body — scrollable overview and details */}
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <div
+          onScroll={handleScroll}
+          className="h-full min-h-0 overflow-y-auto overscroll-y-contain touch-pan-y pb-mobile-nav"
+        >
+          <div className="mx-auto w-full max-w-4xl space-y-4 px-3 py-3">
 
-        {/* Image — top on mobile, left column on desktop */}
-        {profile.mainImage && (
-          <div className="bg-muted/30 shrink-0 md:w-72 lg:w-80 md:border-r md:border-border md:overflow-y-auto md:flex md:items-start md:justify-center">
-            <img src={profile.mainImage} alt={title} className="w-full object-contain max-h-52 md:max-h-none md:w-full" />
-          </div>
-        )}
+          {/* Overview: imagen y detalles siempre en fila; se fusionan/compactan de forma continua con el scroll */}
+          <motion.div
+            style={{
+              gridTemplateColumns: overviewGridTemplate,
+              padding: overviewPaddingStyle,
+              scale: overviewScale,
+            }}
+            className="sticky top-0 z-20 grid items-start gap-3"
+          >
+            <motion.div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 -z-10 border-b border-border/80 bg-background/95 shadow-md backdrop-blur-sm"
+              style={{ opacity: mergeProgress }}
+            />
 
-        {/* Content — scrollable */}
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain touch-pan-y pb-mobile-nav">
-        <div className="px-3 py-3 space-y-4">
+            {profile.mainImage && (
+              <div className="flex min-h-0 items-start justify-center overflow-hidden rounded-xl bg-muted/30">
+                <motion.img
+                  src={resolveStorageUrl(profile.mainImage) ?? undefined}
+                  alt={title}
+                  className="w-full object-contain"
+                  style={{ maxHeight: imageMaxHeightStyle }}
+                />
+              </div>
+            )}
 
-          {/* Detalles del Remoto — compact card */}
-          <section>
-            <SectionLabel icon={<Radio className="w-3 h-3" />} text="Detalles del Remoto" />
-            <div className="rounded-xl border border-border overflow-hidden">
-              {/* FCC ID — full width so long values never overflow */}
-              {profile.fccId && (
-                <div className="px-3 py-2 border-b border-border/50">
-                  <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground/70 leading-none mb-0.5">FCC ID</p>
-                  <p className="text-sm text-foreground font-mono break-all font-semibold leading-snug">{profile.fccId}</p>
-                </div>
-              )}
-              {/* Marca / Frecuencia / Batería — 3-column row */}
-              <div className="grid grid-cols-3 divide-x divide-border/50">
-                <div className="px-3 py-2">
-                  <CompactRow label="Marca" value={profile.marca} />
-                </div>
-                <div className="px-3 py-2">
-                  <CompactRow label="Frec." value={profile.frecuencia} />
-                </div>
-                <div className="px-3 py-2">
-                  <CompactRow label="Bat." value={profile.bateria} />
+            <section className="min-w-0">
+              <SectionLabel icon={<Radio className="w-3 h-3" />} text="Detalles del Remoto" />
+              <div className="rounded-xl border border-border overflow-hidden">
+                {profile.fccId && (
+                  <div className="px-3 py-2 border-b border-border/50">
+                    <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground/70 leading-none mb-0.5">FCC ID</p>
+                    <p className="text-sm text-foreground font-mono break-all font-semibold leading-snug">{profile.fccId}</p>
+                  </div>
+                )}
+                <div className="divide-y divide-border/50">
+                  <div className="px-3 py-2">
+                    <CompactRow label="Marca" value={profile.marca} />
+                  </div>
+                  <div className="px-3 py-2">
+                    <CompactRow label="Frec." value={profile.frecuencia} />
+                  </div>
+                  <div className="px-3 py-2">
+                    <CompactRow label="Bat." value={profile.bateria} />
+                  </div>
                 </div>
               </div>
-            </div>
-          </section>
+            </section>
+          </motion.div>
 
           {/* Generación de Remoto + Transponder — unified card */}
+
           {(hasGenFields || hasTransponderInfo || hasGeneradoCon) && (
             <div className="rounded-xl border border-border overflow-hidden">
               {/* Top 2-col row: Generación | Transponder */}
@@ -289,8 +329,8 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
             </section>
           )}
 
-          <div className="h-4" />
-        </div>
+        <div className="h-4" />
+          </div>
         </div>
       </div>
     </div>

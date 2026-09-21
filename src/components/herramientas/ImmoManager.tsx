@@ -3,7 +3,7 @@ import { m as motion } from "framer-motion";
 import {
   Plus, Trash2, Edit, ArrowLeft, Check, Search,
   ImageIcon, Car, X, ChevronDown, Cpu, Radio,
-  ShieldCheck, Wrench, ChevronUp,
+  ShieldCheck, Wrench, ChevronUp, LayoutGrid, Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -25,6 +25,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { ImageGalleryDialog } from "@/components/shared/ImageGalleryDialog";
+import { useFileUpload } from "@/hooks/useFileUpload";
+import { useWorkshop } from "@/hooks/useWorkshop";
+import { phpApiDeleteFile, resolveStorageUrl } from "@/lib/phpApi";
 
 import type {
   ImmoProfile, ImmoGenField, ImmoCatalogItem,
@@ -60,15 +64,6 @@ function emptyDetail(): Omit<ImmoAssignmentDetail, "profileId"> {
     programacionOBD: false,
     procedimientoProgramacion: "",
   };
-}
-
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
 }
 
 function profileTitle(p: Pick<ImmoProfile, "marca" | "fccId">) {
@@ -173,18 +168,26 @@ function Section({ icon, title, children }: { icon: React.ReactNode; title: stri
 interface ImmoProfileEditorProps {
   draft: Omit<ImmoProfile, "id" | "dateAdded">;
   onChange: (draft: Omit<ImmoProfile, "id" | "dateAdded">) => void;
+  onImageChange: (url: string | undefined) => void | Promise<void>;
+  isUploadingImage: boolean;
+  uploadFile: (file: File) => Promise<{ success: boolean; url?: string }>;
+  galleryOpen: boolean;
+  setGalleryOpen: (open: boolean) => void;
+  workshopCode?: string;
 }
 
-function ImmoProfileEditor({ draft, onChange }: ImmoProfileEditorProps) {
+function ImmoProfileEditor({
+  draft, onChange, onImageChange, isUploadingImage, uploadFile, galleryOpen, setGalleryOpen, workshopCode,
+}: ImmoProfileEditorProps) {
   const mainImgRef = useRef<HTMLInputElement>(null);
   const set = <K extends keyof typeof draft>(key: K, val: (typeof draft)[K]) => onChange({ ...draft, [key]: val });
 
   const handleMainImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { toast.error("Imagen máx 5 MB"); return; }
-    try { set("mainImage", await fileToBase64(file)); } catch { toast.error("Error al cargar imagen"); }
     e.target.value = "";
+    if (!file) return;
+    const result = await uploadFile(file);
+    if (result.success && result.url) await onImageChange(result.url);
   };
 
   return (
@@ -195,24 +198,53 @@ function ImmoProfileEditor({ draft, onChange }: ImmoProfileEditorProps) {
         {draft.mainImage ? (
           <div className="space-y-2">
             <div className="rounded-lg border border-border bg-muted/30 flex items-center justify-center p-3 max-h-48 overflow-hidden">
-              <img src={draft.mainImage} alt="Imagen principal" className="max-w-full max-h-40 object-contain rounded" />
+              <img src={resolveStorageUrl(draft.mainImage) ?? undefined} alt="Imagen principal" className="max-w-full max-h-40 object-contain rounded" />
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => mainImgRef.current?.click()}>
-                <ImageIcon className="w-3.5 h-3.5 mr-1.5" /> Cambiar
+            <div className="flex gap-2 flex-wrap">
+              <Button variant="outline" size="sm" onClick={() => mainImgRef.current?.click()} disabled={isUploadingImage}>
+                {isUploadingImage ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5 mr-1.5" />}
+                Cambiar
               </Button>
-              <Button variant="outline" size="sm" className="text-destructive border-destructive/40 hover:bg-destructive/10" onClick={() => set("mainImage", undefined)}>
+              <Button variant="outline" size="sm" onClick={() => setGalleryOpen(true)} disabled={isUploadingImage}>
+                <LayoutGrid className="w-3.5 h-3.5 mr-1.5" /> Elegir de galería
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive border-destructive/40 hover:bg-destructive/10"
+                onClick={() => void onImageChange(undefined)}
+                disabled={isUploadingImage}
+              >
                 <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Quitar
               </Button>
             </div>
           </div>
         ) : (
-          <button type="button" onClick={() => mainImgRef.current?.click()} className="w-full border-2 border-dashed border-border rounded-xl py-8 flex flex-col items-center gap-2 text-muted-foreground hover:border-primary/40 hover:text-primary/60 transition-colors">
-            <ImageIcon className="w-8 h-8 opacity-30" />
-            <span className="text-sm font-medium">Haz clic para subir imagen</span>
-            <span className="text-xs opacity-70">PNG, JPG, WEBP · máx 5 MB</span>
-          </button>
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={() => mainImgRef.current?.click()}
+              disabled={isUploadingImage}
+              className="w-full border-2 border-dashed border-border rounded-xl py-8 flex flex-col items-center gap-2 text-muted-foreground hover:border-primary/40 hover:text-primary/60 transition-colors disabled:opacity-60"
+            >
+              {isUploadingImage ? <Loader2 className="w-8 h-8 opacity-30 animate-spin" /> : <ImageIcon className="w-8 h-8 opacity-30" />}
+              <span className="text-sm font-medium">{isUploadingImage ? "Subiendo…" : "Haz clic para subir imagen"}</span>
+              <span className="text-xs opacity-70">PNG, JPG, WEBP</span>
+            </button>
+            <Button variant="outline" size="sm" onClick={() => setGalleryOpen(true)} disabled={isUploadingImage}>
+              <LayoutGrid className="w-3.5 h-3.5 mr-1.5" /> Elegir de galería
+            </Button>
+          </div>
         )}
+
+        <ImageGalleryDialog
+          open={galleryOpen}
+          onOpenChange={setGalleryOpen}
+          folder="immo"
+          workshopCode={workshopCode}
+          onSelect={(url) => void onImageChange(url)}
+          layout="list"
+        />
       </Section>
 
       <Separator />
@@ -258,6 +290,21 @@ export function ImmoManager({ profiles, onSave, onUpdate, onDelete, catalog: _ca
   const [isNew, setIsNew] = useState(false);
   const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  // --- Imagen del perfil: sube al servidor (carpeta "immo") en vez de guardar base64 ---
+  const { currentWorkshop } = useWorkshop();
+  const { uploadFile, isUploading: isUploadingImage } = useFileUpload({ folder: "immo", workshopCode: currentWorkshop?.code });
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  // Cambia/elimina la imagen del perfil y borra el archivo del servidor si ya nadie más lo usa
+  // (otras entradas pueden compartir la misma imagen al elegirla de la galería).
+  const replaceMainImage = async (newUrl: string | undefined) => {
+    const oldUrl = draft.mainImage;
+    setDraft((d) => ({ ...d, mainImage: newUrl }));
+    if (oldUrl && oldUrl !== newUrl) {
+      const stillUsedElsewhere = profiles.some((p) => p.id !== editingId && p.mainImage === oldUrl);
+      if (!stillUsedElsewhere) await phpApiDeleteFile(oldUrl);
+    }
+  };
 
   const confirmDelete = () => {
     if (!deleteId) return;
@@ -325,7 +372,7 @@ export function ImmoManager({ profiles, onSave, onUpdate, onDelete, catalog: _ca
               <motion.div key={p.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-4 p-4 rounded-lg border border-border bg-card hover:border-primary/30 transition-colors">
                 {p.mainImage ? (
                   <div className="w-12 h-10 rounded-md overflow-hidden border border-border bg-muted/30 shrink-0">
-                    <img src={p.mainImage} alt="" className="w-full h-full object-cover" />
+                    <img src={resolveStorageUrl(p.mainImage) ?? undefined} alt="" className="w-full h-full object-cover" />
                   </div>
                 ) : (
                   <div className="w-12 h-10 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
@@ -390,7 +437,16 @@ export function ImmoManager({ profiles, onSave, onUpdate, onDelete, catalog: _ca
         </Button>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto pr-1 custom-scrollbar">
-        <ImmoProfileEditor draft={draft} onChange={setDraft} />
+        <ImmoProfileEditor
+          draft={draft}
+          onChange={setDraft}
+          onImageChange={replaceMainImage}
+          isUploadingImage={isUploadingImage}
+          uploadFile={uploadFile}
+          galleryOpen={galleryOpen}
+          setGalleryOpen={setGalleryOpen}
+          workshopCode={currentWorkshop?.code}
+        />
       </div>
     </div>
   );
@@ -658,7 +714,7 @@ export function ImmoAssignmentManager({
                       >
                         <div className="flex items-center gap-2 min-w-0">
                           {p.mainImage ? (
-                            <img src={p.mainImage} className="w-6 h-6 rounded object-cover shrink-0" alt="" />
+                            <img src={resolveStorageUrl(p.mainImage) ?? undefined} className="w-6 h-6 rounded object-cover shrink-0" alt="" />
                           ) : (
                             <Cpu className="w-4 h-4 text-accent shrink-0" />
                           )}
