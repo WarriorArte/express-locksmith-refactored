@@ -26,6 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ImageGalleryDialog } from "@/components/shared/ImageGalleryDialog";
+import { RichTextEditor } from "@/components/herramientas/RichTextField";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import { phpApiDeleteFile, resolveStorageUrl } from "@/lib/phpApi";
@@ -774,7 +775,13 @@ export function ImmoAssignmentManager({
                           </div>
                           <div className="space-y-1">
                             <Label className="text-xs font-bold">Procedimiento de Programación</Label>
-                            <Textarea value={detail.procedimientoProgramacion} onChange={(e) => updateDetail(id, "procedimientoProgramacion", e.target.value)} placeholder="Describe el procedimiento paso a paso…" rows={4} className="text-sm resize-none" />
+                            <RichTextEditor
+                              value={detail.procedimientoProgramacion}
+                              onChange={(v) => updateDetail(id, "procedimientoProgramacion", v)}
+                              placeholder="Describe el procedimiento paso a paso…"
+                              rows={4}
+                              className="text-sm"
+                            />
                           </div>
                         </div>
                       )}

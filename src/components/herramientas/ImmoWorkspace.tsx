@@ -2,6 +2,7 @@ import { useState } from "react";
 import { m as motion, useMotionTemplate, useMotionValue, useTransform } from "framer-motion";
 import { ArrowLeft, Cpu, Radio, Wrench, ShieldCheck, Check } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { FormattedText } from "@/components/herramientas/RichTextField";
 import { resolveStorageUrl } from "@/lib/phpApi";
 import type { ImmoProfile, ImmoAssignmentDetail, ImmoCatalogItem } from "@/types";
 
@@ -153,8 +154,24 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
   const overviewPadding = useTransform(mergeProgress, [0, 1], [0, 8]);
   const overviewPaddingStyle = useMotionTemplate`${overviewPadding}px`;
   const overviewScale = useTransform(mergeProgress, [0, 1], [1, 0.985]);
-  const imageMaxHeight = useTransform(mergeProgress, [0, 1], [208, 112]);
+  const imageMaxHeight = useTransform(mergeProgress, [0, 1], [208, 150]);
   const imageMaxHeightStyle = useMotionTemplate`${imageMaxHeight}px`;
+  // Frec./Bat.: apiladas en reposo, se deslizan a 2 columnas con el scroll.
+  // Un grid no puede interpolar "1 columna" → "2 columnas" sin saltar (cambia cuántas
+  // filas hay), así que en vez de eso las dos filas quedan posicionadas de forma absoluta
+  // y se mueve/encoge cada una con motion values: nada de remounts ni cross-fades, solo
+  // tamaño y posición cambiando cuadro a cuadro en sincronía con el scroll real.
+  const DETAIL_ROW_H = 48; // px, alto fijo de cada fila (contenido corto y constante)
+  const DETAIL_COL_GAP = 12; // px, separación cuando terminan lado a lado
+  const detailRowsHeight = useTransform(mergeProgress, [0, 1], [DETAIL_ROW_H * 2, DETAIL_ROW_H]);
+  const detailRowsHeightStyle = useMotionTemplate`${detailRowsHeight}px`;
+  const detailColWidthPct = useTransform(mergeProgress, [0, 1], [100, 50]);
+  const detailGapHalf = useTransform(mergeProgress, [0, 1], [0, DETAIL_COL_GAP / 2]);
+  const detailColWidthStyle = useMotionTemplate`calc(${detailColWidthPct}% - ${detailGapHalf}px)`;
+  const batLeftPct = useTransform(mergeProgress, [0, 1], [0, 50]);
+  const batLeftStyle = useMotionTemplate`calc(${batLeftPct}% + ${detailGapHalf}px)`;
+  const batTop = useTransform(mergeProgress, [0, 1], [DETAIL_ROW_H, 0]);
+  const batTopStyle = useMotionTemplate`${batTop}px`;
 
   const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
     scrollTop.set(event.currentTarget.scrollTop);
@@ -197,7 +214,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
           >
             <motion.div
               aria-hidden
-              className="pointer-events-none absolute inset-0 -z-10 border-b border-border/80 bg-background/95 shadow-md backdrop-blur-sm"
+              className="pointer-events-none absolute -inset-x-3 inset-y-0 -z-10 border-b border-border/80 bg-background/95 shadow-md backdrop-blur-sm"
               style={{ opacity: mergeProgress }}
             />
 
@@ -225,12 +242,18 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
                   <div className="px-3 py-2">
                     <CompactRow label="Marca" value={profile.marca} />
                   </div>
-                  <div className="px-3 py-2">
-                    <CompactRow label="Frec." value={profile.frecuencia} />
-                  </div>
-                  <div className="px-3 py-2">
-                    <CompactRow label="Bat." value={profile.bateria} />
-                  </div>
+                  <motion.div className="relative" style={{ height: detailRowsHeightStyle }}>
+                    <motion.div className="absolute left-0 top-0 min-w-0" style={{ width: detailColWidthStyle }}>
+                      <div className="px-3 py-2">
+                        <CompactRow label="Frec." value={profile.frecuencia} />
+                      </div>
+                    </motion.div>
+                    <motion.div className="absolute min-w-0" style={{ width: detailColWidthStyle, left: batLeftStyle, top: batTopStyle }}>
+                      <div className="px-3 py-2">
+                        <CompactRow label="Bat." value={profile.bateria} />
+                      </div>
+                    </motion.div>
+                  </motion.div>
                 </div>
               </div>
             </section>
@@ -319,9 +342,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
                   <div className="space-y-1.5">
                     <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground/70 leading-none">Procedimiento</p>
                     <div className="rounded-xl bg-muted/30 border border-border p-3">
-                      <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-                        {detail.procedimientoProgramacion}
-                      </p>
+                      <FormattedText text={detail.procedimientoProgramacion} className="text-sm text-foreground leading-relaxed space-y-1" />
                     </div>
                   </div>
                 )}
