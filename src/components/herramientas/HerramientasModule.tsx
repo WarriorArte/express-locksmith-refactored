@@ -50,7 +50,7 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
   const vehicleDb = useVehicleDatabase({ readOnly: !isSuperAdmin });
   const { profiles: alarmaProfiles, addProfile: addAlarmaProfile, updateProfile: updateAlarmaProfile, deleteProfile: deleteAlarmaProfile } = useAlarmaProfiles();
   const { profiles: immoProfiles, addProfile: addImmoProfile, updateProfile: updateImmoProfile, deleteProfile: deleteImmoProfile } = useImmoProfiles();
-  const { catalog, addItem, updateItem, deleteItem, reorderItems } = useImmoCatalog();
+  const { catalog, addItem, updateItem, deleteItem, previewReorder, commitReorder } = useImmoCatalog();
   const [toolActive, setToolActive] = useState(false);
   const [localSuperAdminView, setLocalSuperAdminView] = useState<SuperAdminHerramientasView>("keycode");
   const activeSuperAdminView = superAdminView ?? localSuperAdminView;
@@ -271,7 +271,8 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
                           onAdd={addItem}
                           onUpdate={updateItem}
                           onDelete={deleteItem}
-                          onReorderAll={reorderItems}
+                          onReorderPreview={previewReorder}
+                          onReorderCommit={commitReorder}
                         />
                       </div>
                     </TabsContent>

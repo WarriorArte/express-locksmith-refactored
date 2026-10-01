@@ -23,7 +23,11 @@ function SectionLabel({ icon, text }: { icon: React.ReactNode; text: string }) {
 
 function SelectedChips({ ids, catalog, narrow = false }: { ids: string[]; catalog: ImmoCatalogItem[]; narrow?: boolean }) {
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
-  const items = ids.map((id) => catalog.find((c) => c.id === id)).filter(Boolean) as ImmoCatalogItem[];
+  // Se recorre el catálogo (no `ids`) para que el orden del carrusel siempre
+  // coincida con el orden definido en Herramientas y Suministros, sin importar
+  // en qué orden se hayan seleccionado los elementos al asignarlos.
+  const idSet = new Set(ids);
+  const items = catalog.filter((c) => idSet.has(c.id));
   if (items.length === 0) return <span className="text-xs text-muted-foreground italic">—</span>;
 
   // Solo los elementos con imagen entran a la galería del lightbox (los que no
@@ -76,7 +80,7 @@ function SelectedChips({ ids, catalog, narrow = false }: { ids: string[]; catalo
   return (
     <>
       <div
-        className="flex flex-nowrap gap-2 overflow-x-auto overscroll-x-contain touch-pan-x snap-x snap-mandatory no-scrollbar pb-1"
+        className="flex flex-nowrap gap-2 overflow-x-auto overscroll-x-contain snap-x snap-mandatory no-scrollbar pb-1"
         role="list"
         aria-label="Elementos disponibles"
       >
@@ -210,7 +214,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
       <div className="flex-1 min-h-0 overflow-hidden">
         <div
           onScroll={handleScroll}
-          className="h-full min-h-0 overflow-y-auto overscroll-y-contain touch-pan-y pb-mobile-nav"
+          className="h-full min-h-0 overflow-y-auto overscroll-y-contain pb-mobile-nav"
         >
           <div className="mx-auto w-full max-w-4xl space-y-4 px-3 py-3">
 

@@ -44,13 +44,14 @@ interface CatalogSectionProps {
   onAdd: (item: ImmoCatalogItem) => void;
   onUpdate: (item: ImmoCatalogItem) => void;
   onDelete: (id: string) => void;
-  onReorderAll: (all: ImmoCatalogItem[]) => void;
+  onReorderPreview: (all: ImmoCatalogItem[]) => void;
+  onReorderCommit: () => void;
   allCatalog: ImmoCatalogItem[];
 }
 
 function CatalogSection({
   title, subtitle, icon, items, category,
-  onAdd, onUpdate, onDelete, onReorderAll, allCatalog,
+  onAdd, onUpdate, onDelete, onReorderPreview, onReorderCommit, allCatalog,
 }: CatalogSectionProps) {
   const [newLabel, setNewLabel] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -104,10 +105,13 @@ function CatalogSection({
     reordered.splice(toIdx, 0, reordered.splice(fromIdx, 1)[0]);
     const others = allCatalog.filter((i) => i.category !== category);
     // Preserve other-category items in their original positions
-    onReorderAll([...others, ...reordered]);
+    onReorderPreview([...others, ...reordered]);
   };
 
-  const handleDragEnd = () => setDragId(null);
+  const handleDragEnd = () => {
+    setDragId(null);
+    onReorderCommit();
+  };
 
   return (
     <Card className="flex flex-col">
@@ -268,11 +272,12 @@ interface ImmoSuppliesManagerProps {
   onAdd: (item: ImmoCatalogItem) => void;
   onUpdate: (item: ImmoCatalogItem) => void;
   onDelete: (id: string) => void;
-  onReorderAll: (items: ImmoCatalogItem[]) => void;
+  onReorderPreview: (items: ImmoCatalogItem[]) => void;
+  onReorderCommit: () => void;
 }
 
 export function ImmoSuppliesManager({
-  catalog, onAdd, onUpdate, onDelete, onReorderAll,
+  catalog, onAdd, onUpdate, onDelete, onReorderPreview, onReorderCommit,
 }: ImmoSuppliesManagerProps) {
   const transponders = catalog.filter((i) => i.category === "transponder");
   const equipos = catalog.filter((i) => i.category === "equipo");
@@ -296,7 +301,8 @@ export function ImmoSuppliesManager({
           onAdd={onAdd}
           onUpdate={onUpdate}
           onDelete={onDelete}
-          onReorderAll={onReorderAll}
+          onReorderPreview={onReorderPreview}
+          onReorderCommit={onReorderCommit}
           allCatalog={catalog}
         />
 
@@ -309,7 +315,8 @@ export function ImmoSuppliesManager({
           onAdd={onAdd}
           onUpdate={onUpdate}
           onDelete={onDelete}
-          onReorderAll={onReorderAll}
+          onReorderPreview={onReorderPreview}
+          onReorderCommit={onReorderCommit}
           allCatalog={catalog}
         />
       </div>

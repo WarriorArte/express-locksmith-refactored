@@ -211,6 +211,8 @@ export interface ImmoCatalogItem {
   label: string;
   image?: string;
   category: 'equipo' | 'transponder';
+  /** Orden manual dentro de su categoría (se asigna al reordenar por drag-and-drop). */
+  position?: number;
 }
 
 export interface ImmoGenField {
