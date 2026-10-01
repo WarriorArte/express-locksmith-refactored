@@ -778,18 +778,14 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
 
   const renderResultEntry = (
     entry: { codigo: string; bitting: string[] },
-    delay: number,
     getHighlightState: (flatIdx: number, val: string) => { isWild: boolean; isAdvanced: boolean },
     badge?: "MASTER" | "VALET",
   ) => {
     const axesDisplay = getAxesResult(entry.bitting, profile!.bittingConfig);
     const isSelected = exactEntry?.codigo === entry.codigo && exactEntry?.bitting.join("") === entry.bitting.join("");
     return (
-      <motion.button
+      <button
         key={badge ? `${entry.codigo}-${badge}` : entry.codigo}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay }}
         onClick={() => loadEntry(entry)}
         className={`w-full flex flex-col gap-1.5 px-3 py-2.5 text-left transition-colors ${
           isSelected ? "bg-primary/8" : "hover:bg-muted/60"
@@ -848,7 +844,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
             </div>
           ))}
         </div>
-      </motion.button>
+      </button>
     );
   };
 
@@ -859,7 +855,6 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
    */
   const renderResultPair = (
     entry: KeyResultEntry,
-    delay: number,
     getHighlightStateFor: (e: { codigo: string; bitting: string[] }) => (flatIdx: number, val: string) => { isWild: boolean; isAdvanced: boolean },
     // Si se da, el Valet solo se muestra cuando SU bitting también cumple la búsqueda
     // — que el Master haya coincidido no implica que el Valet también lo haga.
@@ -868,7 +863,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     if (entry.matchSource === "valet") {
       return (
         <Fragment key={`${entry.codigo}-valet-only`}>
-          {renderResultEntry(entry, delay, getHighlightStateFor(entry), "VALET")}
+          {renderResultEntry(entry, getHighlightStateFor(entry), "VALET")}
         </Fragment>
       );
     }
@@ -877,10 +872,10 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     const showValet = valetBitting && (!matchesQuery || matchesQuery(valetBitting));
     return (
       <Fragment key={entry.codigo}>
-        {renderResultEntry(entry, delay, getHighlightStateFor(entry), seriesHasValet ? "MASTER" : undefined)}
+        {renderResultEntry(entry, getHighlightStateFor(entry), seriesHasValet ? "MASTER" : undefined)}
         {showValet && (() => {
           const valetEntry = { codigo: entry.codigo, bitting: valetBitting };
-          return renderResultEntry(valetEntry, delay, getHighlightStateFor(valetEntry), "VALET");
+          return renderResultEntry(valetEntry, getHighlightStateFor(valetEntry), "VALET");
         })()}
       </Fragment>
     );
@@ -901,9 +896,8 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
   // búsquedas posicionales con comodines).
   const renderPartialResults = () => (
     <div className="rounded-lg border border-border overflow-hidden divide-y divide-border">
-      {bittingResults.map((entry, idx) => renderResultPair(
+      {bittingResults.map((entry) => renderResultPair(
         entry,
-        idx * 0.03,
         partialHighlight,
         (bitting) => partialDigits !== "" && bitting.join("").includes(partialDigits),
       ))}
@@ -1437,8 +1431,8 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                         </span>
                       </div>
                       <div className="rounded-lg border border-border overflow-hidden divide-y divide-border">
-                        {group.map((entry, entryIdx) =>
-                          renderResultPair(entry, (groupIdx * 4 + entryIdx) * 0.03, () => (flatIdx, val) => {
+                        {group.map((entry) =>
+                          renderResultPair(entry, () => (flatIdx, val) => {
                             const searchVal = searchValues[flatIdx] ?? "";
                             const isWild = !searchVal.trim() || searchVal === "?";
                             const isAdvanced = advancedMode && !isWild && val !== searchVal;
@@ -1513,8 +1507,8 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                   </span>
                 </div>
                 <div className="rounded-lg border border-border overflow-hidden divide-y divide-border">
-                  {group.map((entry, entryIdx) =>
-                    renderResultPair(entry, (groupIdx * 4 + entryIdx) * 0.03, () => (flatIdx, val) => {
+                  {group.map((entry) =>
+                    renderResultPair(entry, () => (flatIdx, val) => {
                       const searchVal = searchValues[flatIdx] ?? "";
                       const isWild = !searchVal.trim() || searchVal === "?";
                       const isAdvanced = advancedMode && !isWild && val !== searchVal;

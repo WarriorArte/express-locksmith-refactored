@@ -11,10 +11,10 @@ function profileTitle(p: ImmoProfile) {
   return parts.length ? parts.join(" ") : "Immo Info";
 }
 
-function SectionLabel({ icon, text }: { icon: React.ReactNode; text: string }) {
+function SectionLabel({ icon, text, tone = "primary" }: { icon: React.ReactNode; text: string; tone?: "primary" | "warning" }) {
   return (
     <div className="flex items-center gap-1.5 mb-2">
-      <div className="text-primary/60">{icon}</div>
+      <div className={tone === "warning" ? "text-warning/80" : "text-primary/60"}>{icon}</div>
       <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">{text}</span>
       <div className="flex-1 h-px bg-border/60" />
     </div>
@@ -115,12 +115,12 @@ function SelectedChips({ ids, catalog, narrow = false }: { ids: string[]; catalo
   );
 }
 
-function CompactRow({ label, value }: { label: string; value?: string }) {
+function CompactRow({ label, value, inverse = false }: { label: string; value?: string; inverse?: boolean }) {
   return (
     <div className="space-y-0.5">
-      <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground/70 leading-none">{label}</p>
-      <p className="text-xs text-foreground font-mono break-all leading-snug">
-        {value ? value : <span className="text-muted-foreground/50 italic">—</span>}
+      <p className={`text-[9px] font-bold uppercase tracking-wide leading-none ${inverse ? "text-[hsl(240_22%_95%_/_0.58)]" : "text-muted-foreground/70"}`}>{label}</p>
+      <p className={`text-xs font-mono break-all leading-snug ${inverse ? "text-[hsl(240_22%_95%)]" : "text-foreground"}`}>
+        {value ? value : <span className={inverse ? "text-[hsl(240_22%_95%_/_0.42)] italic" : "text-muted-foreground/50 italic"}>—</span>}
       </p>
     </div>
   );
@@ -168,7 +168,6 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
   const overviewGridTemplate = useMotionTemplate`minmax(0, ${imageFr}fr) minmax(0, ${detailFr}fr)`;
   const overviewPadding = useTransform(mergeProgress, [0, 1], [0, 8]);
   const overviewPaddingStyle = useMotionTemplate`${overviewPadding}px`;
-  const overviewScale = useTransform(mergeProgress, [0, 1], [1, 0.985]);
   const imageMaxHeight = useTransform(mergeProgress, [0, 1], [208, 150]);
   const imageMaxHeightStyle = useMotionTemplate`${imageMaxHeight}px`;
   // Frec./Bat.: apiladas en reposo, se deslizan a 2 columnas con el scroll.
@@ -193,96 +192,102 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden max-w-2xl md:max-w-4xl mx-auto w-full">
-      {/* Sticky header */}
-      <div className="sticky top-0 z-10 flex items-center gap-3 px-4 py-3 bg-background/95 backdrop-blur-sm border-b border-border shrink-0">
-        <button onClick={onBack} className="flex items-center justify-center w-9 h-9 rounded-full bg-muted hover:bg-muted/80 transition-colors shrink-0">
-          <ArrowLeft className="w-4 h-4" />
-        </button>
-        <div className="min-w-0 flex-1">
-          <p className="text-xs text-muted-foreground leading-none mb-0.5">Immo Info</p>
-          <h2 className="text-sm font-bold text-foreground truncate leading-tight">
-            {vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : title}
-          </h2>
-        </div>
-        <div className="flex items-center justify-center w-9 h-9 rounded-full bg-primary/10 shrink-0">
-          <Cpu className="w-4 h-4 text-primary" />
-        </div>
-      </div>
-
+    <div className="flex h-full min-h-0 flex-col overflow-hidden max-w-2xl md:max-w-4xl mx-auto w-full bg-background">
       {/* Body — scrollable overview and details */}
       <div className="flex-1 min-h-0 overflow-hidden">
         <div
           onScroll={handleScroll}
           className="h-full min-h-0 overflow-y-auto overscroll-y-contain pb-mobile-nav"
         >
-          <div className="mx-auto w-full max-w-4xl space-y-4 px-3 py-3">
+          <div className="mx-auto w-full max-w-4xl space-y-4 px-3 pb-3">
 
-          {/* Overview: imagen y detalles siempre en fila; se fusionan/compactan de forma continua con el scroll */}
-          <motion.div
-            style={{
-              gridTemplateColumns: overviewGridTemplate,
-              padding: overviewPaddingStyle,
-              scale: overviewScale,
-            }}
-            className="sticky top-0 z-20 grid items-start gap-3"
-          >
+          {/* Header + overview: el hero termina exactamente después de los detalles del remoto. */}
+          <div className="ce-hero sticky top-0 z-30 -mx-3 overflow-hidden max-lg:rounded-t-none max-lg:rounded-b-[24px] max-lg:border-t-0 max-lg:border-x-0">
+            <div className="flex items-start justify-between gap-4 bg-transparent px-4 py-3.5 text-[hsl(240_22%_95%)]">
+              <div className="min-w-0 flex-1">
+                <button
+                  type="button"
+                  onClick={onBack}
+                  aria-label="Volver a herramientas"
+                  className="ce-hero-eyebrow inline-flex items-center gap-1.5 transition-opacity hover:opacity-70"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" />
+                  Immo Info
+                </button>
+                <h2 className="ce-hero-title mt-1.5 text-[clamp(1.55rem,5.4vw,2.15rem)] lg:mt-2 lg:text-[clamp(1.75rem,3vw,2.5rem)]">
+                  {vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : title}
+                </h2>
+              </div>
+              <div className="mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[0_0_18px_hsl(var(--primary)/0.25)]">
+                <Cpu className="h-5 w-5" />
+              </div>
+            </div>
+
+            {/* Overview: imagen y detalles siempre en fila; se fusionan/compactan de forma continua con el scroll. */}
             <motion.div
-              aria-hidden
-              className="pointer-events-none absolute -inset-x-3 inset-y-0 -z-10 border-b border-border/80 bg-background/95 shadow-md backdrop-blur-sm"
-              style={{ opacity: mergeProgress }}
-            />
-
+              style={{
+                gridTemplateColumns: overviewGridTemplate,
+                paddingTop: "0px",
+                paddingBottom: overviewPaddingStyle,
+                paddingLeft: "12px",
+                paddingRight: "12px",
+              }}
+              className="grid items-start gap-3 overflow-hidden bg-transparent md:gap-4"
+            >
             {profile.mainImage && (
               <button
                 type="button"
                 onClick={() => setMainImageViewerOpen(true)}
                 aria-label={`Ver ${title} ampliado`}
-                className="flex min-h-0 items-start justify-center overflow-hidden rounded-xl bg-muted/30 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="flex min-h-0 items-start justify-center overflow-hidden rounded-xl bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
-                <motion.img
-                  src={resolveStorageUrl(profile.mainImage) ?? undefined}
-                  alt={title}
-                  className="w-full object-contain"
-                  style={{ maxHeight: imageMaxHeightStyle }}
-                />
+              <motion.img
+                src={resolveStorageUrl(profile.mainImage) ?? undefined}
+                alt={title}
+                className="w-full object-contain drop-shadow-sm"
+                style={{ maxHeight: imageMaxHeightStyle }}
+              />
               </button>
             )}
 
-            <section className="min-w-0">
-              <SectionLabel icon={<Radio className="w-3 h-3" />} text="Detalles del Remoto" />
-              <div className="rounded-xl border border-border overflow-hidden">
+            <section className="min-w-0 md:pl-4">
+              <div className="overflow-hidden rounded-xl bg-transparent">
+                <div className="flex items-center gap-2 px-3 py-2.5">
+                  <Radio className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[hsl(240_22%_95%)]">Detalles del Remoto</span>
+                </div>
                 {profile.fccId && (
-                  <div className="px-3 py-2 border-b border-border/50">
-                    <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground/70 leading-none mb-0.5">FCC ID</p>
-                    <p className="text-sm text-foreground font-mono break-all font-semibold leading-snug">{profile.fccId}</p>
+                  <div className="px-3 py-2">
+                    <p className="mb-0.5 text-[9px] font-bold uppercase tracking-wide leading-none text-[hsl(240_22%_95%_/_0.58)]">FCC ID</p>
+                    <p className="break-all font-mono text-sm font-semibold leading-snug text-[hsl(240_22%_95%)]">{profile.fccId}</p>
                   </div>
                 )}
-                <div className="divide-y divide-border/50">
+                <div>
                   <div className="px-3 py-2">
-                    <CompactRow label="Marca" value={profile.marca} />
+                    <CompactRow label="Marca" value={profile.marca} inverse />
                   </div>
                   <motion.div className="relative" style={{ height: detailRowsHeightStyle }}>
                     <motion.div className="absolute left-0 top-0 min-w-0" style={{ width: detailColWidthStyle }}>
                       <div className="px-3 py-2">
-                        <CompactRow label="Frec." value={profile.frecuencia} />
+                        <CompactRow label="Frec." value={profile.frecuencia} inverse />
                       </div>
                     </motion.div>
                     <motion.div className="absolute min-w-0" style={{ width: detailColWidthStyle, left: batLeftStyle, top: batTopStyle }}>
                       <div className="px-3 py-2">
-                        <CompactRow label="Bat." value={profile.bateria} />
+                        <CompactRow label="Bat." value={profile.bateria} inverse />
                       </div>
                     </motion.div>
                   </motion.div>
                 </div>
               </div>
             </section>
-          </motion.div>
+            </motion.div>
+          </div>
 
           {/* Generación de Remoto + Transponder — unified card */}
 
           {(hasGenFields || hasTransponderInfo || hasGeneradoCon) && (
-            <div className="rounded-xl border border-border overflow-hidden">
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
               {/* Top 2-col row: Generación | Transponder */}
               {(hasGenFields || hasTransponderInfo) && (
                 <div className={`grid items-start ${bothCols && hasTransponderInfo ? "grid-cols-2 divide-x divide-border" : "grid-cols-1"}`}>
@@ -300,9 +305,9 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
                     </div>
                   )}
                   {hasTransponderInfo && (
-                    <div className="p-2.5 space-y-2.5">
+                    <div className="p-2.5 space-y-2.5 bg-accent/5">
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <Cpu className="w-3 h-3 text-primary/60 shrink-0" />
+                        <Cpu className="w-3 h-3 text-accent shrink-0" />
                         <span className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground leading-none truncate">Transponder</span>
                       </div>
                       {hasTransponder && <CompactRow label="Tipo" value={detail!.transponder} />}
@@ -319,7 +324,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
 
               {/* Full-width "Se genera con" row — chips span the full card width */}
               {hasGeneradoCon && (
-                <div className={`px-2.5 pb-2.5 space-y-1.5 ${(hasGenFields || hasTransponderInfo) ? "border-t border-border pt-2.5" : "pt-2.5"}`}>
+                <div className={`px-2.5 pb-2.5 pt-2.5 space-y-1.5 bg-muted/30 ${(hasGenFields || hasTransponderInfo) ? "border-t border-border" : ""}`}>
                   <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground/70 leading-none">Se genera con</p>
                   <SelectedChips ids={generadoConIds} catalog={catalog} />
                 </div>
@@ -331,7 +336,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
           {hasProgramacion && (
             <section>
               <SectionLabel icon={<ShieldCheck className="w-3 h-3" />} text="Detalles de Programación" />
-              <div className="space-y-3">
+              <div className="rounded-xl border border-border bg-card p-3 space-y-3">
                 {hasEquiposRemoto && (
                   <div className="space-y-1.5">
                     <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground/70 leading-none">Equipos — Remoto</p>
@@ -361,7 +366,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
                 {detail?.procedimientoProgramacion?.trim() && (
                   <div className="space-y-1.5">
                     <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground/70 leading-none">Procedimiento</p>
-                    <div className="rounded-xl bg-muted/30 border border-border p-3">
+                    <div className="rounded-lg bg-muted/40 border border-border/70 p-3">
                       <FormattedText text={detail.procedimientoProgramacion} className="text-sm text-foreground leading-relaxed space-y-1" />
                     </div>
                   </div>
@@ -373,8 +378,8 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
           {/* Notas Generales */}
           {hasNotasGenerales && (
             <section>
-              <SectionLabel icon={<StickyNote className="w-3 h-3" />} text="Notas Generales" />
-              <div className="rounded-xl bg-muted/30 border border-border p-3">
+              <SectionLabel icon={<StickyNote className="w-3 h-3" />} text="Notas Generales" tone="warning" />
+              <div className="rounded-xl bg-warning-light/40 border border-warning/25 p-3">
                 <FormattedText text={detail!.notasGenerales!} className="text-sm text-foreground leading-relaxed space-y-1" />
               </div>
             </section>
