@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { m as motion, useMotionTemplate, useMotionValue, useTransform } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { m as motion, useMotionTemplate, useMotionValue, useTransform, type MotionValue } from "framer-motion";
 import { ArrowLeft, Cpu, Radio, Wrench, ShieldCheck, Check, StickyNote } from "lucide-react";
+import { AccountMenu } from "@/components/layout/AccountMenu";
 import { ImageViewDialog } from "@/components/shared/ImageViewDialog";
 import { FormattedText } from "@/components/herramientas/RichTextField";
 import { resolveStorageUrl } from "@/lib/phpApi";
@@ -115,13 +116,26 @@ function SelectedChips({ ids, catalog, narrow = false }: { ids: string[]; catalo
   );
 }
 
-function CompactRow({ label, value, inverse = false }: { label: string; value?: string; inverse?: boolean }) {
+function CompactRow({
+  label, value, inverse = false, labelFontSize, valueFontSize,
+}: {
+  label: string; value?: string; inverse?: boolean;
+  labelFontSize?: MotionValue<string>; valueFontSize?: MotionValue<string>;
+}) {
   return (
     <div className="space-y-0.5">
-      <p className={`text-[9px] font-bold uppercase tracking-wide leading-none ${inverse ? "text-[hsl(240_22%_95%_/_0.58)]" : "text-muted-foreground/70"}`}>{label}</p>
-      <p className={`text-xs font-mono break-all leading-snug ${inverse ? "text-[hsl(240_22%_95%)]" : "text-foreground"}`}>
+      <motion.p
+        style={labelFontSize ? { fontSize: labelFontSize } : undefined}
+        className={`text-[9px] font-bold uppercase tracking-wide leading-none ${inverse ? "text-[hsl(240_22%_95%_/_0.58)]" : "text-muted-foreground/70"}`}
+      >
+        {label}
+      </motion.p>
+      <motion.p
+        style={valueFontSize ? { fontSize: valueFontSize } : undefined}
+        className={`text-xs font-mono break-all leading-snug ${inverse ? "text-[hsl(240_22%_95%)]" : "text-foreground"}`}
+      >
         {value ? value : <span className={inverse ? "text-[hsl(240_22%_95%_/_0.42)] italic" : "text-muted-foreground/50 italic"}>—</span>}
-      </p>
+      </motion.p>
     </div>
   );
 }
@@ -142,6 +156,43 @@ const OVERVIEW_MERGE_RANGE = 96;
 export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: ImmoWorkspaceProps) {
   const title = profileTitle(profile);
   const [mainImageViewerOpen, setMainImageViewerOpen] = useState(false);
+  // La imagen debe dar siempre el alto real de la tarjeta "Detalles del Remoto"
+  // (que a su vez se encoge con el scroll por los textos más chicos). Un simple
+  // `items-stretch` + `h-full` en la imagen no sirve aquí: dentro de un grid con
+  // fila "auto", un <img> con alto en porcentaje puede inflar la fila entera al
+  // tamaño natural de la foto en vez de respetar el stretch — por eso se mide el
+  // alto real de los detalles con ResizeObserver y se aplica como alto explícito.
+  const detailsRef = useRef<HTMLDivElement>(null);
+  const [detailsHeight, setDetailsHeight] = useState<number | undefined>(undefined);
+  useEffect(() => {
+    const el = detailsRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) setDetailsHeight(entry.contentRect.height);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  // El FCC ID siempre va en una sola línea: en vez de envolver el texto (break-all),
+  // se mide su ancho natural contra el ancho disponible y se achica con un `scale`
+  // justo lo necesario para que quepa completo sin desbordarse.
+  const fccWrapRef = useRef<HTMLDivElement>(null);
+  const fccTextRef = useRef<HTMLParagraphElement>(null);
+  const [fccFitScale, setFccFitScale] = useState(1);
+  useEffect(() => {
+    const wrap = fccWrapRef.current;
+    const text = fccTextRef.current;
+    if (!wrap || !text) return;
+    const measure = () => {
+      const available = wrap.clientWidth;
+      const natural = text.scrollWidth;
+      setFccFitScale(available > 0 && natural > available ? available / natural : 1);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(wrap);
+    return () => observer.disconnect();
+  }, [profile.fccId]);
   const generacionRemoto = profile.generacionRemoto ?? [];
   const hasGenFields = generacionRemoto.some((f) => f.value.trim());
 
@@ -163,30 +214,21 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
   // Progreso continuo de scroll (0 → 1): nada de estado ni umbral, solo sigue el dedo.
   const scrollTop = useMotionValue(0);
   const mergeProgress = useTransform(scrollTop, [0, OVERVIEW_MERGE_RANGE], [0, 1], { clamp: true });
-  const imageFr = useTransform(mergeProgress, [0, 1], [1, 0.78]);
-  const detailFr = useTransform(mergeProgress, [0, 1], [1, 1.22]);
-  const overviewGridTemplate = useMotionTemplate`minmax(0, ${imageFr}fr) minmax(0, ${detailFr}fr)`;
-  const overviewPadding = useTransform(mergeProgress, [0, 1], [0, 8]);
-  const overviewPaddingStyle = useMotionTemplate`${overviewPadding}px`;
-  const imageMaxHeight = useTransform(mergeProgress, [0, 1], [208, 150]);
-  const imageMaxHeightStyle = useMotionTemplate`${imageMaxHeight}px`;
-  // Frec./Bat.: apiladas en reposo, se deslizan a 2 columnas con el scroll.
-  // Un grid no puede interpolar "1 columna" → "2 columnas" sin saltar (cambia cuántas
-  // filas hay), así que en vez de eso las dos filas quedan posicionadas de forma absoluta
-  // y se mueve/encoge cada una con motion values: nada de remounts ni cross-fades, solo
-  // tamaño y posición cambiando cuadro a cuadro en sincronía con el scroll real.
-  const DETAIL_ROW_H = 48; // px, alto fijo de cada fila (contenido corto y constante)
-  const DETAIL_COL_GAP = 12; // px, separación cuando terminan lado a lado
-  const detailRowsHeight = useTransform(mergeProgress, [0, 1], [DETAIL_ROW_H * 2, DETAIL_ROW_H]);
-  const detailRowsHeightStyle = useMotionTemplate`${detailRowsHeight}px`;
-  const detailColWidthPct = useTransform(mergeProgress, [0, 1], [100, 50]);
-  const detailGapHalf = useTransform(mergeProgress, [0, 1], [0, DETAIL_COL_GAP / 2]);
-  const detailColWidthStyle = useMotionTemplate`calc(${detailColWidthPct}% - ${detailGapHalf}px)`;
-  const batLeftPct = useTransform(mergeProgress, [0, 1], [0, 50]);
-  const batLeftStyle = useMotionTemplate`calc(${batLeftPct}% + ${detailGapHalf}px)`;
-  const batTop = useTransform(mergeProgress, [0, 1], [DETAIL_ROW_H, 0]);
-  const batTopStyle = useMotionTemplate`${batTop}px`;
-
+  // El padding vertical y la altura de la imagen son lo que hace que el hero se
+  // vea "más pequeño" al hacer scroll (el padding horizontal se queda fijo, igual
+  // que en los demás heroes, para que el contenido no se desplace de lado).
+  const heroVerticalPadding = useTransform(mergeProgress, [0, 1], [22, 12]);
+  const heroVerticalPaddingStyle = useMotionTemplate`${heroVerticalPadding}px`;
+  const overviewMarginTop = useTransform(mergeProgress, [0, 1], [16, 8]);
+  const overviewMarginTopStyle = useMotionTemplate`${overviewMarginTop}px`;
+  // Los textos de "Detalles del Remoto" (FCC ID, Marca, Frec., Bat.) también se
+  // encogen junto con la imagen, para que el hero realmente baje de alto.
+  const detailLabelFontSize = useTransform(mergeProgress, [0, 1], [9, 7.5]);
+  const detailLabelFontSizeStyle = useMotionTemplate`${detailLabelFontSize}px`;
+  const detailValueFontSize = useTransform(mergeProgress, [0, 1], [12, 10]);
+  const detailValueFontSizeStyle = useMotionTemplate`${detailValueFontSize}px`;
+  const fccValueFontSize = useTransform(mergeProgress, [0, 1], [14, 11]);
+  const fccValueFontSizeStyle = useMotionTemplate`${fccValueFontSize}px`;
   const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
     scrollTop.set(event.currentTarget.scrollTop);
   };
@@ -198,12 +240,19 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
         <div
           onScroll={handleScroll}
           className="h-full min-h-0 overflow-y-auto overscroll-y-contain pb-mobile-nav"
+          style={{ overflowAnchor: "none" }}
         >
           <div className="mx-auto w-full max-w-4xl space-y-4 px-3 pb-3">
 
-          {/* Header + overview: el hero termina exactamente después de los detalles del remoto. */}
-          <div className="ce-hero sticky top-0 z-30 -mx-3 overflow-hidden max-lg:rounded-t-none max-lg:rounded-b-[24px] max-lg:border-t-0 max-lg:border-x-0">
-            <div className="flex items-start justify-between gap-4 bg-transparent px-4 py-3.5 text-[hsl(240_22%_95%)]">
+          {/* Header + overview: un solo hero (mismo ce-hero-eyebrow/ce-hero-title/ícono que
+              los demás heroes de la app), que se compacta de forma continua con el scroll
+              en vez de quedarse fijo — todo comparte el mismo padding del hero, así que
+              el título de arriba y la imagen/detalles de abajo quedan alineados entre sí. */}
+          <motion.div
+            style={{ paddingTop: heroVerticalPaddingStyle, paddingBottom: heroVerticalPaddingStyle }}
+            className="ce-hero sticky top-0 z-30 max-lg:-mx-3 overflow-hidden px-4 max-lg:rounded-t-none max-lg:rounded-b-[24px] max-lg:border-t-0 max-lg:border-x-0 lg:px-[22px]"
+          >
+            <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
                 <button
                   type="button"
@@ -215,74 +264,77 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
                   Immo Info
                 </button>
                 <h2 className="ce-hero-title mt-1.5 text-[clamp(1.55rem,5.4vw,2.15rem)] lg:mt-2 lg:text-[clamp(1.75rem,3vw,2.5rem)]">
-                  {vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : title}
+                  {vehicle ? `${vehicle.make} ${vehicle.model}` : title}
                 </h2>
               </div>
-              <div className="mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[0_0_18px_hsl(var(--primary)/0.25)]">
-                <Cpu className="h-5 w-5" />
+              <div className="shrink-0 mt-1">
+                <AccountMenu />
               </div>
             </div>
 
-            {/* Overview: imagen y detalles siempre en fila; se fusionan/compactan de forma continua con el scroll. */}
+            {/* Overview: imagen y detalles siempre en fila; la imagen toma el alto medido
+                real de la tarjeta de detalles, así que se encoge junto con ella. */}
             <motion.div
-              style={{
-                gridTemplateColumns: overviewGridTemplate,
-                paddingTop: "0px",
-                paddingBottom: overviewPaddingStyle,
-                paddingLeft: "12px",
-                paddingRight: "12px",
-              }}
-              className="grid items-start gap-3 overflow-hidden bg-transparent md:gap-4"
+              style={{ marginTop: overviewMarginTopStyle }}
+              className={`grid items-start gap-3 md:gap-4 ${profile.mainImage ? "grid-cols-2" : "grid-cols-1"}`}
             >
             {profile.mainImage && (
               <button
                 type="button"
                 onClick={() => setMainImageViewerOpen(true)}
                 aria-label={`Ver ${title} ampliado`}
-                className="flex min-h-0 items-start justify-center overflow-hidden rounded-xl bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="flex min-h-0 items-center justify-center overflow-hidden rounded-xl bg-white/5 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                style={{ height: detailsHeight ?? 168 }}
               >
-              <motion.img
+              <img
                 src={resolveStorageUrl(profile.mainImage) ?? undefined}
                 alt={title}
-                className="w-full object-contain drop-shadow-sm"
-                style={{ maxHeight: imageMaxHeightStyle }}
+                className="h-full w-full object-contain drop-shadow-sm"
               />
               </button>
             )}
 
-            <section className="min-w-0 md:pl-4">
-              <div className="overflow-hidden rounded-xl bg-transparent">
+            <section ref={detailsRef} className="min-w-0 md:pl-4">
+              <div className="overflow-hidden rounded-xl">
                 <div className="flex items-center gap-2 px-3 py-2.5">
                   <Radio className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[hsl(240_22%_95%)]">Detalles del Remoto</span>
+                  <motion.span
+                    style={{ fontSize: detailLabelFontSizeStyle }}
+                    className="whitespace-nowrap font-bold uppercase tracking-[0.08em] text-[hsl(240_22%_95%)]"
+                  >
+                    Detalles del Remoto
+                  </motion.span>
                 </div>
                 {profile.fccId && (
-                  <div className="px-3 py-2">
-                    <p className="mb-0.5 text-[9px] font-bold uppercase tracking-wide leading-none text-[hsl(240_22%_95%_/_0.58)]">FCC ID</p>
-                    <p className="break-all font-mono text-sm font-semibold leading-snug text-[hsl(240_22%_95%)]">{profile.fccId}</p>
+                  <div className="border-t border-white/10 px-3 py-2">
+                    <motion.p
+                      style={{ fontSize: detailLabelFontSizeStyle }}
+                      className="mb-0.5 font-bold uppercase tracking-wide leading-none text-[hsl(240_22%_95%_/_0.58)]"
+                    >
+                      FCC ID
+                    </motion.p>
+                    <div ref={fccWrapRef} className="overflow-hidden">
+                      <motion.p
+                        ref={fccTextRef}
+                        style={{ fontSize: fccValueFontSizeStyle, scale: fccFitScale, transformOrigin: "left" }}
+                        className="inline-block whitespace-nowrap font-mono font-semibold leading-snug text-[hsl(240_22%_95%)]"
+                      >
+                        {profile.fccId}
+                      </motion.p>
+                    </div>
                   </div>
                 )}
-                <div>
-                  <div className="px-3 py-2">
-                    <CompactRow label="Marca" value={profile.marca} inverse />
-                  </div>
-                  <motion.div className="relative" style={{ height: detailRowsHeightStyle }}>
-                    <motion.div className="absolute left-0 top-0 min-w-0" style={{ width: detailColWidthStyle }}>
-                      <div className="px-3 py-2">
-                        <CompactRow label="Frec." value={profile.frecuencia} inverse />
-                      </div>
-                    </motion.div>
-                    <motion.div className="absolute min-w-0" style={{ width: detailColWidthStyle, left: batLeftStyle, top: batTopStyle }}>
-                      <div className="px-3 py-2">
-                        <CompactRow label="Bat." value={profile.bateria} inverse />
-                      </div>
-                    </motion.div>
-                  </motion.div>
+                <div className="border-t border-white/10 px-3 py-2">
+                  <CompactRow label="Año" value={vehicle?.year?.toString()} inverse labelFontSize={detailLabelFontSizeStyle} valueFontSize={detailValueFontSizeStyle} />
+                </div>
+                <div className="grid grid-cols-2 gap-3 border-t border-white/10 px-3 py-2">
+                  <CompactRow label="Frec." value={profile.frecuencia} inverse labelFontSize={detailLabelFontSizeStyle} valueFontSize={detailValueFontSizeStyle} />
+                  <CompactRow label="Bat." value={profile.bateria} inverse labelFontSize={detailLabelFontSizeStyle} valueFontSize={detailValueFontSizeStyle} />
                 </div>
               </div>
             </section>
             </motion.div>
-          </div>
+          </motion.div>
 
           {/* Generación de Remoto + Transponder — unified card */}
 
