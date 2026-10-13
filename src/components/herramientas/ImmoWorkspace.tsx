@@ -209,6 +209,8 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
     detail?.programacionManual || detail?.programacionOBD ||
     !!(detail?.procedimientoProgramacion?.trim());
   const hasNotasGenerales = !!(detail?.notasGenerales?.trim());
+  const hasProcedimiento = !!(detail?.procedimientoProgramacion?.trim());
+  const hasProgramacionBadges = !!(detail?.programacionManual || detail?.programacionOBD);
   const bothCols = hasGenFields && (hasTransponderInfo || hasGeneradoCon);
 
   // Progreso continuo de scroll (0 → 1): nada de estado ni umbral, solo sigue el dedo.
@@ -389,37 +391,39 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
             <section>
               <SectionLabel icon={<ShieldCheck className="w-3 h-3" />} text="Detalles de Programación" />
               <div className="rounded-xl border border-border bg-card p-3 space-y-3">
-                {hasEquiposRemoto && (
-                  <div className="space-y-1.5">
-                    <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground/70 leading-none">Equipos — Remoto</p>
-                    <SelectedChips ids={equiposRemotoIds} catalog={catalog} />
-                  </div>
-                )}
                 {hasEquiposTransponder && (
                   <div className="space-y-1.5">
-                    <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground/70 leading-none">Equipos — Transponder</p>
+                    <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground/70 leading-none">El transponder se programa con</p>
                     <SelectedChips ids={equiposTransponderIds} catalog={catalog} />
                   </div>
                 )}
-                {(detail?.programacionManual || detail?.programacionOBD) && (
-                  <div className="flex flex-wrap gap-2">
-                    {detail?.programacionManual && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold">
-                        <Check className="w-3 h-3" /> Programación Manual
-                      </span>
-                    )}
-                    {detail?.programacionOBD && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary dark:text-primary border border-primary/20 text-xs font-semibold">
-                        <Check className="w-3 h-3" /> Programación OBD
-                      </span>
-                    )}
+                {hasEquiposRemoto && (
+                  <div className="space-y-1.5">
+                    <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground/70 leading-none">Este remoto se programa con</p>
+                    <SelectedChips ids={equiposRemotoIds} catalog={catalog} />
                   </div>
                 )}
-                {detail?.procedimientoProgramacion?.trim() && (
+                {(hasProcedimiento || hasProgramacionBadges) && (
                   <div className="space-y-1.5">
-                    <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground/70 leading-none">Procedimiento</p>
-                    <div className="rounded-lg bg-muted/40 border border-border/70 p-3">
-                      <FormattedText text={detail.procedimientoProgramacion} className="text-sm text-foreground leading-relaxed space-y-1" />
+                    <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground/70 leading-none">Procedimiento de programación del remoto</p>
+                    <div className="rounded-lg bg-muted/40 border border-border/70 p-3 space-y-3">
+                      {hasProgramacionBadges && (
+                        <div className="flex flex-wrap gap-2">
+                          {detail?.programacionManual && (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold">
+                              <Check className="w-3 h-3" /> Programación Manual
+                            </span>
+                          )}
+                          {detail?.programacionOBD && (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary dark:text-primary border border-primary/20 text-xs font-semibold">
+                              <Check className="w-3 h-3" /> Programación OBD
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {hasProcedimiento && (
+                        <FormattedText text={detail!.procedimientoProgramacion} className="text-sm text-foreground leading-relaxed space-y-1" />
+                      )}
                     </div>
                   </div>
                 )}
