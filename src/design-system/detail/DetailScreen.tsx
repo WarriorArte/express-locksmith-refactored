@@ -56,7 +56,7 @@ export function DetailScreen({
         className="h-full min-h-0 overflow-y-auto overscroll-y-contain pb-mobile-nav"
         style={{ overflowAnchor: "none" }}
       >
-        <div className="sticky top-0 z-30 px-2 pb-2 pt-10 lg:pt-3">
+        <div className="sticky top-0 z-30 px-3 pb-2 pt-11 lg:px-4 lg:pt-4">
           <motion.div aria-hidden="true" style={{ opacity: barBackground }} className="absolute inset-0 bg-background shadow-sm" />
           <ModuleHeader title={title} subtitle={meta} onBack={onBack} backLabel={backLabel} actions={actions} accountTrigger={<AccountMenu />} />
         </div>

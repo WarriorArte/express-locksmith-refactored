@@ -337,17 +337,10 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
             subtitle={vehicleSelected ? String(selectedYear) : selectedCategory || "Año · Marca · Modelo"}
             onBack={vehicleSelected ? clearVehicle : undefined}
             backLabel={vehicleSelected ? "Volver a elegir vehículo" : "Volver al inicio"}
+            action={vehicleSelected ? <Button variant="secondary" size="sm" className="rounded-full" onClick={() => setSelectedModel("")}>Cambiar modelo</Button> : undefined}
+            mobileAction={vehicleSelected ? <Button variant="secondary" size="sm" className="rounded-full px-3" onClick={() => setSelectedModel("")}>Cambiar</Button> : undefined}
           >
-            {vehicleSelected ? (
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Button variant="secondary" size="sm" onClick={() => setSelectedModel("")}>
-                  Cambiar modelo
-                </Button>
-                <Button variant="ghost" size="sm" onClick={clearVehicle}>
-                  Otro vehículo
-                </Button>
-              </div>
-            ) : !hasAnyTool ? (
+            {vehicleSelected ? null : !hasAnyTool ? (
               <p className="mt-3 text-[15px] text-muted-foreground">No tienes herramientas asignadas en este taller.</p>
             ) : availableYears.length === 0 && !selectedCategory ? (
               <p className="mt-3 text-[15px] text-muted-foreground">

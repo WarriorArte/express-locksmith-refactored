@@ -974,7 +974,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     <div className="h-full flex flex-col">
 
       {/* ── Barra superior + protagonista + búsqueda por código ── */}
-      <div className="shrink-0 px-4 pt-10 lg:px-6 lg:pt-3">
+      <div className="shrink-0 px-5 pt-11 lg:px-6 lg:pt-4">
         <ModuleHeader className="-mx-2" title={seriesName} subtitle={vehicleLine} onBack={onBack} backLabel={previewMode ? "Salir de la prueba" : "Volver a vehículos"} backIcon={previewMode ? <X className="!h-6 !w-6" /> : undefined} accountTrigger={!previewMode ? <AccountMenu /> : undefined} />
 
         {/* El código encontrado es el protagonista: grande y copiable */}
