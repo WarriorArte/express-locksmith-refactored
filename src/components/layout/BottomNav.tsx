@@ -126,9 +126,9 @@ export function BottomNav() {
           curva de resorte) porque LazyMotion usa domAnimation, sin layout. */}
       <nav
         aria-label="Navegación principal"
-        className="pointer-events-none fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 flex items-center gap-3 lg:hidden"
+        className="pointer-events-none fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 flex items-center gap-3 max-[360px]:inset-x-2 max-[360px]:gap-2 lg:hidden"
       >
-        <div className="pointer-events-auto flex h-16 min-w-0 flex-1 items-center gap-1 rounded-full bg-card px-2 shadow-[0_6px_20px_-6px_hsl(var(--foreground)/0.22),0_2px_6px_-2px_hsl(var(--foreground)/0.12)] dark:bg-popover dark:shadow-[0_8px_24px_-6px_hsl(0_0%_0%/0.6)]">
+        <div className="pointer-events-auto flex h-16 min-w-0 flex-1 items-center gap-1 rounded-full bg-card px-2 max-[360px]:px-1.5 shadow-[0_6px_20px_-6px_hsl(var(--foreground)/0.22),0_2px_6px_-2px_hsl(var(--foreground)/0.12)] dark:bg-popover dark:shadow-[0_8px_24px_-6px_hsl(0_0%_0%/0.6)]">
           {filteredNavItems.map((item) => (
             <NavItemButton key={item.to} item={item} active={isItemActive(item.to)} />
           ))}
@@ -139,11 +139,11 @@ export function BottomNav() {
             type="button"
             onClick={handleFabClick}
             aria-label={directAction ? "Crear" : "Acciones rápidas"}
-            className="group pointer-events-auto relative flex h-16 w-16 shrink-0 items-center justify-center drop-shadow-[0_6px_14px_hsl(var(--primary)/0.35)] dark:drop-shadow-[0_6px_16px_hsl(0_0%_0%/0.55)]"
+            className="group pointer-events-auto relative flex h-16 w-16 shrink-0 items-center justify-center max-[360px]:h-14 max-[360px]:w-14 drop-shadow-[0_6px_14px_hsl(var(--primary)/0.35)] dark:drop-shadow-[0_6px_16px_hsl(0_0%_0%/0.55)]"
           >
             <MaterialShape
               name="cookie9"
-              className="h-16 w-16 text-primary transition-transform duration-500 ease-spring group-active:rotate-45 group-active:scale-95"
+              className="h-16 w-16 max-[360px]:h-14 max-[360px]:w-14 text-primary transition-transform duration-500 ease-spring group-active:rotate-45 group-active:scale-95"
             >
               <Plus className="h-7 w-7 text-primary-foreground" strokeWidth={2.4} />
             </MaterialShape>
@@ -203,15 +203,15 @@ function NavItemButton({ item, active }: { item: Pick<NavItem, "to" | "icon" | "
         if (active) e.preventDefault();
       }}
       onPointerDown={spawnRipple}
-      className={`relative flex h-12 min-w-12 items-center justify-center overflow-hidden rounded-full transition-[flex-grow,background-color,color] duration-500 ease-spring ${
-        active ? "grow-[2.6] bg-accent px-3 text-accent-foreground" : "grow text-muted-foreground"
+      className={`relative flex h-12 items-center justify-center overflow-hidden rounded-full transition-[flex-grow,background-color,color] duration-500 ease-spring ${
+        active ? "min-w-max shrink-0 grow-[2.6] bg-accent px-3 max-[360px]:px-2 text-accent-foreground" : "min-w-9 basis-0 grow text-muted-foreground"
       }`}
     >
-      <Icon className="h-6 w-6 shrink-0" strokeWidth={active ? 2.2 : 1.9} />
+      <Icon className="h-6 w-6 shrink-0 max-[360px]:h-5 max-[360px]:w-5" strokeWidth={active ? 2.2 : 1.9} />
       <span
         aria-hidden="true"
-        className={`overflow-hidden whitespace-nowrap text-sm font-semibold transition-[max-width,opacity,margin] duration-500 ease-emphasized ${
-          active ? "ml-2 max-w-[7.5rem] opacity-100" : "ml-0 max-w-0 opacity-0"
+        className={`overflow-hidden whitespace-nowrap text-sm max-[360px]:text-xs font-semibold transition-[max-width,opacity,margin] duration-500 ease-emphasized ${
+          active ? "ml-2 shrink-0 max-w-[7.5rem] opacity-100 max-[360px]:ml-1.5" : "ml-0 max-w-0 opacity-0"
         }`}
       >
         {item.label}
