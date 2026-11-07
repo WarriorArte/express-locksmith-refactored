@@ -157,10 +157,9 @@ Los carruseles de imágenes y perfiles mantienen el espacio interior de la secci
 
 ### 4.3 Color
 
-- **Prueba vigente:** violeta y ámbar, elegida por el usuario a partir de su tercera referencia; sustituye el celeste sin alterar formas ni animaciones. Colores base: fondo `#F5F6FC`, violeta `#8776FF`, tinta `#071C54`, ámbar `#FFB000`.
-- **Superficies grandes y encabezados destacados:** `bg-header-surface`, lavanda visible sobre el fondo claro; en oscuro, violeta profundo separado del fondo y las tarjetas. No reutilizar `primary-light` porque también colorea indicadores y acentos.
-- **Fondo de pantalla:** casi blanco lavanda en claro y casi negro en oscuro; tarjetas claras u oscuras opacas según el tema.
-- **Acentos:** violeta para acciones principales y burbujas, ámbar para selección y navegación activa; texto azul profundo sobre ambos. `text-primary` usa `primary-text`, un violeta más oscuro en claro para legibilidad; el relleno conserva el violeta vivo elegido.
+- **Superficies grandes y encabezados destacados:** `bg-header-surface`, celeste suave más ligero y menos saturado que las acciones; el gris industrial fue descartado por el usuario. No reutilizar `primary-light` porque también colorea indicadores y acentos.
+- **Fondo de pantalla:** neutral frío casi blanco en claro y casi negro en oscuro. En oscuro el encabezado usa un nivel más luminoso (20%) para distinguirse del fondo y las tarjetas.
+- **Acento:** conservar el celeste en acciones, selección, navegación y burbujas; no convertir toda la interfaz en gris.
 - **Secciones:** `bg-card` + `shadow-sm` sobre el fondo de la pantalla.
 - **Dentro del hero:** `bg-card text-card-foreground` para campos y tiles; superficies opacas para contraste consistente en ambos temas.
 - **Advertencias y notas:** `bg-warning-light`. Errores o “no hacer”: `bg-destructive-light`.

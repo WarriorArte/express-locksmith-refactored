@@ -1,5 +1,5 @@
 # Roadmap
-- [x] Probar paleta violeta y ámbar con texto azul profundo; contraste AA de pares de texto y piezas verificadas a 393/1280 px en claro/oscuro, sin cambiar formas ni animaciones. Pantallas autenticadas pendientes por sesión externa no disponible.
+- [x] Retirar la prueba violeta y ámbar descartada y restaurar el celeste anterior, sin cambiar formas ni animaciones.
 - [x] Restaurar la estrella original cookie9 en FAB y formas compartidas (Gem y reemplazo Sunny descartados); conservar dimensiones y animación. Flujo autenticado pendiente por sesión externa no disponible.
 - [x] Afinar superficies Material Expressive: fondos neutros y encabezados celeste suave (gris industrial descartado); piezas compartidas verificadas a 393/1280 px en claro/oscuro, selector funcional. Revisión con datos reales pendiente por sesión externa no disponible.
 - [x] Unificar encabezados de todos los módulos en dos filas junto a la flecha; textos largos y acciones verificados a 320, 393 y 1280 px.
