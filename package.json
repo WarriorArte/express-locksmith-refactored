@@ -89,6 +89,7 @@
     "@types/react-dom": "^19.2.4",
     "brace-expansion": "^5.0.9",
     "dompurify": "^3.4.13",
+    "postcss-selector-parser": "7.1.6",
     "esbuild": "^0.28.1",
     "typescript-eslint": {
       "@typescript-eslint/typescript-estree": {
@@ -106,12 +107,7 @@
         "minimatch": "^10.2.2"
       },
       "postcss-selector-parser": "7.1.6"
-    },
-    "minimatch@10.2.2>brace-expansion": "^5.0.9",
-    "@eslint/eslintrc>minimatch": "^10.2.2",
-    "@eslint/config-array>minimatch": "^10.2.2",
-    "eslint>minimatch": "^10.2.2",
-    "postcss-selector-parser": "7.1.6"
+    }
   },
   "trustedDependencies": [
     "@swc/core",
