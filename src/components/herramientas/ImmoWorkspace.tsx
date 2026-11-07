@@ -85,7 +85,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
               <MaterialShape name="cookie9" spin className="h-52 w-52 text-background/60 md:h-56 md:w-56">
                 {/* La foto crece más que la forma: lo que sobresale abajo se desvanece. */}
                 <span
-                  className="block h-48 w-[184px] overflow-hidden md:h-52 md:w-[200px]"
+                  className="block h-44 w-[172px] overflow-hidden md:h-48 md:w-[188px]"
                   style={{
                     WebkitMaskImage: PHOTO_FADE,
                     maskImage: PHOTO_FADE,
