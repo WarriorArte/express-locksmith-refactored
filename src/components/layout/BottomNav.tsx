@@ -143,7 +143,7 @@ export function BottomNav() {
             className="group pointer-events-auto relative flex h-16 w-16 shrink-0 items-center justify-center max-[360px]:h-14 max-[360px]:w-14 drop-shadow-[0_6px_14px_hsl(var(--primary)/0.35)] dark:drop-shadow-[0_6px_16px_hsl(0_0%_0%/0.55)]"
           >
             <MaterialShape
-              name="cookie9"
+              name="gem"
               className="h-16 w-16 max-[360px]:h-14 max-[360px]:w-14 text-primary transition-transform duration-500 ease-spring group-active:rotate-45 group-active:scale-95"
             >
               <Plus className="h-7 w-7 text-primary-foreground" strokeWidth={2.4} />

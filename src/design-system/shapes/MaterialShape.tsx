@@ -1,5 +1,5 @@
 /**
- * Formas orgánicas de Material 3 Expressive (cookie, clover, sunny, soft-burst).
+ * Formas de Material 3 Expressive (Gem, cookie, clover, sunny, soft-burst).
  *
  * Se generan como curvas polares r(θ) = 1 + a·cos(n·θ): n = número de lóbulos,
  * a = profundidad. El resultado es un path SVG suave, sin vértices duros, que
@@ -10,10 +10,16 @@
  */
 import { cn } from "@/lib/utils";
 
-export type MaterialShapeName = "cookie9" | "cookie6" | "clover4" | "sunny" | "softBurst";
+export type MaterialShapeName = "gem" | "cookie9" | "cookie6" | "clover4" | "sunny" | "softBurst";
 
-const SHAPES: Record<MaterialShapeName, { lobes: number; depth: number }> = {
-  cookie9: { lobes: 9, depth: 0.075 },
+/** Rounded gemstone silhouette inspired by MaterialShapes.Gem's mirrored polygon.
+ * cookie9 remains a compatibility name so existing decorative stars use Gem
+ * without changing their sizing, children or motion.
+ * Reference: material-components-android/shape/MaterialShapes.java, getGem().
+ */
+const GEM_PATH = "M 50 2 C 59 2 65 6 73 12 L 88 23 C 94 28 96 33 97 41 L 99 64 C 100 72 97 78 90 82 L 59 96 C 53 99 47 99 41 96 L 10 82 C 3 78 0 72 1 64 L 3 41 C 4 33 6 28 12 23 L 27 12 C 35 6 41 2 50 2 Z";
+
+const SHAPES: Record<Exclude<MaterialShapeName, "gem" | "cookie9">, { lobes: number; depth: number }> = {
   cookie6: { lobes: 6, depth: 0.09 },
   clover4: { lobes: 4, depth: 0.16 },
   sunny: { lobes: 8, depth: 0.045 },
@@ -23,6 +29,7 @@ const SHAPES: Record<MaterialShapeName, { lobes: number; depth: number }> = {
 const pathCache = new Map<MaterialShapeName, string>();
 
 function buildPath(name: MaterialShapeName): string {
+  if (name === "gem" || name === "cookie9") return GEM_PATH;
   const cached = pathCache.get(name);
   if (cached) return cached;
 
