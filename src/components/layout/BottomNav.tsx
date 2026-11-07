@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { useWorkshopFeatures } from "@/hooks/useWorkshopFeatures";
 import { useWorkshop } from "@/hooks/useWorkshop";
-import { useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { m as motion } from "framer-motion";
 
 
@@ -109,28 +109,127 @@ export function BottomNav() {
     }
   };
 
+  const barRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<Record<string, HTMLElement | null>>({});
+  const [barWidth, setBarWidth] = useState(0);
+  const [notchX, setNotchX] = useState<number | null>(null);
+
+  const activeItem = filteredNavItems.find((i) => isItemActive(i.to)) || null;
+
+  const measure = useCallback(() => {
+    const bar = barRef.current;
+    if (!bar) return;
+    const rect = bar.getBoundingClientRect();
+    setBarWidth(rect.width);
+    const el = activeItem ? itemRefs.current[activeItem.to] : null;
+    if (el) {
+      const r = el.getBoundingClientRect();
+      setNotchX(r.left - rect.left + r.width / 2);
+    } else {
+      setNotchX(null);
+    }
+  }, [activeItem]);
+
+  useLayoutEffect(() => {
+    measure();
+  }, [measure, filteredNavItems.length, shouldShowFAB]);
+
+  useEffect(() => {
+    const bar = barRef.current;
+    if (!bar) return;
+    const ro = new ResizeObserver(() => measure());
+    ro.observe(bar);
+    window.addEventListener("orientationchange", measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("orientationchange", measure);
+    };
+  }, [measure]);
+
   if (isLoading) return null;
 
   return (
     <>
-      {/* Material 3 Expressive — FAB flotante + barra de navegación */}
-      {shouldShowFAB && (
-        <motion.button
-          whileTap={{ scale: 0.92 }}
-          onClick={handleFabClick}
-          aria-label={directAction ? "Crear" : "Acciones rápidas"}
-          className="fixed right-4 bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-40 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg lg:hidden"
+      <nav className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 lg:hidden">
+        <div
+          ref={barRef}
+          className="relative h-[68px] drop-shadow-[0_8px_20px_hsl(var(--foreground)/0.12)] dark:drop-shadow-[0_8px_18px_hsl(0_0%_0%/0.45)]"
         >
-          <Plus className="h-6 w-6" strokeWidth={2.5} />
-        </motion.button>
-      )}
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card pb-[env(safe-area-inset-bottom)] lg:hidden">
-        <div className="flex h-20 items-stretch justify-around px-2">
-          {filteredNavItems.map((item) => (
-            <NavBtn key={item.to} item={item} active={isItemActive(item.to)} />
-          ))}
+          {/* Silueta de la barra con muesca que se mueve al tab activo */}
+          {barWidth > 0 && (
+            <svg
+              className="absolute inset-0 h-full w-full overflow-visible"
+              viewBox={`0 0 ${barWidth} 68`}
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <motion.path
+                d={buildBarPath(barWidth, notchX)}
+                fill="hsl(var(--card))"
+                stroke="hsl(var(--border))"
+                strokeWidth={1}
+                initial={false}
+                animate={{ d: buildBarPath(barWidth, notchX) }}
+                transition={{ type: "spring", stiffness: 260, damping: 26, mass: 0.7 }}
+              />
+            </svg>
+          )}
+
+          {/* Burbuja del tab activo, flotando sobre la muesca */}
+          {notchX !== null && activeItem && (
+            <motion.div
+              className="pointer-events-none absolute top-[-20px] z-10 flex h-[48px] w-[48px] items-center justify-center rounded-[14px] bg-primary text-primary-foreground shadow-[0_6px_14px_-6px_hsl(var(--foreground)/0.35)]"
+              initial={false}
+              animate={{ left: getNotchCenter(barWidth, notchX) - 24, scale: 1 }}
+              transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.7 }}
+            >
+              <motion.span
+                key={activeItem.to}
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.14, ease: "easeOut" }}
+              >
+                <activeItem.icon className="h-[22px] w-[22px]" strokeWidth={2} />
+              </motion.span>
+            </motion.div>
+          )}
+
+          <div className="relative flex h-full items-end justify-around px-2 pb-2">
+            {leftItems.map((item) => (
+              <NavBtn
+                key={item.to}
+                item={item}
+                active={isItemActive(item.to)}
+                innerRef={(el) => (itemRefs.current[item.to] = el)}
+              />
+            ))}
+
+            {/* Center FAB */}
+            {shouldShowFAB && (
+              <div className="flex flex-1 items-center justify-center self-center">
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={handleFabClick}
+                  aria-label={directAction ? "Crear" : "Acciones rápidas"}
+                  className="flex h-[46px] w-[46px] items-center justify-center rounded-[14px] bg-accent text-accent-foreground"
+                >
+                  <Plus className="h-5 w-5" strokeWidth={2.6} />
+                </motion.button>
+              </div>
+            )}
+
+            {rightItems.map((item) => (
+              <NavBtn
+                key={item.to}
+                item={item}
+                active={isItemActive(item.to)}
+                innerRef={(el) => (itemRefs.current[item.to] = el)}
+              />
+            ))}
+          </div>
         </div>
       </nav>
+
 
       {/* Quick actions sheet */}
       <Dialog open={actionsOpen} onOpenChange={setActionsOpen}>
@@ -157,7 +256,7 @@ export function BottomNav() {
                 onClick={() => openAction(a.dialog)}
                 className="flex min-h-[136px] flex-col items-start justify-end rounded-3xl bg-accent/50 p-4 text-left transition-transform active:scale-[0.98]"
               >
-                <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+                <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-[14px] bg-primary/10 text-primary">
                   <a.icon className="h-5 w-5" />
                 </span>
                 <span className="text-sm font-extrabold leading-tight text-foreground">
@@ -179,39 +278,115 @@ export function BottomNav() {
   );
 }
 
+const BUBBLE = 48; // lado de la burbuja
+const BUBBLE_R = 14; // radio de la burbuja
+const GAP = 6; // aire entre burbuja y barra
+const BUBBLE_TOP = -20; // top de la burbuja respecto a la barra
+
+const NOTCH_HALF = BUBBLE / 2 + GAP; // 30
+const NOTCH_DEPTH = BUBBLE_TOP + BUBBLE + GAP; // 34
+const NOTCH_CORNER = BUBBLE_R + GAP; // 20 · mismo radio visual que la burbuja
+const NOTCH_LIP = 9; // curva suave de entrada en el borde superior
+
+/**
+ * Mantiene la burbuja centrada sobre su icono. La burbuja mide 48 px,
+ * por lo que su centro se ajusta a 24 px de los bordes.
+ */
+function getNotchCenter(w: number, notchX: number | null): number {
+  if (w === 0) return 0;
+  if (notchX === null) return w / 2;
+  return Math.min(Math.max(notchX, 24), w - 24);
+}
+
+/**
+ * Silueta de la barra: rectángulo redondeado con una muesca cuadrada de bordes
+ * redondeados bajo el tab activo.
+ *
+ * IMPORTANTE: la estructura de comandos del path es SIEMPRE la misma (mismo
+ * número y tipo de comandos) para que framer-motion pueda interpolar la "d"
+ * sin glitches ni desapariciones. Solo cambian los números.
+ */
+function buildBarPath(w: number, notchX: number | null): string {
+  const h = 68;
+  const r = 24;
+  const nw = NOTCH_HALF;
+  const nd = NOTCH_DEPTH;
+  const nc = NOTCH_CORNER;
+  const cx = getNotchCenter(w, notchX);
+
+  // Espacio libre a cada lado de la muesca: primero se conserva el "lip"
+  // (curva de entrada) y lo que sobre se usa para la esquina de la barra.
+  const spaceL = Math.max(0, cx - nw);
+  const spaceR = Math.max(0, w - (cx + nw));
+  const lipL = Math.min(NOTCH_LIP, spaceL);
+  const lipR = Math.min(NOTCH_LIP, spaceR);
+  const rL = Math.max(0.01, Math.min(r, spaceL - lipL));
+  const rR = Math.max(0.01, Math.min(r, spaceR - lipR));
+
+  return [
+    `M ${rL} 0`,
+    // entrada izquierda de la muesca
+    `H ${cx - nw - lipL}`,
+    `Q ${cx - nw} 0 ${cx - nw} ${lipL}`,
+    // pared izquierda
+    `V ${nd - nc}`,
+    // esquina inferior izquierda de la muesca
+    `A ${nc} ${nc} 0 0 0 ${cx - nw + nc} ${nd}`,
+    // fondo de la muesca
+    `H ${cx + nw - nc}`,
+    // esquina inferior derecha
+    `A ${nc} ${nc} 0 0 0 ${cx + nw} ${nd - nc}`,
+    // pared derecha
+    `V ${lipR}`,
+    // salida derecha
+    `Q ${cx + nw} 0 ${cx + nw + lipR} 0`,
+    `H ${w - rR}`,
+    `A ${rR} ${rR} 0 0 1 ${w} ${rR}`,
+    `V ${h - r}`,
+    `A ${r} ${r} 0 0 1 ${w - r} ${h}`,
+    `H ${r}`,
+    `A ${r} ${r} 0 0 1 0 ${h - r}`,
+    `V ${rL}`,
+    `A ${rL} ${rL} 0 0 1 ${rL} 0`,
+    "Z",
+  ].join(" ");
+}
+
+
+
+
 function NavBtn({
   item,
   active,
+  innerRef,
 }: {
   item: Pick<NavItem, "to" | "icon" | "label">;
   active: boolean;
+  innerRef?: (el: HTMLAnchorElement | null) => void;
 }) {
   const Icon = item.icon;
   return (
     <NavLink
+      ref={innerRef}
       to={item.to}
+      aria-label={item.label}
       aria-current={active ? "page" : undefined}
       onClick={(e) => {
         if (active) e.preventDefault();
       }}
-      className="flex flex-1 flex-col items-center justify-center gap-1"
+      className="relative flex h-full flex-1 flex-col items-center justify-end gap-1 rounded-[18px] pb-1 active:bg-muted/60"
     >
-      <span className="relative flex h-8 w-16 items-center justify-center">
-        {active && (
-          <motion.span
-            layoutId="m3-nav-indicator"
-            className="absolute inset-0 rounded-full bg-accent"
-            transition={{ type: "spring", stiffness: 420, damping: 30 }}
-          />
-        )}
+      <span className="flex flex-col items-center gap-1">
         <Icon
-          className={`relative h-6 w-6 ${active ? "text-accent-foreground" : "text-muted-foreground"}`}
-          strokeWidth={active ? 2.25 : 1.9}
+          className={`h-[22px] w-[22px] text-muted-foreground ${active ? "invisible" : "visible"}`}
+          strokeWidth={1.9}
         />
-      </span>
-      <span className={`text-xs ${active ? "font-bold text-foreground" : "font-medium text-muted-foreground"}`}>
-        {item.label}
+        <span className={`text-[11px] ${active ? "font-bold text-foreground" : "font-medium text-muted-foreground"}`}>
+          {item.label}
+        </span>
       </span>
     </NavLink>
   );
 }
+
+
