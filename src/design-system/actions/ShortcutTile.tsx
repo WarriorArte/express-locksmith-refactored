@@ -26,7 +26,7 @@ export function ShortcutTile({ icon: Icon, label, onClick, create = false }: Sho
       <span className="relative inline-flex">
         <span
           onPointerDown={spawnRipple}
-          className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-[22px] bg-card text-foreground shadow-sm"
+          className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-[22px] bg-card text-primary shadow-sm"
         >
           <Icon className="h-6 w-6" />
         </span>

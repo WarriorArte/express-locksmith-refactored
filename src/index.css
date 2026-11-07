@@ -32,7 +32,7 @@
     --primary-glow: 199 85% 62%;
 
     /* Header alone carries the large brand surface; detail content stays neutral. */
-    --header-surface: 199 80% 80%;
+    --header-surface: 199 84% 74%;
 
     /* Secondary — neutral surface tile */
     --secondary: 210 10% 92%;
@@ -113,7 +113,7 @@
     --primary-light: 199 50% 20%;
     --primary-glow: 199 90% 72%;
 
-    --header-surface: 199 30% 23%;
+    --header-surface: 199 48% 24%;
 
     --secondary: 210 8% 16%;
     --secondary-foreground: 200 20% 92%;

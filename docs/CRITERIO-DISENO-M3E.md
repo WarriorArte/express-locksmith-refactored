@@ -158,8 +158,8 @@ Los carruseles de imágenes y perfiles mantienen el espacio interior de la secci
 ### 4.3 Color
 
 - **Distribución del color:** el encabezado destacado conserva celeste con más presencia; la información protagonista usa `bg-secondary` neutro y los accesos rápidos `bg-card`. Evitar bloques pastel repetidos. Coral solo para selección activa; no colorear todos los accesos coral. Conservar celeste en acciones y burbujas de creación. El gris industrial en encabezados sigue descartado.
-- **Fondo de pantalla:** neutral frío casi blanco en claro y casi negro en oscuro. En oscuro el encabezado usa un nivel más luminoso (20%) para distinguirse del fondo y las tarjetas.
-- **Prueba vigente:** celeste y coral, elegida por el usuario: fondo `#F5F8FA`, encabezados celeste `#BCE8F6`, coral `#F08070` en selección y navegación activa, tinta `#182D3B`. Conservar celeste en acciones principales y burbujas; formas y animaciones intactas. `text-primary` usa un celeste más oscuro para legibilidad. Adaptar los tonos al tema oscuro. Violeta y ámbar quedaron descartados.
+- **Fondo de pantalla:** neutral frío casi blanco en claro y casi negro en oscuro. El encabezado celeste gana saturación para separarse claramente de las tarjetas neutras; en oscuro usa luminosidad 24% y saturación 48%.
+- **Prueba vigente:** celeste y coral, elegida por el usuario: fondo `#F5F8FA`, encabezados celeste `hsl(199 84% 74%)`, coral `#F08070` en selección y navegación activa, tinta `#182D3B`. Conservar celeste en acciones principales y burbujas; formas y animaciones intactas. Los iconos de accesos usan `text-primary` sobre tarjetas neutras para aportar color sin volver a llenar la pantalla de bloques pastel. Adaptar los tonos al tema oscuro. Violeta y ámbar quedaron descartados.
 - **Secciones:** `bg-card` + `shadow-sm` sobre el fondo de la pantalla.
 - **Dentro del hero:** `bg-card text-card-foreground` para campos y tiles; superficies opacas para contraste consistente en ambos temas.
 - **Advertencias y notas:** `bg-warning-light`. Errores o “no hacer”: `bg-destructive-light`.
