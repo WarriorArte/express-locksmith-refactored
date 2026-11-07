@@ -8,45 +8,46 @@
 @layer base {
   /* ─────────────────────────────────────────────────────────
      LIGHT THEME (default) — Cerrajería Express
-     Celeste primario sobre superficies casi blancas.
+     Violeta y ámbar sobre superficies claras; texto azul profundo.
      ───────────────────────────────────────────────────────── */
   :root {
-    --background: 210 12% 97%;          /* Neutral surface, slight cool cast */
-    --foreground: 200 25% 8%;           /* #0D0D12 */
+    --background: 231 54% 97.5%;        /* #F5F6FC */
+    --foreground: 224 85% 18%;          /* #071C54 */
 
     --card: 0 0% 100%;                  /* #FFFFFF */
-    --card-foreground: 200 15% 10%;
+    --card-foreground: 224 85% 18%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 200 15% 10%;
+    --popover-foreground: 224 85% 18%;
 
     /* Surface 2 — used for nested chips / inputs / sub-tiles */
-    --surface-2: 210 10% 92%;
+    --surface-2: 246 45% 93%;
 
-    /* Primary — celeste (acento de marca) */
-    --primary: 199 88% 60%;            /* #00AEE6 */
-    --primary-foreground: 200 80% 10%;   /* near-black on celeste */
-    --primary-hover: 199 80% 55%;      /* #0097C7 */
-    --primary-light: 199 92% 88%;
-    --primary-glow: 199 85% 62%;
+    /* Primary — vivid violet with deep ink, never white on light violet */
+    --primary: 247 100% 73.1%;          /* #8776FF */
+    --primary-text: 247 58% 45%;        /* darker violet for text and outline icons */
+    --primary-foreground: 224 85% 18%;
+    --primary-hover: 247 100% 77%;
+    --primary-light: 247 100% 91%;
+    --primary-glow: 247 100% 73.1%;
 
-    /* Header surface — celeste suave, menos intenso que el acento */
-    --header-surface: 199 60% 92%;
+    /* Header surface — lavender separates white fields from the page */
+    --header-surface: 247 100% 86%;
 
     /* Secondary — neutral surface tile */
-    --secondary: 210 10% 92%;
-    --secondary-foreground: 200 15% 10%;
-    --secondary-hover: 210 10% 89%;
-    --secondary-light: 210 12% 97%;
+    --secondary: 246 45% 93%;
+    --secondary-foreground: 224 85% 18%;
+    --secondary-hover: 246 45% 89%;
+    --secondary-light: 246 45% 97%;
 
     /* Muted */
-    --muted: 210 10% 92%;
-    --muted-foreground: 200 10% 34%;    /* #5A5A72 */
+    --muted: 246 45% 93%;
+    --muted-foreground: 224 27% 33%;
 
-    /* Accent — celeste container */
-    --accent: 199 92% 88%;
-    --accent-foreground: 200 80% 10%;
-    --accent-light: 199 90% 95%;
+    /* Accent — amber for active navigation and selected controls */
+    --accent: 41.4 100% 50%;            /* #FFB000 */
+    --accent-foreground: 224 85% 18%;
+    --accent-light: 41.4 100% 92%;
 
     /* Destructive */
     --destructive: 350 100% 65%;        /* #FF4D6A */
@@ -68,20 +69,20 @@
     --info-foreground: 0 0% 100%;
     --info-light: 210 80% 93%;
 
-    --border: 200 14% 78%;               /* rgba(0,0,0,0.07) approx */
-    --input: 200 12% 62%;
-    --ring: 199 85% 55%;
+    --border: 240 24% 79%;
+    --input: 240 20% 59%;
+    --ring: 247 58% 48%;
     --radius: 1rem;
 
     /* Sidebar — Light: deep dark sidebar still works as accent rail */
-    --sidebar-background: 210 12% 96%;
-    --sidebar-foreground: 200 15% 10%;
-    --sidebar-primary: 199 85% 62%;
-    --sidebar-primary-foreground: 200 60% 12%;
-    --sidebar-accent: 199 90% 92%;
-    --sidebar-accent-foreground: 200 60% 12%;
-    --sidebar-border: 200 15% 88%;
-    --sidebar-ring: 199 85% 55%;
+    --sidebar-background: 246 45% 94%;
+    --sidebar-foreground: 224 85% 18%;
+    --sidebar-primary: 247 100% 73.1%;
+    --sidebar-primary-foreground: 224 85% 18%;
+    --sidebar-accent: 41.4 100% 50%;
+    --sidebar-accent-foreground: 224 85% 18%;
+    --sidebar-border: 240 24% 79%;
+    --sidebar-ring: 247 58% 48%;
 
     /* Shadows */
     --shadow-sm: 0 1px 3px 0 hsl(240 16% 6% / 0.04);
@@ -91,39 +92,40 @@
   }
 
   /* ─────────────────────────────────────────────────────────
-     DARK THEME — casi negro con acentos celeste
+     DARK THEME — near-black, violet surfaces and amber selections
      ───────────────────────────────────────────────────────── */
   .dark {
-    --background: 210 8% 7%;
-    --foreground: 200 20% 96%;          /* #F0F0F8 */
+    --background: 240 17% 7%;
+    --foreground: 240 60% 97%;
 
-    --card: 210 8% 12%;
-    --card-foreground: 200 20% 92%;
+    --card: 240 18% 13%;
+    --card-foreground: 240 60% 97%;
 
-    --popover: 210 8% 13%;
-    --popover-foreground: 200 20% 92%;
+    --popover: 240 18% 15%;
+    --popover-foreground: 240 60% 97%;
 
-    --surface-2: 210 8% 17%;
+    --surface-2: 242 20% 21%;
 
-    --primary: 199 90% 72%;
-    --primary-foreground: 200 70% 12%;
-    --primary-hover: 199 90% 78%;
-    --primary-light: 199 50% 20%;
-    --primary-glow: 199 90% 72%;
+    --primary: 247 100% 80%;
+    --primary-text: 247 100% 85%;
+    --primary-foreground: 224 85% 18%;
+    --primary-hover: 247 100% 85%;
+    --primary-light: 247 35% 25%;
+    --primary-glow: 247 100% 80%;
 
-    --header-surface: 199 28% 20%;
+    --header-surface: 247 35% 28%;
 
-    --secondary: 210 8% 16%;
-    --secondary-foreground: 200 20% 92%;
-    --secondary-hover: 210 8% 20%;
-    --secondary-light: 210 8% 13%;
+    --secondary: 242 20% 21%;
+    --secondary-foreground: 240 60% 97%;
+    --secondary-hover: 242 20% 25%;
+    --secondary-light: 242 20% 16%;
 
-    --muted: 210 8% 16%;
-    --muted-foreground: 200 12% 72%;    /* #7878A0 */
+    --muted: 242 20% 21%;
+    --muted-foreground: 240 22% 78%;
 
-    --accent: 199 50% 20%;
-    --accent-foreground: 199 90% 88%;
-    --accent-light: 199 40% 16%;
+    --accent: 41.4 100% 50%;
+    --accent-foreground: 224 85% 18%;
+    --accent-light: 41.4 45% 20%;
 
     --destructive: 350 100% 65%;
     --destructive-foreground: 0 0% 100%;
@@ -141,17 +143,18 @@
     --info-foreground: 210 60% 12%;
     --info-light: 210 40% 20%;
 
-    --border: 200 10% 26%;              /* subtle line, no alpha (Tailwind-friendly) */
-    --input: 200 10% 45%;
-    --ring: 199 90% 72%;
+    --border: 240 18% 33%;
+    --input: 240 18% 52%;
+    --ring: 247 100% 80%;
 
-    --sidebar-background: 210 8% 7%;
-    --sidebar-foreground: 200 20% 92%;
-    --sidebar-primary: 199 90% 72%;
-    --sidebar-primary-foreground: 200 70% 12%;
-    --sidebar-accent: 199 50% 20%;
-    --sidebar-accent-foreground: 199 90% 88%;
-    --sidebar-border: 200 10% 20%;
+    --sidebar-background: 240 17% 10%;
+    --sidebar-foreground: 240 60% 97%;
+    --sidebar-primary: 247 100% 80%;
+    --sidebar-primary-foreground: 224 85% 18%;
+    --sidebar-accent: 41.4 100% 50%;
+    --sidebar-accent-foreground: 224 85% 18%;
+    --sidebar-border: 240 18% 33%;
+    --sidebar-ring: 247 100% 80%;
 
     --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.4);
     --shadow-lg: 0 10px 24px -8px hsl(0 0% 0% / 0.5);
@@ -311,7 +314,7 @@
   }
 
   .ce-hero-eyebrow {
-    color: hsl(var(--primary));
+    color: hsl(var(--primary-text));
     font-size: 0.875rem;
     font-weight: 600;
     line-height: 1.2;

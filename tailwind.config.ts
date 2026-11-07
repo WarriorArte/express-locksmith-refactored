@@ -96,6 +96,10 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
       },
+      // Bright filled controls and readable brand text need separate tones.
+      textColor: {
+        primary: "hsl(var(--primary-text))",
+      },
       // Escala de formas M3 (antes todas valían var(--radius) = 16px)
       borderRadius: {
         DEFAULT: "6px",
