@@ -98,7 +98,13 @@ export default {
       },
       // Bright filled controls and readable brand text need separate tones.
       textColor: {
-        primary: "hsl(var(--primary-text))",
+        primary: {
+          DEFAULT: "hsl(var(--primary-text))",
+          foreground: "hsl(var(--primary-foreground))",
+          hover: "hsl(var(--primary-hover))",
+          light: "hsl(var(--primary-light))",
+          fill: "hsl(var(--primary))",
+        },
       },
       // Escala de formas M3 (antes todas valían var(--radius) = 16px)
       borderRadius: {

@@ -61,8 +61,10 @@ interface MaterialShapeProps {
  * de fondo; los hijos quedan centrados encima y no giran.
  */
 export function MaterialShape({ name, className, spin = false, children }: MaterialShapeProps) {
+  // A silhouette is a filled surface, not brand-colored text.
+  const surfaceClassName = className?.replace(/\btext-primary\b(?!-)/g, "text-primary-fill");
   return (
-    <span className={cn("relative inline-flex shrink-0 items-center justify-center", className)}>
+    <span className={cn("relative inline-flex shrink-0 items-center justify-center", surfaceClassName)}>
       <svg
         viewBox="0 0 100 100"
         aria-hidden="true"
