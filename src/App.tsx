@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router";
 import { LazyMotion, domAnimation } from "framer-motion";
-import { Loader2 } from "lucide-react";
+import { AppLoader } from "@/design-system/feedback/AppLoader";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { AppUpdatePrompt } from "@/components/AppUpdatePrompt";
@@ -89,7 +89,7 @@ const routerBase = detectRouterBase();
 
 const RouteFallback = () => (
   <div className="flex items-center justify-center h-full min-h-[40vh]">
-    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+    <AppLoader fullscreen />
   </div>
 );
 

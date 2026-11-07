@@ -1,5 +1,5 @@
 import { useWorkshop } from "@/hooks/useWorkshop";
-import { Loader2 } from "lucide-react";
+import { AppLoader } from "@/design-system/feedback/AppLoader";
 import Dashboard from "./Dashboard";
 import SuperAdminDashboard from "./SuperAdminDashboard";
 
@@ -8,11 +8,7 @@ const Index = () => {
 
   // Show loading while determining user role to prevent flickering
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
+    return <AppLoader fullscreen />;
   }
 
   // SuperAdmin without a workshop context gets the admin dashboard

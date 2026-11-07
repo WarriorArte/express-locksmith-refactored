@@ -1,5 +1,5 @@
 ﻿import { Suspense, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { AppLoader } from "@/design-system/feedback/AppLoader";
 import { Outlet } from "react-router";
 import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
@@ -23,7 +23,7 @@ export function MainLayout() {
           <Suspense
             fallback={
               <div className="flex flex-1 items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <AppLoader />
               </div>
             }
           >
