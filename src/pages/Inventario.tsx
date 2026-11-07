@@ -394,14 +394,14 @@ export default function Inventario() {
                     ) : (
                       <div
                         className="absolute inset-0 flex items-center justify-center"
-                        style={{ background: `linear-gradient(160deg, ${getCategoryColor(product.category_id)}30 0%, hsl(var(--surface-2)) 70%)` }}
+                        style={{ background: 'hsl(var(--surface-2))' }}
                       >
                         <Package className="w-12 h-12 text-muted-foreground/20" />
                       </div>
                     )}
 
                     {/* Gradient oscuro desde abajo */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+                    <div className="absolute inset-0 bg-black/40" />
 
                     {/* Badge stock bajo — arriba derecha */}
                     {!isService && status === "low" && (
@@ -548,14 +548,14 @@ export default function Inventario() {
                   ) : (
                     <div
                       className="absolute inset-0 flex items-center justify-center"
-                      style={{ background: `linear-gradient(160deg, ${getCategoryColor(product.category_id)}30 0%, hsl(var(--surface-2)) 70%)` }}
+                      style={{ background: 'hsl(var(--surface-2))' }}
                     >
                       <Package className="w-12 h-12 text-muted-foreground/20" />
                     </div>
                   )}
 
                   {/* Gradient oscuro desde abajo */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-transparent" />
+                  <div className="absolute inset-0 bg-black/40" />
 
                   {/* Stock bajo — arriba derecha (detrás del ⋯) */}
                   {!isService && status === "low" && (

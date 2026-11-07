@@ -1714,7 +1714,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                                     label={f.label}
                                     min={f.min}
                                     max={f.max}
-                                    step={f.step}
+                                    step={"step" in f ? f.step : undefined}
                                     defaultValue={f.def}
                                     value={configuracionVisual[f.key] ?? f.def}
                                     onChange={(value) => setConfiguracionVisual(c => c ? { ...c, [f.key]: value } : c)}
@@ -1771,7 +1771,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                                 label={f.label}
                                 min={0}
                                 max={35}
-                                step={f.step}
+                                step={"step" in f ? f.step : undefined}
                                 defaultValue={f.def}
                                 value={configuracionVisual[f.key] ?? f.def}
                                 onChange={(value) => setConfiguracionVisual(c => c ? { ...c, [f.key]: value } : c)}

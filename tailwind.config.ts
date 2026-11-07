@@ -21,7 +21,7 @@ export default {
         sheet: "cubic-bezier(0.2,0,0,1)",
       },
       fontFamily: {
-        sans: ["DM Sans", "system-ui", "sans-serif"],
+        sans: ["Roboto", "system-ui", "-apple-system", "Segoe UI", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",

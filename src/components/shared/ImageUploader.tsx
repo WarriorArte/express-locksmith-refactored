@@ -188,7 +188,7 @@ export function ImageUploader({
                   className="w-full max-h-52 object-cover rounded-2xl border border-border"
                   onError={() => { if (previewUrl) setPreviewUrl(null); }}
                 />
-                <div className="absolute inset-x-0 bottom-0 p-3 sm:hidden flex items-center justify-center gap-2 bg-gradient-to-t from-black/65 to-transparent rounded-b-2xl">
+                <div className="absolute inset-x-0 bottom-0 p-3 sm:hidden flex items-center justify-center gap-2 bg-black/60 rounded-b-2xl">
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
