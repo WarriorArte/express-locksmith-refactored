@@ -212,7 +212,7 @@ export function QuotePrintDialog({ open, onOpenChange, quote }: Props) {
           <Button
             type="button"
             variant="outline"
-            className="h-11 rounded-sm px-2 text-[11px] sm:text-sm gap-1.5"
+            className="h-11 rounded-sm px-2 text-xs sm:text-sm gap-1.5"
             onClick={handleDownload}
           >
             <Download className="w-4 h-4 shrink-0" />
@@ -221,7 +221,7 @@ export function QuotePrintDialog({ open, onOpenChange, quote }: Props) {
           <Button
             type="button"
             variant="outline"
-            className="h-11 rounded-sm px-2 text-[11px] sm:text-sm gap-1.5"
+            className="h-11 rounded-sm px-2 text-xs sm:text-sm gap-1.5"
             onClick={handleShare}
           >
             <Share2 className="w-4 h-4 shrink-0" />
@@ -230,7 +230,7 @@ export function QuotePrintDialog({ open, onOpenChange, quote }: Props) {
           <Button
             type="button"
             onClick={handlePrint}
-            className="h-11 rounded-sm bg-primary text-primary-foreground px-2 text-[11px] sm:text-sm gap-1.5"
+            className="h-11 rounded-sm bg-primary text-primary-foreground px-2 text-xs sm:text-sm gap-1.5"
           >
             <Printer className="w-4 h-4" />
             <span className="truncate">Imprimir</span>

@@ -81,7 +81,7 @@ export function UnitNumberInput({
         <button
           type="button"
           aria-label="Aumentar"
-          className="rounded-sm border border-border bg-background/70 text-muted-foreground hover:text-foreground hover:bg-background flex items-center justify-center"
+          className="rounded-full bg-muted text-muted-foreground hover:text-foreground hover:bg-background flex items-center justify-center"
           onClick={() => nudge(1)}
         >
           <ChevronUp className="w-3.5 h-3.5" />
@@ -89,7 +89,7 @@ export function UnitNumberInput({
         <button
           type="button"
           aria-label="Disminuir"
-          className="rounded-sm border border-border bg-background/70 text-muted-foreground hover:text-foreground hover:bg-background flex items-center justify-center"
+          className="rounded-full bg-muted text-muted-foreground hover:text-foreground hover:bg-background flex items-center justify-center"
           onClick={() => nudge(-1)}
         >
           <ChevronDown className="w-3.5 h-3.5" />

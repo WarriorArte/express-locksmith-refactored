@@ -268,7 +268,7 @@ export function ServiceImagesDialog({ open, onOpenChange, service: initialServic
                 )}
 
                 {!storageConfigured && (
-                  <p className="text-xs text-amber-600">
+                  <p className="text-xs text-warning">
                     Configura el servidor de archivos en Configuración → Almacenamiento
                   </p>
                 )}

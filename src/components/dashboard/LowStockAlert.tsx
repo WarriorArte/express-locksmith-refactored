@@ -46,7 +46,7 @@ export function LowStockAlert({ products }: LowStockAlertProps) {
       </div>
       
       {products.length === 0 ? (
-        <div className="py-8 text-center bg-muted/20 rounded-sm border border-dashed">
+        <div className="py-8 text-center bg-muted rounded-[20px]">
           <Package className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
           <p className="text-sm font-medium text-muted-foreground">Inventario en niveles óptimos</p>
         </div>
@@ -58,11 +58,11 @@ export function LowStockAlert({ products }: LowStockAlertProps) {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.08 }}
-              className="flex items-center justify-between p-3 rounded-sm hover:bg-muted/50 transition-colors border border-transparent hover:border-border/50 group cursor-pointer"
+              className="flex items-center justify-between p-3 rounded-[16px] bg-muted hover:bg-secondary-hover transition-colors hover:border-border/50 group cursor-pointer"
               onClick={() => navigate("/inventario?filter=low-stock")}
             >
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-sm bg-muted/50 flex items-center justify-center shrink-0 border border-muted/50 overflow-hidden">
+                <div className="w-10 h-10 rounded-full bg-background flex items-center justify-center shrink-0 overflow-hidden">
                   {product.image_url ? (
                     <img src={resolveStorageUrl(product.image_url) ?? undefined} alt={product.name} className="w-full h-full object-cover" />
                   ) : (
@@ -79,7 +79,7 @@ export function LowStockAlert({ products }: LowStockAlertProps) {
                   <span className="text-sm font-bold text-destructive">
                     {product.stock_store + product.stock_warehouse}
                   </span>
-                  <span className="text-[11px] font-bold text-muted-foreground">
+                  <span className="text-xs font-bold text-muted-foreground">
                     Disponibles
                   </span>
                 </div>

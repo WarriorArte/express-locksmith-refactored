@@ -40,7 +40,7 @@ export function StatCard({
         "relative overflow-hidden rounded-sm p-4",
         isHero
           ? "bg-primary text-primary-foreground "
-          : "bg-card text-foreground border border-border",
+          : "bg-muted text-foreground",
       )}
     >
       <div className="flex items-start justify-between mb-3">
@@ -62,7 +62,7 @@ export function StatCard({
         {trend && (
           <div
             className={cn(
-              "flex items-center gap-0.5 text-[11px] font-bold px-1.5 py-0.5 rounded-sm",
+              "flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.5 rounded-sm",
               trend.isPositive
                 ? isHero
                   ? "bg-[hsl(var(--primary-foreground)/0.15)] text-primary-foreground"
@@ -86,7 +86,7 @@ export function StatCard({
       </div>
       <div
         className={cn(
-          "text-[11px] font-semibold",
+          "text-xs font-semibold",
           isHero
             ? "text-[hsl(var(--primary-foreground)/0.75)]"
             : "text-muted-foreground",
@@ -97,7 +97,7 @@ export function StatCard({
       {subtitle && (
         <div
           className={cn(
-            "text-[11px] mt-0.5",
+            "text-xs mt-0.5",
             isHero
               ? "text-[hsl(var(--primary-foreground)/0.55)]"
               : "text-muted-foreground/70",

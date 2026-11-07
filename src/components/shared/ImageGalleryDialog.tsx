@@ -337,7 +337,7 @@ export function ImageGalleryDialog({
                           <Check className="w-3 h-3" />
                         </div>
                       )}
-                      <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[11px] px-1 py-0.5 truncate">
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs px-1 py-0.5 truncate">
                         {formatSize(file.size)} • {formatDate(file.modified)}
                       </div>
                     </button>

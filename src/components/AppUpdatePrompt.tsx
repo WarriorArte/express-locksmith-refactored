@@ -298,9 +298,9 @@ export function AppUpdatePrompt() {
     .filter(Boolean);
 
   return (
-    <div className="fixed inset-x-3 bottom-3 z-[120] mx-auto max-w-2xl rounded-lg border border-border bg-background/95 p-3 text-foreground shadow-xl backdrop-blur supports-[backdrop-filter]:bg-background/85 sm:bottom-5 sm:flex sm:items-center sm:gap-3">
+    <div className="fixed inset-x-3 bottom-3 z-[120] mx-auto max-w-2xl rounded-[28px] bg-popover shadow-xl p-3 text-foreground shadow-xl backdrop-blur supports-[backdrop-filter]:bg-background/85 sm:bottom-5 sm:flex sm:items-center sm:gap-3">
       <div className="flex min-w-0 flex-1 items-start gap-3">
-        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground">
           <Download className="h-4 w-4" />
         </div>
         <div className="min-w-0">

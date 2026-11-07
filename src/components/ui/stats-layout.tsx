@@ -33,7 +33,7 @@ export function StatsLayout({ mainStat, secondaryStats, className }: StatsLayout
           <MainIcon className="w-6 h-6 sm:w-8 sm:h-8" />
         </div>
         <p className="text-xl sm:text-3xl lg:text-4xl font-black text-foreground mb-1 leading-none">{mainStat.value}</p>
-        <p className="text-[11px] sm:text-xs lg:text-sm font-semibold text-muted-foreground px-1 text-balance">
+        <p className="text-xs sm:text-xs lg:text-sm font-semibold text-muted-foreground px-1 text-balance">
           {mainStat.title}
         </p>
       </div>

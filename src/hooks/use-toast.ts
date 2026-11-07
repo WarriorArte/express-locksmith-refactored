@@ -136,6 +136,7 @@ type Toast = Omit<ToasterToast, "id">;
 
 function toast({ ...props }: Toast) {
   const id = genId();
+  try { navigator.vibrate?.(props.variant === "destructive" ? [20, 40, 20] : 10); } catch { /* sin vibración */ }
 
   const update = (props: ToasterToast) =>
     dispatch({

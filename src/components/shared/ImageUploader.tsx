@@ -185,7 +185,7 @@ export function ImageUploader({
                 <img
                   src={effectivePreviewUrl}
                   alt="Preview"
-                  className="w-full max-h-52 object-cover rounded-2xl border border-border"
+                  className="w-full max-h-52 object-cover rounded-2xl"
                   onError={() => { if (previewUrl) setPreviewUrl(null); }}
                 />
                 <div className="absolute inset-x-0 bottom-0 p-3 sm:hidden flex items-center justify-center gap-2 bg-black/60 rounded-b-2xl">
@@ -227,7 +227,7 @@ export function ImageUploader({
               </div>
             ) : isProcessing ? (
               <div className="flex flex-col items-center gap-3 py-2 w-full px-4">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-accent text-accent-foreground flex items-center justify-center">
                   <Loader2 className="w-5 h-5 text-primary animate-spin" />
                 </div>
                 <p className="text-sm text-muted-foreground">Procesando imagen…</p>
@@ -247,7 +247,7 @@ export function ImageUploader({
                   type="button"
                   onClick={(e) => { e.stopPropagation(); cameraInputRef.current?.click(); }}
                   disabled={disabled || isProcessing || !storageConfigured}
-                  className="absolute top-3 right-3 w-8 h-8 rounded-xl bg-muted border border-border flex items-center justify-center hover:bg-muted/80 transition-colors"
+                  className="absolute top-3 right-3 w-8 h-8 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
                 >
                   <Camera className="w-3.5 h-3.5 text-muted-foreground" />
                 </button>
@@ -287,7 +287,7 @@ export function ImageUploader({
               <img
                 src={effectivePreviewUrl}
                 alt="Preview"
-                className="w-full max-h-44 object-cover rounded-2xl border border-border"
+                className="w-full max-h-44 object-cover rounded-2xl"
                 onError={() => { if (previewUrl) setPreviewUrl(null); }}
               />
               <button

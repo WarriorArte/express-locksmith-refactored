@@ -63,7 +63,7 @@ export const QuotePreviewFrame = forwardRef<HTMLDivElement, QuotePreviewFramePro
       <div
         ref={frameRef}
         className={cn(
-          "rounded-xl border border-border bg-[hsl(var(--surface-2))] p-3 overflow-hidden",
+          "rounded-[20px] bg-muted p-3 overflow-hidden",
           fillHeight && "h-full flex items-center justify-center",
           className,
         )}

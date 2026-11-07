@@ -38,9 +38,9 @@
 
     /* Muted */
     --muted: 200 30% 92%;
-    --muted-foreground: 200 12% 30%;    /* #5A5A72 */
+    --muted-foreground: 200 10% 34%;    /* #5A5A72 */
 
-    /* Accent — cool slate gray */
+    /* Accent — celeste container */
     --accent: 199 92% 88%;
     --accent-foreground: 200 80% 10%;
     --accent-light: 199 90% 95%;
@@ -51,9 +51,9 @@
     --destructive-light: 350 100% 95%;
 
     /* Success */
-    --success: 199 85% 62%;
-    --success-foreground: 200 60% 12%;
-    --success-light: 199 90% 92%;
+    --success: 145 55% 38%;
+    --success-foreground: 0 0% 100%;
+    --success-light: 140 50% 90%;
 
     /* Warning */
     --warning: 36 100% 59%;             /* #FFB830 */
@@ -61,9 +61,9 @@
     --warning-light: 36 100% 94%;
 
     /* Info — primary celeste */
-    --info: 199 85% 62%;
-    --info-foreground: 200 60% 12%;
-    --info-light: 199 90% 92%;
+    --info: 210 70% 48%;
+    --info-foreground: 0 0% 100%;
+    --info-light: 210 80% 93%;
 
     --border: 200 14% 78%;               /* rgba(0,0,0,0.07) approx */
     --input: 200 12% 62%;
@@ -124,17 +124,17 @@
     --destructive-foreground: 0 0% 100%;
     --destructive-light: 350 100% 18%;
 
-    --success: 199 90% 72%;
-    --success-foreground: 200 70% 12%;
-    --success-light: 199 50% 18%;
+    --success: 145 50% 62%;
+    --success-foreground: 145 60% 10%;
+    --success-light: 145 35% 18%;
 
     --warning: 36 100% 59%;
     --warning-foreground: 240 22% 5%;
     --warning-light: 36 100% 14%;
 
-    --info: 199 90% 72%;
-    --info-foreground: 200 70% 12%;
-    --info-light: 199 50% 18%;
+    --info: 210 80% 74%;
+    --info-foreground: 210 60% 12%;
+    --info-light: 210 40% 20%;
 
     --border: 200 10% 26%;              /* subtle line, no alpha (Tailwind-friendly) */
     --input: 200 10% 45%;

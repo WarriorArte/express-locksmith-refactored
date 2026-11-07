@@ -55,7 +55,7 @@ export function ServiceStatusPanel({ stats }: ServiceStatusPanelProps) {
           <div key={status.label} className="flex items-center gap-2">
             <div className={cn("w-2.5 h-2.5 rounded-[3px] shrink-0", status.color)} />
             <div className="flex flex-col">
-              <span className="text-[11px] font-semibold leading-none text-muted-foreground">{status.label}</span>
+              <span className="text-xs font-semibold leading-none text-muted-foreground">{status.label}</span>
               <span className="mt-1 text-sm font-extrabold leading-none tabular-nums">{status.count}</span>
             </div>
           </div>

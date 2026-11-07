@@ -225,20 +225,20 @@ export default function Clientes() {
                   <div className="min-w-0">
                     <p className="font-semibold text-foreground leading-tight truncate">{client.name}</p>
                     <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                      <Badge variant="outline" className="text-[11px] px-1.5 py-0">
+                      <Badge variant="outline" className="text-xs px-1.5 py-0">
                         {client.customer_type === "company" ? "Empresa" : "Persona"}
                       </Badge>
                       {client.is_vip && (
-                        <Badge className="text-[11px] px-1.5 py-0 bg-primary text-primary-foreground">Cerrajero Ext.</Badge>
+                        <Badge className="text-xs px-1.5 py-0 bg-primary text-primary-foreground">Cerrajero Ext.</Badge>
                       )}
                       {client.is_frequent && (
-                        <Badge className="text-[11px] px-1.5 py-0 bg-success text-success-foreground">Frecuente</Badge>
+                        <Badge className="text-xs px-1.5 py-0 bg-success text-success-foreground">Frecuente</Badge>
                       )}
                       {client.has_debt && (
-                        <Badge className="text-[11px] px-1.5 py-0 bg-destructive text-destructive-foreground">Deuda</Badge>
+                        <Badge className="text-xs px-1.5 py-0 bg-destructive text-destructive-foreground">Deuda</Badge>
                       )}
                       {client.no_work_again && (
-                        <Badge className="text-[11px] px-1.5 py-0 bg-destructive text-destructive-foreground">
+                        <Badge className="text-xs px-1.5 py-0 bg-destructive text-destructive-foreground">
                           <AlertCircle className="w-2.5 h-2.5 mr-0.5" />
                           No trabajar
                         </Badge>
@@ -248,9 +248,9 @@ export default function Clientes() {
                 </div>
                 <div className="flex items-start gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                   <div className="text-right">
-                    <p className="text-[11px] text-muted-foreground leading-tight">Compras</p>
+                    <p className="text-xs text-muted-foreground leading-tight">Compras</p>
                     <p className="text-xl font-bold text-foreground dark:text-primary">{currencySymbol}{(client.total_purchases || 0).toLocaleString()}</p>
-                    <p className="text-[11px] text-muted-foreground">{client.total_services || 0} servicios</p>
+                    <p className="text-xs text-muted-foreground">{client.total_services || 0} servicios</p>
                   </div>
                   <div className="hidden md:block">
                     <DropdownMenu>

@@ -127,7 +127,7 @@ export function DateFilterButton({
             type="button"
             aria-label={ariaLabel}
             className={cn(
-              "flex h-10 min-w-10 items-center justify-center gap-2 rounded-xl border border-white/[.13] bg-white/[.09] px-0 text-foreground transition-colors active:scale-95 lg:min-w-[132px] lg:justify-start lg:px-3",
+              "flex h-10 min-w-10 items-center justify-center gap-2 rounded-full bg-muted px-0 text-foreground transition-colors active:scale-95 lg:min-w-[132px] lg:justify-start lg:px-3",
               active && "border-primary/50 bg-primary/18 text-primary",
             )}
           >
@@ -209,7 +209,7 @@ export function DateFilterButton({
             <button
               type="button"
               onClick={() => onChange(emptyDateFilter)}
-              className="mt-3 flex h-10 w-full items-center justify-center rounded-[12px] border border-border bg-background text-sm font-bold text-foreground transition-colors hover:bg-muted"
+              className="mt-3 flex h-10 w-full items-center justify-center rounded-[8px] bg-muted text-sm font-bold text-foreground transition-colors hover:bg-muted"
             >
               Limpiar fecha
             </button>
@@ -222,7 +222,7 @@ export function DateFilterButton({
           type="button"
           aria-label="Limpiar filtro de fecha"
           onClick={() => onChange(emptyDateFilter)}
-          className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/[.13] bg-white/[.09] text-foreground transition-colors active:scale-95 lg:h-9 lg:w-9"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-foreground transition-colors active:scale-95 lg:h-9 lg:w-9"
         >
           <X className="h-4 w-4" />
         </button>
@@ -244,14 +244,14 @@ function DateInput({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-[11px] font-bold text-muted-foreground">
+      <span className="mb-1.5 block text-xs font-bold text-muted-foreground">
         {label}
       </span>
       <input
         type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-[12px] border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none transition-colors focus:border-primary"
+        className="h-11 w-full rounded-[8px] bg-muted px-3 text-sm font-semibold text-foreground outline-none transition-colors focus:border-primary"
       />
     </label>
   );

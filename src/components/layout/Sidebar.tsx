@@ -194,7 +194,7 @@ export function Sidebar({
                 )}
               />
               {!collapsed && (
-                <span className="text-[11px] font-semibold leading-tight text-center w-full truncate">
+                <span className="text-xs font-semibold leading-tight text-center w-full truncate">
                   {item.label}
                 </span>
               )}
@@ -229,7 +229,7 @@ export function Sidebar({
                 )}
               />
               {!collapsed && (
-                <span className="text-[11px] font-semibold leading-tight text-center w-full truncate">
+                <span className="text-xs font-semibold leading-tight text-center w-full truncate">
                   Panel SuperAdmin
                 </span>
               )}
@@ -322,7 +322,7 @@ export function Sidebar({
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
         className="hidden lg:flex flex-col h-dvh sticky top-0 z-30 p-3"
       >
-        <div className="flex flex-col flex-1 bg-sidebar rounded-[16px] shadow-xl border border-white/[0.06] overflow-hidden min-h-0">
+        <div className="flex flex-col flex-1 bg-sidebar rounded-[16px] overflow-hidden min-h-0">
           {sidebarContent}
         </div>
       </motion.aside>

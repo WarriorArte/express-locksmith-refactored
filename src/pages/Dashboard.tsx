@@ -141,11 +141,11 @@ export default function Dashboard() {
                   <RecentActivity />
                   <div className="hidden lg:block card-elevated p-4">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-primary/10 text-primary">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-accent-foreground">
                         <ShoppingCart className="h-5 w-5" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[11px] font-semibold text-muted-foreground">
+                        <p className="text-xs font-semibold text-muted-foreground">
                           transacciones
                         </p>
                         <p className="text-xl font-extrabold leading-tight tabular-nums">

@@ -257,12 +257,12 @@ export default function Ventas() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border bg-muted/30">
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Folio</th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Pago</th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Cliente</th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Artículos</th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Fecha</th>
-                    <th className="px-4 py-3 text-right text-[11px] font-semibold text-muted-foreground">Total</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Folio</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Pago</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Cliente</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Artículos</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Fecha</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Total</th>
                     <th className="w-12" />
                   </tr>
                 </thead>
@@ -302,7 +302,7 @@ export default function Ventas() {
                       <td className="px-4 py-3 text-right whitespace-nowrap">
                         <p className="text-sm font-bold text-foreground dark:text-success">{currencySymbol}{Number(sale.total).toLocaleString()}</p>
                         {sale.discount && Number(sale.discount) > 0 && (
-                          <p className="text-[11px] text-destructive">-{currencySymbol}{Number(sale.discount).toLocaleString()} desc.</p>
+                          <p className="text-xs text-destructive">-{currencySymbol}{Number(sale.discount).toLocaleString()} desc.</p>
                         )}
                       </td>
                       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
@@ -339,14 +339,10 @@ export default function Ventas() {
             {/* Mobile cards */}
             <div className="md:hidden m3-list">
               {filteredSales.map((sale) => {
-                const statusTextClass =
-                  sale.payment_method === "cash" ? "text-success" :
-                  sale.payment_method === "card" ? "text-info" :
-                  sale.payment_method === "transfer" ? "text-primary" : "text-warning";
-                const statusDotClass =
-                  sale.payment_method === "cash" ? "bg-success" :
-                  sale.payment_method === "card" ? "bg-info" :
-                  sale.payment_method === "transfer" ? "bg-primary" : "bg-warning";
+                const saleDate = sale.created_at ? new Date(sale.created_at) : null;
+                const saleWhen = !saleDate ? "" : saleDate.toDateString() === new Date().toDateString()
+                  ? saleDate.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })
+                  : saleDate.toLocaleDateString("es", { day: "numeric", month: "short" });
                 const saleTitle = sale.sale_items && sale.sale_items.length > 0
                   ? sale.sale_items.length === 1
                     ? sale.sale_items[0].product_name
@@ -357,13 +353,13 @@ export default function Ventas() {
                     key={sale.id}
                     onClick={() => handleViewDetail(sale)}
                     code={sale.sale_number}
-                    statusLabel={paymentMethodLabels[sale.payment_method]}
-                    statusTextClass={statusTextClass}
-                    statusDotClass={statusDotClass}
+                    statusLabel={saleWhen}
+                    statusTextClass="text-muted-foreground"
+                    statusDotClass="bg-muted-foreground"
                     title={saleTitle}
                     subtitle={sale.customer_name || sale.customer?.name || "Cliente mostrador"}
                     valueText={`${currencySymbol}${Number(sale.total).toLocaleString()}`}
-                    valueClass="text-success"
+                    valueClass="text-foreground"
                   />
                 );
               })}

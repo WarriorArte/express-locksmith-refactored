@@ -551,13 +551,13 @@ export default function Servicios() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border bg-muted/30">
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground w-10" />
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Folio</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Estado</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Descripcion</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Cliente</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Fecha</th>
-                  <th className="px-4 py-3 text-right text-[11px] font-semibold text-muted-foreground">Precio</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground w-10" />
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Folio</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Estado</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Descripcion</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Cliente</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Fecha</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Precio</th>
                   <th className="w-12" />
                 </tr>
               </thead>
@@ -606,7 +606,7 @@ export default function Servicios() {
                       </td>
                       <td className="px-4 py-3 text-right whitespace-nowrap">
                         <p className="text-sm font-bold text-foreground">{currencySymbol}{Number(price).toLocaleString()}</p>
-                        <p className="text-[11px] text-muted-foreground">{service.final_price ? "Final" : "Estimado"}</p>
+                        <p className="text-xs text-muted-foreground">{service.final_price ? "Final" : "Estimado"}</p>
                       </td>
                       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>

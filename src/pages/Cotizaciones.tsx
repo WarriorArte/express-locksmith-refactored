@@ -292,12 +292,12 @@ export default function Cotizaciones() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border bg-muted/30">
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Folio</th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Estado</th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Cliente</th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Descripción</th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Vence</th>
-                    <th className="px-4 py-3 text-right text-[11px] font-semibold text-muted-foreground">Total</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Folio</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Estado</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Cliente</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Descripción</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Vence</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Total</th>
                     <th className="w-12" />
                   </tr>
                 </thead>
