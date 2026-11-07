@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { useState, useMemo } from "react";
 import { m as motion } from "framer-motion";
 import { Wrench, Key, FileText, Cpu, Car, Truck, Bike } from "lucide-react";
@@ -329,7 +330,7 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {!toolActive && (
-        <div className="shrink-0 bg-background px-5 lg:px-6 pt-10 lg:pt-3 pb-4">
+        <div className={cn("shrink-0 bg-background px-5 lg:px-6 pt-10 lg:pt-3", homeContent ? "pb-9" : "pb-4")}>
           <PageHeader
             className={homeContent ? "dashboard-surface !bg-transparent" : undefined}
             title={vehicleSelected ? `${selectedMake} ${selectedModel}` : "Vehículos"}
