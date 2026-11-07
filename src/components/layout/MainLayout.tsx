@@ -1,4 +1,5 @@
-﻿import { useState } from "react";
+﻿import { Suspense, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { Outlet } from "react-router";
 import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
@@ -18,7 +19,16 @@ export function MainLayout() {
 
       <div className="flex-1 flex flex-col min-w-0">
         <main className="flex-1 min-h-0 overflow-hidden flex flex-col">
-          <Outlet />
+          {/* Suspense local: al cargar un módulo por primera vez la barra lateral e inferior se mantienen visibles */}
+          <Suspense
+            fallback={
+              <div className="flex flex-1 items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            }
+          >
+            <Outlet />
+          </Suspense>
         </main>
       </div>
 

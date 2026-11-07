@@ -17,14 +17,33 @@ import Index from "./pages/Index";
 
 // Lazy-loaded feature pages (code-split per route)
 const SuperAdminDashboard = lazy(() => import("./pages/SuperAdminDashboard"));
-const Inventario = lazy(() => import("./pages/Inventario"));
-const Cotizaciones = lazy(() => import("./pages/Cotizaciones"));
-const Clientes = lazy(() => import("./pages/Clientes"));
-const Servicios = lazy(() => import("./pages/Servicios"));
-const Ventas = lazy(() => import("./pages/Ventas"));
-const Garantias = lazy(() => import("./pages/Garantias"));
-const Configuracion = lazy(() => import("./pages/Configuracion"));
-const Herramientas = lazy(() => import("./pages/Herramientas"));
+const loadInventario = () => import("./pages/Inventario");
+const loadCotizaciones = () => import("./pages/Cotizaciones");
+const loadClientes = () => import("./pages/Clientes");
+const loadServicios = () => import("./pages/Servicios");
+const loadVentas = () => import("./pages/Ventas");
+const loadGarantias = () => import("./pages/Garantias");
+const loadConfiguracion = () => import("./pages/Configuracion");
+const loadHerramientas = () => import("./pages/Herramientas");
+const Inventario = lazy(loadInventario);
+const Cotizaciones = lazy(loadCotizaciones);
+const Clientes = lazy(loadClientes);
+const Servicios = lazy(loadServicios);
+const Ventas = lazy(loadVentas);
+const Garantias = lazy(loadGarantias);
+const Configuracion = lazy(loadConfiguracion);
+const Herramientas = lazy(loadHerramientas);
+
+// Precarga en segundo plano el código de los módulos principales tras la primera carga,
+// para que el primer cambio de módulo no espere la descarga.
+if (typeof window !== "undefined") {
+  const preload = () => {
+    [loadHerramientas, loadServicios, loadInventario, loadVentas, loadClientes, loadCotizaciones, loadGarantias, loadConfiguracion]
+      .reduce((p, load) => p.then(() => load().then(() => undefined, () => undefined)), Promise.resolve());
+  };
+  const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => void }).requestIdleCallback;
+  window.addEventListener("load", () => (ric ? ric(preload, { timeout: 3000 }) : setTimeout(preload, 1500)), { once: true });
+}
 const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
 const SuperAdminHerramientas = lazy(() => import("./pages/SuperAdminHerramientas"));
 const NotFound = lazy(() => import("./pages/NotFound"));
