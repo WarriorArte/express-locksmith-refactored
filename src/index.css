@@ -11,8 +11,8 @@
      Neon green primary on near-white surfaces.
      ───────────────────────────────────────────────────────── */
   :root {
-    --background: 200 30% 98%;          /* #F7F8FA */
-    --foreground: 200 15% 10%;           /* #0D0D12 */
+    --background: 200 35% 97%;          /* #F7F8FA */
+    --foreground: 200 25% 8%;           /* #0D0D12 */
 
     --card: 0 0% 100%;                  /* #FFFFFF */
     --card-foreground: 200 15% 10%;
@@ -21,28 +21,28 @@
     --popover-foreground: 200 15% 10%;
 
     /* Surface 2 — used for nested chips / inputs / sub-tiles */
-    --surface-2: 200 30% 94%;           /* #F0F1F5 */
+    --surface-2: 200 35% 92%;           /* #F0F1F5 */
 
     /* Primary — Neon Green (signature accent) */
-    --primary: 199 85% 62%;            /* #00AEE6 */
-    --primary-foreground: 200 60% 12%;   /* near-black on celeste */
+    --primary: 199 88% 60%;            /* #00AEE6 */
+    --primary-foreground: 200 80% 10%;   /* near-black on celeste */
     --primary-hover: 199 80% 55%;      /* #0097C7 */
-    --primary-light: 199 90% 92%;
+    --primary-light: 199 92% 88%;
     --primary-glow: 199 85% 62%;
 
     /* Secondary — neutral surface tile */
-    --secondary: 200 30% 94%;
+    --secondary: 200 35% 92%;
     --secondary-foreground: 200 15% 10%;
     --secondary-hover: 200 25% 89%;
     --secondary-light: 200 30% 97%;
 
     /* Muted */
-    --muted: 200 30% 94%;
-    --muted-foreground: 200 8% 40%;    /* #5A5A72 */
+    --muted: 200 30% 92%;
+    --muted-foreground: 200 12% 30%;    /* #5A5A72 */
 
     /* Accent — cool slate gray */
-    --accent: 199 90% 92%;              /* #7A8494 */
-    --accent-foreground: 200 60% 12%;
+    --accent: 199 92% 88%;              /* #7A8494 */
+    --accent-foreground: 200 80% 10%;
     --accent-light: 199 90% 95%;
 
     /* Destructive */
@@ -65,8 +65,8 @@
     --info-foreground: 200 60% 12%;
     --info-light: 199 90% 92%;
 
-    --border: 200 15% 88%;               /* rgba(0,0,0,0.07) approx */
-    --input: 200 30% 94%;
+    --border: 200 14% 78%;               /* rgba(0,0,0,0.07) approx */
+    --input: 200 12% 62%;
     --ring: 199 85% 55%;
     --radius: 1rem;
 
@@ -101,15 +101,15 @@
      ───────────────────────────────────────────────────────── */
   .dark {
     --background: 200 15% 7%;           /* #0A0A0F */
-    --foreground: 200 20% 92%;          /* #F0F0F8 */
+    --foreground: 200 20% 96%;          /* #F0F0F8 */
 
-    --card: 200 12% 11%;                 /* #141419 */
+    --card: 200 14% 12%;                 /* #141419 */
     --card-foreground: 200 20% 92%;
 
     --popover: 200 12% 13%;             /* #1A1A22 */
     --popover-foreground: 200 20% 92%;
 
-    --surface-2: 200 12% 16%;           /* #1E1E26 */
+    --surface-2: 200 14% 17%;           /* #1E1E26 */
 
     --primary: 199 90% 72%;
     --primary-foreground: 200 70% 12%;
@@ -123,7 +123,7 @@
     --secondary-light: 200 12% 13%;
 
     --muted: 200 12% 16%;
-    --muted-foreground: 200 8% 62%;    /* #7878A0 */
+    --muted-foreground: 200 12% 72%;    /* #7878A0 */
 
     --accent: 199 50% 20%;
     --accent-foreground: 199 90% 88%;
@@ -145,8 +145,8 @@
     --info-foreground: 200 70% 12%;
     --info-light: 199 50% 18%;
 
-    --border: 200 10% 20%;              /* subtle line, no alpha (Tailwind-friendly) */
-    --input: 200 12% 16%;
+    --border: 200 10% 26%;              /* subtle line, no alpha (Tailwind-friendly) */
+    --input: 200 10% 45%;
     --ring: 199 90% 72%;
 
     --sidebar-background: 200 15% 7%;
@@ -193,9 +193,11 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
+    color: hsl(var(--foreground));
     font-family: 'Roboto', system-ui, -apple-system, 'Segoe UI', sans-serif;
     @apply font-bold tracking-tight;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.015em;
+    font-weight: 700;
   }
 
   /* Hide scrollbars on horizontal chip rows */
@@ -211,13 +213,13 @@
 
   /* Primary card with glow */
   .card-primary {
-    @apply bg-primary text-primary-foreground rounded-sm;
+    @apply bg-primary text-primary-foreground rounded-3xl;
     box-shadow: var(--shadow-gold);
   }
 
   /* Standard outlined card — solid bg to block grid texture */
   .card-elevated {
-    @apply bg-card text-card-foreground rounded-sm border border-border;
+    @apply bg-card text-card-foreground rounded-3xl border border-border;
     background-color: hsl(var(--card));
     box-shadow: var(--shadow-sm);
     transition: all 0.2s ease;
@@ -228,6 +230,7 @@
 
   .ce-hero {
     position: relative;
+    padding-bottom: 4px;
     overflow: hidden;
     border-radius: 16px;
     border-radius: 28px;

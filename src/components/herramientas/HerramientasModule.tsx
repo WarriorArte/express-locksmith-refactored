@@ -379,7 +379,7 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
                             selectedCategory === cat
                               ? "bg-primary text-primary-foreground border-primary"
-                              : "border-white/20 text-white/70 hover:border-white/40 hover:text-white"
+                              : "border-foreground/25 text-muted-foreground hover:border-foreground/50 hover:text-foreground"
                           }`}
                         >
                           {HERO_CHIP_ICONS[cat]} {HERO_CHIP_LABELS[cat]}
@@ -392,7 +392,7 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
                         value={selectedYear ? String(selectedYear) : ""}
                         onValueChange={(v) => { setSelectedYear(Number(v)); setSelectedMake(""); setSelectedModel(""); }}
                       >
-                        <SelectTrigger className="h-11 rounded-xl bg-white/[.09] border-white/[.13] text-[hsl(240_22%_95%)] hover:bg-white/[.14] focus:ring-0 focus:border-white/30 [&>svg]:opacity-60 text-sm">
+                        <SelectTrigger className="h-11 rounded-xl bg-card border-[1.5px] border-foreground/25 text-foreground hover:border-foreground/45 focus:ring-0 focus:border-primary [&>svg]:opacity-60 text-sm">
                           <SelectValue placeholder="Año" />
                         </SelectTrigger>
                         <SelectContent>
@@ -404,7 +404,7 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
                         onValueChange={(v) => { setSelectedMake(v); setSelectedModel(""); }}
                         disabled={!selectedYear}
                       >
-                        <SelectTrigger className="h-11 rounded-xl bg-white/[.09] border-white/[.13] text-[hsl(240_22%_95%)] hover:bg-white/[.14] focus:ring-0 focus:border-white/30 [&>svg]:opacity-60 text-sm">
+                        <SelectTrigger className="h-11 rounded-xl bg-card border-[1.5px] border-foreground/25 text-foreground hover:border-foreground/45 focus:ring-0 focus:border-primary [&>svg]:opacity-60 text-sm">
                           <SelectValue placeholder="Marca" />
                         </SelectTrigger>
                         <SelectContent>
@@ -416,7 +416,7 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
                         onValueChange={(v) => setSelectedModel(v)}
                         disabled={!selectedMake}
                       >
-                        <SelectTrigger className="h-11 rounded-xl bg-white/[.09] border-white/[.13] text-[hsl(240_22%_95%)] hover:bg-white/[.14] focus:ring-0 focus:border-white/30 [&>svg]:opacity-60 text-sm">
+                        <SelectTrigger className="h-11 rounded-xl bg-card border-[1.5px] border-foreground/25 text-foreground hover:border-foreground/45 focus:ring-0 focus:border-primary [&>svg]:opacity-60 text-sm">
                           <SelectValue placeholder="Modelo" />
                         </SelectTrigger>
                         <SelectContent>
@@ -461,9 +461,9 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
                     className="overflow-hidden"
                   >
                     {!hasAnyTool ? (
-                      <p className="text-sm text-white/60 py-2">No tienes herramientas asignadas para este taller.</p>
+                      <p className="text-sm text-muted-foreground py-2">No tienes herramientas asignadas para este taller.</p>
                     ) : availableYears.length === 0 ? (
-                      <p className="text-sm text-white/60 py-2">Aún no hay vehículos configurados para las herramientas de este taller.</p>
+                      <p className="text-sm text-muted-foreground py-2">Aún no hay vehículos configurados para las herramientas de este taller.</p>
                     ) : (
                       <>
                         {/* Chips */}
@@ -480,7 +480,7 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
                               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
                                 selectedCategory === cat
                                   ? "bg-primary text-primary-foreground border-primary"
-                                  : "border-white/20 text-white/70 hover:border-white/40 hover:text-white"
+                                  : "border-foreground/25 text-muted-foreground hover:border-foreground/50 hover:text-foreground"
                               }`}
                             >
                               {HERO_CHIP_ICONS[cat]} {HERO_CHIP_LABELS[cat]}
@@ -493,7 +493,7 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
                             value={selectedYear ? String(selectedYear) : ""}
                             onValueChange={(v) => { setSelectedYear(Number(v)); setSelectedMake(""); setSelectedModel(""); }}
                           >
-                            <SelectTrigger className="h-11 rounded-xl bg-white/[.09] border-white/[.13] text-[hsl(240_22%_95%)] hover:bg-white/[.14] focus:ring-0 focus:border-white/30 [&>svg]:opacity-60 text-sm">
+                            <SelectTrigger className="h-11 rounded-xl bg-card border-[1.5px] border-foreground/25 text-foreground hover:border-foreground/45 focus:ring-0 focus:border-primary [&>svg]:opacity-60 text-sm">
                               <SelectValue placeholder="Año" />
                             </SelectTrigger>
                             <SelectContent>
@@ -505,7 +505,7 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
                             onValueChange={(v) => { setSelectedMake(v); setSelectedModel(""); }}
                             disabled={!selectedYear}
                           >
-                            <SelectTrigger className="h-11 rounded-xl bg-white/[.09] border-white/[.13] text-[hsl(240_22%_95%)] hover:bg-white/[.14] focus:ring-0 focus:border-white/30 [&>svg]:opacity-60 text-sm">
+                            <SelectTrigger className="h-11 rounded-xl bg-card border-[1.5px] border-foreground/25 text-foreground hover:border-foreground/45 focus:ring-0 focus:border-primary [&>svg]:opacity-60 text-sm">
                               <SelectValue placeholder="Marca" />
                             </SelectTrigger>
                             <SelectContent>
@@ -517,7 +517,7 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
                             onValueChange={(v) => setSelectedModel(v)}
                             disabled={!selectedMake}
                           >
-                            <SelectTrigger className="h-11 rounded-xl bg-white/[.09] border-white/[.13] text-[hsl(240_22%_95%)] hover:bg-white/[.14] focus:ring-0 focus:border-white/30 [&>svg]:opacity-60 text-sm">
+                            <SelectTrigger className="h-11 rounded-xl bg-card border-[1.5px] border-foreground/25 text-foreground hover:border-foreground/45 focus:ring-0 focus:border-primary [&>svg]:opacity-60 text-sm">
                               <SelectValue placeholder="Modelo" />
                             </SelectTrigger>
                             <SelectContent>

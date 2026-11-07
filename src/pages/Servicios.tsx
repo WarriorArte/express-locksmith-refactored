@@ -440,9 +440,9 @@ export default function Servicios() {
                 En el <span className="text-primary">taller.</span>
               </h1>
               <p className="ce-hero-meta mt-2 max-w-[460px] lg:mt-3">
-                <b className="text-[hsl(240_22%_95%)]">{stats.today} servicios</b>
+                <b className="text-foreground">{stats.today} servicios</b>
                 {" "}hoy ·{" "}
-                <b className="text-[hsl(240_22%_95%)]">{stats.inProgress} en curso</b>
+                <b className="text-foreground">{stats.inProgress} en curso</b>
               </p>
             </div>
             <div className="flex items-start gap-2">
@@ -467,7 +467,7 @@ export default function Servicios() {
             <div className="flex shrink-0 items-center gap-2">
               <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as "all" | ServiceStatus)}>
                 <SelectTrigger
-                  className="h-10 w-10 shrink-0 justify-center rounded-xl px-0 bg-white/[.09] border-white/[.13] text-[hsl(240_22%_95%)] hover:bg-white/[.14] focus:ring-0 focus:border-white/30 [&>svg:last-child]:hidden lg:w-48 lg:justify-start lg:px-3 lg:[&>svg:last-child]:block"
+                  className="h-10 w-10 shrink-0 justify-center rounded-xl px-0 bg-card border-[1.5px] border-foreground/25 text-foreground hover:border-foreground/45 focus:ring-0 focus:border-primary [&>svg:last-child]:hidden lg:w-48 lg:justify-start lg:px-3 lg:[&>svg:last-child]:block"
                   aria-label="Filtrar por estado"
                 >
                   <div className="flex items-center gap-2">

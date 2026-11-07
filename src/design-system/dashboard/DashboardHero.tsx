@@ -33,9 +33,9 @@ export function DashboardHero({
 
           {/* Desktop: estadísticas */}
           <p className="hidden lg:block ce-hero-meta mt-3 max-w-[460px]">
-            <b className="text-[hsl(240_22%_95%)]">{inProgressServices} servicios en curso</b>
+            <b className="text-foreground">{inProgressServices} servicios en curso</b>
             {" "}y{" "}
-            <b className="text-[hsl(240_22%_95%)]">{expiringQuotes} cotizaciones</b>
+            <b className="text-foreground">{expiringQuotes} cotizaciones</b>
             {" "}a punto de vencer esta semana.
           </p>
         </div>

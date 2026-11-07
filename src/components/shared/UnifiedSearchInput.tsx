@@ -37,7 +37,7 @@ export function UnifiedSearchInput({
 }: UnifiedSearchInputProps) {
   return (
     <div className={cn("relative", className)}>
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/45 pointer-events-none z-10" />
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
       <Input
         ref={inputRef}
         type={type}
@@ -53,9 +53,9 @@ export function UnifiedSearchInput({
         onBlur={onBlur}
         className={cn(
           "pl-9 rounded-2xl h-11 text-[13px]",
-          "bg-white/[.09] border-white/[.13] text-[hsl(240_22%_95%)]",
-          "placeholder:text-white/38 placeholder:font-normal",
-          "focus-visible:border-white/30 focus-visible:bg-white/[.12]",
+          "bg-card border-foreground/25 text-foreground",
+          "placeholder:text-muted-foreground placeholder:font-normal",
+          "focus-visible:border-primary focus-visible:border-2",
           "transition-[border-color,background-color] duration-200",
           inputClassName,
         )}

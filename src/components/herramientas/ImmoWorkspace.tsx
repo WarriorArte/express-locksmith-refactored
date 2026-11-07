@@ -126,15 +126,15 @@ function CompactRow({
     <div className="space-y-0.5">
       <motion.p
         style={labelFontSize ? { fontSize: labelFontSize } : undefined}
-        className={`text-[9px] font-bold uppercase tracking-wide leading-none ${inverse ? "text-[hsl(240_22%_95%_/_0.58)]" : "text-muted-foreground/70"}`}
+        className={`text-[9px] font-bold uppercase tracking-wide leading-none ${inverse ? "text-muted-foreground" : "text-muted-foreground/70"}`}
       >
         {label}
       </motion.p>
       <motion.p
         style={valueFontSize ? { fontSize: valueFontSize } : undefined}
-        className={`text-xs font-mono break-all leading-snug ${inverse ? "text-[hsl(240_22%_95%)]" : "text-foreground"}`}
+        className={`text-xs font-mono break-all leading-snug ${inverse ? "text-foreground" : "text-foreground"}`}
       >
-        {value ? value : <span className={inverse ? "text-[hsl(240_22%_95%_/_0.42)] italic" : "text-muted-foreground/50 italic"}>—</span>}
+        {value ? value : <span className={inverse ? "text-muted-foreground italic" : "text-muted-foreground/50 italic"}>—</span>}
       </motion.p>
     </div>
   );
@@ -285,7 +285,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
                 type="button"
                 onClick={() => setMainImageViewerOpen(true)}
                 aria-label={`Ver ${title} ampliado`}
-                className="flex min-h-0 items-center justify-center overflow-hidden rounded-xl bg-white/5 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="flex min-h-0 items-center justify-center overflow-hidden rounded-xl bg-foreground/5 outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 style={{ height: detailsHeight ?? 168 }}
               >
               <img
@@ -302,16 +302,16 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
                   <Radio className="h-3.5 w-3.5 text-primary" />
                   <motion.span
                     style={{ fontSize: detailLabelFontSizeStyle }}
-                    className="whitespace-nowrap font-bold uppercase tracking-[0.08em] text-[hsl(240_22%_95%)]"
+                    className="whitespace-nowrap font-bold uppercase tracking-[0.08em] text-foreground"
                   >
                     Detalles del Remoto
                   </motion.span>
                 </div>
                 {profile.fccId && (
-                  <div className="border-t border-white/10 px-3 py-2">
+                  <div className="border-t border-foreground/10 px-3 py-2">
                     <motion.p
                       style={{ fontSize: detailLabelFontSizeStyle }}
-                      className="mb-0.5 font-bold uppercase tracking-wide leading-none text-[hsl(240_22%_95%_/_0.58)]"
+                      className="mb-0.5 font-bold uppercase tracking-wide leading-none text-muted-foreground"
                     >
                       FCC ID
                     </motion.p>
@@ -319,17 +319,17 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
                       <motion.p
                         ref={fccTextRef}
                         style={{ fontSize: fccValueFontSizeStyle, scale: fccFitScale, transformOrigin: "left" }}
-                        className="inline-block whitespace-nowrap font-mono font-semibold leading-snug text-[hsl(240_22%_95%)]"
+                        className="inline-block whitespace-nowrap font-mono font-semibold leading-snug text-foreground"
                       >
                         {profile.fccId}
                       </motion.p>
                     </div>
                   </div>
                 )}
-                <div className="border-t border-white/10 px-3 py-2">
+                <div className="border-t border-foreground/10 px-3 py-2">
                   <CompactRow label="Año" value={vehicle?.year?.toString()} inverse labelFontSize={detailLabelFontSizeStyle} valueFontSize={detailValueFontSizeStyle} />
                 </div>
-                <div className="grid grid-cols-2 gap-3 border-t border-white/10 px-3 py-2">
+                <div className="grid grid-cols-2 gap-3 border-t border-foreground/10 px-3 py-2">
                   <CompactRow label="Frec." value={profile.frecuencia} inverse labelFontSize={detailLabelFontSizeStyle} valueFontSize={detailValueFontSizeStyle} />
                   <CompactRow label="Bat." value={profile.bateria} inverse labelFontSize={detailLabelFontSizeStyle} valueFontSize={detailValueFontSizeStyle} />
                 </div>

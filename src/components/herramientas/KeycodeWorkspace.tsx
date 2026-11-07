@@ -984,27 +984,27 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
             />
             <button
               type="submit"
-              className="h-10 w-10 shrink-0 flex items-center justify-center rounded-xl bg-white/[.09] border border-white/[.13] text-[hsl(240_22%_95%)] hover:bg-white/[.14] active:scale-95 transition-all"
+              className="h-10 w-10 shrink-0 flex items-center justify-center rounded-xl bg-card border-[1.5px] border-foreground/25 text-foreground hover:bg-accent active:scale-95 transition-all"
             >
               <Search className="w-4 h-4" />
             </button>
             <button
               type="button"
               onClick={() => setInfoModalOpen(true)}
-              className="h-10 w-10 shrink-0 flex items-center justify-center rounded-xl bg-white/[.09] border border-white/[.13] text-[hsl(240_22%_95%)] hover:bg-white/[.14] active:scale-95 transition-all"
+              className="h-10 w-10 shrink-0 flex items-center justify-center rounded-xl bg-card border-[1.5px] border-foreground/25 text-foreground hover:bg-accent active:scale-95 transition-all"
             >
               <Info className="w-4 h-4" />
             </button>
             <button
               type="button"
               onClick={handleOpenDecoder}
-              className="h-10 w-10 shrink-0 flex items-center justify-center rounded-xl bg-white/[.09] border border-white/[.13] text-[hsl(240_22%_95%)] hover:bg-white/[.14] active:scale-95 transition-all"
+              className="h-10 w-10 shrink-0 flex items-center justify-center rounded-xl bg-card border-[1.5px] border-foreground/25 text-foreground hover:bg-accent active:scale-95 transition-all"
             >
               <Camera className="w-4 h-4" />
             </button>
           </form>
           {codeState === "notfound" && (
-            <p className="mt-1.5 text-xs text-white/60">
+            <p className="mt-1.5 text-xs text-muted-foreground">
               El código <span className="font-mono font-semibold">{searchTerm.toUpperCase()}</span> no existe en esta serie.
             </p>
           )}
@@ -1201,7 +1201,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                   className="font-mono text-center"
                 />
                 {partialDigits.length > 0 && !canPartialSearch && (
-                  <p className="text-[11px] text-white/60 text-center">
+                  <p className="text-[11px] text-muted-foreground text-center">
                     Ingresa al menos {partialMinDigits} dígitos ({partialDigits.length}/{partialMinDigits}).
                   </p>
                 )}
