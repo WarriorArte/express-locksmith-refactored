@@ -23,12 +23,12 @@
     /* Surface 2 — used for nested chips / inputs / sub-tiles */
     --surface-2: 200 35% 92%;           /* #F0F1F5 */
 
-    /* Primary — celeste (acento de marca) */
-    --primary: 199 88% 60%;            /* #00AEE6 */
-    --primary-foreground: 200 80% 10%;   /* near-black on celeste */
-    --primary-hover: 199 80% 55%;      /* #0097C7 */
-    --primary-light: 199 92% 88%;
-    --primary-glow: 199 85% 62%;
+    /* Primary — gris celeste industrial (prueba) */
+    --primary: 206 18% 52%;            /* #6C8CA0 */
+    --primary-foreground: 0 0% 100%;   /* blanco sobre gris */
+    --primary-hover: 206 20% 45%;
+    --primary-light: 206 22% 90%;
+    --primary-glow: 206 18% 60%;
 
     /* Secondary — neutral surface tile */
     --secondary: 200 35% 92%;
@@ -40,10 +40,10 @@
     --muted: 200 30% 92%;
     --muted-foreground: 200 10% 34%;    /* #5A5A72 */
 
-    /* Accent — celeste container */
-    --accent: 199 92% 88%;
-    --accent-foreground: 200 80% 10%;
-    --accent-light: 199 90% 95%;
+    /* Accent — contenedor gris celeste */
+    --accent: 206 20% 88%;
+    --accent-foreground: 206 30% 18%;
+    --accent-light: 206 18% 95%;
 
     /* Destructive */
     --destructive: 350 100% 65%;        /* #FF4D6A */
@@ -67,18 +67,18 @@
 
     --border: 200 14% 78%;               /* rgba(0,0,0,0.07) approx */
     --input: 200 12% 62%;
-    --ring: 199 85% 55%;
+    --ring: 206 18% 55%;
     --radius: 1rem;
 
     /* Sidebar — Light: deep dark sidebar still works as accent rail */
     --sidebar-background: 200 30% 96%;   /* near-black, like the dark theme bg */
     --sidebar-foreground: 200 15% 10%;
-    --sidebar-primary: 199 85% 62%;
-    --sidebar-primary-foreground: 200 60% 12%;
-    --sidebar-accent: 199 90% 92%;
-    --sidebar-accent-foreground: 200 60% 12%;
+    --sidebar-primary: 206 18% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 206 18% 90%;
+    --sidebar-accent-foreground: 206 30% 18%;
     --sidebar-border: 200 15% 88%;
-    --sidebar-ring: 199 85% 55%;
+    --sidebar-ring: 206 18% 55%;
 
     /* Shadows */
     --shadow-sm: 0 1px 3px 0 hsl(240 16% 6% / 0.04);
@@ -102,11 +102,11 @@
 
     --surface-2: 200 14% 17%;           /* #1E1E26 */
 
-    --primary: 199 90% 72%;
-    --primary-foreground: 200 70% 12%;
-    --primary-hover: 199 90% 78%;
-    --primary-light: 199 50% 20%;
-    --primary-glow: 199 90% 72%;
+    --primary: 206 20% 68%;
+    --primary-foreground: 206 40% 12%;
+    --primary-hover: 206 22% 74%;
+    --primary-light: 206 18% 22%;
+    --primary-glow: 206 20% 68%;
 
     --secondary: 200 12% 16%;
     --secondary-foreground: 200 20% 92%;
@@ -116,9 +116,9 @@
     --muted: 200 12% 16%;
     --muted-foreground: 200 12% 72%;    /* #7878A0 */
 
-    --accent: 199 50% 20%;
-    --accent-foreground: 199 90% 88%;
-    --accent-light: 199 40% 16%;
+    --accent: 206 18% 24%;
+    --accent-foreground: 206 25% 88%;
+    --accent-light: 206 15% 17%;
 
     --destructive: 350 100% 65%;
     --destructive-foreground: 0 0% 100%;
@@ -138,14 +138,14 @@
 
     --border: 200 10% 26%;              /* subtle line, no alpha (Tailwind-friendly) */
     --input: 200 10% 45%;
-    --ring: 199 90% 72%;
+    --ring: 206 20% 68%;
 
     --sidebar-background: 200 15% 7%;
     --sidebar-foreground: 200 20% 92%;
-    --sidebar-primary: 199 90% 72%;
-    --sidebar-primary-foreground: 200 70% 12%;
-    --sidebar-accent: 199 50% 20%;
-    --sidebar-accent-foreground: 199 90% 88%;
+    --sidebar-primary: 206 20% 68%;
+    --sidebar-primary-foreground: 206 40% 12%;
+    --sidebar-accent: 206 18% 24%;
+    --sidebar-accent-foreground: 206 25% 88%;
     --sidebar-border: 200 10% 20%;
 
     --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.4);
