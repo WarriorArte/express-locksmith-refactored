@@ -166,7 +166,7 @@ Si un módulo necesita una pieza que no existe y que otro módulo también usar�
 ### 4.4 Formas M3E: cuándo sí
 
 - Detrás de la **foto principal** del objeto (llavero, llave, módulo): `cookie9` con `spin`.
-- La foto del remoto se escala por **ancho**, no por alto: si queda más alta que la forma, sobresale hacia abajo y se oculta con un degradado (`mask-image` vertical de opaco a transparente) en lugar de cortarse de golpe. El degradado solo afecta el **último ~15%** de la foto: el resto se muestra completo, así que subir la foto revela más imagen.
+- La foto del remoto se escala por **ancho**, no por alto: si queda más alta que la forma, sobresale hacia abajo y se oculta con un degradado (`mask-image` vertical de opaco a transparente) en lugar de cortarse de golpe. El degradado solo afecta el **último ~8%** de la foto: el resto se muestra completo, así que subir la foto revela más imagen.
 - Detrás de **números de paso**: `cookie9`.
 - Detrás del **avatar** de un cliente (pendiente): `cookie6`.
 - **No** detrás de íconos decorativos ni en todas las tarjetas. Máximo dos usos por pantalla.
