@@ -74,7 +74,7 @@ export function DetailHero({ className, children }: { className?: string; childr
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-[28px] bg-header-surface text-foreground p-5 md:grid md:grid-cols-[auto_1fr] md:items-center md:gap-8",
+        "overflow-hidden rounded-[28px] bg-secondary text-foreground p-5 md:grid md:grid-cols-[auto_1fr] md:items-center md:gap-8",
         className,
       )}
     >

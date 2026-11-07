@@ -31,8 +31,8 @@
     --primary-light: 199 92% 88%;
     --primary-glow: 199 85% 62%;
 
-    /* Header surface — celeste suave, menos intenso que el acento */
-    --header-surface: 194.5 76.3% 85.1%; /* #BCE8F6 */
+    /* Header alone carries the large brand surface; detail content stays neutral. */
+    --header-surface: 199 80% 80%;
 
     /* Secondary — neutral surface tile */
     --secondary: 210 10% 92%;

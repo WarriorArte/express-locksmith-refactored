@@ -157,7 +157,7 @@ Los carruseles de imágenes y perfiles mantienen el espacio interior de la secci
 
 ### 4.3 Color
 
-- **Superficies grandes y encabezados destacados:** `bg-header-surface`, celeste suave más ligero y menos saturado que las acciones; el gris industrial fue descartado por el usuario. No reutilizar `primary-light` porque también colorea indicadores y acentos.
+- **Distribución del color:** el encabezado destacado conserva celeste con más presencia; la información protagonista usa `bg-secondary` neutro y los accesos rápidos `bg-card`. Evitar bloques pastel repetidos. Coral solo para selección activa; no colorear todos los accesos coral. Conservar celeste en acciones y burbujas de creación. El gris industrial en encabezados sigue descartado.
 - **Fondo de pantalla:** neutral frío casi blanco en claro y casi negro en oscuro. En oscuro el encabezado usa un nivel más luminoso (20%) para distinguirse del fondo y las tarjetas.
 - **Prueba vigente:** celeste y coral, elegida por el usuario: fondo `#F5F8FA`, encabezados celeste `#BCE8F6`, coral `#F08070` en selección y navegación activa, tinta `#182D3B`. Conservar celeste en acciones principales y burbujas; formas y animaciones intactas. `text-primary` usa un celeste más oscuro para legibilidad. Adaptar los tonos al tema oscuro. Violeta y ámbar quedaron descartados.
 - **Secciones:** `bg-card` + `shadow-sm` sobre el fondo de la pantalla.
