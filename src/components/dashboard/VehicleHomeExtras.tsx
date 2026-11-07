@@ -18,7 +18,7 @@ import { useServices, type Service } from "@/hooks/useServices";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useWorkshopFeatures } from "@/hooks/useWorkshopFeatures";
-import { spawnRipple } from "@/lib/ripple";
+import { ShortcutTile } from "@/design-system/actions/ShortcutTile";
 
 type CreateKind = "sale" | "service" | "quote" | "customer";
 
@@ -79,20 +79,13 @@ export function VehicleHomeExtras() {
       {actions.length > 0 && (
         <div className="grid grid-cols-4 gap-2">
           {actions.map((a) => (
-            <button
+            <ShortcutTile
               key={a.kind}
-              type="button"
+              icon={a.icon}
+              label={a.label}
+              create
               onClick={() => setCreating(a.kind)}
-              className="flex flex-col items-center gap-2 text-center"
-            >
-              <span
-                onPointerDown={spawnRipple}
-                className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-[22px] bg-accent text-accent-foreground"
-              >
-                <a.icon className="h-6 w-6" />
-              </span>
-              <span className="text-sm font-medium text-foreground">{a.label}</span>
-            </button>
+            />
           ))}
         </div>
       )}

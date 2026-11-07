@@ -10,6 +10,7 @@ import { useState } from "react";
 
 
 import { spawnRipple } from "@/lib/ripple";
+import { ShortcutTile } from "@/design-system/actions/ShortcutTile";
 import { MaterialShape } from "@/design-system/shapes/MaterialShape";
 import { useVehicleHome } from "@/hooks/useVehicleHome";
 import {
@@ -163,20 +164,13 @@ export function BottomNav() {
           </DialogHeader>
           <div className="grid grid-cols-3 gap-x-3 gap-y-5 pb-2 pt-3">
             {enabledQuickActions.map((a) => (
-              <button
+              <ShortcutTile
                 key={a.dialog}
-                type="button"
+                icon={a.icon}
+                label={a.label}
+                create
                 onClick={() => openAction(a.dialog)}
-                className="flex flex-col items-center gap-2 text-center"
-              >
-                <span
-                  onPointerDown={spawnRipple}
-                  className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-[22px] bg-accent text-accent-foreground"
-                >
-                  <a.icon className="h-6 w-6" />
-                </span>
-                <span className="text-sm font-medium text-foreground">{a.label}</span>
-              </button>
+              />
             ))}
           </div>
         </DialogContent>
