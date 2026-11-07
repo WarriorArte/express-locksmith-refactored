@@ -1344,11 +1344,16 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                       <div key={lk} className="flex items-center gap-3">
                         <span className="w-24 shrink-0 text-sm font-medium text-foreground">{LOCK_LABELS[lk]}</span>
                         {isDosEjes ? (
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="text-xs font-semibold text-muted-foreground">{axes![0].label}</span>
-                            <div className="flex gap-1">{renderCuts(arr, 0, axes![0].length)}</div>
-                            <span className="ml-1 text-xs font-semibold text-muted-foreground">{axes![1].label}</span>
-                            <div className="flex gap-1">{renderCuts(arr, axes![0].length, axes![0].length + axes![1].length)}</div>
+                          // Una fila por eje: cada eje con su etiqueta y sus cortes, sin partirse.
+                          <div className="flex min-w-0 flex-col gap-1.5">
+                            <div className="flex items-center gap-1.5">
+                              <span className="w-4 shrink-0 text-xs font-semibold text-muted-foreground">{axes![0].label}</span>
+                              <div className="flex gap-1">{renderCuts(arr, 0, axes![0].length)}</div>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="w-4 shrink-0 text-xs font-semibold text-muted-foreground">{axes![1].label}</span>
+                              <div className="flex gap-1">{renderCuts(arr, axes![0].length, axes![0].length + axes![1].length)}</div>
+                            </div>
                           </div>
                         ) : (
                           <div className="flex flex-wrap gap-1">{renderCuts(arr, 0, arr.length)}</div>
