@@ -48,8 +48,6 @@ export function DetailScreen({
 }: DetailScreenProps) {
   const scrollTop = useMotionValue(0);
   const barBackground = useTransform(scrollTop, [0, 40], [0, 1]);
-  const barTitle = useTransform(scrollTop, [56, 104], [0, 1]);
-  const barTitleY = useTransform(scrollTop, [56, 104], [8, 0]);
 
   return (
     <div className={cn("mx-auto flex h-full min-h-0 w-full max-w-2xl flex-col overflow-hidden bg-background md:max-w-4xl", className)}>
@@ -64,12 +62,10 @@ export function DetailScreen({
             <Button variant="ghost" size="icon" onClick={onBack} aria-label={backLabel}>
               <ArrowLeft className="!h-6 !w-6" />
             </Button>
-            <motion.p
-              style={{ opacity: barTitle, y: barTitleY }}
-              className="min-w-0 flex-1 truncate text-lg font-semibold text-foreground"
-            >
-              {title}
-            </motion.p>
+            <div className="min-w-0 flex-1 pl-1">
+              <p className="truncate text-lg font-semibold leading-tight text-foreground">{title}</p>
+              {meta && <p className="truncate text-xs leading-tight text-muted-foreground">{meta}</p>}
+            </div>
             {actions}
             <div className="shrink-0 pr-2">
               <AccountMenu />
@@ -77,13 +73,7 @@ export function DetailScreen({
           </div>
         </div>
 
-        <div className="space-y-3 px-4 pb-4">
-          <header className="px-1 pb-2 pt-1">
-            <h2 className="text-[2rem] font-bold leading-tight text-foreground">{title}</h2>
-            {meta && <p className="mt-1 text-base text-muted-foreground">{meta}</p>}
-          </header>
-          {children}
-        </div>
+        <div className="space-y-3 px-4 pb-4 pt-1">{children}</div>
       </div>
     </div>
   );
