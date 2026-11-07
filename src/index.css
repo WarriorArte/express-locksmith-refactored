@@ -30,6 +30,9 @@
     --primary-light: 199 92% 88%;
     --primary-glow: 199 85% 62%;
 
+    /* Header surface — gris industrial para las franjas de encabezado */
+    --header-surface: 210 9% 85%;
+
     /* Secondary — neutral surface tile */
     --secondary: 200 35% 92%;
     --secondary-foreground: 200 15% 10%;
@@ -107,6 +110,8 @@
     --primary-hover: 199 90% 78%;
     --primary-light: 199 50% 20%;
     --primary-glow: 199 90% 72%;
+
+    --header-surface: 213 9% 17%;
 
     --secondary: 200 12% 16%;
     --secondary-foreground: 200 20% 92%;
@@ -271,7 +276,7 @@
     z-index: -1;
     inset: -2.5rem -1.25rem -1rem;
     border-radius: 0 0 3rem 0.75rem;
-    background: hsl(var(--primary-light));
+    background: hsl(var(--header-surface));
     pointer-events: none;
   }
 
@@ -288,7 +293,7 @@
     overflow: hidden;
     border-radius: 16px;
     border-radius: 28px;
-    background: hsl(var(--primary-light));
+    background: hsl(var(--header-surface));
     color: hsl(var(--foreground));
   }
 
