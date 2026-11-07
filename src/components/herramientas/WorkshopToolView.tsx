@@ -343,7 +343,7 @@ function CountBadge({ n }: { n: number }) {
 /** Fila horizontal con desplazamiento por tarjeta: admite uno o varios perfiles por herramienta. */
 function ToolCarousel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-1 no-scrollbar scroll-px-5">
+    <div className="flex min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-1 no-scrollbar">
       {children}
     </div>
   );

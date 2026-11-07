@@ -153,6 +153,8 @@ Si un módulo necesita una pieza que no existe y que otro módulo también usar�
 | Texto mínimo | 12 px |
 | Área táctil mínima | 44 px |
 
+Los carruseles de imágenes y perfiles mantienen el espacio interior de la sección (20 px a cada lado), incluso después de desplazar o ajustar a una tarjeta; no usar márgenes negativos para llevarlos al borde exterior.
+
 ### 4.3 Color
 
 - **Superficies grandes y encabezados destacados:** `bg-header-surface`, celeste suave más ligero y menos saturado que las acciones; el gris industrial fue descartado por el usuario. No reutilizar `primary-light` porque también colorea indicadores y acentos.

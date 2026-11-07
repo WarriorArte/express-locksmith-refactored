@@ -338,8 +338,8 @@ export interface CarouselItem {
 }
 
 /**
- * Carrusel horizontal (herramientas, equipos, fotos de referencia). Sangra
- * hasta el borde de la DetailSection (-mx-5). Las que tienen foto se amplían.
+ * Carrusel horizontal dentro del espacio de la sección, sin invadir sus
+ * bordes redondeados. Las imágenes se amplían al tocarlas.
  */
 export function ImageCarousel({
   items,
@@ -362,7 +362,7 @@ export function ImageCarousel({
 
   return (
     <>
-      <div className="-mx-5 flex min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-5 pb-1 no-scrollbar" role="list">
+      <div className="flex min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-1 no-scrollbar" role="list">
         {items.map((item) => (
           <button
             key={item.id}
