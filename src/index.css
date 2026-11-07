@@ -30,8 +30,8 @@
     --primary-light: 199 92% 88%;
     --primary-glow: 199 85% 62%;
 
-    /* Header surface — gris industrial para las franjas de encabezado */
-    --header-surface: 210 9% 88%;
+    /* Header surface — celeste suave, menos intenso que el acento */
+    --header-surface: 199 60% 92%;
 
     /* Secondary — neutral surface tile */
     --secondary: 210 10% 92%;
@@ -111,7 +111,7 @@
     --primary-light: 199 50% 20%;
     --primary-glow: 199 90% 72%;
 
-    --header-surface: 210 8% 20%;
+    --header-surface: 199 28% 20%;
 
     --secondary: 210 8% 16%;
     --secondary-foreground: 200 20% 92%;

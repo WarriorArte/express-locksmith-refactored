@@ -155,7 +155,7 @@ Si un módulo necesita una pieza que no existe y que otro módulo también usar�
 
 ### 4.3 Color
 
-- **Superficies grandes y encabezados destacados:** `bg-header-surface`, gris industrial de baja saturación; no reutilizar `primary-light` porque también colorea indicadores y acentos.
+- **Superficies grandes y encabezados destacados:** `bg-header-surface`, celeste suave más ligero y menos saturado que las acciones; el gris industrial fue descartado por el usuario. No reutilizar `primary-light` porque también colorea indicadores y acentos.
 - **Fondo de pantalla:** neutral frío casi blanco en claro y casi negro en oscuro. En oscuro el encabezado usa un nivel más luminoso (20%) para distinguirse del fondo y las tarjetas.
 - **Acento:** conservar el celeste en acciones, selección, navegación y burbujas; no convertir toda la interfaz en gris.
 - **Secciones:** `bg-card` + `shadow-sm` sobre el fondo de la pantalla.
