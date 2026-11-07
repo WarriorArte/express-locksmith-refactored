@@ -256,10 +256,10 @@ export function WorkshopToolView({
   };
 
   return (
-    <div className="grid grid-cols-1 items-start gap-3 md:grid-cols-2 xl:grid-cols-3">
+    <div className="flex flex-col gap-3">
       {hasKeycodeData && (
-        <DetailSection title="Keycode" icon={<Key className="h-5 w-5 text-primary" />}>
-          <div className="grid grid-cols-1 gap-2">
+        <DetailSection title="Keycode" icon={<Key className="h-5 w-5 text-primary" />} action={<CountBadge n={availableKeycodeProfileIds.length} />}>
+          <ToolCarousel>
             {availableKeycodeProfileIds
               .map((id) => keycodeProfiles.find((p) => p.id === id))
               .filter((p): p is KeycodeProfile => !!p)
@@ -271,20 +271,20 @@ export function WorkshopToolView({
                     onClick={() => openTool("keycode", p.id)}
                     image={resolveStorageUrl(p.profileImage)}
                     imageClassName="object-contain mix-blend-multiply dark:mix-blend-screen dark:invert"
-                    wide
+                    shape="landscape"
                     fallbackIcon={<Key className="h-8 w-8" />}
                     title={primaryRef?.refCode || (p.series ? `Serie ${p.series}` : `IC ${p.icCard}`)}
                     subtitle={primaryRef?.refCode && p.series ? `Serie ${p.series}` : undefined}
                   />
                 );
               })}
-          </div>
+          </ToolCarousel>
         </DetailSection>
       )}
 
       {hasImmoData && (
-        <DetailSection title="Immo Info" icon={<Cpu className="h-5 w-5 text-primary" />}>
-          <div className="grid grid-cols-2 gap-2">
+        <DetailSection title="Immo Info" icon={<Cpu className="h-5 w-5 text-primary" />} action={<CountBadge n={availableImmoProfileIds.length} />}>
+          <ToolCarousel>
             {availableImmoProfileIds
               .map((id) => immoProfiles.find((p) => p.id === id))
               .filter((p): p is ImmoProfile => !!p)
@@ -293,19 +293,20 @@ export function WorkshopToolView({
                   key={p.id}
                   onClick={() => openTool("immo", p.id)}
                   image={resolveStorageUrl(p.mainImage)}
-                  imageClassName="object-cover"
+                  imageClassName="object-cover object-top"
+                  shape="portrait"
                   fallbackIcon={<Cpu className="h-8 w-8" />}
                   title={[p.marca, p.fccId].filter(Boolean).join(" ") || "Sin título"}
                   subtitle={immoDetailByProfileId.get(p.id)?.transponder || undefined}
                 />
               ))}
-          </div>
+          </ToolCarousel>
         </DetailSection>
       )}
 
       {hasAlarmaData && (
-        <DetailSection title="Alarmas" icon={<Radio className="h-5 w-5 text-primary" />}>
-          <div className="grid grid-cols-2 gap-2">
+        <DetailSection title="Alarmas" icon={<Radio className="h-5 w-5 text-primary" />} action={<CountBadge n={availableAlarmaProfileIds.length} />}>
+          <ToolCarousel>
             {availableAlarmaProfileIds
               .map((id) => alarmaProfiles.find((p) => p.id === id))
               .filter((p): p is AlarmaProfile => !!p)
@@ -319,21 +320,42 @@ export function WorkshopToolView({
                     key={p.id}
                     onClick={() => openTool("alarmas", p.id)}
                     image={thumbFile ? getImageByFile(thumbFile) : null}
-                    imageClassName="object-contain p-2"
+                    imageClassName="object-contain p-3"
+                    shape="square"
                     fallbackIcon={<Radio className="h-8 w-8" />}
                     title={p.nombre}
                     subtitle={[p.marca, p.modelo].filter(Boolean).join(" ") || undefined}
                   />
                 );
               })}
-          </div>
+          </ToolCarousel>
         </DetailSection>
       )}
     </div>
   );
 }
 
-/** Acceso a un perfil de herramienta: imagen sobre superficie tonal + título y subtítulo. */
+function CountBadge({ n }: { n: number }) {
+  if (n < 2) return null;
+  return <span className="rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-semibold text-primary">{n}</span>;
+}
+
+/** Fila horizontal con desplazamiento por tarjeta: admite uno o varios perfiles por herramienta. */
+function ToolCarousel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-1 no-scrollbar scroll-px-5">
+      {children}
+    </div>
+  );
+}
+
+const SHAPE_CLASSES = {
+  landscape: { card: "w-[78%] max-w-[320px]", media: "aspect-[16/10] px-4 py-3" },
+  portrait: { card: "w-[46%] max-w-[190px]", media: "aspect-[3/4]" },
+  square: { card: "w-[46%] max-w-[190px]", media: "aspect-square" },
+} as const;
+
+/** Acceso a un perfil de herramienta: vista previa con la proporción propia de cada herramienta. */
 function ToolTile({
   onClick,
   image,
@@ -341,7 +363,7 @@ function ToolTile({
   fallbackIcon,
   title,
   subtitle,
-  wide = false,
+  shape,
 }: {
   onClick: () => void;
   image: string | null | undefined;
@@ -349,27 +371,23 @@ function ToolTile({
   fallbackIcon: React.ReactNode;
   title: string;
   subtitle?: string;
-  /** Imagen apaisada (siluetas de llave) en lugar de cuadrada. */
-  wide?: boolean;
+  /** Keycode: horizontal · Immo Info: vertical · Alarmas: cuadrada. */
+  shape: keyof typeof SHAPE_CLASSES;
 }) {
+  const c = SHAPE_CLASSES[shape];
   return (
     <button
       type="button"
       onClick={onClick}
       onPointerDown={spawnRipple}
-      className="relative flex flex-col overflow-hidden rounded-[20px] bg-muted text-left"
+      className={cn("relative flex shrink-0 snap-start flex-col overflow-hidden rounded-[20px] bg-muted text-left", c.card)}
     >
-      <span
-        className={cn(
-          "flex w-full items-center justify-center overflow-hidden text-muted-foreground",
-          wide ? "h-24 px-4 py-3" : "aspect-square",
-        )}
-      >
-        {image ? <img src={image} alt="" className={cn("h-full w-full", imageClassName)} /> : fallbackIcon}
+      <span className={cn("m-1.5 mb-0 flex items-center justify-center overflow-hidden rounded-[16px] bg-background text-muted-foreground", c.media)}>
+        {image ? <img src={image} alt="" loading="lazy" className={cn("h-full w-full", imageClassName)} /> : fallbackIcon}
       </span>
       <span className="block px-3 pb-3 pt-2">
         <span className="block truncate text-sm font-semibold text-foreground">{title}</span>
-        {subtitle && <span className="block truncate text-xs text-muted-foreground">{subtitle}</span>}
+        <span className="block min-h-[16px] truncate text-xs text-muted-foreground">{subtitle ?? "\u00a0"}</span>
       </span>
     </button>
   );
