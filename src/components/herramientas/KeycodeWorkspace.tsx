@@ -983,7 +983,10 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
           >
             {previewMode ? <X className="!h-6 !w-6" /> : <ArrowLeft className="!h-6 !w-6" />}
           </Button>
-          <p className="min-w-0 flex-1 truncate text-sm text-muted-foreground">{vehicleLine}</p>
+          <div className="min-w-0 flex-1 pl-1">
+            <h1 className="truncate text-lg font-semibold leading-tight text-foreground" title={seriesName}>{seriesName}</h1>
+            <p className="truncate text-xs leading-tight text-muted-foreground" title={vehicleLine}>{vehicleLine}</p>
+          </div>
           {!previewMode && (
             <div className="shrink-0 pr-2">
               <AccountMenu />
@@ -992,17 +995,15 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
         </div>
 
         {/* El código encontrado es el protagonista: grande y copiable */}
-        <div className="mt-1 flex min-h-[3.5rem] items-end">
-          {codeState === "exact" && exactEntry ? (
+        {codeState === "exact" && exactEntry && (
+          <div className="mt-1 flex min-h-[3.5rem] items-end">
             <CopyableValue
               label={seriesName}
               value={searchTerm.trim().toUpperCase() || exactEntry.codigo}
               copiedMessage="Código copiado"
             />
-          ) : (
-            <h1 className="text-[2rem] font-bold leading-tight text-foreground">{seriesName}</h1>
-          )}
-        </div>
+          </div>
+        )}
 
         <form
           onSubmit={handleCodeSearch}
