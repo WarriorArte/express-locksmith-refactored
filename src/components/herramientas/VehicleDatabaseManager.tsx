@@ -538,7 +538,7 @@ export function VehicleDatabaseManager({
                 {selectedMake && (() => {
                   const cat = getMakeCategory(selectedMake);
                   return (
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border ${CATEGORY_COLORS[cat]}`}>
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border ${CATEGORY_COLORS[cat]}`}>
                       {CATEGORY_ICONS[cat]} {VEHICLE_CATEGORY_LABELS[cat]}
                     </span>
                   );
@@ -1028,7 +1028,7 @@ export function VehicleDatabaseManager({
                         <td className="p-2">{r.Model}</td>
                         <td className="p-2">{r.Year}</td>
                         <td className="p-2">
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border ${CATEGORY_COLORS[cat]}`}>
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border ${CATEGORY_COLORS[cat]}`}>
                             {CATEGORY_ICONS[cat]} {VEHICLE_CATEGORY_LABELS[cat]}
                           </span>
                         </td>

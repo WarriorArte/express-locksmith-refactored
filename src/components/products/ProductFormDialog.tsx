@@ -34,37 +34,18 @@ import { Input } from "@/components/ui/input";
 import { UnitNumberInput } from "@/components/ui/unit-number-input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+import { NativeSelect } from "@/components/ui/native-select";
+import { MaterialShape } from "@/design-system/shapes/MaterialShape";
+import { spawnRipple } from "@/lib/ripple";
 import { useCategories, type Category } from "@/hooks/useCategories";
 import { useCreateProduct, useUpdateProduct, type Product } from "@/hooks/useProducts";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
-import { Check, ChevronsUpDown, Loader2, Package, DollarSign, Warehouse, FileText, Wrench, Plus } from "lucide-react";
+import { Loader2, Package, DollarSign, Warehouse, FileText, Wrench } from "lucide-react";
 import { ImageUploader } from "@/components/shared/ImageUploader";
 import { ServiceProductsEditor, type ProductEditorItem } from "@/components/shared/ServiceProductsEditor";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import { phpApiUpload } from "@/lib/phpApi";
 import { cn } from "@/lib/utils";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 
 interface ProductFormDialogProps {
   open: boolean;
@@ -459,79 +440,45 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
       }}
     >
       <DialogContent className="sm:max-w-md">
-        <DialogHeader className="pr-10">
-          <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-primary/10 text-primary">
-              <Plus className="h-5 w-5" strokeWidth={2.4} />
-            </div>
-            <div className="min-w-0 pt-0.5">
-              <DialogTitle className="text-[1.55rem] font-extrabold leading-[1.05] tracking-[-0.03em]">
-                ¿Qué deseas crear?
-              </DialogTitle>
-              <DialogDescription className="mt-2 text-[13px] leading-snug">
-                Selecciona el tipo de ítem para agregarlo al inventario.
-              </DialogDescription>
-            </div>
-          </div>
+        <DialogHeader className="pr-10 text-left">
+          <DialogTitle className="text-2xl font-bold leading-tight">¿Qué deseas crear?</DialogTitle>
+          <DialogDescription className="sr-only">Elige si es un producto o un servicio.</DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 gap-3 pb-1 pt-1">
-          <button
-            type="button"
-            onClick={() => selectInventoryItemType("product")}
-            className="group flex min-h-[136px] flex-col rounded-[14px] border border-border bg-card p-4 text-left transition-all active:scale-[0.98] hover:border-primary/35 hover:bg-primary/[0.03]"
-          >
-            <span className="mb-5 flex h-11 w-11 items-center justify-center rounded-[13px] bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-              <Package className="h-5 w-5" />
-            </span>
-            <span className="text-base font-extrabold leading-tight text-foreground">Producto</span>
-            <span className="mt-2 text-xs font-medium leading-snug text-muted-foreground">
-              Stock en tienda y bodega
-            </span>
-            <span className="mt-auto pt-3 text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
-              4 pasos
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => selectInventoryItemType("service")}
-            className="group flex min-h-[136px] flex-col rounded-[14px] border border-border bg-card p-4 text-left transition-all active:scale-[0.98] hover:border-primary/35 hover:bg-primary/[0.03]"
-          >
-            <span className="mb-5 flex h-11 w-11 items-center justify-center rounded-[13px] bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-              <Wrench className="h-5 w-5" />
-            </span>
-            <span className="text-base font-extrabold leading-tight text-foreground">Servicio</span>
-            <span className="mt-2 text-xs font-medium leading-snug text-muted-foreground">
-              Mano de obra y productos
-            </span>
-            <span className="mt-auto pt-3 text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
-              4 pasos
-            </span>
-          </button>
+        <div className="grid grid-cols-2 gap-3 pb-2 pt-1">
+          {([
+            { type: "product", icon: Package, label: "Producto", hint: "Con stock en tienda y bodega" },
+            { type: "service", icon: Wrench, label: "Servicio", hint: "Mano de obra y productos" },
+          ] as const).map((option) => (
+            <button
+              key={option.type}
+              type="button"
+              onClick={() => selectInventoryItemType(option.type)}
+              onPointerDown={spawnRipple}
+              className="relative flex flex-col items-center gap-3 overflow-hidden rounded-[28px] bg-muted px-4 py-6 text-center"
+            >
+              <MaterialShape name="cookie9" className="h-16 w-16 text-primary-light">
+                <option.icon className="h-7 w-7 text-primary" />
+              </MaterialShape>
+              <span className="text-base font-semibold text-foreground">{option.label}</span>
+              <span className="-mt-2 text-sm text-muted-foreground">{option.hint}</span>
+            </button>
+          ))}
         </div>
       </DialogContent>
     </Dialog>
 
     <Dialog open={open && (isEditing || isInventoryItemTypeSelected)} onOpenChange={onOpenChange}>
       <DialogContent fixedHeight className="max-w-[95vw] sm:max-w-2xl">
-        <DialogHeader>
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-primary/10 text-primary">
-              {isServiceMode ? <Wrench className="h-5 w-5" /> : <Package className="h-5 w-5" />}
-            </div>
-            <div className="min-w-0">
-              <DialogTitle className="text-xl font-extrabold tracking-tight">
-                {isEditing
-                  ? (isServiceMode ? "Editar servicio" : "Editar producto")
-                  : (isServiceMode ? "Nuevo servicio" : "Nuevo producto")}
-              </DialogTitle>
-              <DialogDescription className="mt-1">
-                {isServiceMode
-                  ? "Mano de obra, productos consumidos y notas"
-                  : "Inventario con stock por tienda y bodega"}
-              </DialogDescription>
-            </div>
-          </div>
+        <DialogHeader className="text-left">
+          <DialogTitle className="text-2xl font-bold leading-tight">
+            {isEditing
+              ? (isServiceMode ? "Editar servicio" : "Editar producto")
+              : (isServiceMode ? "Nuevo servicio" : "Nuevo producto")}
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            {isServiceMode ? "Mano de obra, productos consumidos y notas" : "Inventario con stock por tienda y bodega"}
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -611,22 +558,22 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Tipo de Servicio *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value || ""}>
-                            <FormControl>
-                              <SelectTrigger
-                                aria-invalid={showGeneralInvalid && !hasText(field.value)}
-                                className={cn(showGeneralInvalid && !hasText(field.value) && "border-destructive text-destructive")}
-                              >
-                                <SelectValue placeholder={showGeneralInvalid && !hasText(field.value) ? "Campo obligatorio" : "Seleccionar tipo"} />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="residential">Residencial</SelectItem>
-                              <SelectItem value="commercial">Comercial</SelectItem>
-                              <SelectItem value="automotive">Automotriz</SelectItem>
-                              <SelectItem value="industrial">Industrial</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <FormControl>
+                            <NativeSelect
+                              value={field.value || ""}
+                              onChange={(e) => field.onChange(e.target.value)}
+                              aria-invalid={showGeneralInvalid && !hasText(field.value)}
+                              className={cn(showGeneralInvalid && !hasText(field.value) && "border-destructive text-destructive")}
+                            >
+                              <option value="" disabled>
+                                {showGeneralInvalid && !hasText(field.value) ? "Campo obligatorio" : "Seleccionar tipo"}
+                              </option>
+                              <option value="residential">Residencial</option>
+                              <option value="commercial">Comercial</option>
+                              <option value="automotive">Automotriz</option>
+                              <option value="industrial">Industrial</option>
+                            </NativeSelect>
+                          </FormControl>
                         </FormItem>
                       )}
                     />
@@ -690,7 +637,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                 {isServiceMode ? (
                   <div className="space-y-4">
                     {serviceProductsList.length > 0 && (
-                      <div className="rounded-lg border bg-secondary/30 p-3 space-y-2">
+                      <div className="space-y-2 rounded-[28px] bg-muted p-5">
                         <div className="flex items-center justify-between gap-3">
                           <FormLabel className="text-sm">Productos</FormLabel>
                           <span className="text-sm font-semibold">{formatMoney(serviceProductsSubtotal)}</span>
@@ -729,7 +676,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                       />
                     </div>
 
-                    <div className="rounded-lg border bg-card p-3 space-y-2">
+                    <div className="space-y-2 rounded-[28px] bg-muted p-5">
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">Mano de obra</span>
                         <span className="font-medium">{formatMoney(serviceLaborCost)}</span>
@@ -738,9 +685,9 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                         <span className="text-muted-foreground">Productos</span>
                         <span className="font-medium">{formatMoney(serviceProductsSubtotal)}</span>
                       </div>
-                      <div className="flex items-center justify-between border-t pt-2">
-                        <span className="text-sm font-semibold">Precio del servicio</span>
-                        <span className="text-lg font-extrabold">{formatMoney(servicePrice)}</span>
+                      <div className="flex items-baseline justify-between pt-2">
+                        <span className="text-[15px] font-semibold">Precio del servicio</span>
+                        <span className="text-xl font-bold tabular-nums">{formatMoney(servicePrice)}</span>
                       </div>
                     </div>
 
@@ -997,92 +944,34 @@ function CategoryCombobox({
   onValueChange: (value: string) => void;
   invalid: boolean;
 }) {
-  const [open, setOpen] = useState(false);
-  const [inputReady, setInputReady] = useState(false);
+  // Lista NATIVA del sistema (preferencia del usuario); el punto muestra el color
+  // de la categoría elegida.
   const selectedCategory = categories.find((category) => category.id === value);
-
-  useEffect(() => {
-    if (open) {
-      const timeoutId = setTimeout(() => setInputReady(true), 120);
-      return () => clearTimeout(timeoutId);
-    }
-
-    setInputReady(false);
-    return undefined;
-  }, [open]);
-
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          aria-invalid={invalid}
-          className={cn(
-            "h-11 w-full justify-between rounded-sm px-3 font-medium",
-            invalid && "border-destructive text-destructive hover:text-destructive",
-          )}
-        >
-          {selectedCategory ? (
-            <span className="flex min-w-0 items-center gap-2">
-              <span
-                className="h-3 w-3 shrink-0 rounded-[3px]"
-                style={{ backgroundColor: selectedCategory.color || "#6F67B0" }}
-              />
-              <span className="truncate">{selectedCategory.name}</span>
-            </span>
-          ) : (
-            <span className={cn(invalid ? "text-destructive" : "text-muted-foreground")}>
-              {invalid ? "Selecciona una categoría" : "Seleccionar categoría..."}
-            </span>
-          )}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent
-        className="w-[min(350px,90vw)] p-0"
-        align="start"
-        side="bottom"
-        avoidCollisions={false}
-        onOpenAutoFocus={(event) => event.preventDefault()}
+    <div className="relative">
+      {selectedCategory && (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute left-4 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full"
+          style={{ backgroundColor: selectedCategory.color || "hsl(var(--muted-foreground))" }}
+        />
+      )}
+      <NativeSelect
+        value={value || ""}
+        onChange={(e) => onValueChange(e.target.value)}
+        aria-invalid={invalid}
+        aria-label="Categoría"
+        className={cn(selectedCategory && "pl-10", invalid && "border-destructive text-destructive")}
       >
-        <Command>
-          <CommandInput
-            placeholder="Buscar categoría..."
-            autoFocus={false}
-            readOnly={!inputReady}
-          />
-          <CommandList className="max-h-[180px]">
-            <CommandEmpty>No se encontraron categorías.</CommandEmpty>
-            <CommandGroup>
-              {categories.map((category) => (
-                <CommandItem
-                  key={category.id}
-                  value={category.name}
-                  onSelect={() => {
-                    onValueChange(category.id);
-                    setOpen(false);
-                  }}
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4 shrink-0",
-                      value === category.id ? "opacity-100" : "opacity-0",
-                    )}
-                  />
-                  <span
-                    className="mr-2 h-3 w-3 shrink-0 rounded-[3px]"
-                    style={{ backgroundColor: category.color || "#6F67B0" }}
-                  />
-                  <span className="truncate">{category.name}</span>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+        <option value="" disabled>
+          {invalid ? "Selecciona una categoría" : "Seleccionar categoría…"}
+        </option>
+        {categories.map((category) => (
+          <option key={category.id} value={category.id}>
+            {category.name}
+          </option>
+        ))}
+      </NativeSelect>
+    </div>
   );
 }

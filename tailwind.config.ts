@@ -17,8 +17,12 @@ export default {
       transitionDuration: {
         "320": "320ms",
       },
+      // Curvas con nombre: las arbitrarias (ease-[cubic-bezier(...)]) son ambiguas
+      // con tailwindcss-animate y Tailwind las descarta sin avisar en el build.
       transitionTimingFunction: {
         sheet: "cubic-bezier(0.2,0,0,1)",
+        emphasized: "cubic-bezier(0.2,0,0,1)", // M3: movimiento estándar enfatizado
+        spring: "cubic-bezier(0.34,1.56,0.64,1)", // M3 Expressive: resorte con leve rebote
       },
       fontFamily: {
         sans: ["Figtree", "system-ui", "-apple-system", "Segoe UI", "sans-serif"],
@@ -91,22 +95,22 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
       },
+      // Escala de formas M3 (antes todas valían var(--radius) = 16px)
       borderRadius: {
-        DEFAULT: "var(--radius)",
-        sm: "var(--radius)",
-        md: "var(--radius)",
-        lg: "var(--radius)",
-        xl: "var(--radius)",
-        "2xl": "var(--radius)",
-        "3xl": "var(--radius)",
+        DEFAULT: "6px",
+        xs: "4px",
+        sm: "8px",
+        md: "12px",
+        lg: "16px",
+        xl: "20px",
+        "2xl": "24px",
+        "3xl": "28px",
       },
       boxShadow: {
         sm: "var(--shadow-sm)",
         md: "var(--shadow-md)",
         lg: "var(--shadow-lg)",
         xl: "var(--shadow-xl)",
-        glow: "var(--shadow-glow)",
-        gold: "var(--shadow-gold)",
       },
       keyframes: {
         "accordion-down": {

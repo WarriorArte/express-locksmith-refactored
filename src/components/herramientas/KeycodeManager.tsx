@@ -74,9 +74,9 @@ function VisualRangeField({ label, value, min, max, step = 1, defaultValue, onCh
   return (
     <div className="space-y-1 rounded-lg border border-border bg-muted/40 p-2">
       <div className="flex items-center justify-between gap-2">
-        <Label className="text-[10px] font-bold leading-none">{label}</Label>
+        <Label className="text-[11px] font-bold leading-none">{label}</Label>
         <div className="flex items-center gap-1">
-          <span className="min-w-10 rounded-md bg-primary/10 px-1.5 py-0.5 text-right font-mono text-[10px] font-semibold text-primary">
+          <span className="min-w-10 rounded-md bg-primary/10 px-1.5 py-0.5 text-right tabular-nums text-[11px] font-semibold text-primary">
             {safeValue}
           </span>
           <button
@@ -99,7 +99,7 @@ function VisualRangeField({ label, value, min, max, step = 1, defaultValue, onCh
         onChange={(e) => onChange(Number(e.target.value))}
         className="h-2 w-full cursor-pointer accent-[hsl(var(--primary))]"
       />
-      <div className="flex items-center justify-between text-[9px] text-muted-foreground">
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
         <span>{min}</span>
         <span>{max}</span>
       </div>
@@ -1030,20 +1030,20 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                       {primaryRef.brand} {primaryRef.refCode}
                     </p>
                     <div className="flex flex-wrap gap-1">
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Serie: {profile.series}</Badge>
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">IC: {profile.icCard}</Badge>
+                      <Badge variant="secondary" className="text-[11px] px-1.5 py-0">Serie: {profile.series}</Badge>
+                      <Badge variant="outline" className="text-[11px] px-1.5 py-0">IC: {profile.icCard}</Badge>
                       {profile.codesIncomplete && (
-                        <Badge variant="destructive" className="gap-1 text-[10px] px-1.5 py-0">
+                        <Badge variant="destructive" className="gap-1 text-[11px] px-1.5 py-0">
                           <AlertTriangle className="w-3 h-3" /> Incompleta
                         </Badge>
                       )}
                     </div>
                     {profile.internalReference && (
-                      <p className="text-[10px] font-medium text-foreground/80 truncate">
+                      <p className="text-[11px] font-medium text-foreground/80 truncate">
                         {profile.internalReference}
                       </p>
                     )}
-                    <p className="text-[10px] text-muted-foreground">{profile.codesCount ?? profile.codesData.length} códigos · {profile.dateAdded}</p>
+                    <p className="text-[11px] text-muted-foreground">{profile.codesCount ?? profile.codesData.length} códigos · {profile.dateAdded}</p>
                   </div>
 
                   {/* Actions */}
@@ -1198,7 +1198,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                       placeholder="Ej. 70000-75928"
                       value={series}
                       onChange={(e) => setSeries(e.target.value)}
-                      className="h-8 text-sm font-mono"
+                      className="h-8 text-sm tabular-nums"
                     />
                   </div>
 
@@ -1216,7 +1216,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                     <div className="flex items-center justify-between">
                       <Label className="text-xs font-semibold text-muted-foreground">Títulos adicionales (opcional)</Label>
                     </div>
-                    <p className="text-[10px] text-muted-foreground -mt-1">
+                    <p className="text-[11px] text-muted-foreground -mt-1">
                       Otra nomenclatura que también cubre esta serie, p.ej. si "{series || "70000-75928"}" también se conoce como "0000-5928".
                     </p>
                     {seriesAliases.map((alias, i) => (
@@ -1225,7 +1225,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                           placeholder="Ej. 0000-5928"
                           value={alias}
                           onChange={(e) => updateSeriesAlias(i, e.target.value)}
-                          className="h-8 text-sm font-mono flex-1"
+                          className="h-8 text-sm tabular-nums flex-1"
                         />
                         <Button variant="ghost" size="icon" onClick={() => removeSeriesAlias(i)} className="h-7 w-7 text-destructive hover:text-destructive">
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1241,7 +1241,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
 
                   <div className="flex flex-col gap-1.5">
                     <Label className="text-xs font-semibold text-muted-foreground">Multi-prefijo (opcional)</Label>
-                    <p className="text-[10px] text-muted-foreground -mt-1">
+                    <p className="text-[11px] text-muted-foreground -mt-1">
                       Usa esto solo si varios prefijos comparten el mismo bitting (p.ej. M0001 y V0001 cortan igual).
                       Los códigos se cargan sin prefijo (p.ej. "0001") y aquí registras qué prefijos son válidos para
                       esta serie. Al buscar "V0001", se acepta si "V" está en la lista; un prefijo no listado no encuentra el código.
@@ -1252,7 +1252,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                           placeholder="Ej. V"
                           value={prefix}
                           onChange={(e) => updateMultiPrefix(i, e.target.value)}
-                          className="h-8 text-sm font-mono flex-1 uppercase"
+                          className="h-8 text-sm tabular-nums flex-1 "
                         />
                         <Button variant="ghost" size="icon" onClick={() => removeMultiPrefix(i)} className="h-7 w-7 text-destructive hover:text-destructive">
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1272,7 +1272,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                       placeholder="Ej. IC-001, A1234..."
                       value={icCard}
                       onChange={(e) => setIcCard(e.target.value)}
-                      className="h-8 text-sm font-mono"
+                      className="h-8 text-sm tabular-nums"
                     />
                   </div>
                   <Separator />
@@ -1288,7 +1288,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                         <Input placeholder="Marca" value={ref.brand} onChange={(e) => updateReference(ref.id, "brand", e.target.value)} className="h-8 text-sm" />
                       </div>
                       <div className="col-span-4">
-                        <Input placeholder="Ref." value={ref.refCode} onChange={(e) => updateReference(ref.id, "refCode", e.target.value)} className="h-8 text-sm font-mono" />
+                        <Input placeholder="Ref." value={ref.refCode} onChange={(e) => updateReference(ref.id, "refCode", e.target.value)} className="h-8 text-sm tabular-nums" />
                       </div>
                       <div className="col-span-3 flex justify-center">
                         <input type="radio" name="primaryRef-edit" checked={ref.isPrimary} onChange={() => setPrimaryReference(ref.id)} className="w-4 h-4 cursor-pointer accent-[hsl(var(--primary))]" />
@@ -1313,12 +1313,12 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                     <div className="space-y-1">
                       <Label className="text-xs font-bold">Ejes (longitud)</Label>
                       <Input type="number" min="1" max="20" value={bittingConfig.length}
-                        onChange={(e) => setBittingConfig((c) => ({ ...c, length: parseInt(e.target.value) || 8 }))} className="font-mono h-8" />
+                        onChange={(e) => setBittingConfig((c) => ({ ...c, length: parseInt(e.target.value) || 8 }))} className="tabular-nums h-8" />
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs font-bold">Prof. máxima</Label>
                       <Input type="number" min="1" max="9" value={bittingConfig.maxDepth}
-                        onChange={(e) => setBittingConfig((c) => ({ ...c, maxDepth: parseInt(e.target.value) || 9 }))} className="font-mono h-8" />
+                        onChange={(e) => setBittingConfig((c) => ({ ...c, maxDepth: parseInt(e.target.value) || 9 }))} className="tabular-nums h-8" />
                     </div>
                   </div>
 
@@ -1345,13 +1345,13 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                         const k = (i + 1).toString();
                         return (
                           <div key={k} className="space-y-0.5">
-                            <label className="text-[10px] font-semibold text-muted-foreground">{k} =</label>
+                            <label className="text-[11px] font-semibold text-muted-foreground">{k} =</label>
                             <Input placeholder="-" value={bittingConfig.depthMapping?.[k] ?? ""}
                               onChange={(e) => {
                                 const m = { ...bittingConfig.depthMapping };
                                 if (e.target.value.trim()) m[k] = e.target.value; else delete m[k];
                                 setBittingConfig((c) => ({ ...c, depthMapping: Object.keys(m).length ? m : undefined }));
-                              }} className="font-mono text-center h-7 text-sm" maxLength={1} />
+                              }} className="tabular-nums text-center h-7 text-sm" maxLength={1} />
                           </div>
                         );
                       })}
@@ -1389,12 +1389,12 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                               onChange={(e) => {
                                 const newAxes = bittingConfig.axes!.map((a, idx) => idx === i ? { ...a, length: parseInt(e.target.value) || 1 } : a);
                                 setBittingConfig(c => ({ ...c, axes: newAxes }));
-                              }} className="font-mono w-16 h-7 text-sm" />
+                              }} className="tabular-nums w-16 h-7 text-sm" />
                             <span className="text-xs text-muted-foreground flex-1">pos.</span>
                           </div>
                         ))}
                         <div className="pt-1">
-                          <span className="text-[10px] text-muted-foreground">
+                          <span className="text-[11px] text-muted-foreground">
                             Total: <span className="font-bold text-foreground">{bittingConfig.axes.reduce((s, a) => s + a.length, 0)}</span>
                           </span>
                         </div>
@@ -1433,7 +1433,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                   <div className="space-y-2.5 rounded-lg border border-dashed border-primary/40 bg-primary/5 p-2.5">
                     <div>
                       <p className="text-xs font-bold text-foreground">Colores y trazo</p>
-                      <p className="text-[10px] text-muted-foreground">Ajuste universal: aplica a todas las series, no solo a esta.</p>
+                      <p className="text-[11px] text-muted-foreground">Ajuste universal: aplica a todas las series, no solo a esta.</p>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <label className="flex items-center gap-2 bg-background border border-border rounded-lg p-1.5 cursor-pointer">
@@ -1443,7 +1443,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                           onChange={(e) => setVisualSettings((s) => ({ ...s, strokeColorLight: e.target.value }))}
                           className="w-7 h-6 border-0 p-0 cursor-pointer bg-transparent rounded shrink-0"
                         />
-                        <span className="text-[10px] font-medium text-foreground">Trazo (tema claro)</span>
+                        <span className="text-[11px] font-medium text-foreground">Trazo (tema claro)</span>
                       </label>
                       <label className="flex items-center gap-2 bg-background border border-border rounded-lg p-1.5 cursor-pointer">
                         <input
@@ -1452,7 +1452,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                           onChange={(e) => setVisualSettings((s) => ({ ...s, strokeColorDark: e.target.value }))}
                           className="w-7 h-6 border-0 p-0 cursor-pointer bg-transparent rounded shrink-0"
                         />
-                        <span className="text-[10px] font-medium text-foreground">Trazo (tema oscuro)</span>
+                        <span className="text-[11px] font-medium text-foreground">Trazo (tema oscuro)</span>
                       </label>
                     </div>
                     <VisualRangeField
@@ -1486,7 +1486,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                           ] as [TipoLlaveSVG, string][]).map(([key, name]) => (
                             <Button key={key}
                               variant={configuracionVisual.tipo === key ? "default" : "outline"}
-                              size="sm" className="flex-1 whitespace-nowrap text-[10px] h-7 px-2"
+                              size="sm" className="flex-1 whitespace-nowrap text-[11px] h-7 px-2"
                               onClick={() => setConfiguracionVisual(c => c ? { ...c, tipo: key } : c)}
                             >
                               {name}
@@ -1554,7 +1554,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                       {(configuracionVisual.tipo === 'doble_lado' || configuracionVisual.tipo === 'estandar_1_lado' || configuracionVisual.tipo === '2_ejes_exterior') && (
                         <>
                           <Separator />
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase">Perfil de Corte</p>
+                          <p className="text-[11px] font-bold text-muted-foreground ">Perfil de Corte</p>
                           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
                             {([
                               { label: "Escalón", key: "depthStep", min: 1, max: 15, def: 5 },
@@ -1580,12 +1580,12 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                         <>
                           <Separator />
                           <div className="flex items-center justify-between">
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase">Corte Extra en Punta</p>
+                            <p className="text-[11px] font-bold text-muted-foreground ">Corte Extra en Punta</p>
                             <Button
                               type="button"
                               size="sm"
                               variant={configuracionVisual.corteExtra ? "default" : "outline"}
-                              className="h-6 text-[10px] px-2"
+                              className="h-6 text-[11px] px-2"
                               onClick={() => setConfiguracionVisual(c => c ? { ...c, corteExtra: !c.corteExtra } : c)}
                             >
                               {configuracionVisual.corteExtra ? "Activado" : "Desactivado"}
@@ -1619,12 +1619,12 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                         <>
                           <Separator />
                           <div className="flex items-center justify-between">
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase">Separación Extra Última Posición</p>
+                            <p className="text-[11px] font-bold text-muted-foreground ">Separación Extra Última Posición</p>
                             <Button
                               type="button"
                               size="sm"
                               variant={configuracionVisual.separacionUltimoCorteActiva ? "default" : "outline"}
-                              className="h-6 text-[10px] px-2"
+                              className="h-6 text-[11px] px-2"
                               onClick={() => setConfiguracionVisual(c => c ? { ...c, separacionUltimoCorteActiva: !c.separacionUltimoCorteActiva } : c)}
                             >
                               {configuracionVisual.separacionUltimoCorteActiva ? "Activado" : "Desactivado"}
@@ -1659,7 +1659,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                       {(['pista_canal', 'pista_semi_canal', '1_eje_lateral', '2_ejes_internos'] as TipoLlaveSVG[]).includes(configuracionVisual.tipo) && (
                         <>
                           <Separator />
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase">Forma de Pista</p>
+                          <p className="text-[11px] font-bold text-muted-foreground ">Forma de Pista</p>
                           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
                             <VisualRangeField
                               label="Posición Y (%)"
@@ -1681,8 +1681,8 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                             )}
                             {(configuracionVisual.tipo === 'pista_canal' || configuracionVisual.tipo === 'pista_semi_canal' || configuracionVisual.tipo === '1_eje_lateral') && (
                               <div className="space-y-0.5">
-                                <Label className="text-[10px]">Orientación</Label>
-                                <Button variant="outline" size="sm" className="w-full h-7 text-[10px]"
+                                <Label className="text-[11px]">Orientación</Label>
+                                <Button variant="outline" size="sm" className="w-full h-7 text-[11px]"
                                   onClick={() => setConfiguracionVisual(c => c ? { ...c, orientacion: c.orientacion === 'superior' ? 'inferior' : 'superior' } : c)}
                                 >
                                   {configuracionVisual.orientacion === 'superior' ? '↓ Abajo' : '↑ Arriba'}
@@ -1703,7 +1703,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                               { title: "Borde Inf.", prefix: "Inf", profKey: "profInf", anchoKey: "anchoInf", dinKey: "dinamismoInf" },
                             ] as const).map(side => (
                               <div key={side.prefix} className="space-y-1.5 p-2 bg-muted/50 rounded-lg border border-border">
-                                <p className="text-[10px] font-bold text-center uppercase text-muted-foreground">{side.title}</p>
+                                <p className="text-[11px] font-bold text-center text-muted-foreground">{side.title}</p>
                                 {[
                                   { label: "Prof.", key: side.profKey, def: 4, step: 0.5, min: 1, max: 10 },
                                   { label: "Ancho", key: side.anchoKey, def: 11, min: 0, max: 35 },
@@ -1736,7 +1736,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                               { title: "Eje Inf.", fields: [{ l: "Prof.", k: "profInf", d: 4 }, { l: "Ancho", k: "anchoInf", d: 11 }] },
                             ] as const).map(side => (
                               <div key={side.title} className="space-y-1.5 p-2 bg-muted/50 rounded-lg border border-border">
-                                <p className="text-[10px] font-bold text-center uppercase text-muted-foreground">{side.title}</p>
+                                <p className="text-[11px] font-bold text-center text-muted-foreground">{side.title}</p>
                                 {side.fields.map(f => (
                                   <VisualRangeField
                                     key={f.k}
@@ -1759,7 +1759,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                       {(configuracionVisual.tipo === 'pista_semi_canal' || configuracionVisual.tipo === '1_eje_lateral') && (
                         <>
                           <Separator />
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase">Lado Activo</p>
+                          <p className="text-[11px] font-bold text-muted-foreground ">Lado Activo</p>
                           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
                             {([
                               { label: "Prof.", key: "profundidadActiva", def: 4, step: 0.5 },
@@ -1891,13 +1891,13 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                         placeholder="Código"
                         value={manualCodigo}
                         onChange={(e) => setManualCodigo(e.target.value)}
-                        className="h-8 text-sm font-mono flex-1"
+                        className="h-8 text-sm tabular-nums flex-1"
                       />
                       <Input
                         placeholder={`Bitting (${expectedBittingLength} dígitos)`}
                         value={manualBitting}
                         onChange={(e) => setManualBitting(e.target.value)}
-                        className="h-8 text-sm font-mono flex-1"
+                        className="h-8 text-sm tabular-nums flex-1"
                         maxLength={expectedBittingLength}
                       />
                       <Button size="sm" className="h-8 shrink-0" onClick={addManualCode}>
@@ -1910,7 +1910,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                   <div className="flex items-center justify-between gap-2 p-2.5 rounded-lg border border-border bg-muted/40">
                     <div className="min-w-0">
                       <Label className="text-xs font-semibold text-muted-foreground block">Importar JSON (fusiona)</Label>
-                      <p className="text-[10px] text-muted-foreground">Omite códigos repetidos, agrega solo los nuevos.</p>
+                      <p className="text-[11px] text-muted-foreground">Omite códigos repetidos, agrega solo los nuevos.</p>
                     </div>
                     <Button variant="outline" size="sm" className="h-8 shrink-0" onClick={() => mergeFileInputRef.current?.click()}>
                       <Upload className="w-3.5 h-3.5 mr-1.5" /> Cargar JSON
@@ -1922,7 +1922,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                   <div className="flex items-center justify-between gap-2 p-2.5 rounded-lg border border-destructive/30 bg-destructive/5">
                     <div className="min-w-0">
                       <Label className="text-xs font-semibold text-destructive block">Eliminar todos los códigos</Label>
-                      <p className="text-[10px] text-muted-foreground">Borra permanentemente todos los códigos de esta serie de la base de datos. Útil si cargaste el JSON equivocado.</p>
+                      <p className="text-[11px] text-muted-foreground">Borra permanentemente todos los códigos de esta serie de la base de datos. Útil si cargaste el JSON equivocado.</p>
                     </div>
                     <Button
                       variant="outline"
@@ -1940,13 +1940,13 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0">
                         <Label className="text-xs font-semibold text-amber-700 dark:text-amber-400 block">Códigos Valet</Label>
-                        <p className="text-[10px] text-muted-foreground">
+                        <p className="text-[11px] text-muted-foreground">
                           Mismo código, bitting distinto (llave de acceso restringido). Al buscar, si existe se mostrará marcado como Valet.
                           Los cambios se aplican al pulsar "Guardar".
                           {isNewProfile && " Guarda la serie primero para poder cargarlos."}
                         </p>
                       </div>
-                      <Badge variant="secondary" className="text-[10px] shrink-0">
+                      <Badge variant="secondary" className="text-[11px] shrink-0">
                         {valetCodes.length} cargado(s)
                       </Badge>
                     </div>
@@ -1998,8 +1998,8 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                           </TableRow>
                         ) : paginatedCodes.map((c) => (
                           <TableRow key={c.codigo}>
-                            <TableCell className="font-mono font-bold text-xs py-1.5">{c.codigo}</TableCell>
-                            <TableCell className="font-mono text-muted-foreground tracking-widest text-xs py-1.5">{c.bitting.join(" ")}</TableCell>
+                            <TableCell className="tabular-nums font-bold text-xs py-1.5">{c.codigo}</TableCell>
+                            <TableCell className="tabular-nums text-muted-foreground text-xs py-1.5">{c.bitting.join(" ")}</TableCell>
                             <TableCell className="text-right py-1.5">
                               <Button variant="ghost" size="icon" onClick={() => setDeleteCodeTarget(c.codigo)} className="h-6 w-6 text-destructive hover:text-destructive">
                                 <Trash2 className="w-3 h-3" />
@@ -2035,7 +2035,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                 <Eye className="w-4 h-4 text-primary" />
                 <span className="text-xs font-bold text-foreground">Vista Previa</span>
                 {currentCodes.length > 0 && (
-                  <Badge variant="secondary" className="text-[10px] ml-auto">
+                  <Badge variant="secondary" className="text-[11px] ml-auto">
                     {previewData.source}
                   </Badge>
                 )}
@@ -2103,7 +2103,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                 <div className="text-center text-muted-foreground p-6">
                   <Eye className="w-10 h-10 mx-auto mb-2 opacity-20" />
                   <p className="text-xs font-semibold">Visualización desactivada</p>
-                  <p className="text-[10px] mt-1">Actívala en la pestaña "Visual"</p>
+                  <p className="text-[11px] mt-1">Actívala en la pestaña "Visual"</p>
                 </div>
               )}
             </div>
@@ -2343,7 +2343,7 @@ function DecoderEditor({ decoderConfig, setDecoderConfig, configuracionVisual, b
             <p className="text-xs text-muted-foreground mt-1">
               Permite al taller decodificar el bitting de una llave a partir de una foto.
               {inferredTipo && configuracionVisual && (
-                <> Se detectó el tipo visual <span className="font-mono font-semibold text-primary">{inferredTipo}</span>.</>
+                <> Se detectó el tipo visual <span className="tabular-nums font-semibold text-primary">{inferredTipo}</span>.</>
               )}
             </p>
           </div>
@@ -2381,7 +2381,7 @@ function DecoderEditor({ decoderConfig, setDecoderConfig, configuracionVisual, b
 
       <div className="grid grid-cols-2 gap-3 rounded-xl border border-border bg-muted/30 p-3">
         <div>
-          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Tipo de llave (decoder)</Label>
+          <Label className="text-[11px] text-muted-foreground">Tipo de llave (decoder)</Label>
           <select
             value={decoderConfig.tipoLlave}
             onChange={(e) => setDecoderConfig(applyDecoderPreset(decoderConfig, e.target.value as DecoderTipoLlave, decoderConfig.alineacion))}
@@ -2394,13 +2394,13 @@ function DecoderEditor({ decoderConfig, setDecoderConfig, configuracionVisual, b
             <option value="pista_canal">Pista / Canal / Lateral</option>
           </select>
           {inferredTipo && inferredTipo !== decoderConfig.tipoLlave && (
-            <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
-              ⚠ El visual sugiere <span className="font-mono">{inferredTipo}</span>
+            <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1">
+              ⚠ El visual sugiere <span className="tabular-nums">{inferredTipo}</span>
             </p>
           )}
         </div>
         <div>
-          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Alineación</Label>
+          <Label className="text-[11px] text-muted-foreground">Alineación</Label>
           <select
             value={decoderConfig.alineacion}
             onChange={(e) => setDecoderConfig(applyDecoderPreset(decoderConfig, decoderConfig.tipoLlave, e.target.value as DecoderAlineacion))}
@@ -2413,7 +2413,7 @@ function DecoderEditor({ decoderConfig, setDecoderConfig, configuracionVisual, b
 
         {isUnLado && (
           <div className="col-span-2">
-            <Label className="text-[10px] uppercase tracking-wider text-amber-600 dark:text-amber-400 font-bold">Lado activo de corte</Label>
+            <Label className="text-[11px] text-amber-600 dark:text-amber-400 font-bold">Lado activo de corte</Label>
             <select
               value={decoderConfig.ladoEstandarUn}
               onChange={(e) => setDecoderConfig({ ...decoderConfig, ladoEstandarUn: e.target.value as 'izq' | 'der' })}
@@ -2426,28 +2426,28 @@ function DecoderEditor({ decoderConfig, setDecoderConfig, configuracionVisual, b
         )}
 
         <div className="col-span-2">
-          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Ancho total de la llave (unidades)</Label>
+          <Label className="text-[11px] text-muted-foreground">Ancho total de la llave (unidades)</Label>
           <Input
             type="number"
             value={decoderConfig.anchoLlave}
             onChange={(e) => setDecoderConfig({ ...decoderConfig, anchoLlave: parseInt(e.target.value) || 0 })}
-            className="h-8 mt-1 font-mono text-center"
+            className="h-8 mt-1 tabular-nums text-center"
           />
         </div>
 
         <div className="col-span-2">
-          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Escala (px/mm)</Label>
+          <Label className="text-[11px] text-muted-foreground">Escala (px/mm)</Label>
           <Input
             type="number"
             step="0.01"
             value={decoderConfig.escalaPixelMm}
             onChange={(e) => setDecoderConfig({ ...decoderConfig, escalaPixelMm: parseFloat(e.target.value) || 0 })}
-            className="h-8 mt-1 font-mono text-center"
+            className="h-8 mt-1 tabular-nums text-center"
           />
         </div>
 
         <div className="col-span-2">
-          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+          <Label className="text-[11px] text-muted-foreground">
             Extensión de la grilla más allá del corte extremo
           </Label>
           <Input
@@ -2456,76 +2456,76 @@ function DecoderEditor({ decoderConfig, setDecoderConfig, configuracionVisual, b
             min="0"
             value={decoderConfig.extensionGrilla ?? 1}
             onChange={(e) => setDecoderConfig({ ...decoderConfig, extensionGrilla: parseFloat(e.target.value) || 0 })}
-            className="h-8 mt-1 font-mono text-center"
+            className="h-8 mt-1 tabular-nums text-center"
           />
-          <p className="text-[10px] text-muted-foreground mt-1">
+          <p className="text-[11px] text-muted-foreground mt-1">
             Multiplicador del excedente que se dibuja más allá del corte más lejano a la referencia. 1 = por defecto, 0 = sin excedente.
           </p>
         </div>
       </div>
 
       <div className={`rounded-xl border p-3 space-y-2 ${profsError ? 'border-destructive/60 bg-destructive/5' : 'border-border bg-muted/30'}`}>
-        <Label className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">
+        <Label className="text-[11px] text-muted-foreground font-bold">
           Profundidades (unidades, separadas por coma)
         </Label>
         <Input
           value={profsTxt}
           onChange={(e) => setProfsTxt(e.target.value)}
-          className={`font-mono text-xs ${profsError ? 'border-destructive' : ''}`}
+          className={`tabular-nums text-xs ${profsError ? 'border-destructive' : ''}`}
           placeholder="380, 320, 260, 200"
         />
-        <p className="text-[10px] text-muted-foreground">
+        <p className="text-[11px] text-muted-foreground">
           Debe contener exactamente <span className="font-semibold">{expectedProfsLen}</span> valores (uno por nivel de profundidad), estrictamente crecientes o decrecientes.
         </p>
-        {profsError && <p className="text-[10px] text-destructive font-semibold">⚠ {profsError}</p>}
+        {profsError && <p className="text-[11px] text-destructive font-semibold">⚠ {profsError}</p>}
       </div>
 
       {isDosEjes ? (
         <div className="rounded-xl border border-border bg-muted/30 p-3 grid grid-cols-2 gap-3">
           <div className="col-span-2">
-            <Label className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">
+            <Label className="text-[11px] text-muted-foreground font-bold">
               Distancias de cortes
             </Label>
-            <p className="text-[10px] text-muted-foreground mt-1">
+            <p className="text-[11px] text-muted-foreground mt-1">
               Cada eje debe tener tantos valores como cortes, en orden estrictamente creciente o decreciente.
             </p>
           </div>
           <div>
-            <Label className="text-[9px] text-muted-foreground">Eje A (izq.) — esperados: {expectedDistsLen}</Label>
+            <Label className="text-[11px] text-muted-foreground">Eje A (izq.) — esperados: {expectedDistsLen}</Label>
             <textarea
               value={distsTxt}
               onChange={(e) => setDistsTxt(e.target.value)}
               rows={3}
-              className={`w-full mt-1 bg-background border rounded-md p-2 font-mono text-[11px] resize-none ${distsError ? 'border-destructive' : 'border-input'}`}
+              className={`w-full mt-1 bg-background border rounded-md p-2 tabular-nums text-[11px] resize-none ${distsError ? 'border-destructive' : 'border-input'}`}
             />
-            {distsError && <p className="text-[10px] text-destructive font-semibold mt-1">⚠ {distsError}</p>}
+            {distsError && <p className="text-[11px] text-destructive font-semibold mt-1">⚠ {distsError}</p>}
           </div>
           <div>
-            <Label className="text-[9px] text-muted-foreground">Eje B (der.) — esperados: {expectedDistsDerLen}</Label>
+            <Label className="text-[11px] text-muted-foreground">Eje B (der.) — esperados: {expectedDistsDerLen}</Label>
             <textarea
               value={distsDerTxt}
               onChange={(e) => setDistsDerTxt(e.target.value)}
               rows={3}
-              className={`w-full mt-1 bg-background border rounded-md p-2 font-mono text-[11px] resize-none ${distsDerError ? 'border-destructive' : 'border-input'}`}
+              className={`w-full mt-1 bg-background border rounded-md p-2 tabular-nums text-[11px] resize-none ${distsDerError ? 'border-destructive' : 'border-input'}`}
             />
-            {distsDerError && <p className="text-[10px] text-destructive font-semibold mt-1">⚠ {distsDerError}</p>}
+            {distsDerError && <p className="text-[11px] text-destructive font-semibold mt-1">⚠ {distsDerError}</p>}
           </div>
         </div>
       ) : (
         <div className={`rounded-xl border p-3 space-y-2 ${distsError ? 'border-destructive/60 bg-destructive/5' : 'border-border bg-muted/30'}`}>
-          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">
+          <Label className="text-[11px] text-muted-foreground font-bold">
             Distancias de cortes a la referencia
           </Label>
           <textarea
             value={distsTxt}
             onChange={(e) => setDistsTxt(e.target.value)}
             rows={3}
-            className={`w-full bg-background border rounded-md p-2 font-mono text-[11px] resize-none ${distsError ? 'border-destructive' : 'border-input'}`}
+            className={`w-full bg-background border rounded-md p-2 tabular-nums text-[11px] resize-none ${distsError ? 'border-destructive' : 'border-input'}`}
           />
-          <p className="text-[10px] text-muted-foreground">
+          <p className="text-[11px] text-muted-foreground">
             Debe contener exactamente <span className="font-semibold">{expectedDistsLen}</span> valores (uno por corte del bitting), estrictamente crecientes si la alineacion es a hombro o decrecientes si es a punta.
           </p>
-          {distsError && <p className="text-[10px] text-destructive font-semibold">⚠ {distsError}</p>}
+          {distsError && <p className="text-[11px] text-destructive font-semibold">⚠ {distsError}</p>}
         </div>
       )}
     </div>

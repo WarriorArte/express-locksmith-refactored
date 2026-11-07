@@ -39,7 +39,7 @@ export function CustomerSelect({ value, onValueChange, onCreateNew, invalid = fa
           aria-expanded={open}
           aria-invalid={invalid}
           className={cn(
-            "w-full justify-between",
+            "h-12 w-full justify-between rounded-sm px-4 font-medium",
             invalid && "border-destructive text-destructive hover:text-destructive",
           )}
         >

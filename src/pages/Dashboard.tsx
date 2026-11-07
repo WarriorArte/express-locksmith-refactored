@@ -1,3 +1,6 @@
+import { useVehicleHome } from "@/hooks/useVehicleHome";
+import { HerramientasModule } from "@/components/herramientas/HerramientasModule";
+import { VehicleHomeExtras } from "@/components/dashboard/VehicleHomeExtras";
 import {
   FileText,
   ShoppingCart,
@@ -31,6 +34,7 @@ const mobileNavItems = [
 ];
 
 export default function Dashboard() {
+  const vehicleHome = useVehicleHome();
   const { data: stats, isLoading } = useDashboardStats();
   const { profile } = useAuth();
   const { isFeatureEnabled } = useWorkshopFeatures();
@@ -43,6 +47,12 @@ export default function Dashboard() {
   const filteredNavItems = mobileNavItems.filter(
     (item) => item.featureKey === null || isFeatureEnabled(item.featureKey),
   );
+
+  // El inicio es la herramienta de vehículos (lo más usado), con accesos
+  // rápidos y el resumen del día debajo. Ver useVehicleHome.
+  if (vehicleHome) {
+    return <HerramientasModule homeContent={<VehicleHomeExtras />} />;
+  }
 
   return (
     <div className="flex-1 min-h-0 overflow-hidden lg:overflow-auto lg:overscroll-y-contain no-scrollbar lg:pt-3 lg:px-6 lg:pb-6">
@@ -135,7 +145,7 @@ export default function Dashboard() {
                         <ShoppingCart className="h-5 w-5" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                        <p className="text-[11px] font-semibold text-muted-foreground">
                           transacciones
                         </p>
                         <p className="text-xl font-extrabold leading-tight tabular-nums">

@@ -1,4 +1,4 @@
-import { Package } from "lucide-react";
+import { DetailSection } from "@/design-system/detail/DetailScreen";
 import type { DetailData, DetailItem } from "./types";
 
 interface Props {
@@ -7,31 +7,34 @@ interface Props {
   currencySymbol: string;
 }
 
+const money = (symbol: string, v: number) =>
+  `${symbol}${Number(v || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+
+/** Productos / conceptos: nombre, "cantidad × precio" y subtotal a la derecha. */
 export function DetailViewItems({ type, items, currencySymbol }: Props) {
   if (!items.length) return null;
 
   return (
-    <div className="rounded-2xl bg-[hsl(var(--surface-2))] p-3.5">
-      <h4 className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-        <Package className="w-3.5 h-3.5" />
-        {type === "quote" ? "Conceptos" : "Productos"}
-      </h4>
-      <div className="flex flex-col gap-2">
+    <DetailSection
+      title={type === "quote" ? "Conceptos" : "Productos"}
+      className="bg-muted shadow-none"
+      action={<span className="text-sm tabular-nums text-muted-foreground">{items.length}</span>}
+    >
+      <div className="-my-1.5">
         {items.map((item) => (
-          <div key={item.id} className="rounded-xl bg-background/70 px-3 py-2.5">
-            <div className="truncate text-[13px] font-semibold text-foreground">
-              {item.product_name || item.description}
+          <div key={item.id} className="flex items-start justify-between gap-4 py-1.5">
+            <div className="min-w-0">
+              <p className="truncate text-[15px] font-medium text-foreground">{item.product_name || item.description}</p>
+              <p className="text-sm tabular-nums text-muted-foreground">
+                {item.quantity} × {money(currencySymbol, item.unit_price)}
+              </p>
             </div>
-            <div className="mt-1 flex items-center justify-between gap-2 text-[12px] text-muted-foreground">
-              <span>Cant. {item.quantity}</span>
-              <span>{currencySymbol}{Number(item.unit_price).toFixed(0)}</span>
-              <span className="font-semibold text-foreground">
-                {currencySymbol}{Number(item.subtotal).toFixed(0)}
-              </span>
-            </div>
+            <span className="shrink-0 text-[15px] font-semibold tabular-nums text-foreground">
+              {money(currencySymbol, item.subtotal)}
+            </span>
           </div>
         ))}
       </div>
-    </div>
+    </DetailSection>
   );
 }

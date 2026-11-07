@@ -2,33 +2,40 @@ import { useState } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/responsive-dialog";
-import { Badge } from "@/components/ui/badge";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { Calendar } from "lucide-react";
 import { ImageViewDialog } from "@/components/shared/ImageViewDialog";
+import { DetailSection, SpecTile, SubHeading, TonalChip } from "@/design-system/detail/DetailScreen";
 
 import {
   type DetailData,
   type OverflowAction,
   typeConfig,
   statusLabels,
+  statusTone,
   paymentMethodLabels,
 } from "./detail-view/types";
 import type { DialogAction } from "@/components/shared/DialogActionBar";
 import { DetailViewCustomer } from "./detail-view/DetailViewCustomer";
 import { DetailViewImages } from "./detail-view/DetailViewImages";
 import { DetailViewItems } from "./detail-view/DetailViewItems";
-import { DetailViewTotals } from "./detail-view/DetailViewTotals";
+import { DetailViewTotals, formatMoney } from "./detail-view/DetailViewTotals";
 import { DetailViewFooter } from "./detail-view/DetailViewFooter";
 
 export type { OverflowAction } from "./detail-view/types";
 export type { DialogAction } from "@/components/shared/DialogActionBar";
+
+/*
+ * Detalle de venta / servicio / cotización — criterio M3E (docs/CRITERIO-DISENO-M3E.md),
+ * variante "dentro de una hoja": protagonista = total + estado; el folio vive aquí
+ * (se quitó de las listas) y el cliente se puede llamar o escribir con un toque.
+ */
 
 interface DetailViewDialogProps {
   open: boolean;
@@ -55,7 +62,6 @@ export function DetailViewDialog({
   if (!data) return null;
 
   const config = typeConfig[data.type];
-  const Icon = config.icon;
   const currencySymbol = settings?.currency_symbol || "$";
   const statusConfig = data.status ? statusLabels[data.status] : null;
   const images = data.images ?? [];
@@ -63,104 +69,91 @@ export function DetailViewDialog({
     url: image.image_url,
     description: image.description || undefined,
   }));
-
   const overflowItems: OverflowAction[] = [...(overflowActions ?? [])];
+
+  const hasDeposit = data.type === "service" && Number(data.deposit) > 0;
+  const heroTiles: { label: string; value: string }[] = [];
+  if (hasDeposit) {
+    heroTiles.push({ label: "Anticipo", value: formatMoney(currencySymbol, data.deposit) });
+    heroTiles.push({ label: "Saldo pendiente", value: formatMoney(currencySymbol, Number(data.total) - Number(data.deposit)) });
+  }
+  if (data.valid_until) {
+    heroTiles.push({ label: "Válida hasta", value: format(parseISO(data.valid_until), "d MMM yyyy", { locale: es }) });
+  }
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent fixedHeight disableSwipeToClose={viewingImageIndex !== null} className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base">
-              <span className={`inline-flex size-8 items-center justify-center rounded-xl ${config.color}`}>
-                <Icon className="w-4 h-4" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate font-mono text-foreground dark:text-primary">{data.number}</span>
-                <span className="block text-xs font-medium text-muted-foreground">{config.label}</span>
-              </span>
-              {statusConfig && <Badge className={statusConfig.color}>{statusConfig.label}</Badge>}
-            </DialogTitle>
+          <DialogHeader className="text-left">
+            <DialogTitle className="text-2xl font-bold">{config.label}</DialogTitle>
+            <DialogDescription className="tabular-nums">
+              {data.number} · {format(parseISO(data.date), "d MMM yyyy, HH:mm", { locale: es })}
+            </DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col gap-3 pb-2">
-            <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-xl bg-[hsl(var(--surface-2))] px-3 py-2.5">
-                <div className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  <Calendar className="w-3.5 h-3.5" />
-                  Fecha
-                </div>
-                <div className="truncate text-[13px] font-semibold text-foreground">
-                  {format(parseISO(data.date), "dd MMM yyyy HH:mm", { locale: es })}
-                </div>
-              </div>
-
-              {data.valid_until && (
-                <div className="rounded-xl bg-[hsl(var(--surface-2))] px-3 py-2.5">
-                  <div className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                    <Calendar className="w-3.5 h-3.5" />
-                    Valido hasta
-                  </div>
-                  <div className="truncate text-[13px] font-semibold text-foreground">
-                    {format(parseISO(data.valid_until), "dd MMM yyyy", { locale: es })}
-                  </div>
-                </div>
-              )}
-
-              {data.payment_method && (
-                <div className="rounded-xl bg-[hsl(var(--surface-2))] px-3 py-2.5">
-                  <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                    Pago
-                  </div>
-                  <Badge variant="outline" className="text-xs">
-                    {paymentMethodLabels[data.payment_method] || data.payment_method}
-                  </Badge>
+            {/* Protagonista: total + estado */}
+            <section className="rounded-[28px] bg-primary-light p-5">
+              <p className="text-xs font-medium text-muted-foreground">Total</p>
+              <p className="text-[2.25rem] font-bold leading-tight tabular-nums text-foreground">
+                {formatMoney(currencySymbol, data.total)}
+              </p>
+              {(statusConfig || data.payment_method) && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {statusConfig && (
+                    <TonalChip
+                      label={statusConfig.label}
+                      tone={statusTone[data.status!] ?? "neutral"}
+                      className={statusTone[data.status!] === "accent" ? "bg-background/70 text-foreground" : undefined}
+                    />
+                  )}
+                  {data.payment_method && (
+                    <TonalChip
+                      label={paymentMethodLabels[data.payment_method] || data.payment_method}
+                      tone="neutral"
+                      className="bg-background/70"
+                    />
+                  )}
                 </div>
               )}
-            </div>
+              {heroTiles.length > 0 && (
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  {heroTiles.map((t) => (
+                    <SpecTile key={t.label} label={t.label} value={t.value} />
+                  ))}
+                </div>
+              )}
+            </section>
 
-            {(data.customer_name || data.customer_phone || data.customer_email) && (
-              <div className="rounded-2xl bg-[hsl(var(--surface-2))] p-3.5">
-                <DetailViewCustomer data={data} />
-              </div>
-            )}
+            <DetailViewCustomer data={data} />
 
             {(data.description || data.problem) && (
-              <div className="rounded-2xl bg-[hsl(var(--surface-2))] p-3.5">
-                <h4 className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  Descripcion
-                </h4>
-                <p className="text-sm text-foreground">{data.description}</p>
-                {data.problem && (
-                  <p className="mt-1.5 text-[13px] text-muted-foreground">
-                    <span className="font-semibold text-foreground">Solucion: </span>
-                    {data.problem}
-                  </p>
+              <DetailSection title="Descripción" className="bg-muted shadow-none">
+                {data.description && (
+                  <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">{data.description}</p>
                 )}
-              </div>
+                {data.problem && (
+                  <div className={data.description ? "mt-4" : undefined}>
+                    <SubHeading>Solución</SubHeading>
+                    <p className="-mt-1 whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">{data.problem}</p>
+                  </div>
+                )}
+              </DetailSection>
             )}
 
             {data.type === "service" && images.length > 0 && (
-              <div className="rounded-2xl bg-[hsl(var(--surface-2))] p-3.5">
-                <DetailViewImages images={images} onView={setViewingImageIndex} />
-              </div>
+              <DetailViewImages images={images} onView={setViewingImageIndex} />
             )}
 
-            {data.items.length > 0 && (
-              <DetailViewItems type={data.type} items={data.items} currencySymbol={currencySymbol} />
-            )}
+            <DetailViewItems type={data.type} items={data.items} currencySymbol={currencySymbol} />
 
-            <div className="rounded-2xl bg-[hsl(var(--surface-2))] p-3.5">
-              <DetailViewTotals data={data} currencySymbol={currencySymbol} />
-            </div>
+            <DetailViewTotals data={data} currencySymbol={currencySymbol} />
 
             {data.notes && (
-              <div className="rounded-2xl bg-[hsl(var(--surface-2))] p-3.5">
-                <h4 className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  Notas
-                </h4>
-                <p className="whitespace-pre-wrap text-[13px] text-foreground">{data.notes}</p>
-              </div>
+              <DetailSection title="Notas" className="bg-muted shadow-none">
+                <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">{data.notes}</p>
+              </DetailSection>
             )}
           </div>
 

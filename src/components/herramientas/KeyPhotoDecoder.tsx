@@ -53,7 +53,7 @@ const ControlDeslizanteVertical = ({
       onMouseDown={handleStart} onMouseMove={handleMove} onMouseUp={handleEnd} onMouseLeave={handleEnd}
       onTouchStart={handleStart} onTouchMove={handleMove} onTouchEnd={handleEnd} onTouchCancel={handleEnd}
     >
-      <div className="flex flex-col items-center gap-1 text-[9px] sm:text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-2 shrink-0">
+      <div className="flex flex-col items-center gap-1 text-[11px] sm:text-[10px] text-gray-500 font-bold mb-2 shrink-0">
         <Icono size={16} className="text-[#00E5A0]" />
       </div>
       <div className="w-full flex-1 bg-[#0A0A10] rounded-lg relative overflow-hidden flex items-center justify-center shadow-inner ring-1 ring-[rgba(0,229,160,0.2)]">
@@ -765,13 +765,13 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, initialImageUrl,
             <>
               <div className="absolute left-3 sm:left-5 top-[calc(100%+100px)] -translate-y-1/2 z-[70] flex flex-col gap-4 pointer-events-none items-center">
                 <div className="flex flex-col items-center justify-center w-[54px] sm:w-[60px] h-[54px] sm:h-[60px] bg-[#14141A] backdrop-blur-sm rounded-[1.25rem] border border-[#00E5A0]/20 shadow-xl pointer-events-auto">
-                  <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Corte</span>
+                  <span className="text-[11px] text-gray-500 font-bold">Corte</span>
                   <span className="text-xl font-black text-white leading-none">{cursorActivo.corteIndex + 1}</span>
                 </div>
               </div>
               <div className="absolute right-3 sm:right-5 top-[calc(100%+100px)] -translate-y-1/2 z-[70] flex flex-col gap-4 pointer-events-none items-center">
                 <div className="flex flex-col items-center justify-center w-[54px] sm:w-[60px] h-[54px] sm:h-[60px] bg-[#14141A] backdrop-blur-sm rounded-[1.25rem] border border-[#00E5A0]/20 shadow-xl pointer-events-auto">
-                  <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Nivel</span>
+                  <span className="text-[11px] text-gray-500 font-bold">Nivel</span>
                   <span className="text-xl font-black text-[#00E5A0] leading-none">{currentDepthLabel}</span>
                 </div>
               </div>
@@ -779,7 +779,7 @@ export function KeyPhotoDecoder({ initialConfig, bittingConfig, initialImageUrl,
                 {showLadoToggle && (
                   <button onClick={alternarLado} className="relative w-[54px] sm:w-[60px] h-[54px] sm:h-[60px] bg-[#14141A] border border-[#00E5A0]/20 rounded-[1.25rem] shadow-xl flex justify-center items-center active:scale-90 transition-transform pointer-events-auto shrink-0">
                     <ArrowLeftRight size={18} className="text-[#FFB830]" />
-                    <span className="absolute bottom-1 text-[8px] font-black tracking-widest text-[#FFB830] uppercase">
+                    <span className="absolute bottom-1 text-[11px] font-black text-[#FFB830]">
                       {cursorActivo.lado === 'izq' ? 'IZQ' : 'DER'}
                     </span>
                   </button>

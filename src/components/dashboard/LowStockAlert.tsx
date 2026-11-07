@@ -79,7 +79,7 @@ export function LowStockAlert({ products }: LowStockAlertProps) {
                   <span className="text-sm font-bold text-destructive">
                     {product.stock_store + product.stock_warehouse}
                   </span>
-                  <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                  <span className="text-[11px] font-bold text-muted-foreground">
                     Disponibles
                   </span>
                 </div>

@@ -1,23 +1,16 @@
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/responsive-dialog";
-import { Badge } from "@/components/ui/badge";
+/**
+ * Detalle de garantía — criterio M3E (docs/CRITERIO-DISENO-M3E.md), variante
+ * "dentro de una hoja". Protagonista: los días restantes, en un anillo de
+ * progreso que se vacía hacia el vencimiento.
+ */
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/responsive-dialog";
 import { DialogActionBar, type DialogAction } from "@/components/shared/DialogActionBar";
+import { DetailViewCustomer } from "@/components/shared/detail-view/DetailViewCustomer";
+import { DetailSection, SpecRow, TonalChip } from "@/design-system/detail/DetailScreen";
 import { cn } from "@/lib/utils";
 import { format, parseISO, isPast, differenceInDays } from "date-fns";
 import { es } from "date-fns/locale";
-import {
-  ShieldCheck,
-  User,
-  Calendar,
-  Clock,
-  XCircle,
-  CheckCircle,
-  AlertCircle,
-  Package,
-  Wrench,
-  Printer,
-  type LucideIcon,
-} from "lucide-react";
-import type { ReactNode } from "react";
+import { Package, Printer, Wrench, XCircle } from "lucide-react";
 import type { Warranty } from "@/hooks/useWarranties";
 
 interface WarrantyDetailDialogProps {
@@ -28,166 +21,164 @@ interface WarrantyDetailDialogProps {
   onPrint?: () => void;
 }
 
-export function WarrantyDetailDialog({
-  open,
-  onOpenChange,
-  warranty,
-  onVoid,
-  onPrint,
-}: WarrantyDetailDialogProps) {
+type WarrantyState = "voided" | "expired" | "expiring" | "active";
+
+const STATE_META: Record<WarrantyState, { label: string; ring: string; hero: string }> = {
+  active:   { label: "Vigente",    ring: "text-primary",     hero: "bg-primary-light" },
+  expiring: { label: "Por vencer", ring: "text-warning",     hero: "bg-warning-light" },
+  expired:  { label: "Vencida",    ring: "text-muted-foreground", hero: "bg-muted" },
+  voided:   { label: "Anulada",    ring: "text-destructive", hero: "bg-destructive-light" },
+};
+
+/** Anillo de progreso con los días restantes en el centro. */
+function DaysRing({ fraction, days, className }: { fraction: number; days: number | null; className: string }) {
+  const r = 44;
+  const c = 2 * Math.PI * r;
+  return (
+    <div className="relative h-28 w-28 shrink-0">
+      <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90" aria-hidden="true">
+        <circle cx="50" cy="50" r={r} fill="none" strokeWidth="8" className="stroke-background/70" />
+        <circle
+          cx="50"
+          cy="50"
+          r={r}
+          fill="none"
+          strokeWidth="8"
+          strokeLinecap="round"
+          stroke="currentColor"
+          strokeDasharray={c}
+          strokeDashoffset={c * (1 - fraction)}
+          className={cn("transition-[stroke-dashoffset] duration-700", className)}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        {days !== null ? (
+          <>
+            <span className="text-[2rem] font-bold leading-none tabular-nums text-foreground">{days}</span>
+            <span className="mt-0.5 text-xs font-medium text-muted-foreground">{days === 1 ? "día" : "días"}</span>
+          </>
+        ) : (
+          <span className="text-2xl font-bold text-muted-foreground">—</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function WarrantyDetailDialog({ open, onOpenChange, warranty, onVoid, onPrint }: WarrantyDetailDialogProps) {
   if (!warranty) return null;
 
-  const getStatus = () => {
-    if (warranty.is_voided) {
-      return { label: "Anulada", color: "bg-destructive text-destructive-foreground", icon: XCircle };
-    }
-    const endDate = parseISO(warranty.end_date);
-    if (isPast(endDate)) {
-      return { label: "Vencida", color: "bg-muted text-muted-foreground", icon: AlertCircle };
-    }
-    const daysLeft = differenceInDays(endDate, new Date());
-    if (daysLeft <= 7) {
-      return { label: "Por vencer", color: "bg-warning text-warning-foreground", icon: Clock };
-    }
-    return { label: "Vigente", color: "bg-success text-success-foreground", icon: CheckCircle };
-  };
+  const endDate = parseISO(warranty.end_date);
+  const daysLeft = differenceInDays(endDate, new Date());
+  const state: WarrantyState = warranty.is_voided
+    ? "voided"
+    : isPast(endDate)
+      ? "expired"
+      : daysLeft <= 7
+        ? "expiring"
+        : "active";
+  const meta = STATE_META[state];
+  const isRunning = state === "active" || state === "expiring";
+  const fraction = isRunning && warranty.warranty_days > 0
+    ? Math.min(1, Math.max(0, daysLeft / warranty.warranty_days))
+    : 0;
 
-  const status = getStatus();
-  const StatusIcon = status.icon;
-  const daysLeft = differenceInDays(parseISO(warranty.end_date), new Date());
-  const typeLabel = warranty.warranty_type === "sale" ? "Garantia de venta" : "Garantia de servicio";
-  const TypeIcon = warranty.warranty_type === "sale" ? Package : Wrench;
+  const isSale = warranty.warranty_type === "sale";
+  const TypeIcon = isSale ? Package : Wrench;
+  const fmt = (iso: string, pattern = "d MMM yyyy") => format(parseISO(iso), pattern, { locale: es });
+
+  const stateLine =
+    state === "voided"
+      ? warranty.voided_at ? `Anulada el ${fmt(warranty.voided_at)}` : "Garantía anulada"
+      : state === "expired"
+        ? `Venció el ${fmt(warranty.end_date)}`
+        : `Vence el ${fmt(warranty.end_date)}`;
 
   const showVoid = !!onVoid && !warranty.is_voided;
-  const footerActions: DialogAction[] = [
-    ...(onPrint ? [{ icon: Printer, label: "Ticket", onClick: onPrint }] : []),
-    ...(showVoid ? [{ icon: XCircle, label: "Anular", onClick: onVoid, tone: "destructive" as const }] : []),
-  ];
+  const footerActions: DialogAction[] = onPrint ? [{ icon: Printer, label: "Ticket", onClick: onPrint }] : [];
+  // Anular va al menú ⋯ (acción destructiva).
+  const menuActions: DialogAction[] = showVoid
+    ? [{ icon: XCircle, label: "Anular garantía", tone: "destructive", onClick: onVoid! }]
+    : [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent fixedHeight className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base">
-            <span className="inline-flex size-8 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-              <ShieldCheck className="w-4 h-4" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate font-mono text-foreground dark:text-primary">
-                {warranty.warranty_code}
-              </span>
-              <span className="block text-xs font-medium text-muted-foreground">Detalle de garantia</span>
-            </span>
-            <Badge className={cn("text-xs", status.color)}>
-              <StatusIcon className="w-3.5 h-3.5 mr-1" />
-              {status.label}
-            </Badge>
-          </DialogTitle>
+        <DialogHeader className="text-left">
+          <DialogTitle className="text-2xl font-bold">Garantía</DialogTitle>
+          <DialogDescription className="tabular-nums">
+            {warranty.warranty_code} · {isSale ? "de venta" : "de servicio"}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-3 pb-2">
-          <div className="rounded-2xl bg-[hsl(var(--surface-2))] p-3.5">
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <Badge variant="outline" className="text-xs">
-                <TypeIcon className="w-3.5 h-3.5 mr-1" />
-                {typeLabel}
-              </Badge>
-              {!warranty.is_voided && !isPast(parseISO(warranty.end_date)) && (
-                <span className={cn("text-[13px] font-semibold", daysLeft <= 7 ? "text-warning" : "text-foreground dark:text-success")}>
-                  {daysLeft} dias restantes
-                </span>
-              )}
+          {/* Protagonista: días restantes */}
+          <section className={cn("flex items-center gap-5 rounded-[28px] p-5", meta.hero)}>
+            <DaysRing fraction={fraction} days={isRunning ? daysLeft : null} className={meta.ring} />
+            <div className="min-w-0">
+              <p className="text-[1.75rem] font-bold leading-tight text-foreground">{meta.label}</p>
+              <p className="mt-1 text-[15px] text-muted-foreground">{stateLine}</p>
+              <TonalChip
+                icon={<TypeIcon className="h-4 w-4" />}
+                label={`${warranty.warranty_days} días de cobertura`}
+                tone="neutral"
+                className="mt-3 bg-background/70"
+              />
             </div>
-            <div className="font-mono text-lg font-bold text-foreground dark:text-primary">
-              {warranty.warranty_code}
-            </div>
-          </div>
+          </section>
 
-          <Section icon={User} title="Cliente">
-            <InfoRow label="Nombre" value={warranty.customer_name || "N/A"} />
-            {warranty.customer?.phone && <InfoRow label="Telefono" value={warranty.customer.phone} />}
-            {warranty.customer?.email && <InfoRow label="Email" value={warranty.customer.email} />}
-          </Section>
-
-          <Section icon={TypeIcon} title={warranty.warranty_type === "sale" ? "Producto" : "Servicio"}>
-            {warranty.warranty_type === "sale" ? (
-              <>
-                <InfoRow label="Producto" value={warranty.product_name || "N/A"} />
-                {warranty.sale?.sale_number && <InfoRow label="Ref. venta" value={warranty.sale.sale_number} />}
-              </>
-            ) : (
-              <>
-                <InfoRow label="Descripcion" value={warranty.service_description || "N/A"} />
-                {warranty.service?.service_number && <InfoRow label="Ref. servicio" value={warranty.service.service_number} />}
-              </>
-            )}
-          </Section>
-
-          <Section icon={Calendar} title="Vigencia">
-            <InfoRow label="Duracion" value={`${warranty.warranty_days} dias`} />
-            <InfoRow label="Inicio" value={format(parseISO(warranty.start_date), "dd MMM yyyy", { locale: es })} />
-            <InfoRow label="Vencimiento" value={format(parseISO(warranty.end_date), "dd MMM yyyy", { locale: es })} />
-            <InfoRow label="Creada" value={format(parseISO(warranty.created_at), "dd/MM/yyyy HH:mm", { locale: es })} />
-          </Section>
-
-          {warranty.notes && (
-            <div className="rounded-2xl bg-[hsl(var(--surface-2))] p-3.5">
-              <div className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Notas
-              </div>
-              <p className="whitespace-pre-wrap text-[13px] text-foreground">{warranty.notes}</p>
-            </div>
+          {state === "voided" && (
+            <DetailSection title="Motivo de anulación" tone="destructive" icon={<XCircle className="h-5 w-5 shrink-0 text-destructive" />}>
+              <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">
+                {warranty.voided_reason || "Sin motivo registrado"}
+              </p>
+            </DetailSection>
           )}
 
-          {warranty.is_voided && (
-            <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-3.5">
-              <div className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-destructive">
-                <XCircle className="w-3.5 h-3.5" />
-                Garantia anulada
+          <DetailSection title={isSale ? "Producto" : "Servicio"} className="bg-muted shadow-none">
+            <p className="text-[15px] font-medium leading-relaxed text-foreground">
+              {(isSale ? warranty.product_name : warranty.service_description) || "Sin descripción"}
+            </p>
+            {(isSale ? warranty.sale?.sale_number : warranty.service?.service_number) && (
+              <div className="-mb-1.5 mt-2">
+                <SpecRow
+                  label={isSale ? "Venta" : "Servicio"}
+                  value={(isSale ? warranty.sale?.sale_number : warranty.service?.service_number) ?? ""}
+                />
               </div>
-              {warranty.voided_at && (
-                <InfoRow label="Fecha" value={format(parseISO(warranty.voided_at), "dd/MM/yyyy HH:mm", { locale: es })} />
-              )}
-              <InfoRow label="Razon" value={warranty.voided_reason || "N/A"} />
+            )}
+          </DetailSection>
+
+          <DetailViewCustomer
+            data={{
+              customer_name: warranty.customer_name,
+              customer_phone: warranty.customer?.phone,
+              customer_email: warranty.customer?.email,
+              customer_address: null,
+            }}
+          />
+
+          <DetailSection title="Vigencia" className="bg-muted shadow-none">
+            <div className="-my-1.5">
+              <SpecRow label="Inicio" value={fmt(warranty.start_date)} />
+              <SpecRow label="Vencimiento" value={fmt(warranty.end_date)} />
+              <SpecRow label="Registrada" value={fmt(warranty.created_at, "d MMM yyyy, HH:mm")} />
             </div>
+          </DetailSection>
+
+          {warranty.notes && (
+            <DetailSection title="Notas" className="bg-muted shadow-none">
+              <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">{warranty.notes}</p>
+            </DetailSection>
           )}
         </div>
 
-        {(showVoid || onPrint) && (
-          <DialogFooter className="pt-1 gap-2">
-            <DialogActionBar actions={footerActions} />
+        {(footerActions.length > 0 || menuActions.length > 0) && (
+          <DialogFooter className="gap-2 pt-1">
+            <DialogActionBar actions={footerActions} menuActions={menuActions} />
           </DialogFooter>
         )}
       </DialogContent>
     </Dialog>
-  );
-}
-
-function Section({
-  icon: Icon,
-  title,
-  children,
-}: {
-  icon: LucideIcon;
-  title: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="rounded-2xl bg-[hsl(var(--surface-2))] p-3.5">
-      <div className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-        <Icon className="w-3.5 h-3.5" />
-        {title}
-      </div>
-      <div className="flex flex-col gap-1">{children}</div>
-    </div>
-  );
-}
-
-function InfoRow({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="flex items-start justify-between gap-3 py-1 text-[13px]">
-      <span className="shrink-0 text-muted-foreground">{label}</span>
-      <span className="min-w-0 text-right font-semibold text-foreground">{value}</span>
-    </div>
   );
 }

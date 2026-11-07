@@ -3,13 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { NativeSelect } from "@/components/ui/native-select";
+import { MaterialShape } from "@/design-system/shapes/MaterialShape";
 import {
   Dialog,
   DialogContent,
@@ -197,21 +192,21 @@ export function UserManagement() {
         </Button>
       </div>
 
-      <div className="space-y-3">
+      <div className="m3-list">
         {users?.map((user) => (
           <div
             key={user.id}
-            className="flex items-center justify-between p-4 rounded-lg border bg-card"
+            className="m3-list-item flex flex-wrap items-center justify-between gap-3 bg-muted px-4 py-3"
           >
-            <div className="flex-1">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Users className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <p className="font-medium">{user.full_name}</p>
-                  <p className="text-sm text-muted-foreground">{user.email}</p>
-                </div>
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <MaterialShape name="cookie6" className="h-11 w-11 text-background">
+                <span className="text-sm font-bold text-foreground">
+                  {(user.full_name || user.email || "?").trim().charAt(0).toUpperCase()}
+                </span>
+              </MaterialShape>
+              <div className="min-w-0">
+                <p className="truncate text-[15px] font-medium">{user.full_name}</p>
+                <p className="truncate text-sm text-muted-foreground">{user.email}</p>
               </div>
             </div>
 
@@ -219,20 +214,15 @@ export function UserManagement() {
               {user.user_id === currentUser?.id ? (
                 getRoleBadge(user.role || "employee")
               ) : (
-                <Select
+                <NativeSelect
                   value={user.role || "employee"}
-                  onValueChange={(value: "admin" | "employee") =>
-                    handleRoleChange(user.user_id, value)
-                  }
+                  onChange={(e) => handleRoleChange(user.user_id, e.target.value as "admin" | "employee")}
+                  aria-label={`Rol de ${user.full_name || user.email}`}
+                  className="h-11 w-40"
                 >
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Administrador</SelectItem>
-                    <SelectItem value="employee">Empleado</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <option value="admin">Administrador</option>
+                  <option value="employee">Empleado</option>
+                </NativeSelect>
               )}
 
               {user.user_id !== currentUser?.id && (
@@ -240,6 +230,7 @@ export function UserManagement() {
                   variant="ghost"
                   size="icon"
                   onClick={() => setDeleteUser(user)}
+                  aria-label={`Eliminar a ${user.full_name || user.email}`}
                   className="text-destructive hover:text-destructive hover:bg-destructive/10"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -298,22 +289,18 @@ export function UserManagement() {
             </div>
             <div>
               <Label htmlFor="role">Rol</Label>
-              <Select
+              <NativeSelect
+                id="role"
                 value={newUserRole}
-                onValueChange={(value: "admin" | "employee") => setNewUserRole(value)}
+                onChange={(e) => setNewUserRole(e.target.value as "admin" | "employee")}
               >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Administrador</SelectItem>
-                  <SelectItem value="employee">Empleado</SelectItem>
-                </SelectContent>
-              </Select>
+                <option value="admin">Administrador</option>
+                <option value="employee">Empleado</option>
+              </NativeSelect>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddUserDialogOpen(false)} disabled={isCreating}>
+            <Button variant="proto-ghost" onClick={() => setAddUserDialogOpen(false)} disabled={isCreating}>
               Cancelar
             </Button>
             <Button onClick={handleAddUser} disabled={isCreating}>

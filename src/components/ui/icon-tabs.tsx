@@ -4,7 +4,7 @@
  * Horizontal scrollable strip of tabs where each tab is:
  *   [icon]
  *   [label]
- * with an animated bottom border on the active tab. Drop-in replacement
+ * with a tonal pill behind the active icon (M3 style). Drop-in replacement
  * for shadcn Tabs in mobile-first form modals.
  *
  * Usage:
@@ -32,13 +32,11 @@ interface IconTabsProps {
 }
 
 export function IconTabs({ value, onChange, items, className }: IconTabsProps) {
+  // Estilo M3 (criterio docs/CRITERIO-DISENO-M3E.md): el ícono activo va dentro
+  // de una píldora tonal, etiqueta de 12 px debajo, sin línea divisoria.
   return (
     <div
-      className={cn(
-        "flex w-full overflow-x-auto border-b border-border",
-        "[&::-webkit-scrollbar]:hidden",
-        className,
-      )}
+      className={cn("flex w-full gap-1 overflow-x-auto [&::-webkit-scrollbar]:hidden", className)}
       style={{ scrollbarWidth: "none" }}
       role="tablist"
     >
@@ -55,17 +53,20 @@ export function IconTabs({ value, onChange, items, className }: IconTabsProps) {
             disabled={item.disabled}
             onClick={() => onChange(item.id)}
             className={cn(
-              "flex-1 min-w-[64px] flex flex-col items-center justify-center gap-1",
-              "py-2.5 px-1 text-[11px] font-semibold whitespace-nowrap",
-              "border-b-2 -mb-px transition-colors",
-              item.disabled && "cursor-not-allowed opacity-40 hover:text-muted-foreground",
-              active
-                ? "text-primary border-primary"
-                : "text-muted-foreground border-transparent hover:text-foreground/80",
+              "flex min-w-[64px] flex-1 flex-col items-center justify-center gap-1 whitespace-nowrap px-1 py-1.5 text-xs font-medium transition-colors",
+              item.disabled && "cursor-not-allowed opacity-40",
+              active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
             )}
           >
-            <Icon className="w-[15px] h-[15px]" />
-            <span>{item.label}</span>
+            <span
+              className={cn(
+                "flex h-8 w-14 items-center justify-center rounded-full transition-colors duration-200",
+                active ? "bg-accent text-accent-foreground" : "bg-transparent",
+              )}
+            >
+              <Icon className="h-[18px] w-[18px]" />
+            </span>
+            <span className={active ? "font-semibold" : undefined}>{item.label}</span>
           </button>
         );
       })}

@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { MaterialShape } from "@/design-system/shapes/MaterialShape";
 import { cn } from "@/lib/utils";
 
 type CustomerType = "person" | "company" | "business";
@@ -39,27 +39,28 @@ function getCustomerInitials(name?: string | null): string {
   return normalizedName.charAt(0).toUpperCase();
 }
 
+/**
+ * Avatar del cliente: iniciales sobre la forma orgánica "cookie" de M3 Expressive
+ * (criterio: docs/CRITERIO-DISENO-M3E.md). El color de la forma indica el tipo
+ * de cliente; rojo claro si está marcado como "no volver a trabajar".
+ * El tamaño se controla con `className` (h-/w-); el texto escala con `text-*`.
+ */
 export function CustomerAvatar({ name, customerType = "person", noWorkAgain = false, className }: CustomerAvatarProps) {
   const initials = getCustomerInitials(name);
-  const fallbackClassName =
-    noWorkAgain
-      ? "bg-destructive-light text-destructive"
-      : customerType === "company"
-      ? "bg-primary-light text-foreground dark:text-primary"
+  const shapeColor = noWorkAgain
+    ? "text-destructive-light"
+    : customerType === "company"
+      ? "text-primary-light"
       : customerType === "business"
-        ? "bg-warning-light text-warning"
-        : "bg-info-light text-info";
+        ? "text-warning-light"
+        : "text-info-light";
 
   return (
-    <Avatar className={cn("h-11 w-11 rounded-xl", className)}>
-      <AvatarFallback
-        className={cn(
-          "rounded-xl text-sm font-bold",
-          fallbackClassName
-        )}
-      >
-        {initials}
-      </AvatarFallback>
-    </Avatar>
+    <MaterialShape
+      name="cookie6"
+      className={cn("h-11 w-11 text-sm", shapeColor, className)}
+    >
+      <span aria-hidden="true" className="font-bold leading-none text-foreground">{initials}</span>
+    </MaterialShape>
   );
 }

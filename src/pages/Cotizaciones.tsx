@@ -216,8 +216,7 @@ export default function Cotizaciones() {
       {/* Header bar - ya NO es sticky */}
       <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-3 pb-4">
         <PageHeader
-          eyebrow="Cotizaciones"
-          title={<>Presupuestos al instante</>}
+          title="Cotizaciones"
           subtitle={`${stats.pending} pendientes · ${stats.accepted} aceptadas este mes`}
           action={
             <Button className="h-11 rounded-[12px] bg-primary text-primary-foreground hover:bg-primary-hover" onClick={() => { setEditingQuote(null); setFormDialogOpen(true); }}>
@@ -237,7 +236,7 @@ export default function Cotizaciones() {
             type="button"
             aria-label="Nueva cotización"
             onClick={() => { setEditingQuote(null); setFormDialogOpen(true); }}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[0_0_16px_hsl(var(--primary)/0.40)] transition-transform active:scale-95 lg:hidden"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-transform active:scale-95 lg:hidden"
           >
             <Plus className="w-5 h-5" strokeWidth={2.5} />
           </button>
@@ -250,7 +249,7 @@ export default function Cotizaciones() {
       <div className="mt-6">
         {isLoading ? (
           <>
-            <div className="md:hidden space-y-2.5">
+            <div className="md:hidden m3-list">
               {[0, 1, 2, 3].map((i) => <MobileListCardSkeleton key={i} />)}
             </div>
             <div className="hidden md:block card-elevated overflow-hidden animate-pulse">
@@ -293,12 +292,12 @@ export default function Cotizaciones() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border bg-muted/30">
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Folio</th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Estado</th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Cliente</th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Descripción</th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Vence</th>
-                    <th className="px-4 py-3 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Total</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Folio</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Estado</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Cliente</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Descripción</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Vence</th>
+                    <th className="px-4 py-3 text-right text-[11px] font-semibold text-muted-foreground">Total</th>
                     <th className="w-12" />
                   </tr>
                 </thead>
@@ -314,7 +313,7 @@ export default function Cotizaciones() {
                         onClick={() => handleViewDetail(quote)}
                       >
                         <td className="px-4 py-3">
-                          <span className="font-mono text-xs text-foreground dark:text-primary font-semibold whitespace-nowrap">{quote.quote_number}</span>
+                          <span className="tabular-nums text-xs text-foreground dark:text-primary font-semibold whitespace-nowrap">{quote.quote_number}</span>
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1.5">
@@ -396,7 +395,7 @@ export default function Cotizaciones() {
             </div>
 
             {/* Mobile cards */}
-            <div className="md:hidden space-y-2.5">
+            <div className="md:hidden m3-list">
               {filteredQuotes.map((quote) => {
                 const daysLeft = getDaysLeft(quote.valid_until);
                 const statusTextClass =
@@ -420,7 +419,7 @@ export default function Cotizaciones() {
                     statusDotClass={statusDotClass}
                     statusExtra={
                       quote.status === "pending" && daysLeft <= 3 && daysLeft > 0
-                        ? <span className="ml-1 text-[10px] font-bold text-destructive">· {daysLeft}d</span>
+                        ? <span className="shrink-0 font-semibold text-destructive">· {daysLeft}d</span>
                         : undefined
                     }
                     title={quoteTitle}

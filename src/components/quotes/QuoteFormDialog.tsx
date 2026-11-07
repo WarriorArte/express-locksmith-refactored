@@ -337,10 +337,10 @@ export function QuoteFormDialog({ open, onOpenChange, quote }: QuoteFormDialogPr
           {/* Tab: Resumen */}
           <TabsContent value="resumen" className="space-y-4 mt-4">
             {/* Totals */}
-            <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
+            <div className="space-y-3 rounded-[28px] bg-muted p-5">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Subtotal:</span>
-                <span className="font-medium">${subtotal.toLocaleString()}</span>
+                <span className="font-medium tabular-nums">{currencySymbol}{subtotal.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
                 <Label className="text-sm text-muted-foreground">Descuento:</Label>
@@ -354,9 +354,9 @@ export function QuoteFormDialog({ open, onOpenChange, quote }: QuoteFormDialogPr
                   className={cn("w-32 text-right", showResumenInvalid && (form.discount < 0 || form.discount > subtotal) && invalidFieldClass)}
                 />
               </div>
-              <div className="flex justify-between text-lg font-bold pt-2 border-t">
-                <span>Total:</span>
-                <span className="text-foreground dark:text-primary">${total.toLocaleString()}</span>
+              <div className="flex items-baseline justify-between pt-2 text-xl font-bold">
+                <span>Total</span>
+                <span className="tabular-nums text-foreground">{currencySymbol}{total.toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>Válida hasta:</span>

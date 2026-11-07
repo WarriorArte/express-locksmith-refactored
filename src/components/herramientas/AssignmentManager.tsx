@@ -193,7 +193,7 @@ function AssignmentForm({
     <div className="space-y-4">
       {/* Vehículo */}
       <div className="space-y-2">
-        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+        <p className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
           <Car className="w-3.5 h-3.5" /> Selección de Vehículos
         </p>
         <div className="flex flex-col sm:flex-row gap-2 items-end">
@@ -240,7 +240,7 @@ function AssignmentForm({
 
       {/* Series */}
       <div className="space-y-2">
-        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+        <p className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
           <Wrench className="w-3.5 h-3.5" /> Series (Perfiles)
         </p>
         <div className="space-y-1.5">
@@ -347,7 +347,7 @@ function AssignmentForm({
       {/* Cerraduras por serie */}
       {selectedProfileIds.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+          <p className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
             <Lock className="w-3.5 h-3.5" /> Cerradura
           </p>
           <p className="text-xs text-muted-foreground">
@@ -366,7 +366,7 @@ function AssignmentForm({
               return (
                 <div key={pid} className="rounded-lg border bg-background p-3 space-y-2.5">
                   <div className="flex items-center gap-2 text-xs">
-                    <Badge variant="secondary" className="font-mono">IC {profile.icCard}</Badge>
+                    <Badge variant="secondary" className="tabular-nums">IC {profile.icCard}</Badge>
                     <span className="text-muted-foreground">·</span>
                     <span className="font-medium">{profile.series}</span>
                     {profile.internalReference && (
@@ -408,7 +408,7 @@ function AssignmentForm({
                                 key={idx}
                                 type="button"
                                 onClick={() => toggleLockCut(pid, lk, idx)}
-                                className={`w-6 h-6 rounded border flex items-center justify-center text-[10px] font-bold transition-colors ${checked ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-input hover:bg-muted'}`}
+                                className={`w-6 h-6 rounded border flex items-center justify-center text-[11px] font-bold transition-colors ${checked ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-input hover:bg-muted'}`}
                                 title={`Corte ${idx + 1}`}
                               >
                                 {checked ? '✓' : ''}
@@ -421,9 +421,9 @@ function AssignmentForm({
                             <span className="w-20 shrink-0 font-medium text-foreground">{LOCK_LABELS[lk]}:</span>
                             {isDosEjes ? (
                               <div className="flex flex-wrap gap-2 items-center">
-                                <span className="text-[10px] font-bold text-muted-foreground">{axes![0].label}</span>
+                                <span className="text-[11px] font-bold text-muted-foreground">{axes![0].label}</span>
                                 <div className="flex gap-1">{renderRow(0, axes![0].length)}</div>
-                                <span className="text-[10px] font-bold text-muted-foreground ml-1">{axes![1].label}</span>
+                                <span className="text-[11px] font-bold text-muted-foreground ml-1">{axes![1].label}</span>
                                 <div className="flex gap-1">{renderRow(axes![0].length, axes![0].length + axes![1].length)}</div>
                               </div>
                             ) : (
@@ -602,7 +602,7 @@ export function AssignmentManager({ assignments, onSave, onUpdate, onDelete, key
                           <h3 className={`font-bold text-sm truncate transition-colors ${isEditing ? "text-primary" : "text-foreground"}`} title={`${item.make} ${item.model}`}>
                             {item.make} {item.model}
                           </h3>
-                          <div className="text-[11px] text-muted-foreground font-mono mt-0.5">
+                          <div className="text-[11px] text-muted-foreground tabular-nums mt-0.5">
                             {item.yearStart}–{item.yearEnd}
                           </div>
                         </div>
@@ -611,10 +611,10 @@ export function AssignmentManager({ assignments, onSave, onUpdate, onDelete, key
                         <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                           {isDeleting ? (
                             <div className="flex flex-col gap-1 items-end absolute right-2 top-2 bg-background p-1.5 rounded-md shadow-md border z-10 pointer-events-auto">
-                              <span className="text-[10px] font-bold px-1 text-destructive">¿Borrar?</span>
+                              <span className="text-[11px] font-bold px-1 text-destructive">¿Borrar?</span>
                               <div className="flex gap-1">
-                                <Button variant="destructive" size="sm" className="h-6 text-[10px] px-2" onClick={() => handleDelete(item.id)}>Sí</Button>
-                                <Button variant="outline" size="sm" className="h-6 text-[10px] px-2" onClick={() => setConfirmDeleteId(null)}>No</Button>
+                                <Button variant="destructive" size="sm" className="h-6 text-[11px] px-2" onClick={() => handleDelete(item.id)}>Sí</Button>
+                                <Button variant="outline" size="sm" className="h-6 text-[11px] px-2" onClick={() => setConfirmDeleteId(null)}>No</Button>
                               </div>
                             </div>
                           ) : (
@@ -649,14 +649,14 @@ export function AssignmentManager({ assignments, onSave, onUpdate, onDelete, key
                             {item.keycodeProfileIds.map((pid) => {
                               const p = keycodeProfiles.find((x) => x.id === pid);
                               return p ? (
-                                <span key={pid} className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800" title={`Serie: ${p.series}`}>
+                                <span key={pid} className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800" title={`Serie: ${p.series}`}>
                                   IC:{p.icCard}
                                 </span>
                               ) : null;
                             })}
                           </div>
                         ) : (
-                          <span className="text-[10px] text-muted-foreground italic">Sin series</span>
+                          <span className="text-[11px] text-muted-foreground italic">Sin series</span>
                         )}
                       </div>
                     </div>

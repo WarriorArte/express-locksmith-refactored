@@ -4,9 +4,10 @@ import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
+import { spawnRipple } from "@/lib/ripple";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-semibold tracking-[0.01em] border border-transparent active:scale-[0.97] transition-[transform,background-color] ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "relative overflow-hidden isolate inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-semibold border border-transparent ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -17,8 +18,9 @@ const buttonVariants = cva(
         ghost: "border-transparent hover:bg-accent hover:text-accent-foreground",
         link: "border-transparent text-primary underline-offset-4 hover:underline",
         // Prototype (Redesign.html) — chunky, bold, neon
-        proto: "bg-primary text-primary-foreground font-bold hover:bg-primary/90 active:scale-[0.98] transition-transform",
-        "proto-ghost": "bg-transparent border-[1.5px] border-input text-foreground font-semibold hover:bg-muted/40 active:scale-[0.98] transition-transform",
+        proto: "bg-primary text-primary-foreground font-bold hover:bg-primary/90",
+        // Tonal (sin borde): acción secundaria junto a "proto" (p. ej. Cancelar en formularios).
+        "proto-ghost": "bg-muted text-foreground font-semibold hover:bg-muted/80",
       },
       size: {
         default: "h-11 px-6 py-2",
@@ -41,9 +43,19 @@ export interface ButtonProps
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, onPointerDown, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
-    return <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />;
+    return (
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        onPointerDown={(event: React.PointerEvent<HTMLButtonElement>) => {
+          if (variant !== "link") spawnRipple(event);
+          onPointerDown?.(event);
+        }}
+        {...props}
+      />
+    );
   },
 );
 Button.displayName = "Button";

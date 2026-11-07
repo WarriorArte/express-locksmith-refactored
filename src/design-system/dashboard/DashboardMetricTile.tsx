@@ -18,7 +18,7 @@ export function DashboardMetricTile({
       <div className="mb-2 flex h-[30px] w-[30px] items-center justify-center rounded-lg bg-[hsl(var(--surface-2))] text-muted-foreground">
         <Icon className="h-4 w-4" />
       </div>
-      <div className="text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+      <div className="text-[11px] font-semibold text-muted-foreground">
         {label}
       </div>
       <div className="mt-1 text-[22px] font-extrabold leading-none tracking-tight tabular-nums">

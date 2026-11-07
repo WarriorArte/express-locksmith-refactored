@@ -60,6 +60,10 @@ import { CategoryManagementDialog } from "@/components/products/CategoryManageme
 import { SaleFormDialog } from "@/components/sales/SaleFormDialog";
 import { ServiceFormDialog } from "@/components/services/ServiceFormDialog";
 import { UnifiedSearchInput } from "@/components/shared/UnifiedSearchInput";
+import { ProductTile } from "@/components/products/ProductTile";
+import { NativeSelectButton } from "@/design-system/pickers";
+import { MaterialShape } from "@/design-system/shapes/MaterialShape";
+import { spawnRipple } from "@/lib/ripple";
 
 export default function Inventario() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -196,6 +200,14 @@ export default function Inventario() {
       : selectedCategory === "__services__"
       ? "Servicios"
       : (categories?.find((cat) => cat.id === selectedCategory)?.name || "Categoria");
+  // Texto de las tarjetas: precio protagonista y stock en palabras (antes "T:3 · B:2").
+  const tilePrice = (product: Product, serviceTotals: ReturnType<typeof getServiceTotals> | null) =>
+    `${currencySymbol}${(serviceTotals ? serviceTotals.totalWithProducts : Number(product.sale_price_max || 0)).toLocaleString()}`;
+  const tileSupporting = (product: Product, serviceTotals: ReturnType<typeof getServiceTotals> | null) =>
+    serviceTotals
+      ? `Mano de obra ${currencySymbol}${serviceTotals.labor.toLocaleString()}`
+      : `${product.stock_store} en tienda · ${product.stock_warehouse} en bodega`;
+
   const openDetail = (p: Product) => {
     setDetailProduct(p);
     setDetailOpen(true);
@@ -208,9 +220,8 @@ export default function Inventario() {
         <section className="ce-hero ce-hero-mobile-bleed p-[22px_16px] lg:p-[22px]">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
-              <div className="ce-hero-eyebrow">Inventario</div>
-              <h1 className="ce-hero-title mt-1.5 text-[clamp(1.55rem,5.4vw,2.15rem)] lg:mt-2 lg:text-[clamp(1.75rem,3vw,2.5rem)]">
-                Productos y servicios
+              <h1 className="ce-hero-title text-[clamp(1.55rem,5.4vw,2.15rem)] lg:text-[clamp(1.75rem,3vw,2.5rem)]">
+                Inventario
               </h1>
               <p className="ce-hero-meta mt-2 max-w-[460px] lg:mt-3">
                 <b className="text-foreground">{productsCount} productos</b>
@@ -225,11 +236,11 @@ export default function Inventario() {
             </div>
             <div className="flex items-start gap-2">
               <div className="hidden lg:flex gap-2">
-                <Button className="h-11 rounded-[12px] bg-white/[.09] border border-white/[.13] text-foreground hover:bg-white/[.14]" onClick={() => setCategoryDialogOpen(true)}>
-                  <Palette className="w-4 h-4 mr-1" />
-                  Categorias
+                <Button variant="secondary" onClick={() => setCategoryDialogOpen(true)}>
+                  <Palette className="w-4 h-4" />
+                  Categorías
                 </Button>
-                <Button className="h-11 rounded-[12px] bg-primary text-primary-foreground hover:bg-primary-hover" onClick={handleNewProduct}>
+                <Button onClick={handleNewProduct}>
                   <Plus className="w-4 h-4 mr-1" />
                   Nuevo
                 </Button>
@@ -248,37 +259,33 @@ export default function Inventario() {
             <div className="flex shrink-0 items-center gap-2">
               <button
                 type="button"
-                aria-label="Gestionar categorias"
+                aria-label="Gestionar categorías"
                 onClick={() => setCategoryDialogOpen(true)}
-                className="h-10 w-10 shrink-0 flex items-center justify-center rounded-xl bg-white/[.09] border border-white/[.13] text-foreground active:scale-95 transition-transform lg:hidden"
+                onPointerDown={spawnRipple}
+                className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-background/70 text-foreground lg:hidden"
               >
-                <Palette className="w-4 h-4" />
+                <Palette className="h-[18px] w-[18px]" />
               </button>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger
-                  className="h-10 w-10 shrink-0 justify-center rounded-xl px-0 bg-white/[.09] border-white/[.13] text-foreground hover:bg-white/[.14] focus:ring-0 focus:border-white/30 [&>svg:last-child]:hidden lg:w-56 lg:justify-start lg:px-3 lg:[&>svg:last-child]:block"
-                  aria-label="Filtrar por categoria"
-                >
-                  <div className="flex items-center gap-2">
-                    <Filter className="w-4 h-4" />
-                    <span className="hidden truncate lg:inline">{selectedCategoryLabel}</span>
-                    <span className="sr-only lg:hidden">Filtrar por categoria</span>
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas las categorias</SelectItem>
-                  <SelectItem value="__services__">Servicios</SelectItem>
-                  {categories?.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="hidden border border-white/[.13] rounded-xl p-1.5 bg-white/[.05] lg:flex gap-1">
+              {/* Filtro de categoría con la lista NATIVA del sistema */}
+              <NativeSelectButton
+                icon={<Filter className="h-[18px] w-[18px]" />}
+                label="Filtrar por categoría"
+                value={selectedCategory}
+                onChange={setSelectedCategory}
+                options={[
+                  { value: "all", label: "Todas las categorías" },
+                  { value: "__services__", label: "Servicios" },
+                  ...(categories ?? []).map((cat) => ({ value: cat.id, label: cat.name })),
+                ]}
+                className={selectedCategory !== "all" ? "bg-accent text-accent-foreground" : undefined}
+              />
+              <div className="hidden gap-1 rounded-full bg-background/70 p-1 lg:flex">
                 <Button
                   variant={viewMode === "grid" ? "default" : "ghost"}
                   size="icon"
                   onClick={() => setViewMode("grid")}
-                  className="h-9 w-10 rounded-lg"
+                  aria-label="Ver en cuadrícula"
+                  className="h-8 w-10"
                 >
                   <Grid3X3 className="w-4 h-4" />
                 </Button>
@@ -286,19 +293,13 @@ export default function Inventario() {
                   variant={viewMode === "list" ? "default" : "ghost"}
                   size="icon"
                   onClick={() => setViewMode("list")}
-                  className="h-9 w-10 rounded-lg"
+                  aria-label="Ver en lista"
+                  className="h-8 w-10"
                 >
                   <List className="w-4 h-4" />
                 </Button>
               </div>
-              <button
-                type="button"
-                aria-label="Nuevo item de inventario"
-                onClick={handleNewProduct}
-                className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex shrink-0 items-center justify-center shadow-[0_0_16px_hsl(var(--primary)/0.40)] active:scale-95 transition-transform lg:hidden"
-              >
-                <Plus className="w-5 h-5" strokeWidth={2.5} />
-              </button>
+              {/* En móvil, "nuevo" lo hace el botón + de la barra inferior */}
             </div>
           </div>
         </section>
@@ -307,15 +308,14 @@ export default function Inventario() {
       <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain px-5 lg:px-6 pb-mobile-nav no-scrollbar">
       {/* Skeleton */}
       {isLoading && viewMode === "grid" && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 animate-pulse">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4" aria-busy="true">
           {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-            <div key={i} className="bg-card border border-border rounded-2xl overflow-hidden">
-              <div className="aspect-square bg-muted/40" />
-              <div className="p-3 space-y-2">
-                <div className="h-3 w-3/4 rounded-full bg-muted/60" />
-                <div className="h-4 w-1/2 rounded-full bg-muted/60" />
-                <div className="h-3 w-2/5 rounded-full bg-muted/40" />
-                <div className="h-8 w-full rounded-xl bg-muted/50 mt-3" />
+            <div key={i} className="overflow-hidden rounded-[24px] bg-card shadow-sm">
+              <div className="aspect-square animate-pulse bg-muted" />
+              <div className="space-y-2 p-3.5">
+                <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
+                <div className="h-5 w-1/2 animate-pulse rounded bg-muted" />
+                <div className="mt-3 h-10 w-full animate-pulse rounded-full bg-muted" />
               </div>
             </div>
           ))}
@@ -339,19 +339,21 @@ export default function Inventario() {
 
       {/* Empty State */}
       {!isLoading && filteredProducts.length === 0 && (
-        <div className="card-elevated p-10 text-center">
-          <Package className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">
+        <div className="flex flex-col items-center rounded-[28px] bg-card px-6 py-10 text-center shadow-sm">
+          <MaterialShape name="cookie9" className="mb-4 h-20 w-20 text-primary-light">
+            <Package className="h-8 w-8 text-primary" />
+          </MaterialShape>
+          <h3 className="mb-1 text-lg font-semibold text-foreground">
             {searchQuery ? "Sin resultados" : "Sin productos registrados"}
           </h3>
-          <p className="text-muted-foreground mb-5 max-w-xs mx-auto">
+          <p className="mx-auto mb-5 max-w-xs text-[15px] text-muted-foreground">
             {searchQuery
-              ? "Intenta con otro nombre o cambia el filtro de categoria."
+              ? "Prueba con otro nombre o cambia el filtro de categoría."
               : "Agrega productos o servicios para gestionar tu inventario y precios."}
           </p>
           {!searchQuery && (
             <Button onClick={handleNewProduct}>
-              <Plus className="w-4 h-4 mr-1.5" />
+              <Plus className="w-4 h-4" />
               Agregar producto
             </Button>
           )}
@@ -362,153 +364,59 @@ export default function Inventario() {
       {!isLoading && filteredProducts.length > 0 && <div className="lg:hidden">
         {viewMode === "grid" ? (
           <>
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-lg font-extrabold tracking-tight">Resultados</h2>
-              <span className="text-xs font-bold text-muted-foreground">{filteredProducts.length} items</span>
-            </div>
+            <p className="mb-3 px-1 text-sm tabular-nums text-muted-foreground">
+              {filteredProducts.length} {filteredProducts.length === 1 ? "artículo" : "artículos"}
+            </p>
             <div className="grid grid-cols-2 gap-3">
-              {filteredProducts.map((product, index) => {
-              const status = getStockStatus(product);
-              const isService = (product.item_type ?? "product") === "service";
-              const cc = getCategoryColor(product.category_id);
-              const cn_ = getCategoryName(product.category_id);
-              const serviceTypeLabel = getServiceTypeLabel(product.service_type);
-              const serviceTotals = isService ? getServiceTotals(product) : null;
-              return (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.15, delay: index * 0.03 }}
-                  onClick={() => openDetail(product)}
-                  className="rounded-2xl overflow-hidden active:scale-[0.96] transition-transform cursor-pointer border border-border/50 shadow-sm"
-                >
-                  {/* Full-bleed image con overlay */}
-                  <div className="relative aspect-square">
-                    {product.image_url ? (
-                      <img
-                        src={resolveStorageUrl(product.image_url) ?? undefined}
-                        alt={product.name}
-                        className="absolute inset-0 w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div
-                        className="absolute inset-0 flex items-center justify-center"
-                        style={{ background: 'hsl(var(--surface-2))' }}
-                      >
-                        <Package className="w-12 h-12 text-muted-foreground/20" />
-                      </div>
-                    )}
-
-                    {/* Gradient oscuro desde abajo */}
-                    <div className="absolute inset-0 bg-black/40" />
-
-                    {/* Badge stock bajo — arriba derecha */}
-                    {!isService && status === "low" && (
-                      <div className="absolute top-2.5 right-2.5 z-10">
-                        <span className="px-2 py-0.5 rounded-full bg-warning text-black text-[9px] font-black leading-tight">
-                          bajo
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Info superpuesta sobre el gradiente */}
-                    <div className="absolute inset-x-0 bottom-0 z-10 px-3 pb-3 pt-10">
-                      <p className="text-white/90 text-[11px] font-medium leading-snug line-clamp-1 mb-1">
-                        {product.name}
-                      </p>
-                      <div className="flex items-end justify-between gap-2">
-                        <span className="text-white text-[17px] font-black leading-none tracking-tight">
-                          {isService
-                            ? `${currencySymbol}${serviceTotals?.totalWithProducts.toLocaleString()}`
-                            : `${currencySymbol}${Number(product.sale_price_max).toLocaleString()}`
-                          }
-                        </span>
-                        <span className="text-white/55 text-[10px] leading-tight pb-0.5 text-right">
-                          {isService
-                            ? `M.O ${currencySymbol}${serviceTotals?.labor.toLocaleString()}`
-                            : `T:${product.stock_store} · B:${product.stock_warehouse}`
-                          }
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Barra de acción */}
-                  <div className="bg-card px-2.5 py-2.5">
-                    <Button
-                      type="button"
-                      className="w-full h-9 rounded-xl bg-primary text-primary-foreground hover:bg-primary-hover text-[11px] font-bold"
-                      onClick={(e) => { e.stopPropagation(); handleSell(product); }}
-                    >
-                      <ShoppingCart className="w-3.5 h-3.5 mr-1.5" />
-                      {isService ? "Usar servicio" : "Vender"}
-                    </Button>
-                  </div>
-                </motion.div>
-              );
+              {filteredProducts.map((product) => {
+                const isService = (product.item_type ?? "product") === "service";
+                const serviceTotals = isService ? getServiceTotals(product) : null;
+                return (
+                  <ProductTile
+                    key={product.id}
+                    name={product.name}
+                    imageUrl={product.image_url}
+                    isService={isService}
+                    price={tilePrice(product, serviceTotals)}
+                    supporting={tileSupporting(product, serviceTotals)}
+                    lowStock={!isService && getStockStatus(product) === "low"}
+                    onOpen={() => openDetail(product)}
+                    onSell={() => handleSell(product)}
+                  />
+                );
               })}
             </div>
           </>
         ) : (
-          <div className="bg-card border border-border rounded-2xl overflow-hidden divide-y divide-border">
+          <div className="m3-list">
             {filteredProducts.map((product) => {
-              const status = getStockStatus(product);
               const isService = (product.item_type ?? "product") === "service";
-              const cn_ = getCategoryName(product.category_id);
-              const serviceTypeLabel = getServiceTypeLabel(product.service_type);
               const serviceTotals = isService ? getServiceTotals(product) : null;
+              const low = !isService && getStockStatus(product) === "low";
               return (
-                <div
-                  key={product.id}
-                  onClick={() => openDetail(product)}
-                  className="flex items-center gap-3 px-3 py-2.5 active:bg-muted/40 transition-colors cursor-pointer"
-                >
-                  {/* Thumbnail */}
-                  <div className="w-11 h-11 rounded-xl bg-[hsl(var(--surface-2))] flex items-center justify-center flex-shrink-0 overflow-hidden">
-                    {product.image_url ? (
-                      <img src={resolveStorageUrl(product.image_url) ?? undefined} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <Package className="w-4 h-4 text-muted-foreground/40" />
-                    )}
-                  </div>
-
-                  {/* Name + meta */}
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[13px] font-semibold text-foreground truncate">{product.name}</div>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span
-                        className="px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-tight"
-                        style={isService ? getServiceTypeBadgeStyle() : getCategoryBadgeStyle(product.category_id)}
-                      >
-                        {isService ? serviceTypeLabel : cn_}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground">
-                        {isService
-                          ? `M.O: ${currencySymbol}${Number(product.labor_cost || 0).toLocaleString()}`
-                          : `T:${product.stock_store} · B:${product.stock_warehouse}`
-                        }
-                      </span>
-                      {!isService && status === "low" && (
-                        <span className="text-[9px] font-bold text-warning">↓ bajo</span>
+                <div key={product.id} className="m3-list-item flex items-center gap-3 px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => openDetail(product)}
+                    className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                  >
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted text-muted-foreground">
+                      {product.image_url ? (
+                        <img src={resolveStorageUrl(product.image_url) ?? undefined} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <Package className="h-5 w-5" />
                       )}
-                    </div>
-                  </div>
-
-                  {/* Price + action */}
-                  <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                    <span className="text-[13px] font-extrabold text-foreground dark:text-primary leading-tight">
-                      {isService
-                        ? `${currencySymbol}${serviceTotals?.totalWithProducts.toLocaleString()}`
-                        : `${currencySymbol}${Number(product.sale_price_max).toLocaleString()}`
-                      }
                     </span>
-                    <Button
-                      type="button"
-                      className="h-7 px-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary-hover text-[10px] font-semibold"
-                      onClick={(e) => { e.stopPropagation(); handleSell(product); }}
-                    >
-                      <ShoppingCart className="w-3 h-3 mr-1" />
+                    <span className="min-w-0">
+                      <span className="block truncate text-base font-medium text-foreground">{product.name}</span>
+                      <span className={low ? "block truncate text-sm font-medium text-warning" : "block truncate text-sm text-muted-foreground"}>
+                        {low ? "Stock bajo · " : ""}{tileSupporting(product, serviceTotals)}
+                      </span>
+                    </span>
+                  </button>
+                  <div className="flex shrink-0 flex-col items-end gap-1.5">
+                    <span className="text-base font-semibold tabular-nums text-foreground">{tilePrice(product, serviceTotals)}</span>
+                    <Button type="button" variant="secondary" size="sm" onClick={() => handleSell(product)}>
                       {isService ? "Usar" : "Vender"}
                     </Button>
                   </div>
@@ -523,120 +431,51 @@ export default function Inventario() {
       {!isLoading && filteredProducts.length > 0 && <div className="hidden lg:block">
       {viewMode === "grid" ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4">
-          {filteredProducts.map((product, index) => {
-            const status = getStockStatus(product);
+          {filteredProducts.map((product) => {
             const isService = (product.item_type ?? "product") === "service";
-            const serviceTypeLabel = getServiceTypeLabel(product.service_type);
             const serviceTotals = isService ? getServiceTotals(product) : null;
             return (
-              <motion.div
+              <ProductTile
                 key={product.id}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.1, delay: index * 0.02 }}
-                className="rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-lg border border-border/50 shadow-sm group"
-                onClick={() => { setDetailProduct(product); setDetailOpen(true); }}
-              >
-                {/* Full-bleed image con overlay */}
-                <div className="relative aspect-square">
-                  {product.image_url ? (
-                    <img
-                      src={resolveStorageUrl(product.image_url) ?? undefined}
-                      alt={product.name}
-                      className="absolute inset-0 w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div
-                      className="absolute inset-0 flex items-center justify-center"
-                      style={{ background: 'hsl(var(--surface-2))' }}
-                    >
-                      <Package className="w-12 h-12 text-muted-foreground/20" />
-                    </div>
-                  )}
-
-                  {/* Gradient oscuro desde abajo */}
-                  <div className="absolute inset-0 bg-black/40" />
-
-                  {/* Stock bajo — arriba derecha (detrás del ⋯) */}
-                  {!isService && status === "low" && (
-                    <div className="absolute top-2.5 right-10 z-10">
-                      <span className="px-2 py-0.5 rounded-full bg-warning text-black text-[9px] font-black leading-tight">
-                        bajo
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Context menu — hover */}
-                  <div
-                    className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-20"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button size="icon" variant="secondary" className="h-7 w-7 rounded-lg shadow-sm cursor-pointer">
-                          <MoreVertical className="w-3.5 h-3.5" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setImageProduct(product)}>
-                          <ZoomIn className="w-4 h-4 mr-2" /> Ver imagen
-                        </DropdownMenuItem>
-                        {!isService && (
-                          <>
-                            <DropdownMenuItem onClick={() => setMovementProduct(product)}>
-                              <Move className="w-4 h-4 mr-2" /> Movimientos
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setHistoryProduct(product)}>
-                              <History className="w-4 h-4 mr-2" /> Historial
-                            </DropdownMenuItem>
-                          </>
-                        )}
-                        <DropdownMenuItem onClick={() => handleEdit(product)}>
-                          <Edit className="w-4 h-4 mr-2" /> Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-destructive"
-                          onClick={() => setDeleteProduct(product)}
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" /> Eliminar
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-
-                  {/* Info superpuesta */}
-                  <div className="absolute inset-x-0 bottom-0 z-10 px-3 pb-3 pt-10">
-                    <p className="text-white/90 text-[12px] font-medium leading-snug line-clamp-1 mb-1">
-                      {product.name}
-                    </p>
-                    <div className="flex items-end justify-between gap-2">
-                      <span className="text-white text-[16px] font-black leading-none tracking-tight">
-                        {isService
-                          ? `${currencySymbol}${serviceTotals?.totalWithProducts.toLocaleString()}`
-                          : `${currencySymbol}${Number(product.sale_price_max).toLocaleString()}`
-                        }
-                      </span>
-                      <span className="text-white/55 text-[10px] leading-tight pb-0.5 text-right">
-                        {isService
-                          ? `M.O ${currencySymbol}${serviceTotals?.labor.toLocaleString()}`
-                          : `T:${product.stock_store} · B:${product.stock_warehouse}`
-                        }
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Barra de acción */}
-                <div className="bg-card px-3 py-2.5">
-                  <Button
-                    className="w-full h-8 rounded-xl bg-primary text-primary-foreground hover:bg-primary-hover text-xs font-semibold cursor-pointer"
-                    onClick={(e) => { e.stopPropagation(); handleSell(product); }}
-                  >
-                    <ShoppingCart className="w-3.5 h-3.5 mr-1.5" />
-                    {isService ? "Usar" : "Vender"}
-                  </Button>
-                </div>
-              </motion.div>
+                name={product.name}
+                imageUrl={product.image_url}
+                isService={isService}
+                price={tilePrice(product, serviceTotals)}
+                supporting={tileSupporting(product, serviceTotals)}
+                lowStock={!isService && getStockStatus(product) === "low"}
+                onOpen={() => { setDetailProduct(product); setDetailOpen(true); }}
+                onSell={() => handleSell(product)}
+                menu={
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="icon" variant="ghost" aria-label={`Más acciones de ${product.name}`} className="h-9 w-9 bg-background/85 shadow-sm hover:bg-background">
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setImageProduct(product)}>
+                        <ZoomIn className="w-4 h-4 mr-2" /> Ver imagen
+                      </DropdownMenuItem>
+                      {!isService && (
+                        <>
+                          <DropdownMenuItem onClick={() => setMovementProduct(product)}>
+                            <Move className="w-4 h-4 mr-2" /> Movimientos
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setHistoryProduct(product)}>
+                            <History className="w-4 h-4 mr-2" /> Historial
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                      <DropdownMenuItem onClick={() => handleEdit(product)}>
+                        <Edit className="w-4 h-4 mr-2" /> Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive" onClick={() => setDeleteProduct(product)}>
+                        <Trash2 className="w-4 h-4 mr-2" /> Eliminar
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                }
+              />
             );
           })}
         </div>

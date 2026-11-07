@@ -244,7 +244,7 @@ function DateInput({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+      <span className="mb-1.5 block text-[11px] font-bold text-muted-foreground">
         {label}
       </span>
       <input

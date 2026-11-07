@@ -1,15 +1,41 @@
-import { useState, useMemo, useRef, useEffect } from "react";
-import { m as motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Radio, Search, ChevronDown, X, ImageIcon, AlertTriangle, Info, CalendarDays, List, LayoutGrid } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { AlertTriangle, ArrowLeft, ImageIcon, Info, Minus, Plus, Radio } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/responsive-dialog";
+import { ImageViewDialog } from "@/components/shared/ImageViewDialog";
+import {
+  ChipRow,
+  DetailHero,
+  DetailScreen,
+  DetailSection,
+  FilterChip,
+  SearchBar,
+  SpecRow,
+  SpecTile,
+  SubHeading,
+  TonalChip,
+} from "@/design-system/detail/DetailScreen";
+import { WireSwatch, parseWireColors } from "@/components/herramientas/WireSwatch";
+import { spawnRipple } from "@/lib/ripple";
 import type { AlarmaProfile, AlarmaDataValue, AlarmaDetalle, AlarmaYearImage } from "@/types";
 import { useImageFolder, getImageByFile } from "@/hooks/useImageFolder";
 
-// ── Category system ───────────────────────────────────────────────────────────
+/*
+ * Auto Alarmas — criterio M3E (docs/CRITERIO-DISENO-M3E.md):
+ *  · Lista de puntos de conexión con buscador y chips de categoría
+ *    (sustituye al desplegable + modo Buscar/Explorar).
+ *  · Al tocar un punto se abre una hoja cuyo protagonista es el cable:
+ *    muestra de color real + nombre del color + polaridad.
+ */
+
+// ── Categorías ────────────────────────────────────────────────────────────────
 
 const CATEGORIES = [
   { id: "alimentacion", label: "Alimentación", keywords: ["12 volt", "ground", "starter", "ignition", "accessory"] },
@@ -36,184 +62,6 @@ function getDataPointCategory(title: string): CategoryId {
   return "otros";
 }
 
-// ── Searchable dropdown ───────────────────────────────────────────────────────
-
-interface ComboboxProps {
-  dataValues: AlarmaDataValue[];
-  selectedId: string | null;
-  onSelect: (id: string) => void;
-  onClear: () => void;
-}
-
-function DataPointCombobox({ dataValues, selectedId, onSelect, onClear }: ComboboxProps) {
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const containerRef = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
-
-  // Close on outside click
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (!containerRef.current?.contains(e.target as Node)) {
-        setOpen(false);
-        setQuery("");
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
-
-  // Focus search when opens
-  useEffect(() => {
-    if (open) setTimeout(() => searchRef.current?.focus(), 50);
-  }, [open]);
-
-  const filtered = useMemo(() => {
-    if (!query.trim()) return dataValues;
-    const q = query.toLowerCase();
-    return dataValues.filter(
-      (dv) =>
-        dv.title.toLowerCase().includes(q) ||
-        dv.details.some(
-          (d) => d.label.toLowerCase().includes(q) || d.value.toLowerCase().includes(q)
-        )
-    );
-  }, [dataValues, query]);
-
-  const selected = useMemo(
-    () => dataValues.find((dv) => dv.id === selectedId) ?? null,
-    [dataValues, selectedId]
-  );
-
-  const handleSelect = (id: string) => {
-    onSelect(id);
-    setOpen(false);
-    setQuery("");
-  };
-
-  return (
-    <div ref={containerRef} className="relative">
-      {/* Trigger */}
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className={`w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-xl border-2 bg-card text-left transition-all ${
-          open
-            ? "border-primary shadow-sm"
-            : "border-border hover:border-primary/40"
-        }`}
-      >
-        <div className="flex items-center gap-3 min-w-0">
-          <Radio className="w-4 h-4 text-muted-foreground shrink-0" />
-          {selected ? (
-            <div className="min-w-0">
-              <p className="font-semibold text-sm text-foreground truncate">
-                {selected.title}
-              </p>
-              <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
-                {selected.details.length} campo{selected.details.length !== 1 ? "s" : ""}
-                {(selected.imageUrl || (selected.yearImages?.length ?? 0) > 0) && (
-                  <>
-                    <span>·</span>
-                    <ImageIcon className="w-3 h-3 text-primary" />
-                  </>
-                )}
-              </p>
-            </div>
-          ) : (
-            <span className="text-muted-foreground text-sm">
-              Seleccionar punto de datos…
-            </span>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          {selected && (
-            <span
-              role="button"
-              onClick={(e) => { e.stopPropagation(); onClear(); }}
-              className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <X className="w-3.5 h-3.5" />
-            </span>
-          )}
-          <Badge variant="secondary" className="text-[10px] px-1.5 tabular-nums">
-            {dataValues.length}
-          </Badge>
-          <ChevronDown
-            className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-          />
-        </div>
-      </button>
-
-      {/* Dropdown panel */}
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -6, scaleY: 0.96 }}
-            animate={{ opacity: 1, y: 0, scaleY: 1 }}
-            exit={{ opacity: 0, y: -6, scaleY: 0.96 }}
-            transition={{ duration: 0.12 }}
-            style={{ transformOrigin: "top" }}
-            className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-card border border-border rounded-xl shadow-xl overflow-hidden"
-          >
-            {/* Search inside dropdown */}
-            <div className="p-2 border-b border-border">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                <input
-                  ref={searchRef}
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder={`Buscar entre ${dataValues.length} puntos…`}
-                  className="w-full pl-8 pr-3 py-1.5 text-sm bg-muted rounded-lg outline-none placeholder:text-muted-foreground/60"
-                />
-              </div>
-            </div>
-
-            {/* Options list */}
-            <div className="max-h-72 overflow-y-auto">
-              {filtered.length === 0 ? (
-                <div className="py-8 text-center text-sm text-muted-foreground">
-                  Sin resultados para &ldquo;{query}&rdquo;
-                </div>
-              ) : (
-                filtered.map((dv) => {
-                  const originalIndex = dataValues.indexOf(dv);
-                  const isActive = dv.id === selectedId;
-
-                  return (
-                    <button
-                      key={dv.id}
-                      onClick={() => handleSelect(dv.id)}
-                      className={`w-full text-left px-4 py-2.5 flex items-center gap-3 transition-colors text-sm ${
-                        isActive
-                          ? "bg-primary/8 text-primary font-medium"
-                          : "hover:bg-muted/60 text-foreground"
-                      }`}
-                    >
-                      <span className="text-[11px] font-mono text-muted-foreground w-6 shrink-0 text-right">
-                        {originalIndex + 1}
-                      </span>
-                      <span className="flex-1 truncate">{dv.title || "Sin título"}</span>
-                      {(dv.imageUrl || (dv.yearImages?.length ?? 0) > 0) && (
-                        <ImageIcon className="w-3.5 h-3.5 text-primary shrink-0" />
-                      )}
-                      {isActive && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                      )}
-                    </button>
-                  );
-                })
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function getValueForYear(det: AlarmaDetalle, year: number): { value: string; isYearSpecific: boolean } {
@@ -223,159 +71,233 @@ function getValueForYear(det: AlarmaDetalle, year: number): { value: string; isY
   return { value: det.value, isYearSpecific: false };
 }
 
-// ── Detail panel ──────────────────────────────────────────────────────────────
+const findDetail = (dv: AlarmaDataValue, label: string) =>
+  dv.details.find((d) => d.label.trim().toLowerCase() === label);
 
-function DataPointDetail({ dv, year }: { dv: AlarmaDataValue; year: number }) {
+function yearSpan(years: string[]) {
+  if (years.length === 0) return "";
+  return years.length >= 2 ? `${years[0]}–${years[years.length - 1]}` : years[0];
+}
+
+function PolarityChip({ value }: { value: string }) {
+  const v = value.trim().toLowerCase();
+  if (/(^|\W)(\+|pos)/.test(v) || v.startsWith("+")) {
+    return <TonalChip icon={<Plus className="h-4 w-4" />} label={`Positivo · ${value}`} />;
+  }
+  if (/(^|\W)(-|−|neg)/.test(v) || v.startsWith("-")) {
+    return <TonalChip icon={<Minus className="h-4 w-4" />} label={`Negativo · ${value}`} tone="neutral" />;
+  }
+  return <TonalChip label={value} tone="neutral" />;
+}
+
+// ── Hoja de detalle de un punto ───────────────────────────────────────────────
+
+function DataPointSheet({
+  dv,
+  year,
+  onClose,
+}: {
+  dv: AlarmaDataValue | null;
+  year: number;
+  onClose: () => void;
+}) {
+  // Se conserva el último punto para que el contenido no desaparezca durante
+  // la animación de cierre de la hoja.
+  const lastDv = useRef<AlarmaDataValue | null>(null);
+  if (dv) lastDv.current = dv;
+  const point = dv ?? lastDv.current;
+
   const { folderName } = useImageFolder();
-  const hasYearSpecific = dv.details.some((d) => d.yearValues?.length);
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
 
-  // All image variants resolved from folder (or single base64)
-  const resolvedImageVariants = useMemo(() => {
-    if (dv.imageUrl) {
-      return [{ url: dv.imageUrl, years: [] as string[], sku: "", file: "" }];
-    }
-    if (!dv.yearImages?.length) return [];
-    return dv.yearImages
+  const imageVariants = useMemo(() => {
+    if (!point) return [];
+    if (point.imageUrl) return [{ url: point.imageUrl, years: [] as string[], sku: "", file: "" }];
+    if (!point.yearImages?.length) return [];
+    return point.yearImages
       .map((yi) => ({ ...yi, url: getImageByFile(yi.file) }))
       .filter((yi) => yi.url !== null) as (AlarmaYearImage & { url: string })[];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dv.imageUrl, dv.yearImages, folderName]);
+  }, [point?.imageUrl, point?.yearImages, folderName]);
+
+  if (!point) return null;
+
+  const cable = findDetail(point, "cable");
+  const polaridad = findDetail(point, "polaridad");
+  // Protagonista: el cable; si no hay campo "cable", el primer dato.
+  const lead = cable ?? point.details[0];
+  const leadValue = lead ? getValueForYear(lead, year) : null;
+  const polarValue = polaridad ? getValueForYear(polaridad, year).value : "";
+  const rest = point.details.filter((d) => d !== lead && d !== polaridad);
+  const hasYearSpecific = point.details.some((d) => d.yearValues?.length);
+  const category = CATEGORIES.find((c) => c.id === getDataPointCategory(point.title));
+  const warnings = (point.notes ?? []).filter((n) => n.type === "image_variation");
+  const infos = (point.notes ?? []).filter((n) => n.type !== "image_variation");
+  const missingFolderImages = imageVariants.length === 0 && (point.yearImages?.length ?? 0) > 0;
 
   return (
-    <motion.div
-      key={dv.id}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.18 }}
-    >
-      <Card className="border-primary/20 shadow-sm">
-        <CardContent className="p-5 space-y-4">
-          {/* Title row */}
-          <div className="flex items-start justify-between gap-3">
-            <h3 className="font-bold text-base text-foreground leading-snug">
-              {dv.title}
-            </h3>
-            <div className="flex items-center gap-1.5 shrink-0">
-              {hasYearSpecific && (
-                <Badge variant="outline" className="text-[10px] px-1.5 gap-1 border-primary/30 text-primary dark:text-primary">
-                  <CalendarDays className="w-3 h-3" />
-                  {year}
-                </Badge>
-              )}
-              <Badge variant="secondary" className="text-[10px]">
-                {dv.details.length} campo{dv.details.length !== 1 ? "s" : ""}
-              </Badge>
-            </div>
-          </div>
+    <>
+      <Dialog open={!!dv} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader className="text-left">
+            <DialogTitle className="text-2xl font-bold leading-tight">{point.title}</DialogTitle>
+            <DialogDescription>
+              {[category && category.id !== "otros" ? category.label : null, hasYearSpecific ? `Valores para ${year}` : null]
+                .filter(Boolean)
+                .join(" · ") || "Punto de conexión"}
+            </DialogDescription>
+          </DialogHeader>
 
-          {/* Fields */}
-          {dv.details.length > 0 ? (
-            <div className="space-y-2.5">
-              {dv.details.map((det) => {
-                const { value, isYearSpecific } = getValueForYear(det, year);
-                return (
-                  <div
-                    key={det.id}
-                    className="grid text-sm gap-x-3 gap-y-0.5"
-                    style={{ gridTemplateColumns: "7rem 1fr" }}
-                  >
-                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide leading-5 pt-px">
-                      {det.label || "—"}
-                    </span>
-                    <div className="min-w-0">
-                      <span className={`font-medium break-words leading-5 ${isYearSpecific ? "text-foreground" : "text-foreground"}`}>
-                        {value || "—"}
-                      </span>
-                      {isYearSpecific && (
-                        <span className="ml-1.5 inline-flex items-center text-[10px] text-primary font-normal">
-                          · año {year}
-                        </span>
-                      )}
-                    </div>
+          <div className="space-y-3 pb-4">
+            {/* Protagonista: el cable */}
+            {lead && leadValue && (
+              <section className="rounded-[28px] bg-primary-light p-5">
+                <p className="text-xs font-medium text-muted-foreground">{lead.label || "Cable"}</p>
+                {cable && <WireSwatch value={leadValue.value} variant="cable" className="my-3" />}
+                <p className="text-[1.75rem] font-bold leading-tight text-foreground">
+                  {leadValue.value || "—"}
+                </p>
+                {(polarValue || leadValue.isYearSpecific) && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {polarValue && <PolarityChip value={polarValue} />}
+                    {leadValue.isYearSpecific && <TonalChip label={`Para ${year}`} tone="neutral" />}
                   </div>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground italic">Sin campos cargados</p>
-          )}
+                )}
+              </section>
+            )}
 
-          {/* Images — all year variants */}
-          {resolvedImageVariants.length > 0 ? (
-            <div className="space-y-3 pt-1">
-              {resolvedImageVariants.map((yi, i) => {
-                const yearLabel =
-                  yi.years.length >= 2
-                    ? `${yi.years[0]}–${yi.years[yi.years.length - 1]}`
-                    : yi.years[0] ?? "";
-                return (
-                  <div key={i} className="space-y-1.5">
-                    {yearLabel && (
-                      <p className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
-                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary" />
-                        {yearLabel}
-                      </p>
-                    )}
-                    <img
-                      src={yi.url}
-                      alt={`${dv.title}${yearLabel ? ` · ${yearLabel}` : ""}`}
-                      className="rounded-xl border border-border w-full max-h-64 object-contain bg-white"
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          ) : dv.yearImages && dv.yearImages.length > 0 ? (
-            <div className="flex items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-xs text-muted-foreground">
-              <ImageIcon className="w-3.5 h-3.5 shrink-0" />
-              <span>Imagen disponible — selecciona la carpeta en el administrador</span>
-            </div>
-          ) : null}
+            {rest.length > 0 && (
+              <DetailSection title="Datos" className="bg-muted shadow-none">
+                <div className="-my-1.5">
+                  {rest.map((det) => {
+                    const { value, isYearSpecific } = getValueForYear(det, year);
+                    return (
+                      <SpecRow
+                        key={det.id}
+                        label={det.label || "—"}
+                        value={
+                          <>
+                            {value || "—"}
+                            {isYearSpecific && <span className="ml-1.5 text-xs text-primary">· {year}</span>}
+                          </>
+                        }
+                      />
+                    );
+                  })}
+                </div>
+              </DetailSection>
+            )}
 
-          {/* Notes */}
-          {dv.notes && dv.notes.length > 0 && (
-            <div className="space-y-2 pt-1">
-              {dv.notes.map((note) =>
-                note.type === "image_variation" ? (
-                  <div
-                    key={note.id}
-                    className="flex items-start gap-2 rounded-lg bg-warning/10 border border-amber-200 dark:border-amber-800 px-3 py-2.5 text-xs text-amber-800 dark:text-amber-300"
-                  >
-                    <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-semibold">{note.title}</p>
-                      {note.text && <p className="mt-0.5 opacity-80 leading-relaxed">{note.text}</p>}
-                    </div>
-                  </div>
+            {warnings.map((note) => (
+              <DetailSection
+                key={note.id}
+                title={note.title}
+                tone="warning"
+                icon={<AlertTriangle className="h-5 w-5 shrink-0 text-warning" />}
+              >
+                {note.text && <p className="text-[15px] leading-relaxed text-foreground">{note.text}</p>}
+              </DetailSection>
+            ))}
+
+            {(imageVariants.length > 0 || missingFolderImages) && (
+              <DetailSection title="Diagrama" className="bg-muted shadow-none">
+                {missingFolderImages ? (
+                  <p className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <ImageIcon className="mt-0.5 h-4 w-4 shrink-0" />
+                    Hay imagen, pero falta seleccionar la carpeta de imágenes en el administrador.
+                  </p>
                 ) : (
-                  <div
-                    key={note.id}
-                    className="flex items-start gap-2 rounded-lg bg-primary/5 border border-primary/20 px-3 py-2.5 text-xs text-primary dark:text-primary"
-                  >
-                    <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-semibold">{note.title}</p>
-                      {note.documented && note.documented.length > 0 && (
-                        <p className="mt-0.5">
-                          <span className="opacity-70">Aplica a: </span>
-                          {note.documented[0]} – {note.documented[note.documented.length - 1]}
-                        </p>
-                      )}
-                      {note.probable && note.probable.length > 0 && (
-                        <p>
-                          <span className="opacity-70">Puede funcionar en: </span>
-                          {note.probable[0]} – {note.probable[note.probable.length - 1]}
-                        </p>
-                      )}
-                    </div>
+                  <div className="space-y-4">
+                    {imageVariants.map((yi, i) => {
+                      const label = yearSpan(yi.years);
+                      return (
+                        <div key={i}>
+                          {label && <SubHeading>{label}</SubHeading>}
+                          <button
+                            type="button"
+                            onClick={() => setViewerIndex(i)}
+                            aria-label={`Ampliar diagrama${label ? ` ${label}` : ""}`}
+                            className="block w-full overflow-hidden rounded-2xl bg-white"
+                          >
+                            <img
+                              src={yi.url}
+                              alt={`${point.title}${label ? ` · ${label}` : ""}`}
+                              className="max-h-72 w-full object-contain"
+                            />
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
-                )
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </motion.div>
+                )}
+              </DetailSection>
+            )}
+
+            {infos.map((note) => (
+              <DetailSection
+                key={note.id}
+                title={note.title}
+                className="bg-muted shadow-none"
+                icon={<Info className="h-5 w-5 shrink-0 text-primary" />}
+              >
+                <div className="-my-1.5">
+                  {note.documented && note.documented.length > 0 && (
+                    <SpecRow label="Aplica a" value={yearSpan(note.documented)} />
+                  )}
+                  {note.probable && note.probable.length > 0 && (
+                    <SpecRow label="Puede funcionar en" value={yearSpan(note.probable)} />
+                  )}
+                </div>
+              </DetailSection>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <ImageViewDialog
+        open={viewerIndex !== null}
+        onOpenChange={(open) => !open && setViewerIndex(null)}
+        images={imageVariants.map((yi) => ({ url: yi.url, description: yearSpan(yi.years) || point.title }))}
+        initialIndex={viewerIndex ?? 0}
+      />
+    </>
+  );
+}
+
+// ── Fila de la lista ──────────────────────────────────────────────────────────
+
+function DataPointRow({ dv, year, onClick }: { dv: AlarmaDataValue; year: number; onClick: () => void }) {
+  const cable = findDetail(dv, "cable");
+  const polar = findDetail(dv, "polaridad");
+  const cableVal = cable ? getValueForYear(cable, year).value : "";
+  const polarVal = polar ? getValueForYear(polar, year).value : "";
+  const hasImage = !!(dv.imageUrl || (dv.yearImages?.length ?? 0) > 0);
+  const hasWarning = (dv.notes ?? []).some((n) => n.type === "image_variation");
+  const supporting = [cableVal, polarVal].filter(Boolean).join(" · ");
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      onPointerDown={spawnRipple}
+      className="m3-list-item flex min-h-[72px] w-full items-center gap-4 px-4 py-3 text-left"
+    >
+      {parseWireColors(cableVal) ? (
+        <WireSwatch value={cableVal} />
+      ) : (
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+          <Radio className="h-5 w-5" />
+        </span>
+      )}
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-base font-medium text-foreground">{dv.title || "Sin título"}</span>
+        {supporting && <span className="block truncate text-sm text-muted-foreground">{supporting}</span>}
+      </span>
+      <span className="flex shrink-0 items-center gap-2 text-muted-foreground">
+        {hasWarning && <AlertTriangle className="h-4 w-4 text-warning" aria-label="Tiene advertencias" />}
+        {hasImage && <ImageIcon className="h-4 w-4" aria-label="Tiene diagrama" />}
+      </span>
+    </button>
   );
 }
 
@@ -390,30 +312,19 @@ interface AlarmasWorkspaceProps {
   onBack: () => void;
 }
 
-export function AlarmasWorkspace({
-  year,
-  make,
-  model,
-  profileIds,
-  allProfiles,
-  onBack,
-}: AlarmasWorkspaceProps) {
+export function AlarmasWorkspace({ year, make, model, profileIds, allProfiles, onBack }: AlarmasWorkspaceProps) {
   const profiles = useMemo(
-    () =>
-      profileIds
-        .map((id) => allProfiles.find((p) => p.id === id))
-        .filter((p): p is AlarmaProfile => !!p),
-    [profileIds, allProfiles]
+    () => profileIds.map((id) => allProfiles.find((p) => p.id === id)).filter((p): p is AlarmaProfile => !!p),
+    [profileIds, allProfiles],
   );
 
   const [activeIdx, setActiveIdx] = useState(0);
   const [selectedDvId, setSelectedDvId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<"buscar" | "explorar">("buscar");
   const [activeCategory, setActiveCategory] = useState<CategoryId | null>(null);
-
+  const [query, setQuery] = useState("");
   const activeProfile = profiles[activeIdx] ?? null;
+  const { folderName } = useImageFolder();
 
-  // Reset selected point when profile changes
   const handleProfileChange = (idx: number) => {
     setActiveIdx(idx);
     setSelectedDvId(null);
@@ -422,14 +333,12 @@ export function AlarmasWorkspace({
 
   const selectedDv = useMemo(
     () => activeProfile?.dataValues.find((dv) => dv.id === selectedDvId) ?? null,
-    [activeProfile, selectedDvId]
+    [activeProfile, selectedDvId],
   );
 
-  // Category counts for explore mode
   const categoryCounts = useMemo(() => {
-    if (!activeProfile) return {} as Record<CategoryId, number>;
     const counts = {} as Record<CategoryId, number>;
-    for (const dv of activeProfile.dataValues) {
+    for (const dv of activeProfile?.dataValues ?? []) {
       const cat = getDataPointCategory(dv.title);
       counts[cat] = (counts[cat] ?? 0) + 1;
     }
@@ -438,254 +347,126 @@ export function AlarmasWorkspace({
 
   const availableCategories = useMemo(
     () => CATEGORIES.filter((c) => (categoryCounts[c.id] ?? 0) > 0),
-    [categoryCounts]
+    [categoryCounts],
   );
 
-  const exploreDataValues = useMemo(() => {
-    if (!activeProfile) return [];
-    if (!activeCategory) return activeProfile.dataValues;
-    return activeProfile.dataValues.filter((dv) => getDataPointCategory(dv.title) === activeCategory);
-  }, [activeProfile, activeCategory]);
-
-  const { folderName } = useImageFolder();
+  const visibleDataValues = useMemo(() => {
+    let list = activeProfile?.dataValues ?? [];
+    if (activeCategory) list = list.filter((dv) => getDataPointCategory(dv.title) === activeCategory);
+    const q = query.trim().toLowerCase();
+    if (q) {
+      list = list.filter(
+        (dv) =>
+          dv.title.toLowerCase().includes(q) ||
+          dv.details.some((d) => d.label.toLowerCase().includes(q) || d.value.toLowerCase().includes(q)),
+      );
+    }
+    return list;
+  }, [activeProfile, activeCategory, query]);
 
   const vehicleImg = useMemo(() => {
     if (!activeProfile?.vehicleImages?.length) return null;
-    const match = activeProfile.vehicleImages.find(
-      (vi) => vi.kind === "vehicle" && vi.years.includes(String(year))
-    ) ?? activeProfile.vehicleImages.find((vi) => vi.kind === "vehicle");
-    if (!match) return null;
-    return getImageByFile(match.file);
+    const match =
+      activeProfile.vehicleImages.find((vi) => vi.kind === "vehicle" && vi.years.includes(String(year))) ??
+      activeProfile.vehicleImages.find((vi) => vi.kind === "vehicle");
+    return match ? getImageByFile(match.file) : null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeProfile, year, folderName]);
 
   const logoImg = useMemo(() => {
-    if (!activeProfile) return null;
-    const logoEntry = activeProfile.vehicleImages?.find((vi) => vi.kind === "logo");
-    if (!logoEntry) return null;
-    return getImageByFile(logoEntry.file);
+    const logoEntry = activeProfile?.vehicleImages?.find((vi) => vi.kind === "logo");
+    return logoEntry ? getImageByFile(logoEntry.file) : null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeProfile, folderName]);
 
   if (!activeProfile) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <Radio className="w-10 h-10 text-muted-foreground/40 mb-3" />
-        <p className="text-muted-foreground font-medium">Sin perfil de alarma disponible</p>
-        <Button variant="outline" size="sm" className="mt-4" onClick={onBack}>
-          <ArrowLeft className="w-4 h-4 mr-1.5" /> Volver
+      <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+        <Radio className="mb-3 h-10 w-10 text-muted-foreground" />
+        <p className="text-base font-medium text-foreground">Sin perfil de alarma disponible</p>
+        <Button variant="secondary" className="mt-4" onClick={onBack}>
+          <ArrowLeft /> Volver
         </Button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <Card className="bg-primary/5 border-none shadow-sm rounded-[24px] overflow-hidden">
-        <CardHeader className="pb-3 pt-5 px-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-4">
-              {vehicleImg ? (
-                <div className="h-14 w-20 rounded-xl overflow-hidden border border-primary/20 shrink-0 bg-white">
-                  <img src={vehicleImg} alt={`${make} ${model}`} className="w-full h-full object-contain" />
-                </div>
-              ) : (
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm shrink-0">
-                  <Radio className="h-6 w-6" />
-                </div>
-              )}
-              <div>
-                <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  {logoImg && (
-                    <img src={logoImg} alt="Logo" className="h-4 w-auto object-contain inline-block" />
-                  )}
-                  Auto Alarmas
-                </p>
-                <CardTitle className="text-xl font-bold text-foreground">
-                  {make} {model} · {year}
-                </CardTitle>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  {activeProfile.nombre}
-                  {activeProfile.yearRange && ` · ${activeProfile.yearRange}`}
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onBack}
-              className="text-muted-foreground hover:text-foreground dark:hover:text-foreground shrink-0"
-            >
-              <ArrowLeft className="w-4 h-4 mr-1" /> Volver
-            </Button>
-          </div>
-
-          {/* Multi-profile tabs */}
-          {profiles.length > 1 && (
-            <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-border">
-              {profiles.map((p, i) => (
-                <button
-                  key={p.id}
-                  onClick={() => handleProfileChange(i)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                    i === activeIdx
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "bg-white/70 text-foreground hover:bg-white dark:bg-foreground/60 dark:text-muted-foreground"
-                  }`}
-                >
-                  {p.nombre}
-                </button>
-              ))}
-            </div>
+    <>
+      <DetailScreen
+        title={`${make} ${model}`}
+        meta={`${year} · Alarmas`}
+        onBack={onBack}
+        backLabel="Volver a vehículos"
+      >
+        <DetailHero>
+          {vehicleImg && (
+            <img
+              src={vehicleImg}
+              alt={`${make} ${model}`}
+              className="mx-auto mb-4 h-36 w-full max-w-xs object-contain drop-shadow-md md:mb-0 md:w-64"
+            />
           )}
-        </CardHeader>
-      </Card>
+          <div className="min-w-0 space-y-3">
+            <div className="flex items-center gap-2.5">
+              {logoImg && <img src={logoImg} alt="" className="h-7 w-auto shrink-0 object-contain" />}
+              <p className="min-w-0 truncate text-xl font-semibold text-foreground">{activeProfile.nombre}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <SpecTile label="Puntos de conexión" value={String(activeProfile.dataValues.length)} />
+              <SpecTile label="Años" value={activeProfile.yearRange || String(year)} />
+            </div>
+          </div>
+        </DetailHero>
 
-      {/* View mode toggle */}
-      <div className="flex items-center gap-2 justify-end">
-        <span className="text-xs text-muted-foreground mr-1">Vista:</span>
-        <div className="inline-flex rounded-lg border border-border overflow-hidden">
-          <button
-            onClick={() => { setViewMode("buscar"); setActiveCategory(null); }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
-              viewMode === "buscar"
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            <Search className="w-3.5 h-3.5" /> Buscar
-          </button>
-          <button
-            onClick={() => setViewMode("explorar")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
-              viewMode === "explorar"
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            <LayoutGrid className="w-3.5 h-3.5" /> Explorar
-          </button>
-        </div>
-      </div>
+        {profiles.length > 1 && (
+          <ChipRow label="Perfil de alarma">
+            {profiles.map((p, i) => (
+              <FilterChip key={p.id} selected={i === activeIdx} onClick={() => handleProfileChange(i)}>
+                {p.nombre}
+              </FilterChip>
+            ))}
+          </ChipRow>
+        )}
 
-      {/* ── Buscar mode ── */}
-      {viewMode === "buscar" && (
-        <>
-          <DataPointCombobox
-            dataValues={activeProfile.dataValues}
-            selectedId={selectedDvId}
-            onSelect={setSelectedDvId}
-            onClear={() => setSelectedDvId(null)}
-          />
-          <AnimatePresence mode="wait">
-            {selectedDv ? (
-              <DataPointDetail key={selectedDv.id} dv={selectedDv} year={year} />
-            ) : (
-              <motion.div
-                key="empty"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex flex-col items-center justify-center py-12 border border-dashed border-border rounded-xl text-center"
-              >
-                <Radio className="w-8 h-8 text-muted-foreground/30 mb-2" />
-                <p className="text-sm text-muted-foreground">
-                  Selecciona un punto para ver sus detalles
-                </p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </>
-      )}
+        <SearchBar
+          value={query}
+          onChange={setQuery}
+          placeholder={`Buscar entre ${activeProfile.dataValues.length} puntos`}
+        />
 
-      {/* ── Explorar mode ── */}
-      {viewMode === "explorar" && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.15 }}
-          className="space-y-4"
-        >
-          {/* Category chips */}
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => { setActiveCategory(null); setSelectedDvId(null); }}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${
-                !activeCategory
-                  ? "bg-primary text-primary-foreground border-primary dark:text-foreground dark:border-border"
-                  : "bg-transparent text-muted-foreground border-border hover:border-border hover:text-foreground"
-              }`}
-            >
-              Todos <span className="opacity-60 ml-1">({activeProfile.dataValues.length})</span>
-            </button>
+        {availableCategories.length > 1 && (
+          <ChipRow label="Categorías">
+            <FilterChip selected={!activeCategory} onClick={() => setActiveCategory(null)}>
+              Todos
+            </FilterChip>
             {availableCategories.map((cat) => (
-              <button
+              <FilterChip
                 key={cat.id}
-                onClick={() => { setActiveCategory(cat.id); setSelectedDvId(null); }}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${
-                  activeCategory === cat.id
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-transparent text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
-                }`}
+                selected={activeCategory === cat.id}
+                onClick={() => setActiveCategory(activeCategory === cat.id ? null : cat.id)}
+                count={categoryCounts[cat.id]}
               >
-                {cat.label} <span className="opacity-60 ml-1">({categoryCounts[cat.id] ?? 0})</span>
-              </button>
+                {cat.label}
+              </FilterChip>
+            ))}
+          </ChipRow>
+        )}
+
+        {visibleDataValues.length > 0 ? (
+          <div className="m3-list">
+            {visibleDataValues.map((dv) => (
+              <DataPointRow key={dv.id} dv={dv} year={year} onClick={() => setSelectedDvId(dv.id)} />
             ))}
           </div>
+        ) : (
+          <p className="rounded-[28px] bg-card px-5 py-10 text-center text-[15px] text-muted-foreground shadow-sm">
+            {query.trim() ? <>Sin resultados para “{query.trim()}”</> : "No hay puntos en esta categoría"}
+          </p>
+        )}
+      </DetailScreen>
 
-          {/* Data points compact list */}
-          <div className="space-y-1.5">
-            {exploreDataValues.map((dv) => {
-              const cableDetail = dv.details.find((d) => d.label.toLowerCase() === "cable");
-              const polarDetail = dv.details.find((d) => d.label.toLowerCase() === "polaridad");
-              const cableVal = cableDetail ? getValueForYear(cableDetail, year).value : null;
-              const polarVal = polarDetail ? getValueForYear(polarDetail, year).value : null;
-              const hasImage = !!(dv.imageUrl || (dv.yearImages?.length ?? 0) > 0);
-              const isSelected = dv.id === selectedDvId;
-
-              return (
-                <button
-                  key={dv.id}
-                  onClick={() => setSelectedDvId(isSelected ? null : dv.id)}
-                  className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${
-                    isSelected
-                      ? "border-primary/40 bg-primary/5"
-                      : "border-border bg-card hover:border-primary/20 hover:bg-muted/40"
-                  }`}
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-semibold truncate ${isSelected ? "text-primary dark:text-primary" : "text-foreground"}`}>
-                      {dv.title}
-                    </p>
-                    {(cableVal || polarVal) && (
-                      <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
-                        {[cableVal, polarVal].filter(Boolean).join(" · ")}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {hasImage && <ImageIcon className="w-3.5 h-3.5 text-primary" />}
-                    {dv.notes && dv.notes.length > 0 && (
-                      <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-                    )}
-                    <Badge variant="secondary" className="text-[10px] px-1.5">
-                      {getDataPointCategory(dv.title) === "otros"
-                        ? "—"
-                        : CATEGORIES.find((c) => c.id === getDataPointCategory(dv.title))?.label ?? "—"}
-                    </Badge>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Detail panel for explore mode */}
-          <AnimatePresence mode="wait">
-            {selectedDv && (
-              <DataPointDetail key={selectedDv.id} dv={selectedDv} year={year} />
-            )}
-          </AnimatePresence>
-        </motion.div>
-      )}
-    </div>
+      <DataPointSheet dv={selectedDv} year={year} onClose={() => setSelectedDvId(null)} />
+    </>
   );
 }

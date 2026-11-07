@@ -266,12 +266,12 @@ export function BackupManager() {
       // que el backend fue contando cada tabla.
       for (const key of Object.keys(COUNT_LABELS)) {
         if (!(key in result.counts)) continue;
-        addLog(`✓ ${COUNT_LABELS[key]}: ${result.counts[key].toLocaleString()} eliminados`, "success");
+        addLog(`${COUNT_LABELS[key]}: ${result.counts[key].toLocaleString()} eliminados`, "success");
       }
 
       addLog("", "info");
       addLog("═══════════════════════════════════════", "info");
-      addLog("✅ RESTAURACIÓN COMPLETADA EXITOSAMENTE", "success");
+      addLog("Restauración completada", "success");
       addLog("═══════════════════════════════════════", "info");
 
       setResetComplete(true);
@@ -419,7 +419,7 @@ export function BackupManager() {
             {!isResetting && !resetComplete && (
               <div className="flex-1 overflow-y-auto space-y-4 pr-1 -mr-1">
                 <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                  <p className="text-xs font-semibold text-muted-foreground mb-2">
                     Datos operativos
                   </p>
                   <div className="space-y-2">
@@ -430,7 +430,7 @@ export function BackupManager() {
                 <Separator />
 
                 <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                  <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
                     <Settings2 className="w-3.5 h-3.5" />
                     Configuración (normalmente se conserva)
                   </p>
@@ -455,7 +455,7 @@ export function BackupManager() {
 
             {(isResetting || resetComplete) && resetLogs.length > 0 && (
               <div className="flex-1 overflow-hidden">
-                <div className="bg-muted/50 rounded-lg p-3 h-64 overflow-y-auto font-mono text-xs space-y-1">
+                <div className="bg-muted/50 rounded-lg p-3 h-64 overflow-y-auto tabular-nums text-xs space-y-1">
                   {resetLogs.map((log, index) => (
                     <div
                       key={index}

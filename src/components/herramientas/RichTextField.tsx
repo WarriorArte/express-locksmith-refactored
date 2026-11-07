@@ -110,7 +110,7 @@ export function RichTextEditor({ value, onChange, placeholder, rows = 4, classNa
 
 // ── Renderizado de solo lectura ──────────────────────────────────────────────
 
-function renderInline(line: string, keyPrefix: string): React.ReactNode[] {
+export function renderInline(line: string, keyPrefix: string): React.ReactNode[] {
   const parts = line.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g).filter((p) => p !== "");
   if (parts.length === 0) return [line];
   return parts.map((part, i) => {

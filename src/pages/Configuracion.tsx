@@ -16,7 +16,8 @@ import {
   Palette,
   Sun,
   Moon,
-  Bell,
+  ChevronRight,
+  Copy,
   LogOut,
   Wrench,
   type LucideIcon,
@@ -31,19 +32,17 @@ import { Badge } from "@/components/ui/badge";
 import { UserManagement } from "@/components/settings/UserManagement";
 import { ProfileSettings } from "@/components/settings/ProfileSettings";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
+import { NativeSelect } from "@/components/ui/native-select";
+import { IconTabs } from "@/components/ui/icon-tabs";
+import { MaterialShape } from "@/design-system/shapes/MaterialShape";
+import { spawnRipple } from "@/lib/ripple";
+import { toast as sonnerToast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useBusinessSettings, useUpdateBusinessSettings } from "@/hooks/useBusinessSettings";
@@ -187,26 +186,27 @@ export default function Configuracion() {
       {/* Header */}
       <PageHeader
         title="Configuración"
-        subtitle="Administra tu negocio y personaliza la app"
         className="lg:hidden"
       />
 
       {/* MOBILE: v2 prototype layout - profile card + tabs in single screen */}
       <div className="lg:hidden -mt-2">
-        {/* Profile card (green hero) */}
-        <div className="rounded-[18px] bg-primary text-primary-foreground p-3.5 flex items-center gap-3 mb-4 shadow-[0_0_24px_hsl(var(--primary)/0.30)]">
-          <div className="w-[46px] h-[46px] rounded-[14px] bg-foreground/10 flex items-center justify-center font-extrabold text-[17px]">
-            {(() => {
-              const name = profile?.full_name || "";
-              const parts = name.trim().split(" ").filter(Boolean);
-              if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-              if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-              return (user?.email || "U").charAt(0).toUpperCase();
-            })()}
-          </div>
+        {/* Perfil: avatar en forma cookie sobre contenedor tonal */}
+        <div className="mb-4 flex items-center gap-4 rounded-[28px] bg-primary-light p-4">
+          <MaterialShape name="cookie6" className="h-14 w-14 text-background/70">
+            <span className="text-lg font-bold text-foreground">
+              {(() => {
+                const name = profile?.full_name || "";
+                const parts = name.trim().split(" ").filter(Boolean);
+                if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+                if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+                return (user?.email || "U").charAt(0).toUpperCase();
+              })()}
+            </span>
+          </MaterialShape>
           <div className="min-w-0 flex-1">
-            <div className="text-[15px] font-extrabold truncate">{profile?.full_name || "Usuario"}</div>
-            <div className="text-[11px] opacity-70 truncate">
+            <div className="truncate text-lg font-semibold text-foreground">{profile?.full_name || "Usuario"}</div>
+            <div className="truncate text-sm text-muted-foreground">
               {isAdmin ? "Administrador" : "Empleado"} · {user?.email}
             </div>
           </div>
@@ -237,8 +237,7 @@ export default function Configuracion() {
           <div className="sticky top-0 z-40 -mx-6 px-6 pt-4 pb-4 bg-background border-b border-border/60 shadow-[0_8px_24px_hsl(var(--background))]">
           <PageHeader
             title="Configuración"
-            subtitle="Administra tu negocio y personaliza la app"
-            className="mb-5"
+                className="mb-5"
           />
           <TabsList className={cn(
             "grid gap-2 h-auto p-1 bg-muted",
@@ -312,7 +311,7 @@ export default function Configuracion() {
                   className={cn(
                     "relative rounded-2xl border-2 p-4 transition-all text-left",
                     theme === "light"
-                      ? "border-primary shadow-[0_0_20px_hsl(var(--primary)/0.25)]"
+                      ? "border-primary "
                       : "border-border hover:border-muted-foreground/30",
                   )}
                 >
@@ -331,7 +330,7 @@ export default function Configuracion() {
                   className={cn(
                     "relative rounded-2xl border-2 p-4 transition-all text-left",
                     theme === "dark"
-                      ? "border-primary shadow-[0_0_20px_hsl(var(--primary)/0.25)]"
+                      ? "border-primary "
                       : "border-border hover:border-muted-foreground/30",
                   )}
                 >
@@ -446,9 +445,10 @@ export default function Configuracion() {
                     <Globe className="w-4 h-4" />
                     País del Negocio
                   </Label>
-                  <Select
+                  <NativeSelect
                     value={businessForm.country_code}
-                    onValueChange={(value) => {
+                    onChange={(e) => {
+                      const value = e.target.value;
                       const info = getCountryByCode(value);
                       setBusinessForm(prev => ({
                         ...prev,
@@ -457,22 +457,15 @@ export default function Configuracion() {
                         phone_country_code: info?.dial ?? prev.phone_country_code,
                       }));
                     }}
+                    className="max-w-sm"
                   >
-                    <SelectTrigger className="w-full max-w-sm">
-                      <SelectValue placeholder="Selecciona un país" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[300px]">
-                      {COUNTRIES.map((c) => (
-                        <SelectItem key={c.code} value={c.code}>
-                          <span className="flex items-center gap-2">
-                            <span>{c.flag}</span>
-                            <span>{c.name}</span>
-                            <span className="text-muted-foreground">({c.dial} · {c.currencySymbol})</span>
-                          </span>
-                        </SelectItem>
+                    <option value="" disabled>Selecciona un país</option>
+                    {COUNTRIES.map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {c.flag} {c.name} ({c.dial} · {c.currencySymbol})
+                        </option>
                       ))}
-                    </SelectContent>
-                  </Select>
+                  </NativeSelect>
                   <p className="text-xs text-muted-foreground flex items-center gap-3 pt-1">
                     <span className="inline-flex items-center gap-1"><DollarSign className="w-3 h-3" /> Moneda: <strong>{businessForm.currency_symbol}</strong></span>
                     <span className="inline-flex items-center gap-1">Prefijo: <strong>{businessForm.phone_country_code}</strong></span>
@@ -508,9 +501,9 @@ export default function Configuracion() {
               <div className="space-y-6">
                 {/* Logo y tamaño de papel */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="flex items-center justify-between p-4 rounded-xl border border-border">
+                  <div className="flex items-center justify-between gap-4 rounded-[20px] bg-muted p-4">
                     <div>
-                      <div className="text-sm font-semibold">Incluir logo</div>
+                      <div className="text-[15px] font-medium">Incluir logo</div>
                       <div className="text-xs text-muted-foreground mt-0.5">Mostrar el logo del negocio en el ticket</div>
                     </div>
                     <Switch
@@ -521,19 +514,14 @@ export default function Configuracion() {
 
                   <div className="space-y-2">
                     <Label>Tamaño de papel</Label>
-                    <Select
+                    <NativeSelect
                       value={businessForm.ticket_paper_size}
-                      onValueChange={(v) => setBusinessForm((p) => ({ ...p, ticket_paper_size: v }))}
+                      onChange={(e) => setBusinessForm((p) => ({ ...p, ticket_paper_size: e.target.value }))}
                     >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="58mm">58 mm (impresora pequeña)</SelectItem>
-                        <SelectItem value="80mm">80 mm (estándar)</SelectItem>
-                        <SelectItem value="104mm">104 mm (ancho)</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      <option value="58mm">58 mm (impresora pequeña)</option>
+                      <option value="80mm">80 mm (estándar)</option>
+                      <option value="104mm">104 mm (ancho)</option>
+                    </NativeSelect>
                     <p className="text-xs text-muted-foreground">
                       Ancho del papel de tu impresora térmica
                     </p>
@@ -541,8 +529,8 @@ export default function Configuracion() {
                 </div>
 
                 {/* Mensajes personalizados */}
-                <div className="border-t border-border pt-6">
-                  <div className="text-sm font-semibold mb-1">Mensajes de pie de ticket</div>
+                <div className="pt-2">
+                  <div className="text-base font-semibold mb-1">Mensajes de pie de ticket</div>
                   <p className="text-xs text-muted-foreground mb-4">
                     Personaliza el mensaje final que aparece en cada tipo de ticket. Si lo dejas vacío, se usará "¡Gracias por su preferencia!"
                   </p>
@@ -638,13 +626,13 @@ export default function Configuracion() {
                     <Loader2 className="w-6 h-6 animate-spin" />
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="m3-list">
                     {users?.map((user) => (
-                      <div key={user.id} className="flex items-center justify-between p-4 rounded-xl border">
+                      <div key={user.id} className="m3-list-item flex items-center justify-between gap-3 bg-muted px-4 py-3">
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-medium">
-                            {user.full_name.charAt(0)}
-                          </div>
+                          <MaterialShape name="cookie6" className="h-11 w-11 text-background">
+                            <span className="text-sm font-bold text-foreground">{user.full_name.charAt(0)}</span>
+                          </MaterialShape>
                           <div>
                             <div className="flex items-center gap-2">
                               <span className="font-medium">{user.full_name}</span>
@@ -658,18 +646,15 @@ export default function Configuracion() {
                             <span className="text-sm text-muted-foreground">{user.email}</span>
                           </div>
                         </div>
-                        <Select 
+                        <NativeSelect
                           value={user.role || "employee"}
-                          onValueChange={(value) => handleRoleChange(user.user_id, value as "admin" | "employee")}
+                          onChange={(e) => handleRoleChange(user.user_id, e.target.value as "admin" | "employee")}
+                          aria-label={`Rol de ${user.full_name || user.email}`}
+                          className="w-44"
                         >
-                          <SelectTrigger className="w-40">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="admin">Administrador</SelectItem>
-                            <SelectItem value="employee">Empleado</SelectItem>
-                          </SelectContent>
-                        </Select>
+                          <option value="admin">Administrador</option>
+                          <option value="employee">Empleado</option>
+                        </NativeSelect>
                       </div>
                     ))}
                   </div>
@@ -752,27 +737,7 @@ function MobileConfigTabs({
 
   return (
     <div>
-      {/* Tabs strip */}
-      <div className="flex border-b border-border mb-4 -mx-4 px-4">
-        {tabs.map((t) => {
-          const Icon = t.icon;
-          const active = tab === t.id;
-          return (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setTab(t.id)}
-              className={cn(
-                "flex-1 flex flex-col items-center gap-1 py-2.5 text-[11px] font-semibold border-b-2 -mb-px transition-colors",
-                active ? "text-primary border-primary" : "text-muted-foreground border-transparent",
-              )}
-            >
-              <Icon className="w-[15px] h-[15px]" />
-              <span>{t.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      <IconTabs value={tab} onChange={(id) => setTab(id as typeof tab)} items={tabs} className="mb-5" />
 
       {/* Negocio */}
       {tab === "negocio" && (
@@ -799,9 +764,10 @@ function MobileConfigTabs({
             </div>
             <div>
               <Label>País</Label>
-              <Select
+              <NativeSelect
                 value={businessForm.country_code}
-                onValueChange={(value) => {
+                onChange={(e) => {
+                  const value = e.target.value;
                   const info = getCountryByCode(value);
                   setBusinessForm((p) => ({
                     ...p,
@@ -811,20 +777,14 @@ function MobileConfigTabs({
                   }));
                 }}
               >
-                <SelectTrigger><SelectValue placeholder="País" /></SelectTrigger>
-                <SelectContent className="max-h-[260px]">
-                  {COUNTRIES.map((c) => (
-                    <SelectItem key={c.code} value={c.code}>
-                      <span className="flex items-center gap-2">
-                        <span>{c.flag}</span>
-                        <span>{c.name}</span>
-                        <span className="text-muted-foreground text-xs">{c.currencySymbol}</span>
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-[10px] text-muted-foreground mt-1">
+                <option value="" disabled>País</option>
+                {COUNTRIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.flag} {c.name} ({c.currencySymbol})
+                  </option>
+                ))}
+              </NativeSelect>
+              <p className="mt-1 text-xs text-muted-foreground">
                 Moneda: <strong>{businessForm.currency_symbol}</strong> · Tel: <strong>{businessForm.phone_country_code}</strong>
               </p>
             </div>
@@ -844,10 +804,18 @@ function MobileConfigTabs({
                 <Input value={workshopCode} readOnly className="flex-1 bg-muted text-muted-foreground cursor-default" />
                 <Button
                   type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => { navigator.clipboard.writeText(workshopCode); }}
+                  variant="secondary"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(workshopCode);
+                      navigator.vibrate?.(10);
+                      sonnerToast.success("Código copiado");
+                    } catch {
+                      sonnerToast.error("No se pudo copiar");
+                    }
+                  }}
                 >
+                  <Copy className="h-4 w-4" />
                   Copiar
                 </Button>
               </div>
@@ -864,11 +832,8 @@ function MobileConfigTabs({
       {tab === "ticket" && (
         <div className="space-y-4">
           {/* Logo toggle */}
-          <div className="flex items-center justify-between p-3.5 rounded-xl border border-border">
-            <div>
-              <div className="text-[13px] font-semibold">Incluir logo</div>
-              <div className="text-[11px] text-muted-foreground">Mostrar logo en el ticket</div>
-            </div>
+          <div className="flex min-h-14 items-center justify-between gap-4 rounded-[20px] bg-muted px-4 py-3">
+            <div className="text-[15px] font-medium">Incluir logo en el ticket</div>
             <Switch
               checked={businessForm.ticket_show_logo}
               onCheckedChange={(v) => setBusinessForm((p) => ({ ...p, ticket_show_logo: v }))}
@@ -878,24 +843,19 @@ function MobileConfigTabs({
           {/* Paper size */}
           <div className="space-y-1.5">
             <Label>Tamaño de papel</Label>
-            <Select
+            <NativeSelect
               value={businessForm.ticket_paper_size}
-              onValueChange={(v) => setBusinessForm((p) => ({ ...p, ticket_paper_size: v }))}
+              onChange={(e) => setBusinessForm((p) => ({ ...p, ticket_paper_size: e.target.value }))}
             >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="58mm">58 mm (impresora pequeña)</SelectItem>
-                <SelectItem value="80mm">80 mm (estándar)</SelectItem>
-                <SelectItem value="104mm">104 mm (ancho)</SelectItem>
-              </SelectContent>
-            </Select>
+              <option value="58mm">58 mm (impresora pequeña)</option>
+              <option value="80mm">80 mm (estándar)</option>
+              <option value="104mm">104 mm (ancho)</option>
+            </NativeSelect>
           </div>
 
           {/* Footer messages */}
           <div className="space-y-3">
-            <div className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider">Mensajes de pie</div>
+            <div className="text-base font-semibold text-foreground">Mensajes de pie</div>
             <div className="space-y-1.5">
               <Label>Venta</Label>
               <Textarea
@@ -942,25 +902,33 @@ function MobileConfigTabs({
       {/* Sistema */}
       {tab === "sistema" && (
         <div className="space-y-3">
-          {/* Dark mode toggle row */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-[hsl(var(--surface-2))] border border-border">
-            <div>
-              <div className="text-[13px] font-semibold text-foreground">Modo oscuro</div>
-              <div className="text-[11px] text-muted-foreground">Cambiar apariencia de la app</div>
+          <div className="m3-list">
+            <div className="m3-list-item flex min-h-16 items-center justify-between gap-4 bg-muted px-4 py-3">
+              <div className="flex items-center gap-3">
+                <Moon className="h-5 w-5 text-muted-foreground" />
+                <span className="text-[15px] font-medium text-foreground">Modo oscuro</span>
+              </div>
+              <Switch checked={theme === "dark"} onCheckedChange={(c) => setTheme(c ? "dark" : "light")} />
             </div>
-            <Switch checked={theme === "dark"} onCheckedChange={(c) => setTheme(c ? "dark" : "light")} />
+            {isAdmin && (
+              <SystemRow
+                icon={Shield}
+                label="Respaldo de datos"
+                sub="Copia de seguridad"
+                onClick={() => document.getElementById("__cfg_backup")?.scrollIntoView({ behavior: "smooth" })}
+              />
+            )}
+            {isSuperAdmin && (
+              <SystemRow
+                icon={Wrench}
+                label="Mantenimiento"
+                sub="Herramientas globales y talleres"
+                onClick={() => document.getElementById("__cfg_maintenance")?.scrollIntoView({ behavior: "smooth" })}
+              />
+            )}
           </div>
 
           <UpdateCheckCard compact />
-
-
-
-          {/* Backup as list-item card */}
-          <div className="bg-card rounded-2xl border border-border overflow-hidden">
-            {isAdmin && <SystemRow icon={Shield} label="Respaldo de datos" sub="Copia de seguridad" onClick={() => document.getElementById("__cfg_backup")?.scrollIntoView({ behavior: "smooth" })} />}
-            {isSuperAdmin && <SystemRow icon={Wrench} label="Mantenimiento" sub="Herramientas globales y talleres" onClick={() => document.getElementById("__cfg_maintenance")?.scrollIntoView({ behavior: "smooth" })} divider />}
-            <SystemRow icon={Bell} label="Notificaciones" sub="Alertas de stock y servicios" onClick={() => {}} divider />
-          </div>
 
           <Button onClick={handleSaveSettings} disabled={updatePending} className="w-full">
             {updatePending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
@@ -984,7 +952,8 @@ function MobileConfigTabs({
             <button
               type="button"
               onClick={signOut}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-destructive/10 text-destructive text-[13px] font-bold mt-2"
+              onPointerDown={spawnRipple}
+              className="relative mt-2 flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-full bg-destructive-light text-sm font-semibold text-destructive"
             >
               <LogOut className="w-4 h-4" />
               Cerrar sesión
@@ -1001,34 +970,25 @@ function SystemRow({
   label,
   sub,
   onClick,
-  divider,
 }: {
   icon: LucideIcon;
   label: string;
   sub?: string;
   onClick?: () => void;
-  divider?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={cn(
-        "w-full flex items-center gap-3 px-3.5 py-3 text-left active:bg-muted transition-colors",
-        divider && "border-t border-border",
-      )}
+      onPointerDown={spawnRipple}
+      className="m3-list-item flex min-h-16 w-full items-center gap-3 bg-muted px-4 py-3 text-left"
     >
-      <div className="w-9 h-9 rounded-xl bg-[hsl(var(--surface-2))] flex items-center justify-center flex-shrink-0">
-        <Icon className="w-4 h-4 text-primary" />
-      </div>
+      <Icon className="h-5 w-5 shrink-0 text-muted-foreground" />
       <div className="min-w-0 flex-1">
-        <div className="text-[13px] font-semibold text-foreground">{label}</div>
-        <div className="text-[11px] text-muted-foreground truncate">{sub}</div>
+        <div className="text-[15px] font-medium text-foreground">{label}</div>
+        {sub && <div className="truncate text-sm text-muted-foreground">{sub}</div>}
       </div>
-      <span className="text-muted-foreground text-sm">›</span>
+      <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
     </button>
   );
 }
-
-
-

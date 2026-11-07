@@ -123,8 +123,7 @@ export default function Garantias() {
       {/* Header bar - ya NO es sticky */}
       <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-3 pb-4">
         <PageHeader
-          eyebrow="Garantías"
-          title={<>Control de garantías</>}
+          title="Garantías"
           subtitle={`${warranties?.length || 0} garantías registradas`}
           action={
             <Button className="h-11 rounded-[12px] bg-primary text-primary-foreground hover:bg-primary-hover" onClick={() => setSettingsDialogOpen(true)}>
@@ -144,7 +143,7 @@ export default function Garantias() {
             type="button"
             aria-label="Ajustar duración"
             onClick={() => setSettingsDialogOpen(true)}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[0_0_16px_hsl(var(--primary)/0.40)] transition-transform active:scale-95 lg:hidden"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-transform active:scale-95 lg:hidden"
           >
             <Clock className="w-5 h-5" strokeWidth={2.5} />
           </button>
@@ -157,7 +156,7 @@ export default function Garantias() {
       <div className="mt-6">
         {isLoading ? (
           <>
-            <div className="md:hidden space-y-2.5">
+            <div className="md:hidden m3-list">
               {[0, 1, 2, 3].map((i) => <MobileListCardSkeleton key={i} />)}
             </div>
             <div className="hidden md:block card-elevated overflow-hidden animate-pulse">
@@ -194,12 +193,12 @@ export default function Garantias() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border bg-muted/30">
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Código</th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Estado</th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Tipo</th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Cliente</th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Días rest.</th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Vigencia</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Código</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Estado</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Tipo</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Cliente</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Días rest.</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Vigencia</th>
                     <th className="w-12" />
                   </tr>
                 </thead>
@@ -216,7 +215,7 @@ export default function Garantias() {
                         onClick={() => handleViewDetail(warranty)}
                       >
                         <td className="px-4 py-3">
-                          <span className="font-mono text-xs text-foreground dark:text-primary font-semibold whitespace-nowrap">{warranty.warranty_code}</span>
+                          <span className="tabular-nums text-xs text-foreground dark:text-primary font-semibold whitespace-nowrap">{warranty.warranty_code}</span>
                         </td>
                         <td className="px-4 py-3">
                           <Badge className={cn("text-xs whitespace-nowrap", status.color)}>
@@ -276,7 +275,7 @@ export default function Garantias() {
             </div>
 
             {/* Mobile cards */}
-            <div className="md:hidden space-y-2.5">
+            <div className="md:hidden m3-list">
               {filteredWarranties.map((warranty) => {
                 const status = getWarrantyStatus(warranty);
                 const daysLeft = differenceInDays(parseISO(warranty.end_date), new Date());
@@ -301,11 +300,6 @@ export default function Garantias() {
                     statusTextClass={statusTextClass}
                     statusDotClass={statusDotClass}
                     statusPulse={!warranty.is_voided && isActive && daysLeft <= 7}
-                    statusExtra={
-                      <span className="ml-1 text-[10px] text-muted-foreground/60">
-                        · {warranty.warranty_type === "sale" ? "Venta" : "Servicio"}
-                      </span>
-                    }
                     title={warrantyTitle}
                     subtitle={warranty.customer_name || "Sin cliente"}
                     valueText={isActive ? `${daysLeft}d` : undefined}

@@ -13,14 +13,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { IconTabs } from "@/components/ui/icon-tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Loader2, Plus, MapPin, Shield, Package, User, Wrench, FileText, Image, Trash2 } from "lucide-react";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Loader2, Plus, MapPin, Shield, Package, User, Wrench, FileText, Image, Trash2, CalendarClock } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { CustomerSelect } from "@/components/shared/CustomerSelect";
 import { ServiceProductsEditor } from "@/components/shared/ServiceProductsEditor";
 import { ImageUploader } from "@/components/shared/ImageUploader";
@@ -622,25 +617,20 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
             {!isEditing && (
               <div className="space-y-2">
                 <Label>Plantilla de inventario (opcional)</Label>
-                <Select value={selectedTemplateId} onValueChange={handleTemplateImport}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Crear servicio desde cero" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={MANUAL_TEMPLATE}>Crear desde cero (sin plantilla)</SelectItem>
-                    {serviceTemplates.length === 0 ? (
-                      <SelectItem value="__none" disabled>
-                        No hay servicios preconfigurados
-                      </SelectItem>
-                    ) : (
-                      serviceTemplates.map((template) => (
-                        <SelectItem key={template.id} value={template.id}>
-                          {template.name}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
+                <NativeSelect value={selectedTemplateId || MANUAL_TEMPLATE} onChange={(e) => handleTemplateImport(e.target.value)}>
+                  <option value={MANUAL_TEMPLATE}>Crear desde cero (sin plantilla)</option>
+                  {serviceTemplates.length === 0 ? (
+                    <option value="__none" disabled>
+                      No hay servicios preconfigurados
+                    </option>
+                  ) : (
+                    serviceTemplates.map((template) => (
+                      <option key={template.id} value={template.id}>
+                        {template.name}
+                      </option>
+                    ))
+                  )}
+                </NativeSelect>
               </div>
             )}
 
@@ -657,24 +647,21 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
 
             <div className="space-y-2">
               <Label>Tipo de Servicio *</Label>
-              <Select
-                value={form.service_type}
-                onValueChange={(value: ServiceType) => setForm(prev => ({ ...prev, service_type: value }))}
+              <NativeSelect
+                value={form.service_type || ""}
+                onChange={(e) => setForm(prev => ({ ...prev, service_type: e.target.value as ServiceType }))}
+                aria-invalid={showServicioInvalid && !isValidServiceType}
+                className={cn(showServicioInvalid && !isValidServiceType && "border-destructive text-destructive")}
               >
-                <SelectTrigger
-                  aria-invalid={showServicioInvalid && !isValidServiceType}
-                  className={cn(showServicioInvalid && !isValidServiceType && "border-destructive text-destructive")}
-                >
-                  <SelectValue placeholder={showServicioInvalid && !isValidServiceType ? "Campo obligatorio" : "Seleccionar tipo"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {serviceTypes.map(type => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <option value="" disabled>
+                  {showServicioInvalid && !isValidServiceType ? "Campo obligatorio" : "Seleccionar tipo"}
+                </option>
+                {serviceTypes.map(type => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </NativeSelect>
             </div>
 
             <div className="space-y-2">
@@ -753,7 +740,7 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
             </div>
 
             {/* Totals */}
-            <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
+            <div className="space-y-2 rounded-[28px] bg-muted p-5">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Productos:</span>
                 <span>{currencySymbol}{productsTotal.toLocaleString()}</span>
@@ -766,17 +753,17 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
                 <span className="text-muted-foreground">Descuento:</span>
                 <span className="text-destructive">-{currencySymbol}{form.discount.toLocaleString()}</span>
               </div>
-              <div className="flex justify-between text-lg font-bold pt-2 border-t">
-                <span>Total Estimado:</span>
-                <span className="text-foreground dark:text-primary">{currencySymbol}{totalEstimated.toLocaleString()}</span>
+              <div className="flex items-baseline justify-between pt-2 text-xl font-bold">
+                <span>Total estimado</span>
+                <span className="tabular-nums text-foreground">{currencySymbol}{totalEstimated.toLocaleString()}</span>
               </div>
               {form.deposit > 0 && (
                 <>
-                  <div className="flex justify-between text-sm text-emerald-600 dark:text-emerald-400">
-                    <span>Anticipo recibido:</span>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Anticipo recibido:</span>
                     <span>-{currencySymbol}{form.deposit.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between text-sm font-semibold pt-1 border-t">
+                  <div className="flex justify-between pt-1 text-sm font-semibold">
                     <span>Saldo pendiente:</span>
                     <span>{currencySymbol}{saldoPendiente.toLocaleString()}</span>
                   </div>
@@ -785,24 +772,22 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
             </div>
 
             {/* Schedule Service Option */}
-            <div className="p-4 bg-accent/5 rounded-lg border border-accent/20 space-y-4">
-              <div className="flex items-center space-x-3">
-                <Checkbox
+            <div className="space-y-4 rounded-[28px] bg-muted p-5">
+              <div className="flex items-center justify-between gap-4">
+                <Label htmlFor="schedule_service" className="mb-0 cursor-pointer">
+                  <span className="flex items-center gap-2 text-[15px]">
+                    <CalendarClock className="h-[18px] w-[18px] text-primary" />
+                    Programar servicio
+                  </span>
+                  <span className="mt-1 block text-sm font-normal text-muted-foreground">Fecha y hora para iniciarlo</span>
+                </Label>
+                <Switch
                   id="schedule_service"
                   checked={!!form.scheduled_start_at}
                   onCheckedChange={(checked) =>
                     setForm((prev) => ({ ...prev, scheduled_start_at: checked ? new Date().toISOString() : null }))
                   }
                 />
-                <div className="flex-1">
-                  <Label
-                    htmlFor="schedule_service"
-                    className="text-sm font-medium flex items-center gap-2 cursor-pointer"
-                  >
-                    📅 Programar servicio
-                  </Label>
-                  <p className="text-xs text-muted-foreground mt-1">Establece una fecha y hora para iniciar este servicio</p>
-                </div>
               </div>
 
               {form.scheduled_start_at && (
@@ -842,24 +827,19 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
             </div>
 
             {/* Warranty Option */}
-            <div className="p-4 bg-primary/5 rounded-lg border border-primary/20 space-y-4">
-              <div className="flex items-center space-x-3">
-                <Checkbox
+            <div className="space-y-4 rounded-[28px] bg-muted p-5">
+              <div className="flex items-center justify-between gap-4">
+                <Label htmlFor="has_warranty" className="mb-0 cursor-pointer">
+                  <span className="flex items-center gap-2 text-[15px]">
+                    <Shield className="h-[18px] w-[18px] text-primary" />
+                    Aplicar garantía
+                  </span>
+                </Label>
+                <Switch
                   id="has_warranty"
                   checked={form.has_warranty}
-                  onCheckedChange={(checked) =>
-                    setForm((prev) => ({ ...prev, has_warranty: checked === true }))
-                  }
+                  onCheckedChange={(checked) => setForm((prev) => ({ ...prev, has_warranty: checked === true }))}
                 />
-                <div className="flex-1">
-                  <Label
-                    htmlFor="has_warranty"
-                    className="text-sm font-medium flex items-center gap-2 cursor-pointer"
-                  >
-                    <Shield className="w-4 h-4 text-primary" />
-                    Aplicar Garantía
-                  </Label>
-                </div>
               </div>
 
               {form.has_warranty && (
@@ -871,20 +851,17 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
                     aria-invalid={showCostosInvalid && form.has_warranty && form.warranty_value < 1}
                     className={cn("w-20", showCostosInvalid && form.has_warranty && form.warranty_value < 1 && invalidFieldClass)}
                   />
-                  <Select
+                  <NativeSelect
                     value={form.warranty_unit}
-                    onValueChange={handleWarrantyUnitChange}
+                    onChange={(e) => handleWarrantyUnitChange(e.target.value as "days" | "weeks" | "months" | "years")}
+                    aria-label="Unidad de la garantía"
+                    className="w-36"
                   >
-                    <SelectTrigger className="w-28">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="days">días</SelectItem>
-                      <SelectItem value="weeks">semanas</SelectItem>
-                      <SelectItem value="months">meses</SelectItem>
-                      <SelectItem value="years">años</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    <option value="days">días</option>
+                    <option value="weeks">semanas</option>
+                    <option value="months">meses</option>
+                    <option value="years">años</option>
+                  </NativeSelect>
                 </div>
               )}
             </div>
@@ -926,16 +903,17 @@ export function ServiceFormDialog({ open, onOpenChange, service, templateService
                     <img
                       src={resolveStorageUrl(img.image_url) ?? undefined}
                       alt="Service"
-                      className="w-full h-24 object-cover rounded-lg border"
+                      className="h-24 w-full rounded-2xl object-cover"
                     />
                     <Button
                       type="button"
                       variant="destructive"
                       size="icon"
-                      className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute right-1.5 top-1.5 h-8 w-8 transition-opacity md:opacity-0 md:group-hover:opacity-100"
+                      aria-label="Quitar imagen"
                       onClick={() => removeImage(img.tempId)}
                     >
-                      <Trash2 className="w-3 h-3" />
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 ))}

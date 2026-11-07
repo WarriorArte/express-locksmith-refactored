@@ -4,13 +4,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { NativeSelect } from "@/components/ui/native-select";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -198,10 +192,10 @@ export function MaintenanceManager() {
       for (const [mod, counts] of Object.entries(result.deleted)) {
         const label = modules.find((m) => m.id === mod)?.label ?? mod;
         const total = Object.values(counts).reduce((a, b) => a + b, 0);
-        addPurgeLog(`✓ ${label}: ${total.toLocaleString()} registros eliminados`, "success");
+        addPurgeLog(`${label}: ${total.toLocaleString()} registros eliminados`, "success");
       }
 
-      addPurgeLog("✅ Purga completada correctamente", "success");
+      addPurgeLog("Purga completada correctamente", "success");
       setPurgeComplete(true);
       setSelected({});
       await fetchStats();
@@ -326,8 +320,8 @@ export function MaintenanceManager() {
                   <label
                     key={mod.id}
                     className={cn(
-                      "block rounded-lg border p-4 cursor-pointer transition-colors",
-                      isChecked ? "border-destructive/60 bg-destructive/5" : "hover:bg-muted/50",
+                      "block cursor-pointer rounded-[20px] p-4 transition-colors",
+                      isChecked ? "bg-destructive-light" : "bg-muted hover:bg-muted/80",
                       total === 0 && "opacity-60 cursor-not-allowed",
                     )}
                   >
@@ -366,8 +360,8 @@ export function MaintenanceManager() {
             </div>
 
             {hasOrphanRisk && (
-              <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400">
-                <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+              <div className="flex items-start gap-2 rounded-[20px] bg-warning-light p-4 text-sm text-foreground">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
                 <p>
                   Vas a eliminar perfiles sin eliminar <strong>Asignaciones</strong>: las asignaciones
                   existentes quedarán con vínculos rotos a esos perfiles.
@@ -375,7 +369,7 @@ export function MaintenanceManager() {
               </div>
             )}
 
-            <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30">
+            <div className="flex items-center justify-between rounded-[20px] bg-muted p-4">
               <span className="text-sm text-muted-foreground">
                 {selectedModules.length === 0
                   ? "Ningún módulo seleccionado"
@@ -433,8 +427,9 @@ export function MaintenanceManager() {
                     ))}
                   </div>
                   {hasOrphanRisk && (
-                    <p className="text-amber-600 dark:text-amber-400 text-sm">
-                      ⚠️ Quedarán asignaciones con referencias rotas a los perfiles eliminados.
+                    <p className="flex items-start gap-2 text-sm text-foreground">
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+                      Quedarán asignaciones con referencias rotas a los perfiles eliminados.
                     </p>
                   )}
                   <p className="text-destructive font-medium">Esta operación no se puede deshacer.</p>
@@ -459,7 +454,7 @@ export function MaintenanceManager() {
 
           {(isPurging || purgeComplete) && purgeLogs.length > 0 && (
             <div className="flex-1 overflow-hidden">
-              <div className="bg-muted/50 rounded-lg p-3 h-56 overflow-y-auto font-mono text-xs space-y-1">
+              <div className="bg-muted/50 rounded-lg p-3 h-56 overflow-y-auto tabular-nums text-xs space-y-1">
                 {purgeLogs.map((log, index) => (
                   <div
                     key={index}
@@ -523,27 +518,24 @@ export function MaintenanceManager() {
                 </p>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="delete-workshop-select" className="text-xs">
+                  <Label htmlFor="delete-workshop-select">
                     Taller a eliminar
                   </Label>
-                  <Select
+                  <NativeSelect
+                    id="delete-workshop-select"
                     value={workshopToDeleteId}
-                    onValueChange={(value) => {
-                      setWorkshopToDeleteId(value);
+                    onChange={(e) => {
+                      setWorkshopToDeleteId(e.target.value);
                       setDeleteWorkshopConfirmText("");
                     }}
                   >
-                    <SelectTrigger id="delete-workshop-select">
-                      <SelectValue placeholder="Selecciona un taller" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {workshops.map((w) => (
-                        <SelectItem key={w.id} value={w.id}>
-                          {w.name} ({w.code})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    <option value="" disabled>Selecciona un taller</option>
+                    {workshops.map((w) => (
+                      <option key={w.id} value={w.id}>
+                        {w.name} ({w.code})
+                      </option>
+                    ))}
+                  </NativeSelect>
                 </div>
 
                 {workshopToDelete && (

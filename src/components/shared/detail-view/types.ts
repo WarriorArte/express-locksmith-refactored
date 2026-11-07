@@ -70,3 +70,16 @@ export const paymentMethodLabels: Record<string, string> = {
   transfer: "Transferencia",
   credit: "Crédito",
 };
+
+/** Tono del chip de estado en el detalle (criterio M3E: contenedores tonales, sin colores fijos). */
+export const statusTone: Record<string, "accent" | "warning" | "neutral" | "destructive"> = {
+  pending: "warning",
+  in_progress: "accent",
+  accepted: "accent",
+  completed: "accent",
+  delivered: "accent",
+  converted: "accent",
+  expired: "neutral",
+  cancelled: "destructive",
+  rejected: "destructive",
+};

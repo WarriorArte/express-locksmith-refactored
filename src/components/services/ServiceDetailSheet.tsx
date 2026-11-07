@@ -1,52 +1,38 @@
 /**
- * ServiceDetailSheet — Mobile-first detail sheet (Redesign v2 style).
- * Opens as a tall bottom sheet showing badges, problem description,
- * meta grid, costs breakdown, images, and grouped action buttons.
+ * ServiceDetailSheet — detalle de un servicio (hoja inferior en móvil).
+ * Criterio M3E (docs/CRITERIO-DISENO-M3E.md), variante "dentro de una hoja":
+ * protagonista = estado + siguiente paso (botón grande dentro del hero).
  */
 import { useMemo, useState } from "react";
-import { resolveStorageUrl } from "@/lib/phpApi";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
+import { CheckCircle, Edit, ImagePlus, Trash2, Truck, Wrench, XCircle, type LucideIcon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/responsive-dialog";
 import { Button } from "@/components/ui/button";
 import { ImageViewDialog } from "@/components/shared/ImageViewDialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DialogActionBar, type DialogAction } from "@/components/shared/DialogActionBar";
+import { DetailViewCustomer } from "@/components/shared/detail-view/DetailViewCustomer";
+import { DetailViewImages } from "@/components/shared/detail-view/DetailViewImages";
+import { DetailViewItems } from "@/components/shared/detail-view/DetailViewItems";
+import { formatMoney } from "@/components/shared/detail-view/DetailViewTotals";
+import { DetailSection, SpecRow, SpecTile } from "@/design-system/detail/DetailScreen";
+import { MaterialShape } from "@/design-system/shapes/MaterialShape";
 import { cn } from "@/lib/utils";
-import {
-  MapPin,
-  Edit,
-  XCircle,
-  Trash2,
-  Wrench,
-  CheckCircle,
-  Truck,
-  Package,
-  Navigation,
-  Image as ImageIcon,
-  ImagePlus,
-  MoreHorizontal,
-  type LucideIcon,
-} from "lucide-react";
 import type { Service, ServiceStatus } from "@/hooks/useServices";
 
-const STATUS_META: Record<ServiceStatus, { label: string; dot: string; cls: string }> = {
-  pending:     { label: "Pendiente",  dot: "bg-warning",     cls: "bg-warning/15 text-warning" },
-  in_progress: { label: "En Curso",   dot: "bg-info",        cls: "bg-info/15 text-info" },
-  completed:   { label: "Finalizado", dot: "bg-success",     cls: "bg-success/15 text-foreground dark:text-success" },
-  delivered:   { label: "Entregado",  dot: "bg-primary",     cls: "bg-primary/15 text-foreground dark:text-primary" },
-  cancelled:   { label: "Cancelado",  dot: "bg-destructive", cls: "bg-destructive/15 text-destructive" },
+const STATUS_META: Record<ServiceStatus, { label: string; dot: string }> = {
+  pending:     { label: "Pendiente",  dot: "bg-warning" },
+  in_progress: { label: "En curso",   dot: "bg-info" },
+  completed:   { label: "Finalizado", dot: "bg-success" },
+  delivered:   { label: "Entregado",  dot: "bg-primary" },
+  cancelled:   { label: "Cancelado",  dot: "bg-destructive" },
 };
 
 const TYPE_LABEL: Record<string, string> = {
@@ -56,12 +42,10 @@ const TYPE_LABEL: Record<string, string> = {
   industrial: "Industrial",
 };
 
-type ServiceImageItem = NonNullable<Service["service_images"]>[number];
-
 const NEXT_STATUS: Partial<Record<ServiceStatus, { status: ServiceStatus; label: string; icon: LucideIcon }>> = {
-  pending:     { status: "in_progress", label: "Iniciar servicio",   icon: Wrench },
-  in_progress: { status: "completed",   label: "Marcar completado",  icon: CheckCircle },
-  completed:   { status: "delivered",   label: "Marcar entregado",   icon: Truck },
+  pending:     { status: "in_progress", label: "Iniciar servicio",  icon: Wrench },
+  in_progress: { status: "completed",   label: "Marcar completado", icon: CheckCircle },
+  completed:   { status: "delivered",   label: "Marcar entregado",  icon: Truck },
 };
 
 interface Props {
@@ -90,310 +74,166 @@ export function ServiceDetailSheet({
   const images = useMemo(() => service?.service_images ?? [], [service?.service_images]);
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [imageViewerIndex, setImageViewerIndex] = useState(0);
-  const [actionsOpen, setActionsOpen] = useState(false);
   const viewerImages = useMemo(
     () =>
       images
         .filter((img) => Boolean(img?.image_url))
-        .map((img) => ({
-          url: img.image_url,
-          description: img.description || undefined,
-        })),
+        .map((img) => ({ url: img.image_url, description: img.description || undefined })),
     [images],
   );
 
   if (!service) return null;
 
-  const st = service.status === "pending" && service.scheduled_start_at
-    ? { label: "Programado", dot: "bg-accent", cls: "bg-accent/15 text-accent" }
-    : STATUS_META[service.status];
+  const isScheduled = service.status === "pending" && !!service.scheduled_start_at;
+  const st = isScheduled ? { label: "Programado", dot: "bg-accent" } : STATUS_META[service.status];
   const typeLabel = TYPE_LABEL[service.service_type] ?? service.service_type;
   const next = onStatusChange ? NEXT_STATUS[service.status] : undefined;
+
   const products = service.service_products ?? [];
-  const productsSubtotal =
-    products.reduce((acc, p) => acc + Number(p.subtotal), 0) || 0;
+  const productsSubtotal = products.reduce((acc, p) => acc + Number(p.subtotal), 0) || 0;
   const labor = Number(service.labor_cost || 0);
   const discount = Number(service.discount || 0);
   const deposit = Number(service.deposit || 0);
   const total = Number(service.final_price ?? service.estimated_price ?? 0);
   const notes = service.internal_notes?.trim() || "";
+  const address = service.address || service.customer?.address || null;
+  const canCancel = !!onCancel && (service.status === "pending" || service.status === "in_progress");
 
-  const getDisplayDate = (svc: Service) => {
-    if (svc.status === "pending" && svc.scheduled_start_at) {
-      return svc.scheduled_start_at;
-    }
-    if (svc.started_at) {
-      return svc.started_at;
-    }
-    return svc.created_at;
+  const dateIso = isScheduled
+    ? service.scheduled_start_at!
+    : service.started_at || service.created_at;
+  const dateLabel = isScheduled ? "Programado para" : service.started_at ? "Iniciado" : "Registrado";
+  const dateText = format(parseISO(dateIso), "EEEE d MMM, HH:mm", { locale: es });
+
+  const openImage = (index: number) => {
+    const img = images[index];
+    if (!img?.image_url || viewerImages.length === 0) return;
+    const safeIndex = viewerImages.findIndex((image) => image.url === img.image_url);
+    setImageViewerIndex(safeIndex >= 0 ? safeIndex : Math.min(index, viewerImages.length - 1));
+    setImageViewerOpen(true);
   };
 
-  const meta = [
-    { l: "Cliente", v: service.customer?.name || "—" },
-    { l: "Teléfono", v: service.customer?.phone || "—" },
-    { l: "Fecha", v: format(parseISO(getDisplayDate(service)), "dd MMM yyyy", { locale: es }) },
-    { l: "Hora", v: format(parseISO(getDisplayDate(service)), "HH:mm", { locale: es }) },
+  // Pie: Editar y Fotos a la vista; cancelar y eliminar en el menú ⋯.
+  const footerActions: DialogAction[] = [
+    ...(onEdit ? [{ icon: Edit, label: "Editar", onClick: () => onEdit(service) }] : []),
+    ...(onAddImages ? [{ icon: ImagePlus, label: "Fotos", tooltip: "Agregar fotos", onClick: () => onAddImages(service) }] : []),
   ];
-  const address = service.address || service.customer?.address;
-  const handleOpenMaps = () => {
-    if (!address) return;
-    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
-    window.open(mapsUrl, "_blank", "noopener,noreferrer");
-  };
-  const hasFooterActions =
-    !!next ||
-    !!onDelete ||
-    !!onEdit ||
-    !!onAddImages ||
-    (!!onCancel && (service.status === "pending" || service.status === "in_progress"));
+  const menuActions: DialogAction[] = [
+    ...(canCancel ? [{ icon: XCircle, label: "Cancelar servicio", tone: "warning" as const, onClick: () => onCancel!(service) }] : []),
+    ...(onDelete
+      ? [{ icon: Trash2, label: "Eliminar", tone: "destructive" as const, separator: true, onClick: () => onDelete(service) }]
+      : []),
+  ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent fixedHeight disableSwipeToClose={imageViewerOpen} className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="font-mono text-foreground dark:text-primary">{service.service_number}</DialogTitle>
+        <DialogHeader className="text-left">
+          <DialogTitle className="line-clamp-2 text-2xl font-bold leading-tight">
+            {service.description || "Servicio"}
+          </DialogTitle>
+          <DialogDescription className="tabular-nums">
+            {service.service_number} · {typeLabel}
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto space-y-3 pb-2">
-          {/* Badges */}
-          <div className="flex gap-1.5 flex-wrap">
-            <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold", st.cls)}>
-              <span className={cn("w-1.5 h-1.5 rounded-full", st.dot)} />
-              {st.label}
-            </span>
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-muted text-muted-foreground">
-              {typeLabel}
-            </span>
-            {address && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-muted text-muted-foreground">
-                <MapPin className="w-2.5 h-2.5" /> Domicilio
-              </span>
-            )}
-          </div>
-
-          {/* Description */}
-          <div className="bg-[hsl(var(--surface-2))] rounded-2xl p-3.5">
-            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
-              Descripción del problema
+        <div className="flex-1 space-y-3 overflow-y-auto pb-2">
+          {/* Protagonista: estado + siguiente paso */}
+          <section className="rounded-[28px] bg-primary-light p-5">
+            <p className="text-xs font-medium text-muted-foreground">Estado</p>
+            <div className="mt-0.5 flex items-center gap-2.5">
+              <span
+                aria-hidden="true"
+                className={cn("h-3 w-3 shrink-0 rounded-full", st.dot, service.status === "in_progress" && "animate-pulse")}
+              />
+              <p className="text-[1.75rem] font-bold leading-tight text-foreground">{st.label}</p>
             </div>
-            <div className="text-sm font-medium text-foreground">{service.description}</div>
-            {service.problem && (
-              <div className="text-[13px] text-muted-foreground mt-1.5">{service.problem}</div>
-            )}
-          </div>
+            <p className="mt-1 text-[15px] text-muted-foreground first-letter:uppercase">
+              {dateLabel} {dateText}
+            </p>
 
-          {/* Meta grid */}
-          <div className="grid grid-cols-2 gap-2">
-            {meta.map(({ l, v }) => (
-              <div key={l} className="bg-[hsl(var(--surface-2))] rounded-xl px-3 py-2.5">
-                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">{l}</div>
-                <div className="text-[13px] font-semibold text-foreground truncate">{v}</div>
-              </div>
-            ))}
-          </div>
-
-          {address && (
-            <div className="bg-[hsl(var(--surface-2))] rounded-xl px-3 py-2.5 flex items-center gap-2.5">
-              <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
-              <div className="min-w-0 flex-1">
-                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Dirección</div>
-                <div className="text-[13px] text-foreground truncate">{address}</div>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-8 px-2.5 rounded-lg flex-shrink-0"
-                onClick={handleOpenMaps}
-              >
-                <Navigation className="w-3.5 h-3.5 mr-1" />
-                Ubicar
-              </Button>
-            </div>
-          )}
-
-          {/* Products */}
-          {products.length > 0 && (
-            <div className="bg-[hsl(var(--surface-2))] rounded-2xl p-3.5">
-              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <Package className="w-3.5 h-3.5" /> Productos ({products.length})
-              </div>
-              <div className="space-y-2">
-                {products.map((item) => (
-                  <div key={item.id} className="rounded-xl bg-background/70 px-3 py-2.5">
-                    <div className="text-[13px] font-semibold text-foreground truncate">{item.product_name || "Producto"}</div>
-                    <div className="text-[12px] text-muted-foreground mt-1 flex justify-between gap-2">
-                      <span>Cant. {Number(item.quantity || 0)}</span>
-                      <span>{currencySymbol}{Number(item.unit_price || 0).toLocaleString()}</span>
-                      <span className="font-semibold text-foreground">{currencySymbol}{Number(item.subtotal || 0).toLocaleString()}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Costs */}
-          <div className="bg-[hsl(var(--surface-2))] rounded-2xl p-3.5">
-            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
-              Desglose de costos
-            </div>
-            <div className="flex flex-col gap-1">
-              {productsSubtotal > 0 && (
-                <Row label="Productos" value={`${currencySymbol}${productsSubtotal.toLocaleString()}`} />
-              )}
-              {labor > 0 && (
-                <Row label="Mano de obra" value={`${currencySymbol}${labor.toLocaleString()}`} />
-              )}
-              {(productsSubtotal > 0 || labor > 0) && (
-                <div className="border-t border-border my-1" />
-              )}
-              {discount > 0 && (
-                <Row label="Descuento" value={`-${currencySymbol}${discount.toLocaleString()}`} negative />
-              )}
-              <div className="flex justify-between items-center py-1">
-                <span className="text-[13px] font-bold text-foreground">Total</span>
-                <span className="text-base font-extrabold text-foreground dark:text-primary">
-                  {currencySymbol}{total.toLocaleString()}
-                </span>
-              </div>
-              {deposit > 0 && (
-                <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-border">
-                  <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-2 text-center">
-                    <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">
-                      Anticipo
-                    </div>
-                    <div className="text-[13px] font-bold text-emerald-600 dark:text-emerald-400">
-                      {currencySymbol}{deposit.toLocaleString()}
-                    </div>
-                  </div>
-                  <div className="bg-muted/50 rounded-lg p-2 text-center">
-                    <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">
-                      Saldo pendiente
-                    </div>
-                    <div className="text-[13px] font-bold text-foreground">
-                      {currencySymbol}{(total - deposit).toLocaleString()}
-                    </div>
-                  </div>
-                </div>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <SpecTile label="Total" value={formatMoney(currencySymbol, total)} />
+              {deposit > 0 ? (
+                <SpecTile label="Saldo pendiente" value={formatMoney(currencySymbol, total - deposit)} />
+              ) : (
+                <SpecTile label="Precio" value={service.final_price != null ? "Final" : "Estimado"} />
               )}
             </div>
-          </div>
 
-          {/* Notes */}
-          {notes && (
-            <div className="bg-[hsl(var(--surface-2))] rounded-2xl p-3.5">
-              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
-                Notas
-              </div>
-              <div className="text-[13px] text-foreground whitespace-pre-wrap">{notes}</div>
-            </div>
-          )}
-
-          {/* Images */}
-          {images.length > 0 && (
-            <div>
-              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                Imágenes ({images.length})
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                {images.map((img: ServiceImageItem, index: number) => (
-                  <button
-                    key={img.id}
-                    type="button"
-                    className="aspect-square rounded-xl bg-[hsl(var(--surface-2))] overflow-hidden flex items-center justify-center cursor-zoom-in"
-                    onClick={() => {
-                      if (!img.image_url || viewerImages.length === 0) return;
-                      const safeIndex = viewerImages.findIndex((image) => image.url === img.image_url);
-                      setImageViewerIndex(safeIndex >= 0 ? safeIndex : Math.min(index, viewerImages.length - 1));
-                      setImageViewerOpen(true);
-                    }}
-                  >
-                    {img.image_url ? (
-                      <img src={resolveStorageUrl(img.image_url) ?? undefined} alt="Imagen del servicio" className="w-full h-full object-cover" />
-                    ) : (
-                      <ImageIcon className="w-5 h-5 text-muted-foreground" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-        </div>
-
-        {hasFooterActions && (
-          <DialogFooter className="pt-1 gap-2">
-            {/* Avanzar estado */}
             {next && (
               <Button
-                className="w-full h-12 rounded-2xl bg-primary text-primary-foreground hover:bg-primary-hover font-bold"
+                className="mt-4 h-14 w-full text-base"
                 onClick={() => onStatusChange?.(service, next.status)}
               >
-                <next.icon className="w-4 h-4 mr-1.5" />
+                <next.icon className="!h-5 !w-5" />
                 {next.label}
               </Button>
             )}
+          </section>
 
-            {/* Acciones secundarias */}
-            <div className="flex items-center gap-2 w-full">
-              {/* Editar */}
-              {onEdit && (
-                <Button
-                  variant="outline"
-                  className="flex-1 h-12 rounded-2xl font-semibold"
-                  onClick={() => onEdit(service)}
-                >
-                  <Edit className="w-4 h-4 mr-1.5" /> Editar
-                </Button>
-              )}
-              {(onAddImages || (onCancel && (service.status === "pending" || service.status === "in_progress"))) && (
-                <DropdownMenu modal={false} open={actionsOpen} onOpenChange={setActionsOpen}>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl flex-shrink-0">
-                      <MoreHorizontal className="w-5 h-5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" side="top">
-                    {onAddImages && (
-                      <DropdownMenuItem onClick={() => onAddImages(service)}>
-                        <ImagePlus className="w-4 h-4 mr-2" /> Agregar imágenes
-                      </DropdownMenuItem>
-                    )}
-                    {onAddImages && (
-                      <DropdownMenuItem onClick={() => onAddImages(service)}>
-                        <ImagePlus className="w-4 h-4 mr-2" /> Agregar imágenes
-                      </DropdownMenuItem>
-                    )}
-                    {onDelete && (
-                      <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-destructive focus:text-destructive"
-                          onClick={() => onDelete(service)}
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" /> Eliminar
-                        </DropdownMenuItem>
-                      </>
-                    )}
-                    {onCancel && (service.status === "pending" || service.status === "in_progress") && (
-                      <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-destructive focus:text-destructive"
-                          onClick={() => {
-                            setActionsOpen(false);
-                            window.setTimeout(() => onCancel(service), 0);
-                          }}
-                        >
-                          <XCircle className="w-4 h-4 mr-2" /> Cancelar servicio
-                        </DropdownMenuItem>
-                      </>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
+          <DetailViewCustomer
+            data={{
+              customer_name: service.customer?.name,
+              customer_phone: service.customer?.phone,
+              customer_email: null,
+              customer_address: address,
+            }}
+          />
+
+          {service.problem && (
+            <DetailSection title="Problema" className="bg-muted shadow-none">
+              <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">{service.problem}</p>
+            </DetailSection>
+          )}
+
+          {images.length > 0 && <DetailViewImages images={images} onView={openImage} />}
+
+          <DetailViewItems
+            type="service"
+            items={products.map((p) => ({
+              id: p.id,
+              product_name: p.product_name || "Producto",
+              quantity: Number(p.quantity || 0),
+              unit_price: Number(p.unit_price || 0),
+              subtotal: Number(p.subtotal || 0),
+            }))}
+            currencySymbol={currencySymbol}
+          />
+
+          {(labor > 0 || discount > 0 || deposit > 0) && (
+            <DetailSection title="Desglose" className="bg-muted shadow-none">
+              <div className="-my-1.5">
+                {productsSubtotal > 0 && <SpecRow label="Productos" value={formatMoney(currencySymbol, productsSubtotal)} />}
+                {labor > 0 && <SpecRow label="Mano de obra" value={formatMoney(currencySymbol, labor)} />}
+                {discount > 0 && (
+                  <SpecRow label="Descuento" value={<span className="text-destructive">−{formatMoney(currencySymbol, discount)}</span>} />
+                )}
+                <SpecRow label="Total" value={<span className="font-bold">{formatMoney(currencySymbol, total)}</span>} />
+                {deposit > 0 && <SpecRow label="Anticipo" value={formatMoney(currencySymbol, deposit)} />}
+              </div>
+            </DetailSection>
+          )}
+
+          {notes && (
+            <DetailSection title="Notas internas" className="bg-muted shadow-none">
+              <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">{notes}</p>
+            </DetailSection>
+          )}
+
+          {!service.problem && images.length === 0 && products.length === 0 && !notes && (
+            <div className="flex flex-col items-center py-4 text-center">
+              <MaterialShape name="cookie9" className="mb-2 h-12 w-12 text-muted">
+                <Wrench className="h-5 w-5 text-muted-foreground" />
+              </MaterialShape>
+              <p className="text-sm text-muted-foreground">Sin productos, fotos ni notas todavía.</p>
             </div>
+          )}
+        </div>
+
+        {(footerActions.length > 0 || menuActions.length > 0) && (
+          <DialogFooter className="gap-2 pt-1">
+            <DialogActionBar actions={footerActions} menuActions={menuActions} />
           </DialogFooter>
         )}
       </DialogContent>
@@ -407,16 +247,5 @@ export function ServiceDetailSheet({
         />
       )}
     </Dialog>
-  );
-}
-
-function Row({ label, value, negative }: { label: string; value: string; negative?: boolean }) {
-  return (
-    <div className="flex justify-between items-center py-1">
-      <span className="text-[13px] text-muted-foreground">{label}</span>
-      <span className={cn("text-[13px] font-semibold", negative ? "text-destructive" : "text-foreground")}>
-        {value}
-      </span>
-    </div>
   );
 }

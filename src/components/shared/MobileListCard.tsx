@@ -1,26 +1,38 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { m as motion } from "framer-motion";
+import { spawnRipple } from "@/lib/ripple";
 
+/**
+ * Elemento de lista de dos líneas (M3 / Android).
+ *
+ *   Título principal ..................... $1,200
+ *   ● Estado · Cliente
+ *
+ * Va dentro de un contenedor `.m3-list`, que agrupa los elementos con 2px de
+ * separación y esquinas grandes solo en los extremos (estilo Android 16).
+ *
+ * El folio/código ya NO se muestra en la lista: vive en la vista de detalle.
+ * La prop `code` se conserva para accesibilidad (se lee en el aria-label).
+ */
 interface MobileListCardProps {
   onClick: () => void;
-  /** Folio / código — se muestra arriba a la derecha en mono apagado */
-  code: string;
-  /** Texto del indicador de estado (arriba a la izquierda) */
+  /** Folio / código. Solo se anuncia a lectores de pantalla; se ve en el detalle. */
+  code?: string;
+  /** Texto del indicador de estado */
   statusLabel: string;
   /** Clase de color del texto del estado, e.g. "text-warning" */
   statusTextClass: string;
-  /** Clase de color del dot del estado, e.g. "bg-warning" */
+  /** Clase de color del punto de estado, e.g. "bg-warning" */
   statusDotClass: string;
-  /** Si el dot debe pulsar (para estados activos/urgentes) */
+  /** Si el punto debe pulsar (para estados activos/urgentes) */
   statusPulse?: boolean;
-  /** Contenido opcional junto al label de estado (ej: aviso de días) */
+  /** Contenido opcional junto al estado (ej: aviso de días) */
   statusExtra?: ReactNode;
-  /** Texto principal de la tarjeta — hero. Soporta hasta 2 líneas. */
+  /** Texto principal (una línea) */
   title: string;
-  /** Texto secundario izquierdo del footer (cliente, contacto…) */
+  /** Texto secundario (cliente, contacto…) */
   subtitle?: string;
-  /** Valor derecho del footer (precio, días restantes…) */
+  /** Valor a la derecha (precio, días restantes…) */
   valueText?: string;
   /** Clase de color del valor, e.g. "text-success" */
   valueClass?: string;
@@ -40,78 +52,57 @@ export function MobileListCard({
   valueClass,
 }: MobileListCardProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.1 }}
-      className="card-elevated p-4 cursor-pointer active:scale-[0.99] transition-transform"
+    <button
+      type="button"
       onClick={onClick}
+      onPointerDown={spawnRipple}
+      aria-label={code ? `${title}, ${code}` : undefined}
+      className="m3-list-item flex min-h-[72px] w-full items-center gap-3 px-4 py-3 text-left"
     >
-      {/* Fila 1: estado | código */}
-      <div className="flex items-center justify-between gap-2 mb-2.5">
-        <div className="flex items-center gap-1.5 min-w-0">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-base font-medium leading-6 text-foreground">{title}</p>
+        <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-sm leading-5 text-muted-foreground">
           <span
+            aria-hidden="true"
             className={cn(
-              "w-[7px] h-[7px] rounded-full shrink-0",
+              "h-2 w-2 shrink-0 rounded-full",
               statusDotClass,
-              statusPulse && "animate-pulse"
+              statusPulse && "animate-pulse",
             )}
           />
-          <span className={cn("text-[11px] font-semibold tracking-wide leading-none", statusTextClass)}>
-            {statusLabel}
-          </span>
+          <span className={cn("shrink-0 font-medium", statusTextClass)}>{statusLabel}</span>
           {statusExtra}
-        </div>
-        <span className="font-mono text-[10px] text-muted-foreground/50 tracking-widest shrink-0 ml-2">
-          {code}
-        </span>
-      </div>
-
-      {/* Fila 2: título hero (hasta 2 líneas) */}
-      <p className="text-[13.5px] font-semibold text-foreground line-clamp-2 leading-snug">
-        {title}
-      </p>
-
-      {/* Fila 3: footer con separador */}
-      {(subtitle !== undefined || valueText) && (
-        <div className="flex items-center justify-between gap-3 mt-3 pt-2.5 border-t border-border/40">
-          <span className="text-[11.5px] text-muted-foreground truncate min-w-0">
-            {subtitle ?? ""}
-          </span>
-          {valueText && (
-            <span
-              className={cn(
-                "text-[13px] font-bold shrink-0 tabular-nums leading-none",
-                valueClass ?? "text-foreground/80"
-              )}
-            >
-              {valueText}
-            </span>
+          {subtitle && (
+            <>
+              <span aria-hidden="true" className="shrink-0">·</span>
+              <span className="truncate">{subtitle}</span>
+            </>
           )}
         </div>
+      </div>
+
+      {valueText && (
+        <span
+          className={cn(
+            "shrink-0 text-base font-semibold tabular-nums",
+            valueClass ?? "text-foreground",
+          )}
+        >
+          {valueText}
+        </span>
       )}
-    </motion.div>
+    </button>
   );
 }
 
 export function MobileListCardSkeleton() {
   return (
-    <div className="card-elevated p-4 animate-pulse">
-      <div className="flex items-center justify-between gap-2 mb-2.5">
-        <div className="flex items-center gap-1.5">
-          <div className="w-[7px] h-[7px] rounded-full bg-muted/70 shrink-0" />
-          <div className="h-2.5 w-14 rounded bg-muted/60" />
-        </div>
-        <div className="h-2 w-16 rounded bg-muted/60" />
+    <div className="m3-list-item flex min-h-[72px] items-center gap-3 px-4 py-3">
+      <div className="min-w-0 flex-1 space-y-2">
+        <div className="h-4 w-[65%] animate-pulse rounded bg-muted" />
+        <div className="h-3 w-[45%] animate-pulse rounded bg-muted" />
       </div>
-      <div className="space-y-1.5">
-        <div className="h-3.5 w-[72%] rounded bg-muted/60" />
-        <div className="h-3.5 w-[45%] rounded bg-muted/60" />
-      </div>
-      <div className="flex items-center justify-between gap-3 mt-3 pt-2.5 border-t border-border/40">
-        <div className="h-2.5 w-28 rounded bg-muted/60" />
-        <div className="h-3 w-14 rounded bg-muted/60" />
-      </div>
+      <div className="h-4 w-14 animate-pulse rounded bg-muted" />
     </div>
   );
 }

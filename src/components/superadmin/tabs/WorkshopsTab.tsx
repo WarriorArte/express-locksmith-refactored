@@ -121,7 +121,7 @@ export function WorkshopsTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
                     value={newWorkshop.code}
                     onChange={(e) => setNewWorkshop({ ...newWorkshop, code: e.target.value.toUpperCase() })}
                     placeholder="EJEMPLO123"
-                    className="uppercase"
+                    className=""
                   />
                   <p className="text-xs text-muted-foreground">
                     Este código será requerido para iniciar sesión en el taller
@@ -217,7 +217,7 @@ export function WorkshopsTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
               <Input
                 value={editWorkshop?.code || ""}
                 onChange={(e) => setEditWorkshop((p) => (p ? { ...p, code: e.target.value.toUpperCase() } : null))}
-                className="uppercase"
+                className=""
               />
             </div>
           </div>

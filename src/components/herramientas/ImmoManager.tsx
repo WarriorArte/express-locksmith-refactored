@@ -134,7 +134,7 @@ function GenFieldList({ fields, onChange }: { fields: ImmoGenField[]; onChange: 
         <div key={f.id} className="flex items-center gap-2">
           <Input value={f.label} onChange={(e) => update(f.id, "label", e.target.value)} placeholder="Nombre" className="h-8 w-28 text-xs font-semibold" />
           <span className="text-muted-foreground text-xs shrink-0">:</span>
-          <Input value={f.value} onChange={(e) => update(f.id, "value", e.target.value)} placeholder="Valor" className="h-8 flex-1 text-xs font-mono" />
+          <Input value={f.value} onChange={(e) => update(f.id, "value", e.target.value)} placeholder="Valor" className="h-8 flex-1 text-xs tabular-nums" />
           <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive shrink-0" onClick={() => remove(f.id)} disabled={fields.length <= 1}>
             <Trash2 className="w-3.5 h-3.5" />
           </Button>
@@ -157,7 +157,7 @@ function Section({ icon, title, children }: { icon: React.ReactNode; title: stri
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <div className="text-primary">{icon}</div>
-        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{title}</h3>
+        <h3 className="text-xs font-bold text-muted-foreground">{title}</h3>
         <div className="flex-1 h-px bg-border" />
       </div>
       {children}
@@ -254,7 +254,7 @@ function ImmoProfileEditor({
       {/* Detalles del remoto */}
       <Section icon={<Radio className="w-4 h-4" />} title="Detalles del Remoto">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {([["marca", "Marca", "Toyota, Honda…", ""], ["fccId", "FCC ID", "HYQ12BFB…", "font-mono"], ["frecuencia", "Frecuencia", "433 MHz…", ""], ["bateria", "Batería", "CR2032…", ""]] as const).map(([key, lbl, ph, cls]) => (
+          {([["marca", "Marca", "Toyota, Honda…", ""], ["fccId", "FCC ID", "HYQ12BFB…", "tabular-nums"], ["frecuencia", "Frecuencia", "433 MHz…", ""], ["bateria", "Batería", "CR2032…", ""]] as const).map(([key, lbl, ph, cls]) => (
             <div key={key} className="space-y-1">
               <Label className="text-xs font-bold">{lbl}</Label>
               <Input value={draft[key]} onChange={(e) => set(key, e.target.value)} placeholder={ph} className={`h-8 text-sm ${cls}`} />
@@ -616,7 +616,7 @@ export function ImmoAssignmentManager({
           <CardContent className="pt-4 pb-4 px-4 bg-primary/5 rounded-[inherit] space-y-4">
             {/* Vehicle */}
             <div className="space-y-2">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <p className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
                 <Car className="w-3.5 h-3.5" /> Vehículo
               </p>
               <div className="grid grid-cols-2 gap-2">
@@ -641,7 +641,7 @@ export function ImmoAssignmentManager({
 
             {/* Profile selector */}
             <div className="space-y-2">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <p className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
                 <Cpu className="w-3.5 h-3.5" /> Perfiles Immo
               </p>
               <div className="relative">
@@ -699,7 +699,7 @@ export function ImmoAssignmentManager({
             {/* Per-profile detail sections */}
             {selectedIds.length > 0 && (
               <div className="space-y-2">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <p className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5" /> Datos por Vehículo
                 </p>
                 {selectedIds.map((id) => {
@@ -723,7 +723,7 @@ export function ImmoAssignmentManager({
                           )}
                           <span className="text-sm font-semibold text-foreground truncate">{profileTitle(p)}</span>
                           {detail.transponder && (
-                            <span className="text-xs text-muted-foreground font-mono">· {detail.transponder}</span>
+                            <span className="text-xs text-muted-foreground tabular-nums">· {detail.transponder}</span>
                           )}
                         </div>
                         {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />}
@@ -736,7 +736,7 @@ export function ImmoAssignmentManager({
                           {/* Transponder */}
                           <div className="space-y-1">
                             <Label className="text-xs font-bold">Transponder</Label>
-                            <Input value={detail.transponder} onChange={(e) => updateDetail(id, "transponder", e.target.value)} placeholder="Philips ID46…" className="h-8 text-sm font-mono" />
+                            <Input value={detail.transponder} onChange={(e) => updateDetail(id, "transponder", e.target.value)} placeholder="Philips ID46…" className="h-8 text-sm tabular-nums" />
                           </div>
                           <div className="space-y-1">
                             <Label className="text-xs font-bold">Notas del transponder</Label>
@@ -840,7 +840,7 @@ export function ImmoAssignmentManager({
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <h3 className={`font-bold text-sm truncate ${isEditing ? "text-primary" : "text-foreground"}`}>{item.make} {item.model}</h3>
-                        <div className="text-[11px] text-muted-foreground font-mono mt-0.5">{item.yearStart}–{item.yearEnd}</div>
+                        <div className="text-[11px] text-muted-foreground tabular-nums mt-0.5">{item.yearStart}–{item.yearEnd}</div>
                       </div>
                       <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                         <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => setDeleteAssignmentId(item.id)}>
@@ -854,11 +854,11 @@ export function ImmoAssignmentManager({
                           const p = immoProfiles.find((x) => x.id === d.profileId);
                           return p ? (
                             <div key={d.profileId} className="flex flex-col gap-0.5">
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-accent-light text-accent border border-accent/20 dark:bg-accent/30 dark:text-accent-foreground dark:border-accent/40">
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-accent-light text-accent border border-accent/20 dark:bg-accent/30 dark:text-accent-foreground dark:border-accent/40">
                                 {profileTitle(p)}
                               </span>
                               {d.transponder && (
-                                <span className="text-[9px] text-muted-foreground font-mono px-1.5">{d.transponder}</span>
+                                <span className="text-[11px] text-muted-foreground tabular-nums px-1.5">{d.transponder}</span>
                               )}
                             </div>
                           ) : null;

@@ -39,7 +39,7 @@ export function StatCard({
       className={cn(
         "relative overflow-hidden rounded-sm p-4",
         isHero
-          ? "bg-primary text-primary-foreground shadow-[0_0_24px_hsl(var(--primary)/0.30)]"
+          ? "bg-primary text-primary-foreground "
           : "bg-card text-foreground border border-border",
       )}
     >
@@ -62,7 +62,7 @@ export function StatCard({
         {trend && (
           <div
             className={cn(
-              "flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-sm",
+              "flex items-center gap-0.5 text-[11px] font-bold px-1.5 py-0.5 rounded-sm",
               trend.isPositive
                 ? isHero
                   ? "bg-[hsl(var(--primary-foreground)/0.15)] text-primary-foreground"
@@ -97,7 +97,7 @@ export function StatCard({
       {subtitle && (
         <div
           className={cn(
-            "text-[10px] mt-0.5",
+            "text-[11px] mt-0.5",
             isHero
               ? "text-[hsl(var(--primary-foreground)/0.55)]"
               : "text-muted-foreground/70",

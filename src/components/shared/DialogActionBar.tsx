@@ -40,12 +40,12 @@ interface DialogActionBarProps {
   menuLabel?: string;
 }
 
+// Botones tonales M3 (sin borde): el color de contenedor indica la intención.
 const actionToneClass: Record<DialogActionTone, string> = {
-  default: "",
-  primary: "border-primary/25 bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary",
-  destructive:
-    "border-destructive/20 bg-destructive/10 text-destructive hover:bg-destructive/15 hover:text-destructive",
-  warning: "border-warning/20 bg-warning/10 text-warning hover:bg-warning/15 hover:text-warning",
+  default: "bg-muted text-foreground hover:bg-muted hover:text-foreground",
+  primary: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
+  destructive: "bg-destructive-light text-destructive hover:bg-destructive-light hover:text-destructive",
+  warning: "bg-warning-light text-foreground hover:bg-warning-light hover:text-foreground",
 };
 
 const menuToneClass: Record<DialogActionTone, string> = {
@@ -99,13 +99,13 @@ export function DialogActionBar({
           const button = (
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               aria-label={action.label}
               title={action.tooltip ?? action.label}
               disabled={action.disabled}
               onClick={action.onClick}
               className={cn(
-                "h-12 min-w-0 flex-1 rounded-2xl px-0 text-[13px] font-semibold focus-visible:ring-0 focus-visible:ring-offset-0 sm:px-2 lg:px-3",
+                "h-12 min-w-0 flex-1 rounded-full px-0 text-sm font-semibold focus-visible:ring-0 focus-visible:ring-offset-0 sm:px-2 lg:px-3",
                 isCrowded && "gap-0 sm:px-0 lg:px-0",
                 actionToneClass[tone],
                 action.className,
@@ -131,11 +131,11 @@ export function DialogActionBar({
             <DropdownMenuTrigger asChild>
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 size="icon"
                 aria-label={menuLabel}
                 title={menuLabel}
-                className={cn("h-12 flex-shrink-0 rounded-2xl focus-visible:ring-0 focus-visible:ring-offset-0", isCrowded ? "w-11" : "w-12")}
+                className={cn("h-12 flex-shrink-0 rounded-full bg-muted hover:bg-muted focus-visible:ring-0 focus-visible:ring-offset-0", isCrowded ? "w-11" : "w-12")}
               >
                 <MoreHorizontal aria-hidden="true" />
               </Button>

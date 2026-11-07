@@ -16,7 +16,7 @@ interface HeroHeaderProps {
 export function HeroHeader({
   title,
   subtitle,
-  eyebrow = "Cerrajería Express",
+  eyebrow,
   action,
   mobileAction,
   accountTrigger,
@@ -34,7 +34,7 @@ export function HeroHeader({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <div className="ce-hero-eyebrow mb-1.5 lg:mb-2">{eyebrow}</div>
+          {eyebrow && <div className="ce-hero-eyebrow mb-1.5 lg:mb-2">{eyebrow}</div>}
           <h1 className="ce-hero-title text-[clamp(1.55rem,5.4vw,2.15rem)] lg:text-[clamp(1.75rem,3vw,2.5rem)]">
             {title}
           </h1>

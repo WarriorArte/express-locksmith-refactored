@@ -143,7 +143,7 @@ export function FeaturesTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
         {selectedWorkshop && (
           <div className="space-y-4">
             <section className="space-y-1">
-              <h3 className="text-xs font-semibold flex items-center gap-2 text-muted-foreground uppercase tracking-wide">
+              <h3 className="text-xs font-semibold flex items-center gap-2 text-muted-foreground">
                 <ToggleLeft className="h-3 w-3" /> Módulos generales
               </h3>
               <div className="grid gap-0 border rounded-md overflow-hidden md:grid-cols-2">
@@ -152,7 +152,7 @@ export function FeaturesTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
             </section>
 
             <section className="space-y-1">
-              <h3 className="text-xs font-semibold flex items-center gap-2 text-muted-foreground uppercase tracking-wide">
+              <h3 className="text-xs font-semibold flex items-center gap-2 text-muted-foreground">
                 <Wrench className="h-3 w-3" /> Herramientas técnicas
               </h3>
               <div className="grid gap-0 border rounded-md overflow-hidden md:grid-cols-2">

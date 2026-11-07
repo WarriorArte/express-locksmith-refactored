@@ -20,13 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { NativeSelect } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
 import { useCreateCustomer, useUpdateCustomer, type Customer } from "@/hooks/useCustomers";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
@@ -81,6 +75,18 @@ interface CustomerFormDialogProps {
   onOpenChange: (open: boolean) => void;
   customer?: Customer | null;
 }
+
+const TAG_FIELDS: {
+  name: "is_normal" | "is_frequent" | "is_vip" | "has_debt" | "no_work_again";
+  label: string;
+  destructive?: boolean;
+}[] = [
+  { name: "is_normal", label: "Normal" },
+  { name: "is_frequent", label: "Frecuente" },
+  { name: "is_vip", label: "Cerrajero externo" },
+  { name: "has_debt", label: "Con deuda" },
+  { name: "no_work_again", label: "No volver a trabajar", destructive: true },
+];
 
 export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFormDialogProps) {
   const createCustomer = useCreateCustomer();
@@ -225,17 +231,12 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Tipo de Cliente</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="person">Persona</SelectItem>
-                        <SelectItem value="company">Empresa</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <NativeSelect value={field.value} onChange={(e) => field.onChange(e.target.value)}>
+                        <option value="person">Persona</option>
+                        <option value="company">Empresa</option>
+                      </NativeSelect>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -302,70 +303,27 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
                 )}
               />
 
-              {/* Etiquetas especiales */}
-              <div className="col-span-2 space-y-4">
-                <h4 className="font-medium text-sm text-muted-foreground">Etiquetas</h4>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="is_normal"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center justify-between rounded-lg border p-3">
-                        <FormLabel className="text-sm">Normal</FormLabel>
-                        <FormControl>
-                          <Switch checked={field.value} onCheckedChange={field.onChange} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="is_vip"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center justify-between rounded-lg border p-3 border-primary/50">
-                        <FormLabel className="text-sm text-foreground dark:text-primary">Cerrajero Ext.</FormLabel>
-                        <FormControl>
-                          <Switch checked={field.value} onCheckedChange={field.onChange} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="is_frequent"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center justify-between rounded-lg border p-3">
-                        <FormLabel className="text-sm">Frecuente</FormLabel>
-                        <FormControl>
-                          <Switch checked={field.value} onCheckedChange={field.onChange} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="has_debt"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center justify-between rounded-lg border p-3">
-                        <FormLabel className="text-sm">Con Deuda</FormLabel>
-                        <FormControl>
-                          <Switch checked={field.value} onCheckedChange={field.onChange} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="no_work_again"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center justify-between rounded-lg border p-3 border-destructive/50">
-                        <FormLabel className="text-sm text-destructive">No Trabajar</FormLabel>
-                        <FormControl>
-                          <Switch checked={field.value} onCheckedChange={field.onChange} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
+              {/* Etiquetas: filas con interruptor, estilo Ajustes de Android */}
+              <div className="col-span-2">
+                <p className="mb-2 text-sm font-medium text-foreground">Etiquetas</p>
+                <div className="m3-list">
+                  {TAG_FIELDS.map((tag) => (
+                    <FormField
+                      key={tag.name}
+                      control={form.control}
+                      name={tag.name}
+                      render={({ field }) => (
+                        <FormItem className="m3-list-item flex min-h-14 items-center justify-between gap-4 space-y-0 bg-muted px-4 py-2">
+                          <FormLabel className={cn("mb-0 text-[15px]", tag.destructive && "text-destructive")}>
+                            {tag.label}
+                          </FormLabel>
+                          <FormControl>
+                            <Switch checked={!!field.value} onCheckedChange={field.onChange} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  ))}
                 </div>
               </div>
 

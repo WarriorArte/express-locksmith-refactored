@@ -4,9 +4,9 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
-// v2 prototype: tiny uppercase, bold, muted color
+// Criterio M3E: etiqueta legible (14 px, medium) en lugar de 11 px negrita gris.
 const labelVariants = cva(
-  "text-[11px] font-bold uppercase tracking-[0.05em] text-muted-foreground leading-none mb-1.5 inline-block peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+  "text-sm font-medium text-foreground leading-tight mb-1.5 inline-block peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
 );
 
 const Label = React.forwardRef<

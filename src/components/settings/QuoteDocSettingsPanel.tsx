@@ -87,7 +87,7 @@ export function QuoteDocSettingsPanel({
         </div>
       {/* Layout picker */}
       <section>
-        <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-2 block">Disposición</Label>
+        <Label className="mb-2 block text-base font-semibold">Disposición</Label>
         <div className="grid grid-cols-3 gap-2">
           {QUOTE_TEMPLATES.map(L => (
             <button
@@ -101,8 +101,8 @@ export function QuoteDocSettingsPanel({
                 });
               }}
               className={cn(
-                "rounded-xl border-2 p-3 text-center transition-all bg-card",
-                settings.layout === L.id ? "border-primary shadow-[0_0_16px_hsl(var(--primary)/0.25)]" : "border-border hover:border-muted-foreground/40",
+                "rounded-[20px] p-3 text-center transition-colors",
+                settings.layout === L.id ? "bg-accent ring-2 ring-primary" : "bg-muted hover:bg-muted/80",
               )}
             >
               <L.Thumb accent={settings.accent} ink={settings.ink} />
@@ -114,7 +114,7 @@ export function QuoteDocSettingsPanel({
 
       {/* Palette */}
       <section>
-        <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-2 block">Paletas</Label>
+        <Label className="mb-2 block text-base font-semibold">Paletas</Label>
         <div className="grid grid-cols-3 gap-2.5">
           {QUOTE_PRESETS.map(p => {
             const active = settings.presetId === p.id;
@@ -125,8 +125,8 @@ export function QuoteDocSettingsPanel({
                 type="button"
                 onClick={() => applyPreset(p)}
                 className={cn(
-                  "rounded-xl border-2 overflow-hidden transition-all text-left group",
-                  active ? "border-foreground shadow-[0_0_0_1px_hsl(var(--foreground))]" : "border-border hover:border-muted-foreground/50",
+                  "group overflow-hidden rounded-[20px] text-left transition-shadow",
+                  active ? "ring-[3px] ring-primary" : "ring-1 ring-foreground/10 hover:ring-foreground/25",
                 )}
                 style={{ background: preview.paper }}
               >
@@ -148,7 +148,7 @@ export function QuoteDocSettingsPanel({
                   </div>
                 </div>
                 <div
-                  className="text-[11px] font-semibold py-1.5 px-3 border-t truncate"
+                  className="truncate border-t px-3 py-1.5 text-xs font-semibold"
                   style={{ color: preview.ink, borderColor: preview.rule }}
                 >
                   {p.name}
@@ -161,7 +161,7 @@ export function QuoteDocSettingsPanel({
 
       {/* Custom colors */}
       <section>
-        <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-2 block">
+        <Label className="mb-2 block text-base font-semibold">
           Colores personalizados {settings.presetId === "custom" && <span className="text-primary">· custom</span>}
         </Label>
         <div className="grid grid-cols-2 gap-2">
@@ -179,16 +179,16 @@ export function QuoteDocSettingsPanel({
             <ColorPick label="Papel (fondo de página)" value={settings.paper} onChange={v => setColor("paper", v)} />
           </div>
         </div>
-        <div className="mt-2 text-[11px] text-muted-foreground">
+        <div className="mt-2 text-xs text-muted-foreground">
           Colores automaticos de contraste activos para mantener los textos legibles.
         </div>
       </section>
 
       <section>
-        <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-2 flex justify-between">
-          Logo <span className="font-mono normal-case">{settings.logoSize}px</span>
+        <Label className="mb-2 flex justify-between text-base font-semibold">
+          Logo <span className="tabular-nums normal-case">{settings.logoSize}px</span>
         </Label>
-        <div className="rounded-xl border border-border bg-card p-3">
+        <div className="rounded-[20px] bg-muted p-4">
           <input
             type="range"
             min={48}
@@ -198,7 +198,7 @@ export function QuoteDocSettingsPanel({
             onChange={e => update({ logoSize: Number(e.target.value) })}
             className="w-full accent-primary"
           />
-          <div className="mt-2 grid grid-cols-3 text-[10px] text-muted-foreground">
+          <div className="mt-2 grid grid-cols-3 text-xs text-muted-foreground">
             <span>Pequeno</span>
             <span className="text-center">Medio</span>
             <span className="text-right">Grande</span>
@@ -208,17 +208,17 @@ export function QuoteDocSettingsPanel({
 
       {/* Background image */}
       <section>
-        <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-2 block">Imagen de fondo (marca de agua)</Label>
-        <div className="rounded-xl border border-border bg-card p-3 space-y-3">
+        <Label className="mb-2 block text-base font-semibold">Imagen de fondo (marca de agua)</Label>
+        <div className="space-y-3 rounded-[20px] bg-muted p-4">
           <div className="flex items-center gap-3">
             <div
-              className="w-14 h-14 rounded-md border border-dashed border-border bg-muted bg-cover bg-center flex-shrink-0"
+              className="h-14 w-14 shrink-0 rounded-xl bg-background bg-cover bg-center"
               style={settings.bgUrl ? { backgroundImage: `url(${settings.bgUrl})` } : {}}
             />
             <div className="flex gap-2 flex-1">
-              <Button type="button" size="sm" variant="outline" onClick={() => fileRef.current?.click()}>Subir</Button>
+              <Button type="button" size="sm" variant="secondary" onClick={() => fileRef.current?.click()}>Subir</Button>
               {settings.bgUrl && (
-                <Button type="button" size="sm" variant="outline" className="text-destructive" onClick={() => update({ bgUrl: "" })}>Quitar</Button>
+                <Button type="button" size="sm" variant="ghost" className="text-destructive" onClick={() => update({ bgUrl: "" })}>Quitar</Button>
               )}
               <input ref={fileRef} type="file" accept="image/*" onChange={onUpload} className="hidden" />
             </div>
@@ -229,7 +229,7 @@ export function QuoteDocSettingsPanel({
             onChange={e => update({ bgUrl: e.target.value })}
           />
           <div>
-            <Label className="text-xs flex justify-between">Opacidad <span className="font-mono">{Math.round(settings.bgOpacity * 100)}%</span></Label>
+            <Label className="text-xs flex justify-between">Opacidad <span className="tabular-nums">{Math.round(settings.bgOpacity * 100)}%</span></Label>
             <input
               type="range" min={0} max={1} step={0.01}
               value={settings.bgOpacity}
@@ -240,8 +240,8 @@ export function QuoteDocSettingsPanel({
         </div>
       </section>
 
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-border">
-      <p className="text-[11px] text-muted-foreground font-mono">
+      <div className="flex flex-col gap-3 pt-3 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-xs tabular-nums text-muted-foreground">
         <FileText className="w-3 h-3 inline mr-1" />
         Tamaño Carta 8.5 × 11 in · {getQuoteTemplate(settings.layout)?.name.toLowerCase()} · {settings.presetId}
       </p>
@@ -273,7 +273,7 @@ export function QuoteDocSettingsPreview({ state }: { state?: QuoteDocSettingsSta
 
   if (isLoading) {
     return (
-      <div className="h-[calc(100vh-2rem)] rounded-xl border border-border bg-[hsl(var(--surface-2))] flex items-center justify-center text-muted-foreground">
+      <div className="flex h-[calc(100vh-2rem)] items-center justify-center rounded-[28px] bg-muted text-muted-foreground">
         <Loader2 className="w-5 h-5 animate-spin mr-2" />
         Cargando preview
       </div>
@@ -309,7 +309,7 @@ function QuotePreview({
 
 function ColorPick({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
-    <label className="flex items-center gap-2 bg-card border border-border rounded-lg p-2 cursor-pointer">
+    <label className="flex cursor-pointer items-center gap-2.5 rounded-2xl bg-muted p-2.5">
       <input
         type="color"
         value={value}
@@ -317,8 +317,7 @@ function ColorPick({ label, value, onChange }: { label: string; value: string; o
         className="w-9 h-7 border-0 p-0 cursor-pointer bg-transparent rounded"
       />
       <div className="flex flex-col min-w-0">
-        <span className="text-[11px] font-medium text-foreground truncate">{label}</span>
-        <span className="text-[10px] text-muted-foreground">Cambiar color</span>
+        <span className="truncate text-[13px] font-medium text-foreground">{label}</span>
       </div>
     </label>
   );

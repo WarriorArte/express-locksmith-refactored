@@ -1,15 +1,25 @@
+/**
+ * Ficha + historial del cliente — criterio M3E (docs/CRITERIO-DISENO-M3E.md),
+ * variante "dentro de una hoja". Protagonista: el cliente (avatar en forma
+ * cookie) con lo que importa antes de atenderlo: etiquetas (deuda, no trabajar),
+ * servicios y compras. Debajo, contacto y la lista de servicios.
+ */
 import { useState } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/responsive-dialog";
-import { Badge } from "@/components/ui/badge";
 import { DialogActionBar, type DialogAction } from "@/components/shared/DialogActionBar";
-import { Wrench, Eye, Loader2, Edit, Trash2, Phone, Mail, MapPin, AlertCircle } from "lucide-react";
+import { DetailViewCustomer } from "@/components/shared/detail-view/DetailViewCustomer";
+import { MobileListCard, MobileListCardSkeleton } from "@/components/shared/MobileListCard";
+import { DetailSection, SpecTile, TonalChip } from "@/design-system/detail/DetailScreen";
+import { AlertCircle, Edit, Star, Trash2, Wallet, Wrench } from "lucide-react";
 import { useServices, type Service } from "@/hooks/useServices";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import type { Customer } from "@/hooks/useCustomers";
 import { ServiceDetailSheet } from "@/components/services/ServiceDetailSheet";
 import { CustomerAvatar } from "@/components/customers/CustomerAvatar";
@@ -25,177 +35,157 @@ interface CustomerServicesDialogProps {
   onDelete?: () => void;
 }
 
-const statusConfig = {
-  pending: { label: "Pendiente", color: "bg-warning text-warning-foreground" },
-  in_progress: { label: "En Curso", color: "bg-info text-info-foreground" },
-  completed: { label: "Finalizado", color: "bg-success text-success-foreground" },
-  delivered: { label: "Entregado", color: "bg-primary text-primary-foreground" },
-  cancelled: { label: "Cancelado", color: "bg-destructive text-destructive-foreground" },
+const STATUS: Record<string, { label: string; text: string; dot: string }> = {
+  pending:     { label: "Pendiente",  text: "text-warning",     dot: "bg-warning" },
+  in_progress: { label: "En curso",   text: "text-info",        dot: "bg-info" },
+  completed:   { label: "Finalizado", text: "text-success",     dot: "bg-success" },
+  delivered:   { label: "Entregado",  text: "text-primary",     dot: "bg-primary" },
+  cancelled:   { label: "Cancelado",  text: "text-destructive", dot: "bg-destructive/70" },
 };
 
-const getServiceDisplayStatus = (service: Service) => {
-  if (service.status === "pending" && service.scheduled_start_at) {
-    return { label: "Programado", color: "bg-accent text-accent-foreground" };
-  }
+const getServiceStatus = (service: Service) =>
+  service.status === "pending" && service.scheduled_start_at
+    ? { label: "Programado", text: "text-accent-foreground", dot: "bg-accent" }
+    : STATUS[service.status] ?? STATUS.pending;
 
-  return statusConfig[service.status as keyof typeof statusConfig];
-};
+const getServiceDate = (service: Service) =>
+  (service.status === "pending" && service.scheduled_start_at) || service.started_at || service.created_at;
 
-const getServiceDisplayDate = (service: Service) => {
-  if (service.status === "pending" && service.scheduled_start_at) {
-    return service.scheduled_start_at;
-  }
-
-  if (service.started_at) {
-    return service.started_at;
-  }
-
-  return service.created_at;
-};
-
-export function CustomerServicesDialog({
-  open,
-  onOpenChange,
-  customer,
-  onEdit,
-  onDelete,
-}: CustomerServicesDialogProps) {
+export function CustomerServicesDialog({ open, onOpenChange, customer, onEdit, onDelete }: CustomerServicesDialogProps) {
   const { data: allServices, isLoading } = useServices();
+  const { data: settings } = useBusinessSettings();
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const currencySymbol = settings?.currency_symbol || "$";
 
-  const customerServices = allServices?.filter(s => s.customer_id === customer?.id) || [];
-  const footerActions: DialogAction[] = [
-    ...(onEdit ? [{ icon: Edit, label: "Editar", onClick: onEdit }] : []),
-    ...(onDelete ? [{ icon: Trash2, label: "Eliminar", onClick: onDelete, tone: "destructive" as const }] : []),
-  ];
+  const customerServices = allServices?.filter((s) => s.customer_id === customer?.id) || [];
 
   const handleViewDetail = (service: Service) => {
     setSelectedService(service);
     onOpenChange(false);
-    window.setTimeout(() => {
-      setDetailDialogOpen(true);
-    }, 0);
+    window.setTimeout(() => setDetailDialogOpen(true), 0);
   };
 
   if (!customer) return null;
 
+  const noWork = !!customer.no_work_again;
+  const footerActions: DialogAction[] = onEdit ? [{ icon: Edit, label: "Editar", onClick: onEdit }] : [];
+  // Eliminar va al menú ⋯ (acción destructiva).
+  const menuActions: DialogAction[] = onDelete
+    ? [{ icon: Trash2, label: "Eliminar cliente", tone: "destructive", onClick: onDelete }]
+    : [];
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent fixedHeight className="max-w-[95vw] sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              <CustomerAvatar
-                name={customer.name}
-                customerType={customer.customer_type}
-                noWorkAgain={!!customer.no_work_again}
-                className="h-9 w-9 flex-shrink-0"
-              />
-              <span className="truncate">{customer.name}</span>
-            </DialogTitle>
-
-            {/* Badges */}
-            <div className="flex items-center gap-1.5 flex-wrap pt-1">
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                {customer.customer_type === "company" ? "Empresa" : "Persona"}
-              </Badge>
-              {customer.is_vip && (
-                <Badge className="text-[10px] px-1.5 py-0 bg-primary text-primary-foreground">Cerrajero Ext.</Badge>
-              )}
-              {customer.is_frequent && (
-                <Badge className="text-[10px] px-1.5 py-0 bg-success text-success-foreground">Frecuente</Badge>
-              )}
-              {customer.has_debt && (
-                <Badge className="text-[10px] px-1.5 py-0 bg-destructive text-destructive-foreground">Deuda</Badge>
-              )}
-              {customer.no_work_again && (
-                <Badge className="text-[10px] px-1.5 py-0 bg-destructive text-destructive-foreground">
-                  <AlertCircle className="w-2.5 h-2.5 mr-0.5" />
-                  No trabajar
-                </Badge>
-              )}
-            </div>
-
-            {/* Contacto */}
-            {(customer.phone || customer.email || customer.address) && (
-              <div className="space-y-1 text-sm text-muted-foreground">
-                {customer.phone && (
-                  <div className="flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span>{customer.phone}</span>
-                  </div>
-                )}
-                {customer.email && (
-                  <div className="flex items-center gap-1.5">
-                    <Mail className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span className="truncate">{customer.email}</span>
-                  </div>
-                )}
-                {customer.address && (
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span className="truncate">{customer.address}</span>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Título historial */}
-            <div className="border-t pt-3 flex items-center gap-2">
-              <Wrench className="w-4 h-4" />
-              <span className="font-semibold text-sm">
-                Historial de Servicios ({customerServices.length})
-              </span>
-            </div>
+        <DialogContent fixedHeight className="max-w-[95vw] sm:max-w-lg">
+          <DialogHeader className="text-left">
+            <DialogTitle className="line-clamp-2 text-2xl font-bold leading-tight">{customer.name}</DialogTitle>
+            <DialogDescription>{customer.customer_type === "company" ? "Empresa" : "Persona"}</DialogDescription>
           </DialogHeader>
 
-          {/* Services list */}
-          <div>
+          <div className="flex flex-col gap-3 pb-2">
+            {/* Protagonista: el cliente y lo que hay que saber antes de atenderlo */}
+            <section className={cn("rounded-[28px] p-5", noWork ? "bg-destructive-light" : "bg-primary-light")}>
+              <div className="flex items-center gap-4">
+                <CustomerAvatar
+                  name={customer.name}
+                  customerType={customer.customer_type}
+                  noWorkAgain={noWork}
+                  className={cn("h-20 w-20 text-2xl", noWork ? "text-background/70" : "")}
+                />
+                <div className="grid min-w-0 flex-1 grid-cols-2 gap-2">
+                  <SpecTile label="Servicios" value={isLoading ? "…" : String(customerServices.length)} />
+                  <SpecTile
+                    label="Compras"
+                    value={`${currencySymbol}${Number(customer.total_purchases || 0).toLocaleString()}`}
+                  />
+                </div>
+              </div>
 
-            {isLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-              </div>
-            ) : customerServices.length === 0 ? (
-              <div className="text-center py-8">
-                <Wrench className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
-                <p className="text-sm text-muted-foreground">Sin servicios registrados</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {customerServices.map((service) => {
-                  const status = getServiceDisplayStatus(service);
-                  return (
-                    <div
-                      key={service.id}
-                      className="p-3 rounded-xl border hover:border-primary/50 transition-colors cursor-pointer"
-                      onClick={() => handleViewDetail(service)}
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                            <span className="font-mono text-sm text-foreground dark:text-primary font-medium">{service.service_number}</span>
-                            <Badge className={cn("text-xs", status.color)}>{status.label}</Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {format(parseISO(getServiceDisplayDate(service)), "dd MMM yyyy", { locale: es })}
-                            </span>
-                          </div>
-                          <p className="text-sm truncate text-muted-foreground">{service.description}</p>
-                        </div>
-                        <Eye className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              {(noWork || customer.has_debt || customer.is_frequent || customer.is_vip) && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {noWork && (
+                    <TonalChip icon={<AlertCircle className="h-4 w-4" />} label="No volver a trabajar" tone="destructive" className="bg-background/70 text-destructive" />
+                  )}
+                  {!!customer.has_debt && (
+                    <TonalChip icon={<Wallet className="h-4 w-4" />} label="Con deuda" tone="warning" />
+                  )}
+                  {!!customer.is_frequent && (
+                    <TonalChip icon={<Star className="h-4 w-4" />} label="Frecuente" tone="neutral" className="bg-background/70" />
+                  )}
+                  {!!customer.is_vip && (
+                    <TonalChip label="Cerrajero externo" tone="neutral" className="bg-background/70" />
+                  )}
+                </div>
+              )}
+              {noWork && customer.no_work_reason && (
+                <p className="mt-3 text-[15px] leading-relaxed text-foreground">{customer.no_work_reason}</p>
+              )}
+            </section>
+
+            <DetailViewCustomer
+              data={{
+                customer_name: null,
+                customer_phone: customer.phone,
+                customer_email: customer.email,
+                customer_address: customer.address,
+              }}
+            />
+            {customer.phone_secondary && (
+              <DetailViewCustomer
+                data={{ customer_name: null, customer_phone: customer.phone_secondary, customer_email: null, customer_address: null }}
+              />
             )}
+
+            {customer.notes && (
+              <DetailSection title="Notas" className="bg-muted shadow-none">
+                <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">{customer.notes}</p>
+              </DetailSection>
+            )}
+
+            <DetailSection
+              title="Servicios"
+              className="bg-muted shadow-none"
+              action={!isLoading && <span className="text-sm tabular-nums text-muted-foreground">{customerServices.length}</span>}
+            >
+              {isLoading ? (
+                <div className="m3-list -mx-1">
+                  {[0, 1, 2].map((i) => <MobileListCardSkeleton key={i} />)}
+                </div>
+              ) : customerServices.length === 0 ? (
+                <p className="flex items-center gap-2 text-[15px] text-muted-foreground">
+                  <Wrench className="h-4 w-4 shrink-0" />
+                  Sin servicios registrados
+                </p>
+              ) : (
+                <div className="m3-list -mx-1">
+                  {customerServices.map((service) => {
+                    const status = getServiceStatus(service);
+                    const price = service.final_price ?? service.estimated_price ?? 0;
+                    return (
+                      <MobileListCard
+                        key={service.id}
+                        onClick={() => handleViewDetail(service)}
+                        code={service.service_number}
+                        statusLabel={status.label}
+                        statusTextClass={status.text}
+                        statusDotClass={status.dot}
+                        statusPulse={service.status === "in_progress"}
+                        title={service.description || service.service_number}
+                        subtitle={format(parseISO(getServiceDate(service)), "d MMM yyyy", { locale: es })}
+                        valueText={price > 0 ? `${currencySymbol}${Number(price).toLocaleString()}` : undefined}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+            </DetailSection>
           </div>
 
-          {/* Footer: Editar + Eliminar */}
-          {(onEdit || onDelete) && (
+          {(footerActions.length > 0 || menuActions.length > 0) && (
             <DialogFooter>
-              <DialogActionBar actions={footerActions} />
+              <DialogActionBar actions={footerActions} menuActions={menuActions} />
             </DialogFooter>
           )}
         </DialogContent>
@@ -205,11 +195,10 @@ export function CustomerServicesDialog({
         open={detailDialogOpen}
         onOpenChange={(nextOpen) => {
           setDetailDialogOpen(nextOpen);
-          if (!nextOpen) {
-            setSelectedService(null);
-          }
+          if (!nextOpen) setSelectedService(null);
         }}
         service={selectedService}
+        currencySymbol={currencySymbol}
       />
     </>
   );

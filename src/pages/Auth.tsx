@@ -1,10 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { m as motion } from "framer-motion";
-import { Key, Mail, Lock, Eye, EyeOff, Loader2, Building2 } from "lucide-react";
+import { Key, Mail, Lock, Loader2, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { AuthBrand, AuthField } from "@/design-system/auth";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { phpApiRequest } from "@/lib/phpApi";
@@ -30,7 +28,6 @@ export default function Auth() {
   const [workshopCode, setWorkshopCode] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -136,111 +133,60 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-sm"
-      >
-        {/* Logo + Title */}
-        <div className="mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-primary-foreground mb-5 shadow-[0_0_32px_hsl(var(--primary)/0.40)]">
-            <Key className="w-7 h-7" strokeWidth={2.5} />
-          </div>
-          <h1 className="text-[34px] font-extrabold text-foreground leading-[1.05] tracking-tight">
-            Cerrajería
-            <br />
-            <span className="text-primary">Express</span>
-          </h1>
-          <p className="text-sm text-muted-foreground mt-2">
-            Gestión inteligente de tu taller
-          </p>
-        </div>
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <div className="w-full max-w-sm">
+        <AuthBrand icon={Key} title="Cerrajería Express" />
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-3">
-          <div>
-            <div className="relative">
-              <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-muted-foreground/60" />
-              <input
-                type="text"
-                placeholder="Código del taller"
-                value={workshopCode}
-                onChange={(e) => setWorkshopCode(e.target.value.toUpperCase())}
-                disabled={isLoading}
-                autoComplete="off"
-                className="w-full h-[52px] pl-11 pr-4 rounded-2xl bg-card border-[1.5px] border-border text-foreground placeholder:text-muted-foreground/60 text-[15px] focus:border-primary focus:outline-none transition-colors uppercase"
-              />
-            </div>
-            {errors.workshopCode && (
-              <p className="text-xs text-destructive mt-1.5 ml-1">{errors.workshopCode}</p>
-            )}
-          </div>
-
-          <div>
-            <div className="relative">
-              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-muted-foreground/60" />
-              <input
-                type="email"
-                placeholder="Correo electrónico"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
-                autoComplete="email"
-                className="w-full h-[52px] pl-11 pr-4 rounded-2xl bg-card border-[1.5px] border-border text-foreground placeholder:text-muted-foreground/60 text-[15px] focus:border-primary focus:outline-none transition-colors"
-              />
-            </div>
-            {errors.email && (
-              <p className="text-xs text-destructive mt-1.5 ml-1">{errors.email}</p>
-            )}
-          </div>
-
-          <div>
-            <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-muted-foreground/60" />
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Contraseña"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
-                autoComplete="current-password"
-                className="w-full h-[52px] pl-11 pr-11 rounded-2xl bg-card border-[1.5px] border-border text-foreground placeholder:text-muted-foreground/60 text-[15px] focus:border-primary focus:outline-none transition-colors"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-            {errors.password && (
-              <p className="text-xs text-destructive mt-1.5 ml-1">{errors.password}</p>
-            )}
-          </div>
-
-          <button
-            type="submit"
+          <AuthField
+            icon={Building2}
+            label="Código del taller"
+            value={workshopCode}
+            onChange={(e) => setWorkshopCode(e.target.value.toUpperCase())}
             disabled={isLoading}
-            className="w-full h-[52px] mt-2 rounded-2xl bg-primary text-primary-foreground font-bold text-[15px] shadow-[0_0_20px_hsl(var(--primary)/0.30)] hover:bg-primary-hover active:scale-[0.98] transition-all disabled:opacity-70 flex items-center justify-center gap-2"
-          >
+            autoComplete="off"
+            autoCapitalize="characters"
+            spellCheck={false}
+            error={errors.workshopCode}
+          />
+          <AuthField
+            icon={Mail}
+            label="Correo electrónico"
+            type="email"
+            inputMode="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={isLoading}
+            autoComplete="email"
+            error={errors.email}
+          />
+          <AuthField
+            icon={Lock}
+            label="Contraseña"
+            password
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={isLoading}
+            autoComplete="current-password"
+            error={errors.password}
+          />
+
+          <Button type="submit" disabled={isLoading} className="mt-3 h-14 w-full text-base">
             {isLoading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Iniciando...
+                <Loader2 className="h-5 w-5 animate-spin" />
+                Iniciando…
               </>
             ) : (
               "Iniciar sesión"
             )}
-          </button>
+          </Button>
         </form>
 
-        <p className="text-center text-xs text-muted-foreground mt-5">
+        <p className="mt-6 text-center text-sm text-muted-foreground">
           Contacta al administrador para obtener acceso
         </p>
-      </motion.div>
+      </div>
     </div>
   );
 }

@@ -674,7 +674,7 @@ const DialogContent = React.forwardRef<
             "fixed inset-x-0 bottom-0 left-0 right-0 z-50 flex flex-col w-full max-w-none",
             fixedHeight ? "h-[85dvh]" : "max-h-[92dvh]",
             "bg-popover text-popover-foreground",
-            "rounded-t-[16px] outline-none shadow-2xl",
+            "rounded-t-[28px] outline-none shadow-2xl",
             // Native-feel slide animation
             "data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom data-[state=open]:duration-500 data-[state=open]:ease-sheet",
             !isGestureClosing && "data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=closed]:duration-320 data-[state=closed]:ease-in",

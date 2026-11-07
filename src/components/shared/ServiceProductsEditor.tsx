@@ -3,7 +3,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { UnitNumberInput } from "@/components/ui/unit-number-input";
 import { ProductSelect } from "./ProductSelect";
 import { cn } from "@/lib/utils";
@@ -147,20 +147,15 @@ export function ServiceProductsEditor({
       {showNoProductsCheckbox && (
         <label
           className={cn(
-            "w-full rounded-lg border bg-background px-3.5 py-3 transition-colors",
-            "flex items-center gap-3 hover:bg-muted/50 cursor-pointer",
-            noProductsConsumed
-              ? "border-primary text-foreground"
-              : showInvalid &&
-                  items.length === 0 &&
-                  "border-destructive text-destructive",
+            "flex min-h-14 w-full cursor-pointer items-center justify-between gap-4 rounded-[20px] bg-muted px-4 py-3",
+            !noProductsConsumed && showInvalid && items.length === 0 && "bg-destructive-light text-destructive",
           )}
         >
-          <Checkbox
+          <span className="text-[15px] font-medium">Este servicio no consume productos</span>
+          <Switch
             checked={noProductsConsumed}
             onCheckedChange={(checked) => handleNoProductsChange(checked === true)}
           />
-          <span className="text-sm font-medium">Este servicio no consume productos</span>
         </label>
       )}
 
@@ -171,9 +166,7 @@ export function ServiceProductsEditor({
           noProductsConsumed && "opacity-50 pointer-events-none",
         )}
       >
-        <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {showDescriptionField ? "Seleccionar Producto o Servicio" : "Seleccionar Producto"}
-        </Label>
+        <Label>{showDescriptionField ? "Producto o servicio" : "Producto"}</Label>
         <div className="flex gap-2">
           <div className="flex-1">
             <ProductSelect
@@ -189,11 +182,11 @@ export function ServiceProductsEditor({
           </div>
           <Button
             type="button"
-            variant="outline"
             size="icon"
-            className="h-10 w-10 shrink-0"
+            className="h-12 w-12 shrink-0"
             onClick={handleAdd}
             disabled={addButtonDisabled}
+            aria-label="Agregar a la lista"
           >
             <Plus className="w-4 h-4" />
           </Button>
@@ -221,8 +214,8 @@ export function ServiceProductsEditor({
             <div
               key={item.tempId}
               className={cn(
-                "p-3 bg-muted/50 rounded-lg border",
-                editable && "space-y-2",
+                "rounded-[20px] bg-muted p-4",
+                editable && "space-y-3",
               )}
             >
               {/* Nombre o descripción */}
@@ -246,7 +239,7 @@ export function ServiceProductsEditor({
                   )}
                 />
               ) : (
-                <p className="text-sm font-medium truncate">
+                <p className="truncate text-[15px] font-medium">
                   {item.product_name || "—"}
                 </p>
               )}
@@ -300,7 +293,7 @@ export function ServiceProductsEditor({
                   <div className="flex items-end gap-1">
                     <div className="flex-1">
                       <Label className="text-xs text-muted-foreground">Subtotal</Label>
-                      <div className="h-9 px-2 py-1 bg-background rounded text-sm font-medium flex items-center">
+                      <div className="flex h-9 items-center px-1 text-[15px] font-semibold tabular-nums">
                         {currencySymbol}
                         {item.subtotal.toLocaleString()}
                       </div>
@@ -312,6 +305,7 @@ export function ServiceProductsEditor({
                       className="h-9 w-9"
                       onClick={() => handleRemove(item.tempId)}
                       disabled={!canDelete}
+                      aria-label="Quitar de la lista"
                     >
                       <Trash2 className="w-4 h-4 text-destructive" />
                     </Button>

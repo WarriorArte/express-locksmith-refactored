@@ -1,9 +1,11 @@
 import { useState, useMemo } from "react";
-import { m as motion, AnimatePresence } from "framer-motion";
+import { m as motion } from "framer-motion";
 import { Wrench, Key, FileText, Cpu, Car, Truck, Bike } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { AccountMenu } from "@/components/layout/AccountMenu";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { ChipRow, FilterChip } from "@/design-system/detail/DetailScreen";
+import { NativeSelectField } from "@/design-system/pickers";
 
 import { useWorkshop } from "@/hooks/useWorkshop";
 import { useKeycodeProfiles } from "@/hooks/useKeycodeProfiles";
@@ -41,9 +43,11 @@ export type SuperAdminHerramientasView = "keycode" | "immo" | "alarmas" | "vehic
 
 interface HerramientasModuleProps {
   superAdminView?: SuperAdminHerramientasView;
+  /** Contenido bajo el selector mientras no hay vehículo elegido (inicio de la app). */
+  homeContent?: React.ReactNode;
 }
 
-export function HerramientasModule({ superAdminView }: HerramientasModuleProps) {
+export function HerramientasModule({ superAdminView, homeContent }: HerramientasModuleProps) {
   const { isSuperAdmin } = useWorkshop();
   const { profiles, addProfile, updateProfile, deleteProfile, fetchProfileWithCodes, searchCodes, uploadCodesInChunks } = useKeycodeProfiles();
   const { assignments, addAssignment, updateAssignment, deleteAssignment } = useToolAssignments();
@@ -114,7 +118,6 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
   }, [allValidA, selectedYear, selectedMake]);
 
   const vehicleSelected = !!(selectedYear && selectedMake && selectedModel);
-  const searchCollapsed = vehicleSelected;
   const hasAnyTool = isKeycodeAuth || isAlarmasAuth || isImmoAuth;
 
   if (isSuperAdmin) {
@@ -315,222 +318,92 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
     );
   }
 
-  // Vista de taller
+  // Vista de taller — selector estilo Android (criterio M3E, docs/CRITERIO-DISENO-M3E.md):
+  // campos grandes con el selector NATIVO del sistema (preferencia del usuario).
+  const clearVehicle = () => {
+    setSelectedYear("");
+    setSelectedMake("");
+    setSelectedModel("");
+  };
+
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {!toolActive && (
         <div className="shrink-0 bg-background px-5 lg:px-6 pt-10 lg:pt-3 pb-4">
           <section className="ce-hero ce-hero-mobile-bleed p-[22px_16px] lg:p-[22px]">
-            {/* Fila título + avatar */}
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
-                <div className="ce-hero-eyebrow">Herramientas</div>
-                <h1 className="ce-hero-title mt-1.5 text-[clamp(1.55rem,5.4vw,2.15rem)] lg:mt-2 lg:text-[clamp(1.75rem,3vw,2.5rem)]">
-                  Selección de vehículo
+                <h1 className="ce-hero-title text-[clamp(1.55rem,5.4vw,2.15rem)] lg:text-[clamp(1.75rem,3vw,2.5rem)]">
+                  {vehicleSelected ? `${selectedMake} ${selectedModel}` : "Vehículos"}
                 </h1>
+                {vehicleSelected && <p className="ce-hero-meta mt-2 text-base">{selectedYear}</p>}
               </div>
               <AccountMenu />
             </div>
 
-            {/* ── Selector en mobile ── */}
-            <div className="lg:hidden mt-4">
-              <AnimatePresence mode="wait">
-                {searchCollapsed && vehicleSelected ? (
-                  /* Estado colapsado: resumen del vehículo */
-                  <motion.div
-                    key="collapsed"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.18 }}
-                    className="flex items-center justify-between"
-                  >
-                    <p className="ce-hero-meta font-semibold">
-                      {selectedYear} · {selectedMake} {selectedModel}
-                    </p>
-                    <button
-                      onClick={() => setSelectedModel("")}
-                      className="ml-3 shrink-0 text-xs font-semibold text-primary hover:underline"
+            {vehicleSelected ? (
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button variant="secondary" size="sm" onClick={() => setSelectedModel("")}>
+                  Cambiar modelo
+                </Button>
+                <Button variant="ghost" size="sm" onClick={clearVehicle}>
+                  Otro vehículo
+                </Button>
+              </div>
+            ) : !hasAnyTool ? (
+              <p className="mt-3 text-[15px] text-muted-foreground">No tienes herramientas asignadas en este taller.</p>
+            ) : availableYears.length === 0 && !selectedCategory ? (
+              <p className="mt-3 text-[15px] text-muted-foreground">
+                Aún no hay vehículos configurados para tus herramientas.
+              </p>
+            ) : (
+              <div className="mt-4 space-y-3">
+                <ChipRow label="Tipo de vehículo">
+                  {VEHICLE_CATEGORIES.map((cat) => (
+                    <FilterChip
+                      key={cat}
+                      selected={selectedCategory === cat}
+                      onClick={() => {
+                        setSelectedCategory(selectedCategory === cat ? "" : cat);
+                        clearVehicle();
+                      }}
                     >
-                      Cambiar
-                    </button>
-                  </motion.div>
-                ) : (
-                  /* Estado expandido: chips + selects */
-                  <motion.div
-                    key="expanded"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.25, ease: "easeInOut" }}
-                    className="overflow-hidden"
-                  >
-                    {/* Chips de categoría */}
-                    <div className="flex gap-2 mb-4">
-                      {VEHICLE_CATEGORIES.map((cat) => (
-                        <button
-                          key={cat}
-                          onClick={() => {
-                            setSelectedCategory(selectedCategory === cat ? "" : cat);
-                            setSelectedYear("");
-                            setSelectedMake("");
-                            setSelectedModel("");
-                          }}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                            selectedCategory === cat
-                              ? "bg-primary text-primary-foreground border-primary"
-                              : "border-foreground/25 text-muted-foreground hover:border-foreground/50 hover:text-foreground"
-                          }`}
-                        >
-                          {HERO_CHIP_ICONS[cat]} {HERO_CHIP_LABELS[cat]}
-                        </button>
-                      ))}
-                    </div>
-                    {/* Selects */}
-                    <div className="flex flex-col gap-3 pb-2">
-                      <Select
-                        value={selectedYear ? String(selectedYear) : ""}
-                        onValueChange={(v) => { setSelectedYear(Number(v)); setSelectedMake(""); setSelectedModel(""); }}
-                      >
-                        <SelectTrigger className="h-11 rounded-xl bg-card border-[1.5px] border-foreground/25 text-foreground hover:border-foreground/45 focus:ring-0 focus:border-primary [&>svg]:opacity-60 text-sm">
-                          <SelectValue placeholder="Año" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableYears.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                      <Select
-                        value={selectedMake}
-                        onValueChange={(v) => { setSelectedMake(v); setSelectedModel(""); }}
-                        disabled={!selectedYear}
-                      >
-                        <SelectTrigger className="h-11 rounded-xl bg-card border-[1.5px] border-foreground/25 text-foreground hover:border-foreground/45 focus:ring-0 focus:border-primary [&>svg]:opacity-60 text-sm">
-                          <SelectValue placeholder="Marca" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableMakes.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                      <Select
-                        value={selectedModel}
-                        onValueChange={(v) => setSelectedModel(v)}
-                        disabled={!selectedMake}
-                      >
-                        <SelectTrigger className="h-11 rounded-xl bg-card border-[1.5px] border-foreground/25 text-foreground hover:border-foreground/45 focus:ring-0 focus:border-primary [&>svg]:opacity-60 text-sm">
-                          <SelectValue placeholder="Modelo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableModels.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* ── Selector en desktop — grid 3 columnas ── */}
-            <div className="hidden lg:block mt-5">
-              <AnimatePresence mode="wait">
-                {searchCollapsed ? (
-                  <motion.div
-                    key="collapsed-lg"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.18 }}
-                    className="flex items-center justify-between"
-                  >
-                    <p className="ce-hero-meta font-semibold text-base">
-                      {selectedYear} · {selectedMake} {selectedModel}
-                    </p>
-                    <button
-                      onClick={() => setSelectedModel("")}
-                      className="ml-3 shrink-0 text-sm font-semibold text-primary hover:underline"
-                    >
-                      Cambiar
-                    </button>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="expanded-lg"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.25, ease: "easeInOut" }}
-                    className="overflow-hidden"
-                  >
-                    {!hasAnyTool ? (
-                      <p className="text-sm text-muted-foreground py-2">No tienes herramientas asignadas para este taller.</p>
-                    ) : availableYears.length === 0 ? (
-                      <p className="text-sm text-muted-foreground py-2">Aún no hay vehículos configurados para las herramientas de este taller.</p>
-                    ) : (
-                      <>
-                        {/* Chips */}
-                        <div className="flex gap-2 mb-4">
-                          {VEHICLE_CATEGORIES.map((cat) => (
-                            <button
-                              key={cat}
-                              onClick={() => {
-                                setSelectedCategory(selectedCategory === cat ? "" : cat);
-                                setSelectedYear("");
-                                setSelectedMake("");
-                                setSelectedModel("");
-                              }}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                                selectedCategory === cat
-                                  ? "bg-primary text-primary-foreground border-primary"
-                                  : "border-foreground/25 text-muted-foreground hover:border-foreground/50 hover:text-foreground"
-                              }`}
-                            >
-                              {HERO_CHIP_ICONS[cat]} {HERO_CHIP_LABELS[cat]}
-                            </button>
-                          ))}
-                        </div>
-                        {/* Selects */}
-                        <div className="grid grid-cols-3 gap-4 pb-1">
-                          <Select
-                            value={selectedYear ? String(selectedYear) : ""}
-                            onValueChange={(v) => { setSelectedYear(Number(v)); setSelectedMake(""); setSelectedModel(""); }}
-                          >
-                            <SelectTrigger className="h-11 rounded-xl bg-card border-[1.5px] border-foreground/25 text-foreground hover:border-foreground/45 focus:ring-0 focus:border-primary [&>svg]:opacity-60 text-sm">
-                              <SelectValue placeholder="Año" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {availableYears.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                          <Select
-                            value={selectedMake}
-                            onValueChange={(v) => { setSelectedMake(v); setSelectedModel(""); }}
-                            disabled={!selectedYear}
-                          >
-                            <SelectTrigger className="h-11 rounded-xl bg-card border-[1.5px] border-foreground/25 text-foreground hover:border-foreground/45 focus:ring-0 focus:border-primary [&>svg]:opacity-60 text-sm">
-                              <SelectValue placeholder="Marca" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {availableMakes.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                          <Select
-                            value={selectedModel}
-                            onValueChange={(v) => setSelectedModel(v)}
-                            disabled={!selectedMake}
-                          >
-                            <SelectTrigger className="h-11 rounded-xl bg-card border-[1.5px] border-foreground/25 text-foreground hover:border-foreground/45 focus:ring-0 focus:border-primary [&>svg]:opacity-60 text-sm">
-                              <SelectValue placeholder="Modelo" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {availableModels.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                      {HERO_CHIP_ICONS[cat]}
+                      {HERO_CHIP_LABELS[cat]}
+                    </FilterChip>
+                  ))}
+                </ChipRow>
+                <div className="grid gap-2 lg:grid-cols-3">
+                  <NativeSelectField
+                    surface="onHero"
+                    label="Año"
+                    value={selectedYear ? String(selectedYear) : null}
+                    placeholder={availableYears.length ? "Elige el año" : "Sin vehículos de este tipo"}
+                    options={availableYears.map((y) => ({ value: String(y) }))}
+                    onChange={(v) => { setSelectedYear(Number(v)); setSelectedMake(""); setSelectedModel(""); }}
+                    disabled={availableYears.length === 0}
+                  />
+                  <NativeSelectField
+                    surface="onHero"
+                    label="Marca"
+                    value={selectedMake || null}
+                    placeholder="Elige la marca"
+                    options={availableMakes.map((m) => ({ value: m }))}
+                    onChange={(v) => { setSelectedMake(v); setSelectedModel(""); }}
+                    disabled={!selectedYear}
+                  />
+                  <NativeSelectField
+                    surface="onHero"
+                    label="Modelo"
+                    value={selectedModel || null}
+                    placeholder="Elige el modelo"
+                    options={availableModels.map((m) => ({ value: m }))}
+                    onChange={setSelectedModel}
+                    disabled={!selectedMake}
+                  />
+                </div>
+              </div>
+            )}
           </section>
         </div>
       )}
@@ -539,6 +412,7 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
           ? "flex-1 min-h-0 overflow-hidden"
           : "flex-1 min-h-0 overflow-auto overscroll-y-contain px-5 lg:px-6 pb-mobile-nav no-scrollbar"
       }>
+        {!vehicleSelected && homeContent ? homeContent : (
         <WorkshopToolView
           assignments={assignments}
           keycodeProfiles={profiles}
@@ -552,7 +426,9 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
           selectedMake={selectedMake}
           selectedModel={selectedModel}
         />
+        )}
       </div>
+
     </div>
   );
 }

@@ -230,7 +230,7 @@ function AlarmaDataValueCard({ dv, index, onChange, onDelete }: DataValueCardPro
       <CardContent className="p-0">
         {/* Header row */}
         <div className="flex items-center gap-2 px-3 py-2.5">
-          <span className="text-xs font-mono text-muted-foreground w-5 text-center shrink-0">
+          <span className="text-xs tabular-nums text-muted-foreground w-5 text-center shrink-0">
             {index + 1}
           </span>
           <Input
@@ -244,7 +244,7 @@ function AlarmaDataValueCard({ dv, index, onChange, onDelete }: DataValueCardPro
             {dv.imageUrl && (
               <span className="w-2 h-2 rounded-full bg-emerald-500" title="Tiene imagen" />
             )}
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+            <Badge variant="secondary" className="text-[11px] px-1.5 py-0 h-4">
               {dv.details.length}
             </Badge>
             <button
@@ -275,7 +275,7 @@ function AlarmaDataValueCard({ dv, index, onChange, onDelete }: DataValueCardPro
               <div className="border-t border-border px-3 pb-3 pt-2 space-y-3">
                 {/* Details table */}
                 <div className="space-y-1.5">
-                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                  <p className="text-[11px] font-semibold text-muted-foreground">
                     Campos
                   </p>
                   {dv.details.map((det) => (
@@ -312,7 +312,7 @@ function AlarmaDataValueCard({ dv, index, onChange, onDelete }: DataValueCardPro
 
                 {/* Image section */}
                 <div className="space-y-2">
-                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                  <p className="text-[11px] font-semibold text-muted-foreground">
                     Imagen de referencia
                   </p>
 
@@ -340,7 +340,7 @@ function AlarmaDataValueCard({ dv, index, onChange, onDelete }: DataValueCardPro
                         const yearLabel = `${yi.years[0]}–${yi.years[yi.years.length - 1]}`;
                         return (
                           <div key={i} className="space-y-1">
-                            <p className="text-[10px] font-medium text-muted-foreground flex items-center gap-1">
+                            <p className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
                               <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500" />
                               {yearLabel}
                             </p>
@@ -394,7 +394,7 @@ function AlarmaDataValueCard({ dv, index, onChange, onDelete }: DataValueCardPro
                 {dv.notes && dv.notes.length > 0 && (
                   <div className="space-y-1.5">
                     <Separator />
-                    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                    <p className="text-[11px] font-semibold text-muted-foreground">
                       Notas
                     </p>
                     {dv.notes.map((note) =>
@@ -544,7 +544,7 @@ function AlarmaProfileEditor({ initial, defaultValues, onSave, onDelete, onCance
       <div className="flex-1 overflow-auto custom-scrollbar min-h-0 pt-4 space-y-5">
         {/* Header info */}
         <div className="space-y-3">
-          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+          <p className="text-[11px] font-semibold text-muted-foreground">
             Información del Perfil
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -604,7 +604,7 @@ function AlarmaProfileEditor({ initial, defaultValues, onSave, onDelete, onCance
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+              <p className="text-[11px] font-semibold text-muted-foreground">
                 Puntos de Datos
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -934,7 +934,7 @@ function AlarmaAsignacionTab({
                         />
                         <div className="min-w-0">
                           <p className="font-medium text-xs truncate">{p.nombre}</p>
-                          <p className="text-[10px] text-muted-foreground truncate">
+                          <p className="text-[11px] text-muted-foreground truncate">
                             {[p.marca, p.modelo, p.yearRange].filter(Boolean).join(" · ")}
                           </p>
                         </div>
@@ -1000,7 +1000,7 @@ function AlarmaAsignacionTab({
                     </p>
                     <div className="flex flex-wrap gap-1 mt-1.5">
                       {names.map((n, i) => (
-                        <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0">
+                        <Badge key={i} variant="secondary" className="text-[11px] px-1.5 py-0">
                           {n}
                         </Badge>
                       ))}
@@ -1225,13 +1225,13 @@ export function AlarmasManager({
                         <p className={`text-xs font-semibold truncate ${active ? "text-primary-foreground" : ""}`}>
                           {p.nombre}
                         </p>
-                        <p className={`text-[10px] truncate mt-0.5 ${active ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                        <p className={`text-[11px] truncate mt-0.5 ${active ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
                           {[p.marca, p.modelo, p.yearRange].filter(Boolean).join(" · ") || "Sin detalles"}
                         </p>
                       </div>
                       <Badge
                         variant={active ? "outline" : "secondary"}
-                        className={`text-[10px] px-1.5 py-0 shrink-0 ${active ? "border-primary-foreground/40 text-primary-foreground/80" : ""}`}
+                        className={`text-[11px] px-1.5 py-0 shrink-0 ${active ? "border-primary-foreground/40 text-primary-foreground/80" : ""}`}
                       >
                         {p.dataValues.length}
                       </Badge>

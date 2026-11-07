@@ -1,66 +1,72 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import {
-  Bell,
+  Car,
   ChevronRight,
   FileText,
-  Key,
   LogOut,
   Settings,
   Shield,
   ShoppingCart,
-  User,
   Users,
-  Wrench,
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkshop } from "@/hooks/useWorkshop";
+import { useWorkshopFeatures } from "@/hooks/useWorkshopFeatures";
+import { useVehicleHome } from "@/hooks/useVehicleHome";
 import { cn } from "@/lib/utils";
+import { spawnRipple } from "@/lib/ripple";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/responsive-dialog";
 
 interface AccountMenuProps {
+  /** @deprecated Ya no se muestran notificaciones (no existía la función real). */
   showNotifications?: boolean;
   triggerClassName?: string;
 }
 
-const operationItems = [
-  { label: "Cotizaciones", description: "Propuestas y conversión a venta", icon: FileText, to: "/cotizaciones" },
-  { label: "Ventas", description: "Caja del día y facturas", icon: ShoppingCart, to: "/ventas" },
-  { label: "Garantías", description: "Cobertura y reclamos", icon: Shield, to: "/garantias" },
-];
-
-const catalogItems = [
-  { label: "Clientes", description: "Historial por cliente", icon: Users, to: "/clientes" },
-  { label: "Herramientas", description: "Inventario del taller", icon: Wrench, to: "/herramientas" },
-];
-
 type AccountNavItem = {
   label: string;
-  description: string;
   icon: LucideIcon;
   to: string;
+  featureKey: string | null;
 };
 
-export function AccountMenu({
-  showNotifications = true,
-  triggerClassName,
-}: AccountMenuProps) {
+// Una palabra por destino: el ícono hace el resto (sección 3.11 de la auditoría).
+const navItems: AccountNavItem[] = [
+  { label: "Cotizaciones", icon: FileText, to: "/cotizaciones", featureKey: "quotes" },
+  { label: "Ventas", icon: ShoppingCart, to: "/ventas", featureKey: "sales" },
+  { label: "Garantías", icon: Shield, to: "/garantias", featureKey: "warranties" },
+  { label: "Clientes", icon: Users, to: "/clientes", featureKey: "customers" },
+  { label: "Vehículos", icon: Car, to: "/herramientas", featureKey: null },
+  { label: "Ajustes", icon: Settings, to: "/configuracion", featureKey: null },
+];
+
+export function AccountMenu({ triggerClassName }: AccountMenuProps) {
   const [open, setOpen] = useState(false);
-  const { user, profile, isAdmin, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const { currentWorkshop } = useWorkshop();
+  const { isFeatureEnabled } = useWorkshopFeatures();
   const navigate = useNavigate();
+
   const initial =
     profile?.full_name?.charAt(0)?.toUpperCase() ||
     user?.email?.charAt(0)?.toUpperCase() ||
     "U";
-  const workshopName = currentWorkshop?.name || "Cerrajería Express";
-  const workshopCode = currentWorkshop?.code || "ELE-2024";
+  const displayName = profile?.full_name || user?.email || "Usuario";
+  const vehicleHome = useVehicleHome();
+  const items = navItems.filter(
+    (item) =>
+      (item.featureKey === null || isFeatureEnabled(item.featureKey)) &&
+      // Si Vehículos es el inicio, no hace falta repetirlo aquí.
+      !(vehicleHome && item.to === "/herramientas"),
+  );
 
   const goTo = (path: string) => {
     setOpen(false);
@@ -77,178 +83,73 @@ export function AccountMenu({
     <Dialog open={open} onOpenChange={setOpen}>
       <button
         type="button"
-        aria-label="Cuenta"
+        aria-label="Cuenta y menú"
         onClick={() => setOpen(true)}
         className={cn(
-          "ce-hero-avatar relative flex items-center justify-center text-sm font-extrabold active:scale-95 transition-transform",
+          "ce-hero-avatar relative flex items-center justify-center overflow-hidden text-sm font-bold",
           triggerClassName,
         )}
+        onPointerDown={spawnRipple}
       >
         {initial}
       </button>
 
       <DialogContent className="sm:max-w-md">
         <DialogHeader className="sr-only">
-          <DialogTitle>Cuenta y navegación</DialogTitle>
+          <DialogTitle>Cuenta y menú</DialogTitle>
+          <DialogDescription>Secciones de la app y opciones de la cuenta</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-5 pb-1">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-[14px] bg-primary text-primary-foreground shadow-[0_0_18px_hsl(var(--primary)/0.25)]">
-              <Key className="h-5 w-5" strokeWidth={2.4} />
-            </div>
-            <div className="min-w-0">
-              <div className="text-base font-extrabold leading-tight tracking-tight text-foreground">
-                {workshopName}
-              </div>
-              <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                <span>Más opciones</span>
-                <span>·</span>
-                <span>navegación</span>
-                <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-extrabold text-foreground">
-                  {workshopCode}
+        <div className="space-y-6 pb-1">
+          {/* Persona + taller: toca para ir al perfil */}
+          <button
+            type="button"
+            onClick={() => goTo("/configuracion")}
+            onPointerDown={spawnRipple}
+            className="relative flex w-full items-center gap-3 overflow-hidden rounded-2xl bg-muted p-3 text-left"
+          >
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-lg font-bold text-primary-foreground">
+              {initial}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-base font-semibold text-foreground">{displayName}</span>
+              {currentWorkshop?.name && (
+                <span className="block truncate text-sm text-muted-foreground">{currentWorkshop.name}</span>
+              )}
+            </span>
+            <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+          </button>
+
+          <nav aria-label="Secciones" className="grid grid-cols-3 gap-x-3 gap-y-5">
+            {items.map((item) => (
+              <button
+                key={item.to}
+                type="button"
+                onClick={() => goTo(item.to)}
+                className="flex flex-col items-center gap-2 text-center"
+              >
+                <span
+                  onPointerDown={spawnRipple}
+                  className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-[22px] bg-accent text-accent-foreground"
+                >
+                  <item.icon className="h-6 w-6" />
                 </span>
-              </div>
-            </div>
-          </div>
+                <span className="text-sm font-medium text-foreground">{item.label}</span>
+              </button>
+            ))}
+          </nav>
 
-          <div className="grid grid-cols-2 gap-2.5">
-            <AccountTile
-              icon={User}
-              label="Mi perfil"
-              description={profile?.full_name?.split(" ")[0] || "Usuario"}
-              onClick={() => goTo("/configuracion")}
-            />
-            {showNotifications && (
-              <AccountTile
-                icon={Bell}
-                label="Notificaciones"
-                description="4 sin leer"
-                badge="4"
-                onClick={() => goTo("/configuracion")}
-              />
-            )}
-          </div>
-
-          <AccountSection label="Operación" items={operationItems} onNavigate={goTo} />
-          <AccountSection label="Catálogo" items={catalogItems} onNavigate={goTo} />
-
-          <div>
-            <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
-              Cuenta
-            </div>
-            <AccountRow
-              icon={Settings}
-              label="Configuración"
-              description={isAdmin ? "Negocio, usuarios, plantillas" : "Perfil y preferencias"}
-              onClick={() => goTo("/configuracion")}
-            />
-          </div>
-
-          <div className="border-t border-border pt-4">
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="flex w-full items-center gap-3 rounded-sm px-3 py-3 text-left text-destructive active:bg-destructive/10"
-            >
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-destructive/10">
-                <LogOut className="h-5 w-5" />
-              </div>
-              <div className="min-w-0">
-                <div className="text-sm font-extrabold">Cerrar sesión</div>
-                <div className="text-xs font-medium text-muted-foreground">Volver a la pantalla de acceso</div>
-              </div>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            onPointerDown={spawnRipple}
+            className="relative flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-full text-sm font-semibold text-destructive"
+          >
+            <LogOut className="h-4 w-4" />
+            Cerrar sesión
+          </button>
         </div>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function AccountTile({
-  icon: Icon,
-  label,
-  description,
-  badge,
-  onClick,
-}: {
-  icon: LucideIcon;
-  label: string;
-  description: string;
-  badge?: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="relative flex items-center gap-3 rounded-[14px] bg-muted px-3 py-3 text-left active:scale-[0.98] transition-transform"
-    >
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-primary/10 text-primary">
-        <Icon className="h-5 w-5" />
-      </div>
-      <div className="min-w-0">
-        <div className="truncate text-sm font-extrabold leading-tight text-foreground">{label}</div>
-        <div className="truncate text-xs font-medium text-muted-foreground">{description}</div>
-      </div>
-      {badge && (
-        <span className="absolute right-3 top-3 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-extrabold text-destructive-foreground">
-          {badge}
-        </span>
-      )}
-    </button>
-  );
-}
-
-function AccountSection({
-  label,
-  items,
-  onNavigate,
-}: {
-  label: string;
-  items: AccountNavItem[];
-  onNavigate: (path: string) => void;
-}) {
-  return (
-    <div>
-      <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
-        {label}
-      </div>
-      <div className="space-y-1.5">
-        {items.map((item) => (
-          <AccountRow key={item.to} {...item} onClick={() => onNavigate(item.to)} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function AccountRow({
-  icon: Icon,
-  label,
-  description,
-  onClick,
-}: {
-  icon: LucideIcon;
-  label: string;
-  description: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-sm px-3 py-2.5 text-left active:bg-muted/70"
-    >
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-muted text-muted-foreground">
-        <Icon className="h-5 w-5" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-extrabold leading-tight text-foreground">{label}</div>
-        <div className="truncate text-xs font-medium text-muted-foreground">{description}</div>
-      </div>
-      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-    </button>
   );
 }

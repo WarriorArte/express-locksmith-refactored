@@ -9,16 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { IconTabs } from "@/components/ui/icon-tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Switch } from "@/components/ui/switch";
 import { Loader2, UserPlus, Shield, User, Package, FileText, ShoppingCart } from "lucide-react";
 import { CustomerSelect } from "@/components/shared/CustomerSelect";
 import { ServiceProductsEditor, type ProductEditorItem } from "@/components/shared/ServiceProductsEditor";
@@ -342,21 +336,16 @@ export function SaleFormDialog({ open, onOpenChange, initialProduct }: SaleFormD
               </div>
               <div className="space-y-2">
                 <Label>Método de Pago</Label>
-                <Select
+                <NativeSelect
                   value={form.payment_method}
-                  onValueChange={(value: PaymentMethod) => setForm(prev => ({ ...prev, payment_method: value }))}
+                  onChange={(e) => setForm(prev => ({ ...prev, payment_method: e.target.value as PaymentMethod }))}
                 >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {paymentMethods.map(method => (
-                      <SelectItem key={method} value={method}>
-                        {paymentMethodLabels[method]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  {paymentMethods.map(method => (
+                    <option key={method} value={method}>
+                      {paymentMethodLabels[method]}
+                    </option>
+                  ))}
+                </NativeSelect>
               </div>
             </div>
 
@@ -400,7 +389,7 @@ export function SaleFormDialog({ open, onOpenChange, initialProduct }: SaleFormD
           {/* Tab: Resumen */}
           <TabsContent value="resumen" className="space-y-4 mt-4">
             {/* Totals */}
-            <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
+            <div className="space-y-3 rounded-[28px] bg-muted p-5">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Subtotal:</span>
                 <span className="font-medium">{currencySymbol}{subtotal.toLocaleString()}</span>
@@ -417,33 +406,26 @@ export function SaleFormDialog({ open, onOpenChange, initialProduct }: SaleFormD
                   className={cn("w-32 text-right", showResumenInvalid && (form.discount < 0 || form.discount > subtotal) && invalidFieldClass)}
                 />
               </div>
-              <div className="flex justify-between text-lg font-bold pt-2 border-t">
-                <span>Total:</span>
-                <span className="text-foreground dark:text-success">{currencySymbol}{total.toLocaleString()}</span>
+              <div className="flex items-baseline justify-between pt-2 text-xl font-bold">
+                <span>Total</span>
+                <span className="tabular-nums text-foreground">{currencySymbol}{total.toLocaleString()}</span>
               </div>
             </div>
 
             {/* Warranty Option */}
-            <div className="flex items-center space-x-3 p-4 bg-primary/5 rounded-lg border border-primary/20">
-              <Checkbox
+            <div className="flex items-center justify-between gap-4 rounded-[28px] bg-muted p-5">
+              <Label htmlFor="has_warranty" className="mb-0 cursor-pointer">
+                <span className="flex items-center gap-2 text-[15px]">
+                  <Shield className="h-[18px] w-[18px] text-primary" />
+                  Aplicar garantía
+                </span>
+                <span className="mt-1 block text-sm font-normal text-muted-foreground">Se genera un ticket con código QR</span>
+              </Label>
+              <Switch
                 id="has_warranty"
                 checked={form.has_warranty}
-                onCheckedChange={(checked) =>
-                  setForm((prev) => ({ ...prev, has_warranty: checked === true }))
-                }
+                onCheckedChange={(checked) => setForm((prev) => ({ ...prev, has_warranty: checked === true }))}
               />
-              <div className="flex-1">
-                <Label
-                  htmlFor="has_warranty"
-                  className="text-sm font-medium flex items-center gap-2 cursor-pointer"
-                >
-                  <Shield className="w-4 h-4 text-primary" />
-                  Aplicar Garantía
-                </Label>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Se generará un ticket de garantía con código QR
-                </p>
-              </div>
             </div>
 
             {/* Notes */}

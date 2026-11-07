@@ -40,7 +40,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 Ocurrió un error inesperado. Recarga la página para continuar.
               </p>
               {this.state.error && (
-                <p className="text-xs text-muted-foreground/60 font-mono break-all bg-muted rounded-xl p-3 mt-3">
+                <p className="text-xs text-muted-foreground/60 tabular-nums break-all bg-muted rounded-xl p-3 mt-3">
                   {this.state.error.message}
                 </p>
               )}
@@ -48,7 +48,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <button
               type="button"
               onClick={() => window.location.reload()}
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-primary text-primary-foreground text-sm font-bold shadow-[0_0_20px_hsl(var(--primary)/0.30)]"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-primary text-primary-foreground text-sm font-bold "
             >
               <RefreshCw className="w-4 h-4" />
               Recargar app

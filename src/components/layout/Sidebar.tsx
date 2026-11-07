@@ -1,4 +1,5 @@
 ﻿import { NavLink, useLocation, useNavigate } from "react-router";
+import { useVehicleHome } from "@/hooks/useVehicleHome";
 import { m as motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
@@ -76,12 +77,18 @@ export function Sidebar({
   const { currentWorkshop, isSuperAdmin, isLoading, setCurrentWorkshop } = useWorkshop();
   const { isFeatureEnabled } = useWorkshopFeatures();
   const { signOut } = useAuth();
+  const vehicleHome = useVehicleHome();
 
   // Determine which nav items to show (top scrollable section)
   const getNavItems = () => {
     if (isLoading) return [];
     if (isSuperAdmin && !currentWorkshop) return superAdminNavItems;
-    return workshopNavItems.filter(
+    const items = vehicleHome
+      ? workshopNavItems
+          .filter((item) => item.path !== "/herramientas")
+          .map((item) => (item.path === "/" ? { ...item, icon: Car, label: "Vehículos" } : item))
+      : workshopNavItems;
+    return items.filter(
       (item) => item.featureKey === null || isFeatureEnabled(item.featureKey),
     );
   };
@@ -147,7 +154,7 @@ export function Sidebar({
                   ? "Administración Global"
                   : isSuperAdmin
                     ? "Modo Taller (SuperAdmin)"
-                    : "Sistema de Gestión"}
+                    : null}
               </p>
             </motion.div>
           )}
@@ -187,7 +194,7 @@ export function Sidebar({
                 )}
               />
               {!collapsed && (
-                <span className="text-[10px] font-semibold leading-tight text-center w-full truncate">
+                <span className="text-[11px] font-semibold leading-tight text-center w-full truncate">
                   {item.label}
                 </span>
               )}
@@ -222,7 +229,7 @@ export function Sidebar({
                 )}
               />
               {!collapsed && (
-                <span className="text-[10px] font-semibold leading-tight text-center w-full truncate">
+                <span className="text-[11px] font-semibold leading-tight text-center w-full truncate">
                   Panel SuperAdmin
                 </span>
               )}

@@ -89,8 +89,7 @@ export default function Clientes() {
       {/* Header bar - ya NO es sticky */}
       <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-3 pb-4">
         <PageHeader
-          eyebrow="Clientes"
-          title={<>Tus clientes</>}
+          title="Clientes"
           subtitle={`${customers?.length || 0} clientes registrados`}
           action={
             <Button className="h-11 rounded-[12px] bg-primary text-primary-foreground hover:bg-primary-hover" onClick={handleNewCustomer}>
@@ -110,7 +109,7 @@ export default function Clientes() {
             type="button"
             aria-label="Nuevo cliente"
             onClick={handleNewCustomer}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[0_0_16px_hsl(var(--primary)/0.40)] transition-transform active:scale-95 lg:hidden"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-transform active:scale-95 lg:hidden"
           >
             <Plus className="w-5 h-5" strokeWidth={2.5} />
           </button>
@@ -122,7 +121,7 @@ export default function Clientes() {
       {isLoading ? (
         <>
           {/* Mobile skeleton */}
-          <div className="md:hidden space-y-2.5">
+          <div className="md:hidden m3-list">
             {[0, 1, 2, 3].map((i) => <MobileListCardSkeleton key={i} />)}
           </div>
           {/* Desktop skeleton */}
@@ -170,7 +169,7 @@ export default function Clientes() {
       {!isLoading && filteredClients.length > 0 && (
       <>
         {/* Mobile list */}
-        <div className="md:hidden space-y-2.5">
+        <div className="md:hidden m3-list">
           {filteredClients.map((client) => {
             const statusLabel =
               client.no_work_again ? "No trabajar" :
@@ -198,8 +197,6 @@ export default function Clientes() {
                 statusDotClass={statusDotClass}
                 title={client.name}
                 subtitle={client.phone || client.email || "Sin contacto"}
-                valueText={`${currencySymbol}${(client.total_purchases || 0).toLocaleString()}`}
-                valueClass="text-foreground"
               />
             );
           })}
@@ -228,20 +225,20 @@ export default function Clientes() {
                   <div className="min-w-0">
                     <p className="font-semibold text-foreground leading-tight truncate">{client.name}</p>
                     <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                      <Badge variant="outline" className="text-[11px] px-1.5 py-0">
                         {client.customer_type === "company" ? "Empresa" : "Persona"}
                       </Badge>
                       {client.is_vip && (
-                        <Badge className="text-[10px] px-1.5 py-0 bg-primary text-primary-foreground">Cerrajero Ext.</Badge>
+                        <Badge className="text-[11px] px-1.5 py-0 bg-primary text-primary-foreground">Cerrajero Ext.</Badge>
                       )}
                       {client.is_frequent && (
-                        <Badge className="text-[10px] px-1.5 py-0 bg-success text-success-foreground">Frecuente</Badge>
+                        <Badge className="text-[11px] px-1.5 py-0 bg-success text-success-foreground">Frecuente</Badge>
                       )}
                       {client.has_debt && (
-                        <Badge className="text-[10px] px-1.5 py-0 bg-destructive text-destructive-foreground">Deuda</Badge>
+                        <Badge className="text-[11px] px-1.5 py-0 bg-destructive text-destructive-foreground">Deuda</Badge>
                       )}
                       {client.no_work_again && (
-                        <Badge className="text-[10px] px-1.5 py-0 bg-destructive text-destructive-foreground">
+                        <Badge className="text-[11px] px-1.5 py-0 bg-destructive text-destructive-foreground">
                           <AlertCircle className="w-2.5 h-2.5 mr-0.5" />
                           No trabajar
                         </Badge>
@@ -251,7 +248,7 @@ export default function Clientes() {
                 </div>
                 <div className="flex items-start gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                   <div className="text-right">
-                    <p className="text-[11px] text-muted-foreground uppercase tracking-wide leading-tight">Compras</p>
+                    <p className="text-[11px] text-muted-foreground leading-tight">Compras</p>
                     <p className="text-xl font-bold text-foreground dark:text-primary">{currencySymbol}{(client.total_purchases || 0).toLocaleString()}</p>
                     <p className="text-[11px] text-muted-foreground">{client.total_services || 0} servicios</p>
                   </div>

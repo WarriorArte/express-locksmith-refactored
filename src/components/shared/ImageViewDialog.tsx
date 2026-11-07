@@ -356,7 +356,7 @@ export function ImageViewDialog({
           >
             <div className="pointer-events-auto">
               {images.length > 1 && (
-                <span className="text-white/90 text-xs font-semibold tracking-wider px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 shadow-sm">
+                <span className="text-white/90 text-xs font-semibold px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 shadow-sm">
                   {imageIndex + 1} / {images.length}
                 </span>
               )}
@@ -454,7 +454,7 @@ export function ImageViewDialog({
               )}
               {currentImage.description && (
                 <div className="px-6 max-w-2xl text-center pointer-events-auto">
-                  <p className="text-white/95 text-sm md:text-base font-normal leading-relaxed tracking-wide drop-shadow-sm select-text">
+                  <p className="text-white/95 text-sm md:text-base font-normal leading-relaxed drop-shadow-sm select-text">
                     {currentImage.description}
                   </p>
                 </div>

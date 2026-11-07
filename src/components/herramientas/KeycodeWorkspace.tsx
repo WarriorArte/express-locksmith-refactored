@@ -1,22 +1,33 @@
-import { Fragment, useState, useRef, useMemo, useCallback, useEffect } from "react";
+import { Fragment, useState, useRef, useMemo, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { m as motion, AnimatePresence } from "framer-motion";
-import { Key, ArrowLeft, CheckCircle2, X, Info, Settings2, Loader2, Camera, Lock, Search, List, ChevronLeft, ChevronRight, ImageIcon, ScanSearch } from "lucide-react";
+import { Key, ArrowLeft, Check, X, Info, Camera, Lock, Search, List, ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { GeneradorLlaveSVG } from "@/components/llaves/GeneradorLlaveSVG";
-import { UnifiedSearchInput } from "@/components/shared/UnifiedSearchInput";
 import { KeyPhotoDecoder } from "@/components/herramientas/KeyPhotoDecoder";
 import { buildDefaultDecoderConfig } from "@/lib/decoderPresets";
 import { useKeycodeVisualSettings } from "@/hooks/useKeycodeVisualSettings";
 import { useTheme } from "@/hooks/useTheme";
+import { spawnRipple } from "@/lib/ripple";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { AccountMenu } from "@/components/layout/AccountMenu";
-import { Separator } from "@/components/ui/separator";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/responsive-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/responsive-dialog";
+import { MaterialShape } from "@/design-system/shapes/MaterialShape";
+import {
+  CopyableValue,
+  DetailScreen,
+  DetailSection,
+  FilterChip,
+  SpecRow,
+  SubHeading,
+  TonalChip,
+} from "@/design-system/detail/DetailScreen";
+
+/*
+ * Keycode — herramienta interactiva con el criterio M3E (docs/CRITERIO-DISENO-M3E.md).
+ * Protagonista: el código encontrado (CopyableValue). La lógica de búsqueda no cambió.
+ */
 
 import type { ToolAssignment, KeycodeProfile, BittingConfig, CodeEntry } from "@/types";
 import { LOCK_LABELS, LOCK_ORDER } from "@/types";
@@ -663,38 +674,28 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     return buildDefaultDecoderConfig(profile);
   }, [profile]);
 
-  if (!profile) {
+  if (!profile || loadingCodes) {
     return (
-      <div className="space-y-6">
-        <Button variant="ghost" onClick={onBack} className="text-primary">
-          <ArrowLeft className="w-4 h-4 mr-2" /> Volver a herramientas
-        </Button>
-        <Card className="border-destructive/50">
-          <CardContent className="py-12 text-center">
-            <Key className="w-12 h-12 mx-auto mb-3 text-destructive/50" />
-            <h3 className="text-lg font-bold text-foreground">Perfil de Keycode no encontrado</h3>
-            <p className="text-muted-foreground">
-              El perfil asignado a este vehículo ya no existe. Contacte al SuperAdmin.
+      <DetailScreen
+        title={!profile ? "Keycode" : baseProfile?.series ? `Serie ${baseProfile.series}` : "Keycode"}
+        meta={`${assignment.make} ${assignment.model}${year ? ` · ${year}` : ""}`}
+        onBack={onBack}
+        backLabel="Volver a vehículos"
+      >
+        {!profile ? (
+          <DetailSection title="Perfil no encontrado" tone="destructive" icon={<Key className="h-5 w-5 shrink-0" />}>
+            <p className="text-[15px] leading-relaxed text-foreground">
+              El perfil asignado a este vehículo ya no existe. Contacta al SuperAdmin.
             </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (loadingCodes) {
-    return (
-      <div className="space-y-6">
-        <Button variant="ghost" onClick={onBack} className="text-primary">
-          <ArrowLeft className="w-4 h-4 mr-2" /> Volver a herramientas
-        </Button>
-        <Card>
-          <CardContent className="py-16 flex flex-col items-center gap-3 text-muted-foreground">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            <p className="text-sm font-medium">Cargando códigos de la serie…</p>
-          </CardContent>
-        </Card>
-      </div>
+          </DetailSection>
+        ) : (
+          <div aria-busy="true" className="space-y-3">
+            <div className="h-44 animate-pulse rounded-[28px] bg-card shadow-sm" />
+            <div className="h-56 animate-pulse rounded-[28px] bg-card shadow-sm" />
+            <p className="text-center text-sm text-muted-foreground">Cargando códigos de la serie…</p>
+          </div>
+        )}
+      </DetailScreen>
     );
   }
 
@@ -786,41 +787,36 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     return (
       <button
         key={badge ? `${entry.codigo}-${badge}` : entry.codigo}
+        type="button"
         onClick={() => loadEntry(entry)}
-        className={`w-full flex flex-col gap-1.5 px-3 py-2.5 text-left transition-colors ${
-          isSelected ? "bg-primary/8" : "hover:bg-muted/60"
-        }`}
+        onPointerDown={spawnRipple}
+        aria-pressed={isSelected}
+        className={`m3-list-item flex w-full flex-col gap-2 px-4 py-3 text-left ${isSelected ? "bg-primary-light" : ""}`}
       >
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="truncate text-base font-semibold tabular-nums text-foreground">{entry.codigo}</span>
             {badge && (
-              <Badge
-                className={`text-[9px] px-1.5 py-0 font-bold shrink-0 ${
-                  badge === "MASTER"
-                    ? "bg-amber-400 text-amber-950 hover:bg-amber-400"
-                    : "bg-slate-400 text-slate-950 hover:bg-slate-400"
+              <span
+                className={`inline-flex h-6 shrink-0 items-center rounded-md px-2 text-xs font-semibold ${
+                  badge === "MASTER" ? "bg-warning-light text-foreground" : "bg-muted text-muted-foreground"
                 }`}
               >
-                {badge}
-              </Badge>
+                {badge === "MASTER" ? "Master" : "Valet"}
+              </span>
             )}
-            <span className={`font-mono text-sm font-semibold ${isSelected ? "text-primary" : "text-foreground"}`}>
-              {entry.codigo}
-            </span>
           </div>
-          {isSelected && <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />}
+          {isSelected && <Check className="h-5 w-5 shrink-0 text-primary" />}
         </div>
-        <div className="flex flex-col gap-1 w-full">
+        <div className="flex w-full flex-col gap-1">
           {axesDisplay.map((axis, aIdx) => (
-            <div key={aIdx} className="flex items-center gap-1.5 w-full">
+            <div key={aIdx} className="flex w-full items-center gap-2">
               {showAxisLabels && (
-                <span className="text-[10px] font-bold text-muted-foreground shrink-0 w-3">
-                  {axis.label}:
-                </span>
+                <span className="w-4 shrink-0 text-xs font-semibold text-muted-foreground">{axis.label}</span>
               )}
               <div
                 className="grid"
-                style={{ gridTemplateColumns: `repeat(${axis.values.length}, 1.75rem)`, gap: '2px' }}
+                style={{ gridTemplateColumns: `repeat(${axis.values.length}, 1.75rem)`, gap: "3px" }}
               >
                 {axis.values.map((val, posIdx) => {
                   const flatIdx = (ranges[aIdx]?.start ?? 0) + posIdx;
@@ -828,11 +824,11 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                   return (
                     <span
                       key={posIdx}
-                      className={`h-6 flex items-center justify-center rounded text-[1.25rem] leading-none font-extrabold tracking-tight ${
+                      className={`flex h-7 items-center justify-center rounded-md text-lg font-bold leading-none tabular-nums ${
                         isWild
                           ? "bg-primary text-primary-foreground"
                           : isAdvanced
-                            ? "bg-amber-400/25 text-amber-600 dark:text-amber-400"
+                            ? "bg-warning-light text-foreground"
                             : "bg-muted text-muted-foreground"
                       }`}
                     >
@@ -895,7 +891,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
   // búsqueda normal, sin la agrupación por "llave" (que solo aplica a
   // búsquedas posicionales con comodines).
   const renderPartialResults = () => (
-    <div className="rounded-lg border border-border overflow-hidden divide-y divide-border">
+    <div className="m3-list">
       {bittingResults.map((entry) => renderResultPair(
         entry,
         partialHighlight,
@@ -904,138 +900,167 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     </div>
   );
 
+  const plural = (n: number, word: string) => `${n} ${word}${n !== 1 ? "s" : ""}`;
+  const resultsTitle = isSearching
+    ? "Buscando…"
+    : bittingResults.length > 0
+      ? plural(bittingResults.length, "código")
+      : "Sin coincidencias";
+  const resultsMeta = isPartialResults
+    ? "Coincidencias por secuencia"
+    : bittingResults.length > 0
+      ? `${plural(bittingGroups.length, "llave")} necesaria${bittingGroups.length !== 1 ? "s" : ""}`
+      : "Resultados de la búsqueda";
+
+  const positionalHighlight = () => (flatIdx: number, val: string) => {
+    const searchVal = searchValues[flatIdx] ?? "";
+    const isWild = !searchVal.trim() || searchVal === "?";
+    const isAdvanced = advancedMode && !isWild && val !== searchVal;
+    return { isWild, isAdvanced };
+  };
+
+  /** Cuerpo de resultados, compartido por la columna de escritorio y la hoja móvil. */
+  const renderResultsBody = () => {
+    if (isSearching) {
+      return (
+        <div className="m3-list" aria-busy="true">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="m3-list-item space-y-2 px-4 py-3">
+              <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+              <div className="h-7 w-48 animate-pulse rounded-md bg-muted" />
+            </div>
+          ))}
+        </div>
+      );
+    }
+    if (bittingResults.length === 0) {
+      return (
+        <div className="rounded-[28px] bg-muted px-5 py-8 text-center">
+          <p className="text-base font-semibold text-foreground">Sin coincidencias</p>
+          <p className="mt-1 text-sm text-muted-foreground">Ningún código coincide con los cortes ingresados.</p>
+        </div>
+      );
+    }
+    if (isPartialResults) return renderPartialResults();
+    return (
+      <div className="space-y-5">
+        {bittingGroups.map((group, groupIdx) => (
+          <section key={groupIdx}>
+            <div className="mb-2.5 flex items-center gap-3">
+              <MaterialShape name="cookie9" className="h-9 w-9 text-primary-light">
+                <span className="text-sm font-bold tabular-nums text-foreground">{groupIdx + 1}</span>
+              </MaterialShape>
+              <p className="text-base font-semibold text-foreground">Llave {groupIdx + 1}</p>
+              <span className="text-sm text-muted-foreground">{plural(group.length, "código")}</span>
+            </div>
+            <div className="m3-list">
+              {group.map((entry) => renderResultPair(entry, positionalHighlight, matchesCurrentPositionalQuery))}
+            </div>
+          </section>
+        ))}
+      </div>
+    );
+  };
+
+  const vehicleLine = previewMode
+    ? "Vista de prueba · cambios sin guardar"
+    : `${assignment.make} ${assignment.model}${year ? ` · ${year}` : ""}`;
+  const seriesName = profile.series ? `Serie ${profile.series}` : `IC ${profile.icCard}`;
+  const primaryRef = profile.references.find((r) => r.isPrimary);
+
   return (
     <>
     <div className="h-full flex flex-col">
 
-      {/* ══════════════════════════════════════
-          HERO HEADER
-          ══════════════════════════════════════ */}
-      <div className="shrink-0 bg-background px-5 lg:px-6 pt-10 lg:pt-3 pb-4">
-        <section className="ce-hero ce-hero-mobile-bleed p-[22px_16px] lg:p-[22px]">
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0 flex-1">
-              <button
-                onClick={onBack}
-                className="ce-hero-eyebrow inline-flex items-center gap-1.5 hover:opacity-70 transition-opacity"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                {previewMode ? "Cerrar prueba" : "Herramientas"}
-              </button>
-              <AnimatePresence mode="wait">
-                <motion.h1
-                  key={exactEntry?.codigo ?? "serie"}
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.18 }}
-                  className="ce-hero-title mt-1.5 text-[clamp(1.55rem,5.4vw,2.15rem)] lg:mt-2 lg:text-[clamp(1.75rem,3vw,2.5rem)]"
-                >
-                  {codeState === "exact" && exactEntry
-                    ? <span className="text-primary">{searchTerm.trim().toUpperCase() || exactEntry.codigo}</span>
-                    : profile.series
-                      ? <>Serie <span className="text-primary">{profile.series}</span></>
-                      : <>IC <span className="text-primary">{profile.icCard}</span></>
-                  }
-                </motion.h1>
-              </AnimatePresence>
-              <p className="ce-hero-meta mt-2">
-                {previewMode
-                  ? "Vista de prueba · cambios sin guardar"
-                  : <>{assignment.make} {assignment.model}{year ? ` · ${year}` : ""}</>}
-              </p>
+      {/* ── Barra superior + protagonista + búsqueda por código ── */}
+      <div className="shrink-0 px-4 pt-10 lg:px-6 lg:pt-3">
+        <div className="-mx-2 flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onBack}
+            aria-label={previewMode ? "Salir de la prueba" : "Volver a vehículos"}
+          >
+            {previewMode ? <X className="!h-6 !w-6" /> : <ArrowLeft className="!h-6 !w-6" />}
+          </Button>
+          <p className="min-w-0 flex-1 truncate text-sm text-muted-foreground">{vehicleLine}</p>
+          {!previewMode && (
+            <div className="shrink-0 pr-2">
+              <AccountMenu />
             </div>
-            {previewMode ? (
-              <Button
-                type="button"
-                variant="secondary"
-                size="icon"
-                onClick={onBack}
-                title="Salir de la prueba"
-                aria-label="Salir de la prueba"
-                className="shrink-0 mt-1 h-9 w-9 border border-border shadow-sm"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            ) : (
-              <div className="shrink-0 mt-1">
-                <AccountMenu />
-              </div>
-            )}
-          </div>
-
-          {/* ── Barra de búsqueda ── */}
-          <form onSubmit={handleCodeSearch} className="mt-4 lg:mt-5 flex items-center gap-2">
-            <UnifiedSearchInput
-              className="flex-1 min-w-0"
-              placeholder="Codigo"
-              inputRef={codeInputRef}
-              type="search"
-              enterKeyHint="search"
-              autoCapitalize="characters"
-              autoCorrect="off"
-              spellCheck={false}
-              value={searchTerm}
-              onChange={(val) => {
-                setSearchTerm(val);
-                if (codeState === "notfound") setCodeState("idle");
-              }}
-              inputClassName="font-mono uppercase placeholder:normal-case"
-            />
-            <button
-              type="submit"
-              className="h-10 w-10 shrink-0 flex items-center justify-center rounded-xl bg-card border-[1.5px] border-foreground/25 text-foreground hover:bg-accent active:scale-95 transition-all"
-            >
-              <Search className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setInfoModalOpen(true)}
-              className="h-10 w-10 shrink-0 flex items-center justify-center rounded-xl bg-card border-[1.5px] border-foreground/25 text-foreground hover:bg-accent active:scale-95 transition-all"
-            >
-              <Info className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={handleOpenDecoder}
-              className="h-10 w-10 shrink-0 flex items-center justify-center rounded-xl bg-card border-[1.5px] border-foreground/25 text-foreground hover:bg-accent active:scale-95 transition-all"
-            >
-              <Camera className="w-4 h-4" />
-            </button>
-          </form>
-          {codeState === "notfound" && (
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              El código <span className="font-mono font-semibold">{searchTerm.toUpperCase()}</span> no existe en esta serie.
-            </p>
           )}
-        </section>
+        </div>
+
+        {/* El código encontrado es el protagonista: grande y copiable */}
+        <div className="mt-1 flex min-h-[3.5rem] items-end">
+          {codeState === "exact" && exactEntry ? (
+            <CopyableValue
+              label={seriesName}
+              value={searchTerm.trim().toUpperCase() || exactEntry.codigo}
+              copiedMessage="Código copiado"
+            />
+          ) : (
+            <h1 className="text-[2rem] font-bold leading-tight text-foreground">{seriesName}</h1>
+          )}
+        </div>
+
+        <form
+          onSubmit={handleCodeSearch}
+          className="mt-3 flex h-14 items-center gap-1 rounded-full bg-card pl-1.5 pr-1.5 shadow-sm"
+        >
+          <Button type="submit" variant="ghost" size="icon" aria-label="Buscar código">
+            <Search className="!h-5 !w-5" />
+          </Button>
+          <input
+            ref={codeInputRef}
+            type="search"
+            enterKeyHint="search"
+            autoCapitalize="characters"
+            autoCorrect="off"
+            spellCheck={false}
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              if (codeState === "notfound") setCodeState("idle");
+            }}
+            placeholder="Buscar código"
+            aria-label="Código de la llave"
+            className="min-w-0 flex-1 bg-transparent text-base tabular-nums text-foreground outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
+          />
+          <Button type="button" variant="ghost" size="icon" onClick={() => setInfoModalOpen(true)} aria-label="Información de la serie">
+            <Info className="!h-5 !w-5" />
+          </Button>
+          <Button type="button" variant="ghost" size="icon" onClick={handleOpenDecoder} aria-label="Leer llave con foto">
+            <Camera className="!h-5 !w-5" />
+          </Button>
+        </form>
+        {codeState === "notfound" && (
+          <p className="mt-2 px-2 text-sm text-destructive">
+            El código <span className="font-semibold tabular-nums">{searchTerm.toUpperCase()}</span> no existe en esta serie.
+          </p>
+        )}
       </div>
 
-      {/* ══════════════════════════════════════
-          CONTENIDO — dos columnas en desktop
-          ══════════════════════════════════════ */}
-      <div className="flex-1 min-h-0 flex flex-col lg:flex-row lg:gap-4 overflow-hidden px-5 lg:px-6 pb-mobile-nav">
+      {/* ── Contenido: llave + teclado | resultados (escritorio) ── */}
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row lg:gap-4 overflow-hidden px-4 pt-3 lg:px-6 pb-mobile-nav">
 
-      {/* ══════════════════════════════════════
-          COLUMNA IZQUIERDA — SVG interactivo + controles
-          ══════════════════════════════════════ */}
-      <div className="flex-1 flex flex-col min-h-0 pb-2 lg:flex-none lg:shrink-0 lg:w-[480px] lg:pb-4">
+      <div className="flex-1 flex flex-col min-h-0 gap-3 pb-2 lg:flex-none lg:shrink-0 lg:w-[480px] lg:pb-4">
 
-        {/* SVG interactivo con inputs inline — siempre visible */}
-        <div className="flex-1 min-h-0 flex items-center gap-1 mb-3">
-
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="shrink-0 text-muted-foreground hover:text-foreground -ml-1"
-                onClick={() => setSelectedCellIdx(prev => prev > 0 ? prev - 1 : bittingTotalLength - 1)}
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </Button>
-              <div className="flex-1 min-w-0 overflow-y-auto no-scrollbar">
+        {/* Llave interactiva */}
+        <div className="flex-1 min-h-0 flex items-center gap-1 rounded-[28px] bg-card px-1 shadow-sm">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="shrink-0 text-muted-foreground"
+            aria-label="Corte anterior"
+            onClick={() => setSelectedCellIdx(prev => prev > 0 ? prev - 1 : bittingTotalLength - 1)}
+          >
+            <ChevronLeft className="!h-5 !w-5" />
+          </Button>
+          <div className="flex-1 min-w-0 max-h-full overflow-y-auto no-scrollbar py-2">
             {profile.configuracionVisual ? (
-              <div className="flex justify-center overflow-x-auto bg-muted/30 border border-dashed border-border rounded-lg p-1">
+              <div className="flex justify-center overflow-x-auto">
                 <GeneradorLlaveSVG
                   config={{ ...profile.configuracionVisual, maxDepth: profile.bittingConfig.maxDepth }}
                   cortesPrimarios={primaryNums}
@@ -1063,14 +1088,12 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                 />
               </div>
             ) : (
-              /* Fallback: tile grid si no hay configuración visual */
-              <div className="space-y-3">
+              /* Sin configuración visual: casillas de cortes */
+              <div className="space-y-3 px-1">
                 {ranges.map((axisRange, axisIdx) => (
-                  <div key={axisIdx} className="space-y-1">
+                  <div key={axisIdx} className="space-y-1.5">
                     {showAxisLabels && (
-                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                        Eje {axisRange.label}
-                      </p>
+                      <p className="text-sm font-medium text-muted-foreground">Eje {axisRange.label}</p>
                     )}
                     <div className="w-full sm:max-w-md sm:mx-auto">
                       <div
@@ -1078,7 +1101,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                         style={{ gridTemplateColumns: `repeat(${axisRange.length}, minmax(0, 1fr))` }}
                       >
                         {Array.from({ length: axisRange.length }, (_, i) => (
-                          <div key={`hdr-${axisIdx}-${i}`} className="text-center text-[10px] sm:text-xs font-semibold text-muted-foreground">
+                          <div key={`hdr-${axisIdx}-${i}`} className="text-center text-xs font-medium text-muted-foreground">
                             {i + 1}
                           </div>
                         ))}
@@ -1133,15 +1156,16 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                               inputMode="none"
                               maxLength={2}
                               autoComplete="off"
-                              className={`h-10 sm:h-14 w-full text-center font-mono font-bold text-base sm:text-2xl rounded-md border-2 transition-colors focus:outline-none uppercase
-                                ${isExact && isValued
-                                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                              aria-label={`Corte ${globalIndex + 1}`}
+                              className={`h-11 sm:h-14 w-full rounded-xl text-center tabular-nums font-bold text-lg sm:text-2xl transition-colors focus:outline-none ${
+                                isExact && isValued
+                                  ? "bg-primary text-primary-foreground"
                                   : isSelected
-                                    ? "bg-primary/10 text-primary border-primary ring-2 ring-primary/40"
+                                    ? "bg-primary-light text-foreground ring-2 ring-primary"
                                     : isValued
-                                      ? "bg-primary/15 text-primary border-primary/40"
-                                      : "bg-background text-muted-foreground border-input"
-                                }`}
+                                      ? "bg-primary-light text-foreground"
+                                      : "bg-muted text-muted-foreground"
+                              }`}
                             />
                           );
                         })}
@@ -1151,382 +1175,235 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                 ))}
               </div>
             )}
-              </div>{/* fin contenedor figura */}
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="shrink-0 text-muted-foreground"
+            aria-label="Corte siguiente"
+            onClick={() => setSelectedCellIdx(prev => prev < bittingTotalLength - 1 ? prev + 1 : 0)}
+          >
+            <ChevronRight className="!h-5 !w-5" />
+          </Button>
+        </div>
+
+        {/* Teclado de profundidades + acciones */}
+        <div className="shrink-0 space-y-4 rounded-[28px] bg-card p-4 shadow-sm">
+          {!partialSearchMode ? (
+            <div className="flex flex-wrap justify-center gap-2 sm:mx-auto sm:max-w-md">
+              {Array.from(allowedValues).map((keyVal) => (
+                <Button
+                  key={`keypad-${keyVal}`}
+                  type="button"
+                  variant="ghost"
+                  onPointerDown={(e) => { e.preventDefault(); handleVirtualKeypad(keyVal); }}
+                  aria-label={`Profundidad ${keyVal}`}
+                  className="h-12 w-12 rounded-full bg-muted p-0 text-xl font-semibold tabular-nums hover:bg-muted"
+                >
+                  {keyVal}
+                </Button>
+              ))}
               <Button
                 type="button"
                 variant="ghost"
-                size="icon"
-                className="shrink-0 text-muted-foreground hover:text-foreground -mr-1"
-                onClick={() => setSelectedCellIdx(prev => prev < bittingTotalLength - 1 ? prev + 1 : 0)}
+                onPointerDown={(e) => { e.preventDefault(); handleVirtualKeypad("?"); }}
+                aria-label="Corte desconocido"
+                className="h-12 w-12 rounded-full bg-accent p-0 text-xl font-semibold text-accent-foreground hover:bg-accent"
               >
-                <ChevronRight className="w-5 h-5" />
+                ?
               </Button>
-        </div>{/* fin flex flechas */}
-
-        <Card>
-          <CardContent className="px-4 pb-4 pt-4 space-y-4">
-            {/* Teclado Virtual Numérico / Profundidades */}
-            {profile && !partialSearchMode && (
-              <div className="flex flex-wrap justify-center gap-2 sm:max-w-md sm:mx-auto mt-4 mb-4">
-                {Array.from(allowedValues).map((keyVal) => (
-                  <Button
-                    key={`keypad-${keyVal}`}
-                    type="button"
-                    variant="outline"
-                    onPointerDown={(e) => { e.preventDefault(); handleVirtualKeypad(keyVal); }}
-                    className="w-12 h-12 flex items-center justify-center text-lg font-bold p-0"
-                  >
-                    {keyVal}
-                  </Button>
-                ))}
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onPointerDown={(e) => { e.preventDefault(); handleVirtualKeypad("?"); }}
-                  className="w-12 h-12 flex items-center justify-center text-lg font-bold p-0"
-                >
-                  ?
-                </Button>
-              </div>
-            )}
-
-            {/* Búsqueda parcial: secuencia de dígitos, sin importar la posición */}
-            {partialSearchMode && (
-              <div className="flex flex-col gap-1 sm:max-w-md sm:mx-auto">
-                <Input
-                  value={partialSearchInput}
-                  onChange={(e) => setPartialSearchInput(e.target.value.replace(/\D/g, ""))}
-                  placeholder={`Mínimo ${partialMinDigits} dígitos, ej. 13112433`}
-                  inputMode="numeric"
-                  className="font-mono text-center"
-                />
-                {partialDigits.length > 0 && !canPartialSearch && (
-                  <p className="text-[11px] text-muted-foreground text-center">
-                    Ingresa al menos {partialMinDigits} dígitos ({partialDigits.length}/{partialMinDigits}).
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Acciones */}
-            <div className="flex gap-2 sm:max-w-md sm:mx-auto">
-              <Button
-                type="button"
-                size="icon"
-                onClick={partialSearchMode ? handlePartialSearch : handleBittingSearch}
-                variant={hasBittingSearched ? "outline" : "default"}
-                title={partialSearchMode ? "Buscar secuencia" : (hasBittingSearched ? "Actualizar búsqueda" : "Buscar coincidencias")}
-                disabled={partialSearchMode ? !canPartialSearch : !canBittingSearch}
-                className="shrink-0"
-              >
-                <Key className="w-4 h-4" />
-              </Button>
-              {isMobile && (
-                <Button
-                  type="button"
-                  size="icon"
-                  onClick={() => setResultsSheetOpen(true)}
-                  title="Ver resultados"
-                  disabled={!hasBittingSearched}
-                  className="shrink-0"
-                >
-                  <List className="w-4 h-4" />
-                </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1.5 sm:mx-auto sm:max-w-md">
+              <Input
+                value={partialSearchInput}
+                onChange={(e) => setPartialSearchInput(e.target.value.replace(/\D/g, ""))}
+                placeholder={`Mínimo ${partialMinDigits} dígitos, ej. 13112433`}
+                inputMode="numeric"
+                aria-label="Secuencia de cortes"
+                className="text-center tabular-nums"
+              />
+              {partialDigits.length > 0 && !canPartialSearch && (
+                <p className="text-center text-xs text-muted-foreground">
+                  Faltan {partialMinDigits - partialDigits.length} dígitos ({partialDigits.length}/{partialMinDigits}).
+                </p>
               )}
-              <Button
-                type="button"
-                variant={advancedMode ? "default" : "outline"}
-                size="icon"
-                onClick={() => setAdvancedMode(!advancedMode)}
-                title={advancedMode ? "Desactivar búsqueda avanzada" : "Activar búsqueda avanzada (±1)"}
-                className="shrink-0 ml-auto"
-              >
-                <Settings2 className="w-4 h-4" />
-              </Button>
-              <Button
-                type="button"
-                variant={partialSearchMode ? "default" : "outline"}
-                size="icon"
+            </div>
+          )}
+
+          <div className="space-y-3 sm:mx-auto sm:max-w-md">
+            <div className="flex items-center gap-2">
+              <FilterChip onCard selected={advancedMode} onClick={() => setAdvancedMode(!advancedMode)}>
+                ±1
+              </FilterChip>
+              <FilterChip
+                onCard
+                selected={partialSearchMode}
                 onClick={() => {
                   setPartialSearchMode((v) => !v);
                   if (partialSearchMode) { setPartialSearchInput(""); setIsPartialResults(false); }
                 }}
-                title={partialSearchMode ? "Desactivar búsqueda parcial" : "Activar búsqueda parcial (secuencia de dígitos)"}
-                className="shrink-0"
               >
-                <ScanSearch className="w-4 h-4" />
-              </Button>
+                Secuencia
+              </FilterChip>
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 size="icon"
                 onClick={handleClear}
-                title="Limpiar"
                 disabled={!hasAnyValue}
-                className="shrink-0"
+                aria-label="Limpiar"
+                className="ml-auto"
               >
-                <X className="w-4 h-4" />
+                <X className="!h-5 !w-5" />
               </Button>
             </div>
-
-
-          </CardContent>
-        </Card>
-
-        {/* Modal de información */}
-        <Dialog open={infoModalOpen} onOpenChange={setInfoModalOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                Información de la serie
-              </DialogTitle>
-            </DialogHeader>
-
-            <div className="space-y-4 pb-2">
-              {/* Vehículo e IC */}
-              <div className="space-y-1 bg-muted/40 rounded-md p-2.5 border">
-                <p className="text-sm font-semibold text-foreground">{assignment.make} {assignment.model}</p>
-                <p className="text-xs text-muted-foreground">{assignment.yearStart} – {assignment.yearEnd}</p>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1">
-                  <span className="text-xs text-muted-foreground">IC: <span className="font-mono font-semibold text-foreground">{profile.icCard}</span></span>
-                  {profile.series && (
-                    <span className="text-xs text-muted-foreground">Serie: <span className="font-semibold text-foreground">{profile.series}</span></span>
-                  )}
-                  {profile.references.find(r => r.isPrimary) && (
-                    <span className="text-xs text-muted-foreground">
-                      Ref: <span className="font-semibold text-foreground">{profile.references.find(r => r.isPrimary)!.brand} {profile.references.find(r => r.isPrimary)!.refCode}</span>
-                    </span>
-                  )}
-                </div>
-                {!!profile.seriesAliases?.length && (
-                  <p className="text-xs text-muted-foreground pt-1">
-                    Esta serie también incluye: <span className="font-semibold text-foreground">{profile.seriesAliases.join(", ")}</span>
-                  </p>
-                )}
-              </div>
-
-              {/* Cerraduras del vehículo */}
-              {profileLockSelections && (() => {
-                const axes = profile.bittingConfig.axes;
-                const isDosEjes = !!(axes && axes.length >= 2);
-                return (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Lock className="w-4 h-4 text-primary" />
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">Cerraduras de este vehículo</h4>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground leading-snug">
-                      Cortes incluidos en cada cerradura ({assignment.make} {assignment.model} {assignment.yearStart}-{assignment.yearEnd}):
-                    </p>
-                    <div className="space-y-1.5 bg-muted/40 rounded-md p-2.5 border">
-                      {LOCK_ORDER.filter((lk) => profileLockSelections[lk]).map((lk) => {
-                        const arr = profileLockSelections[lk]!;
-                        const renderRow = (start: number, end: number) =>
-                          arr.slice(start, end).map((checked, i) => (
-                            <span
-                              key={start + i}
-                              className={`inline-flex items-center justify-center w-4 h-4 rounded-sm border text-[9px] font-bold ${checked ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground/40 border-input'}`}
-                            >
-                              {checked ? '✓' : ''}
-                            </span>
-                          ));
-                        return (
-                          <div key={lk} className="flex items-center gap-2 text-xs">
-                            <span className="w-20 shrink-0 font-medium">{LOCK_LABELS[lk]}:</span>
-                            {isDosEjes ? (
-                              <div className="flex flex-wrap gap-1.5 items-center">
-                                <span className="text-[9px] font-bold text-muted-foreground">{axes![0].label}</span>
-                                <div className="flex gap-0.5">{renderRow(0, axes![0].length)}</div>
-                                <span className="text-[9px] font-bold text-muted-foreground ml-1">{axes![1].label}</span>
-                                <div className="flex gap-0.5">{renderRow(axes![0].length, axes![0].length + axes![1].length)}</div>
-                              </div>
-                            ) : (
-                              <div className="flex flex-wrap gap-0.5">{renderRow(0, arr.length)}</div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Mapeo de profundidades */}
-              {usesLetterMapping && profile.bittingConfig.depthMapping && (
-                <div className="space-y-2">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">Mapeo de profundidades</h4>
-                  <p className="text-[11px] text-muted-foreground leading-snug">
-                    Es posible que las llaves de esta cerradura tengan impresos números, letras o marcas distintas. Usa esta tabla para interpretarlos:
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {Object.entries(profile.bittingConfig.depthMapping).map(([num, letter]) => (
-                      <div key={num} className="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-700 rounded px-2 py-1">
-                        <span className="font-mono font-bold text-sm text-foreground">{letter}</span>
-                        <span className="text-amber-500 text-xs">=</span>
-                        <span className="font-mono text-sm text-muted-foreground">{num}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                onClick={partialSearchMode ? handlePartialSearch : handleBittingSearch}
+                variant={hasBittingSearched ? "secondary" : "default"}
+                disabled={partialSearchMode ? !canPartialSearch : !canBittingSearch}
+                className="flex-1"
+              >
+                <Key />
+                {hasBittingSearched ? "Buscar de nuevo" : "Buscar"}
+              </Button>
+              {isMobile && hasBittingSearched && (
+                <Button type="button" variant="secondary" onClick={() => setResultsSheetOpen(true)} aria-label="Ver resultados">
+                  <List />
+                  <span className="tabular-nums">{bittingResults.length}</span>
+                </Button>
               )}
             </div>
-          </DialogContent>
-        </Dialog>
-
+          </div>
+        </div>
       </div>
 
-      {/* ══════════════════════════════════════
-          COLUMNA DERECHA — resultados (solo desktop)
-          ══════════════════════════════════════ */}
+      {/* Resultados (escritorio) */}
       <div className="hidden lg:flex flex-1 min-h-0 flex-col overflow-hidden">
-
-      {/* Loading overlay */}
-      <AnimatePresence>
-        {isSearching && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="shrink-0 flex items-center justify-center gap-2 py-4"
-          >
-            <Loader2 className="w-5 h-5 animate-spin text-primary" />
-            <span className="text-sm font-medium text-muted-foreground">Buscando coincidencias…</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {hasBittingSearched && !isSearching && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex-1 min-h-0 flex flex-col overflow-hidden"
-          >
-            <Separator className="shrink-0" />
-            {bittingResults.length > 0 ? (
-              <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-                <div className="flex items-center gap-2 shrink-0 py-2">
-                  <CheckCircle2 className="w-4 h-4 text-green-600" />
-                  <span className="text-sm font-semibold text-green-700 dark:text-green-400">
-                    {bittingResults.length} código{bittingResults.length !== 1 ? "s" : ""}
-                    {!isPartialResults && (
-                      <>
-                        {" · "}
-                        {bittingGroups.length} llave{bittingGroups.length !== 1 ? "s" : ""} necesaria{bittingGroups.length !== 1 ? "s" : ""}
-                      </>
-                    )}
-                  </span>
-                </div>
-                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain space-y-3 pb-2" style={{ scrollbarWidth: 'thin', scrollbarColor: 'hsl(var(--border)) transparent' }}>
-                  {isPartialResults ? renderPartialResults() : bittingGroups.map((group, groupIdx) => (
-                    <div key={groupIdx} className="space-y-2">
-                      <div className="flex items-center justify-center gap-2 px-1">
-                        <span className="text-sm font-extrabold tracking-wide text-primary bg-primary/15 px-3 py-1 rounded-full uppercase">
-                          Llave {groupIdx + 1}
-                        </span>
-                        <span className="text-xs font-medium text-muted-foreground">
-                          {group.length} código{group.length !== 1 ? "s" : ""}
-                        </span>
-                      </div>
-                      <div className="rounded-lg border border-border overflow-hidden divide-y divide-border">
-                        {group.map((entry) =>
-                          renderResultPair(entry, () => (flatIdx, val) => {
-                            const searchVal = searchValues[flatIdx] ?? "";
-                            const isWild = !searchVal.trim() || searchVal === "?";
-                            const isAdvanced = advancedMode && !isWild && val !== searchVal;
-                            return { isWild, isAdvanced };
-                          }, matchesCurrentPositionalQuery)
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="text-center bg-muted/50 p-8 rounded-xl border border-dashed border-border">
-                <p className="font-semibold text-foreground mb-1">Sin coincidencias</p>
-                <p className="text-sm text-muted-foreground">
-                  Ningún código coincide con el patrón de cortes ingresado.
-                </p>
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      </div>{/* fin columna derecha */}
-      </div>{/* fin área de contenido */}
-    </div>
-
-    {/* ── Bottom sheet de resultados (solo mobile) ── */}
-    <Dialog open={resultsSheetOpen} onOpenChange={setResultsSheetOpen}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base">
-            {isSearching ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                <span>Buscando...</span>
-              </>
-            ) : bittingResults.length > 0 ? (
-              <>
-                <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
-                <span className="text-green-700 dark:text-green-400">
-                  {bittingResults.length} código{bittingResults.length !== 1 ? "s" : ""}
-                  {!isPartialResults && (
-                    <>
-                      {" · "}
-                      {bittingGroups.length} llave{bittingGroups.length !== 1 ? "s" : ""} necesaria{bittingGroups.length !== 1 ? "s" : ""}
-                    </>
-                  )}
-                </span>
-              </>
-            ) : (
-              <span>Sin coincidencias</span>
-            )}
-          </DialogTitle>
-        </DialogHeader>
-
-        {isSearching ? (
-          <div className="flex items-center justify-center gap-2 py-12">
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
-            <span className="text-sm text-muted-foreground">Buscando coincidencias…</span>
-          </div>
-        ) : bittingResults.length > 0 ? (
-          <div className="space-y-3 pb-2">
-            {isPartialResults ? renderPartialResults() : bittingGroups.map((group, groupIdx) => (
-              <div key={groupIdx} className="space-y-2">
-                <div className="flex items-center justify-center gap-2 px-1">
-                  <span className="text-sm font-extrabold tracking-wide text-primary bg-primary/15 px-3 py-1 rounded-full uppercase">
-                    Llave {groupIdx + 1}
-                  </span>
-                  <span className="text-xs font-medium text-muted-foreground">
-                    {group.length} código{group.length !== 1 ? "s" : ""}
-                  </span>
-                </div>
-                <div className="rounded-lg border border-border overflow-hidden divide-y divide-border">
-                  {group.map((entry) =>
-                    renderResultPair(entry, () => (flatIdx, val) => {
-                      const searchVal = searchValues[flatIdx] ?? "";
-                      const isWild = !searchVal.trim() || searchVal === "?";
-                      const isAdvanced = advancedMode && !isWild && val !== searchVal;
-                      return { isWild, isAdvanced };
-                    }, matchesCurrentPositionalQuery)
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+        {isSearching || hasBittingSearched ? (
+          <>
+            <div className="shrink-0 pb-3">
+              <p className="text-lg font-semibold text-foreground">{resultsTitle}</p>
+              {!isSearching && <p className="text-sm text-muted-foreground">{resultsMeta}</p>}
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain pb-4 no-scrollbar">
+              {renderResultsBody()}
+            </div>
+          </>
         ) : (
-          <div className="text-center bg-muted/50 p-8 rounded-xl border border-dashed border-border">
-            <p className="font-semibold text-foreground mb-1">Sin coincidencias</p>
-            <p className="text-sm text-muted-foreground">
-              Ningún código coincide con el patrón de cortes ingresado.
+          <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
+            <MaterialShape name="cookie9" className="mb-4 h-20 w-20 text-muted">
+              <Key className="h-8 w-8 text-muted-foreground" />
+            </MaterialShape>
+            <p className="max-w-xs text-[15px] text-muted-foreground">
+              Marca los cortes que conoces y pulsa Buscar para ver qué códigos coinciden.
             </p>
           </div>
         )}
+      </div>
+      </div>
+    </div>
+
+    {/* Información de la serie */}
+    <Dialog open={infoModalOpen} onOpenChange={setInfoModalOpen}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader className="text-left">
+          <DialogTitle className="text-2xl font-bold">{seriesName}</DialogTitle>
+          <DialogDescription>
+            {assignment.make} {assignment.model} · {assignment.yearStart}–{assignment.yearEnd}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3 pb-4">
+          <DetailSection title="Serie" className="bg-muted shadow-none">
+            <div className="-my-1.5">
+              <SpecRow label="IC" value={profile.icCard} />
+              {profile.series && <SpecRow label="Serie" value={profile.series} />}
+              {primaryRef && <SpecRow label="Referencia" value={`${primaryRef.brand} ${primaryRef.refCode}`} />}
+              {!!profile.seriesAliases?.length && (
+                <SpecRow label="También incluye" value={profile.seriesAliases.join(", ")} />
+              )}
+            </div>
+          </DetailSection>
+
+          {profileLockSelections && (() => {
+            const axes = profile.bittingConfig.axes;
+            const isDosEjes = !!(axes && axes.length >= 2);
+            const renderCuts = (arr: boolean[], start: number, end: number) =>
+              arr.slice(start, end).map((checked, i) => (
+                <span
+                  key={start + i}
+                  aria-label={`Corte ${start + i + 1}${checked ? " incluido" : ""}`}
+                  className={`flex h-6 w-6 items-center justify-center rounded-md ${
+                    checked ? "bg-primary text-primary-foreground" : "bg-background"
+                  }`}
+                >
+                  {checked && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
+                </span>
+              ));
+            return (
+              <DetailSection title="Cerraduras" className="bg-muted shadow-none" icon={<Lock className="h-5 w-5 text-primary" />}>
+                <SubHeading>Cortes que lleva cada cerradura</SubHeading>
+                <div className="space-y-3">
+                  {LOCK_ORDER.filter((lk) => profileLockSelections[lk]).map((lk) => {
+                    const arr = profileLockSelections[lk]!;
+                    return (
+                      <div key={lk} className="flex items-center gap-3">
+                        <span className="w-24 shrink-0 text-sm font-medium text-foreground">{LOCK_LABELS[lk]}</span>
+                        {isDosEjes ? (
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="text-xs font-semibold text-muted-foreground">{axes![0].label}</span>
+                            <div className="flex gap-1">{renderCuts(arr, 0, axes![0].length)}</div>
+                            <span className="ml-1 text-xs font-semibold text-muted-foreground">{axes![1].label}</span>
+                            <div className="flex gap-1">{renderCuts(arr, axes![0].length, axes![0].length + axes![1].length)}</div>
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap gap-1">{renderCuts(arr, 0, arr.length)}</div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </DetailSection>
+            );
+          })()}
+
+          {usesLetterMapping && profile.bittingConfig.depthMapping && (
+            <DetailSection title="Mapeo de profundidades" className="bg-muted shadow-none">
+              <p className="mb-3 text-sm leading-relaxed text-muted-foreground">
+                Las llaves pueden traer impresas letras o marcas distintas. Equivalencias:
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(profile.bittingConfig.depthMapping).map(([num, letter]) => (
+                  <TonalChip
+                    key={num}
+                    tone="warning"
+                    label={
+                      <>
+                        <span className="font-bold tabular-nums">{letter}</span>
+                        <span className="tabular-nums text-muted-foreground">= {num}</span>
+                      </>
+                    }
+                  />
+                ))}
+              </div>
+            </DetailSection>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    {/* Resultados (hoja móvil) */}
+    <Dialog open={resultsSheetOpen} onOpenChange={setResultsSheetOpen}>
+      <DialogContent>
+        <DialogHeader className="text-left">
+          <DialogTitle className="text-2xl font-bold">{resultsTitle}</DialogTitle>
+          <DialogDescription>{isSearching ? "Buscando coincidencias" : resultsMeta}</DialogDescription>
+        </DialogHeader>
+        <div className="pb-4">{renderResultsBody()}</div>
       </DialogContent>
     </Dialog>
 
@@ -1540,22 +1417,32 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
       />
     )}
 
+    {/* Origen de la foto para el decodificador */}
     <Dialog open={capturaModalOpen} onOpenChange={setCapturaModalOpen}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground text-center">
-            Origen de imagen
-          </DialogTitle>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader className="text-left">
+          <DialogTitle className="text-2xl font-bold">Leer llave con foto</DialogTitle>
+          <DialogDescription className="sr-only">Elige si tomar una foto o abrir una de la galería.</DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col gap-3 pb-2">
-          <label className="flex items-center justify-center gap-3 bg-primary text-primary-foreground p-3.5 rounded-2xl cursor-pointer active:scale-95 transition-transform">
-            <Camera size={18} />
-            <span className="font-bold tracking-wider text-sm">Tomar Foto</span>
+        <div className="grid grid-cols-2 gap-3 pb-4">
+          <label
+            onPointerDown={spawnRipple}
+            className="relative flex cursor-pointer flex-col items-center gap-3 overflow-hidden rounded-[28px] bg-primary-light px-4 py-6 text-center"
+          >
+            <MaterialShape name="cookie9" className="h-14 w-14 text-background/70">
+              <Camera className="h-6 w-6 text-foreground" />
+            </MaterialShape>
+            <span className="text-base font-semibold text-foreground">Cámara</span>
             <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleCapturaImagen} />
           </label>
-          <label className="flex items-center justify-center gap-3 bg-muted border border-border text-foreground p-3.5 rounded-2xl cursor-pointer active:scale-95 transition-transform">
-            <ImageIcon size={18} />
-            <span className="font-bold tracking-wider text-sm">Abrir Galería</span>
+          <label
+            onPointerDown={spawnRipple}
+            className="relative flex cursor-pointer flex-col items-center gap-3 overflow-hidden rounded-[28px] bg-muted px-4 py-6 text-center"
+          >
+            <MaterialShape name="cookie9" className="h-14 w-14 text-background/70">
+              <ImageIcon className="h-6 w-6 text-foreground" />
+            </MaterialShape>
+            <span className="text-base font-semibold text-foreground">Galería</span>
             <input type="file" accept="image/*" className="hidden" onChange={handleCapturaImagen} />
           </label>
         </div>

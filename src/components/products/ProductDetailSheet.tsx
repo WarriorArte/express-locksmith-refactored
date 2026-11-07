@@ -1,28 +1,22 @@
 /**
- * ProductDetailSheet — Mobile-first product detail (Redesign v2 style).
+ * ProductDetailSheet — detalle de producto o servicio del inventario.
+ * Criterio M3E (docs/CRITERIO-DISENO-M3E.md), variante "dentro de una hoja":
+ * protagonista = foto + precio de venta + stock.
  */
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/responsive-dialog";
 import { DialogActionBar, type DialogAction } from "@/components/shared/DialogActionBar";
-import { getReadableTextColor } from "@/lib/colorContrast";
+import { formatMoney } from "@/components/shared/detail-view/DetailViewTotals";
+import { DetailSection, SpecRow, SpecTile, TonalChip } from "@/design-system/detail/DetailScreen";
+import { MaterialShape } from "@/design-system/shapes/MaterialShape";
 import { resolveStorageUrl } from "@/lib/phpApi";
-import { cn } from "@/lib/utils";
-import {
-  Package,
-  Edit,
-  Move,
-  History,
-  Trash2,
-  Store,
-  Warehouse,
-  AlertTriangle,
-  ZoomIn,
-} from "lucide-react";
+import { AlertTriangle, Edit, History, Move, Package, Trash2, Wrench, ZoomIn } from "lucide-react";
 import type { Product } from "@/hooks/useProducts";
 
 interface Props {
@@ -38,6 +32,13 @@ interface Props {
   onDelete?: (p: Product) => void;
   onZoomImage?: (p: Product) => void;
 }
+
+const SERVICE_TYPE_LABEL: Record<string, string> = {
+  automotive: "Automotriz",
+  residential: "Residencial",
+  commercial: "Comercial",
+  industrial: "Industrial",
+};
 
 export function ProductDetailSheet({
   product,
@@ -55,17 +56,7 @@ export function ProductDetailSheet({
   if (!product) return null;
 
   const isService = (product.item_type ?? "product") === "service";
-  const badgeColor = isService ? "#6F67B0" : categoryColor;
-
-  const getServiceTypeLabel = (serviceType: string | null) => {
-    const labels: Record<string, string> = {
-      automotive: "Automotriz",
-      residential: "Residencial",
-      commercial: "Comercial",
-      industrial: "Industrial",
-    };
-    return labels[serviceType || ""] || serviceType || "Servicio";
-  };
+  const money = (v: number | null | undefined) => formatMoney(currencySymbol, v);
 
   const totalStock = product.stock_store + product.stock_warehouse;
   const isLow = totalStock < product.min_stock;
@@ -76,179 +67,134 @@ export function ProductDetailSheet({
     0,
   );
   const serviceTotal = Math.max(0, labor + serviceProductsSubtotal);
-  const stockBadge = isLow
-    ? { label: "Stock bajo", cls: "bg-warning/15 text-warning" }
-    : { label: "En stock", cls: "bg-success/15 text-foreground dark:text-success" };
-
-  const stockBoxes = [
-    { l: "Tienda", v: product.stock_store, i: Store },
-    { l: "Bodega", v: product.stock_warehouse, i: Warehouse },
-    { l: "Mínimo", v: product.min_stock, i: AlertTriangle, alert: true },
-  ];
+  const salePrice = isService ? serviceTotal : Number(product.sale_price_max || 0);
+  const kindLabel = isService
+    ? SERVICE_TYPE_LABEL[product.service_type || ""] || product.service_type || "Servicio"
+    : categoryName;
 
   const footerActions: DialogAction[] = [
     { icon: Edit, label: "Editar", onClick: () => onEdit(product) },
     ...(!isService
       ? [
-          { icon: Move, label: "Movimientos", onClick: () => onMovement(product) },
+          { icon: Move, label: "Movimientos", tooltip: "Registrar entrada o salida", onClick: () => onMovement(product) },
           { icon: History, label: "Historial", onClick: () => onHistory(product) },
         ]
       : []),
-    ...(onDelete
-      ? [{ icon: Trash2, label: "Eliminar", onClick: () => onDelete(product), tone: "destructive" as const }]
-      : []),
   ];
+  // Eliminar va al menú ⋯ para no quedar junto a Editar.
+  const menuActions: DialogAction[] = onDelete
+    ? [{ icon: Trash2, label: "Eliminar", tone: "destructive", onClick: () => onDelete(product) }]
+    : [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent fixedHeight className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="truncate">{product.name}</DialogTitle>
+        <DialogHeader className="text-left">
+          <DialogTitle className="line-clamp-2 text-2xl font-bold leading-tight">{product.name}</DialogTitle>
+          <DialogDescription className="flex items-center gap-2">
+            {!isService && (
+              <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: categoryColor }} />
+            )}
+            {isService ? `Servicio · ${kindLabel}` : kindLabel}
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto space-y-3 pb-2">
-          {/* Image */}
-          <button
-            type="button"
-            onClick={() => onZoomImage?.(product)}
-            className="w-full h-40 rounded-2xl bg-[hsl(var(--surface-2))] flex items-center justify-center overflow-hidden relative"
-          >
+        <div className="flex-1 space-y-3 overflow-y-auto pb-2">
+          {/* Protagonista: foto + precio + stock */}
+          <section className="rounded-[28px] bg-primary-light p-5">
             {product.image_url ? (
-              <img src={resolveStorageUrl(product.image_url) ?? undefined} alt={product.name} className="w-full h-full object-cover" />
+              <button
+                type="button"
+                onClick={() => onZoomImage?.(product)}
+                aria-label={`Ampliar foto de ${product.name}`}
+                className="relative mb-4 block h-44 w-full overflow-hidden rounded-2xl bg-background/70"
+              >
+                <img
+                  src={resolveStorageUrl(product.image_url) ?? undefined}
+                  alt={product.name}
+                  className="h-full w-full object-contain"
+                />
+                <span className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-background/80 text-foreground">
+                  <ZoomIn className="h-4 w-4" />
+                </span>
+              </button>
             ) : (
-              <Package className="w-12 h-12 text-muted-foreground" />
+              <MaterialShape name="cookie9" className="mx-auto mb-4 h-24 w-24 text-background/60">
+                {isService ? <Wrench className="h-9 w-9 text-primary" /> : <Package className="h-9 w-9 text-primary" />}
+              </MaterialShape>
             )}
-            {product.image_url && (
-              <span className="absolute top-2 right-2 w-8 h-8 rounded-lg bg-background/70 backdrop-blur flex items-center justify-center">
-                <ZoomIn className="w-4 h-4 text-foreground" />
-              </span>
-            )}
-          </button>
 
-          {/* Badges */}
-          <div className="flex gap-1.5 flex-wrap">
+            <p className="text-xs font-medium text-muted-foreground">
+              {isService ? "Precio del servicio" : "Precio sugerido"}
+            </p>
+            <p className="text-[2.25rem] font-bold leading-tight tabular-nums text-foreground">{money(salePrice)}</p>
+
             {!isService && (
-              <span className={cn("inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold", stockBadge.cls)}>
-                {stockBadge.label}
-              </span>
+              <>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {isLow ? (
+                    <TonalChip
+                      icon={<AlertTriangle className="h-4 w-4" />}
+                      label={`Stock bajo · quedan ${totalStock}`}
+                      tone="warning"
+                    />
+                  ) : (
+                    <TonalChip label={`${totalStock} en stock`} tone="neutral" className="bg-background/70" />
+                  )}
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  <SpecTile label="Tienda" value={String(product.stock_store)} />
+                  <SpecTile label="Bodega" value={String(product.stock_warehouse)} />
+                  <SpecTile label="Mínimo" value={String(product.min_stock)} />
+                </div>
+              </>
             )}
-            <span
-              className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold"
-              style={{ backgroundColor: badgeColor, color: getReadableTextColor(badgeColor) }}
-            >
-              {isService ? getServiceTypeLabel(product.service_type) : categoryName}
-            </span>
-          </div>
+          </section>
 
           {product.description && (
-            <p className="text-[13px] text-muted-foreground leading-relaxed">{product.description}</p>
+            <DetailSection title="Descripción" className="bg-muted shadow-none">
+              <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">{product.description}</p>
+            </DetailSection>
           )}
 
-          {/* Prices/Labor */}
-          <div className="bg-[hsl(var(--surface-2))] rounded-2xl p-3.5">
-            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
-              {isService ? "Detalles de servicio" : "Precios"}
+          <DetailSection title={isService ? "Costos del servicio" : "Precios"} className="bg-muted shadow-none">
+            <div className="-my-1.5">
+              {isService ? (
+                <>
+                  <SpecRow label="Mano de obra" value={money(labor)} />
+                  <SpecRow label="Productos" value={money(serviceProductsSubtotal)} />
+                  <SpecRow label="Precio con descuento" value={money(discount)} />
+                </>
+              ) : (
+                <>
+                  <SpecRow label="Costo local" value={money(product.purchase_price_local)} />
+                  {product.purchase_price_imported ? (
+                    <SpecRow label="Costo importado" value={money(product.purchase_price_imported)} />
+                  ) : null}
+                  <SpecRow label="Precio con descuento" value={money(product.sale_price_min)} />
+                  <SpecRow label="Precio sugerido" value={<span className="font-bold">{money(product.sale_price_max)}</span>} />
+                </>
+              )}
             </div>
-            {isService ? (
-              <>
-                <Row label="Mano de obra" value={`${currencySymbol}${labor.toLocaleString()}`} />
-                <Row label="Productos" value={`${currencySymbol}${serviceProductsSubtotal.toLocaleString()}`} />
-                <Row label="Precio con descuento" value={`${currencySymbol}${discount.toLocaleString()}`} accent="text-destructive" />
-                <div className="flex justify-between items-center pt-2 mt-2 border-t border-border">
-                  <span className="text-[13px] font-bold text-foreground">Precio del servicio</span>
-                  <span className="text-base font-extrabold text-foreground dark:text-primary">
-                    {currencySymbol}{serviceTotal.toLocaleString()}
-                  </span>
-                </div>
-              </>
-            ) : (
-              <>
-                <Row label="Costo local" value={`${currencySymbol}${Number(product.purchase_price_local || 0).toLocaleString()}`} />
-                {product.purchase_price_imported ? (
-                  <Row label="Costo importado" value={`${currencySymbol}${Number(product.purchase_price_imported).toLocaleString()}`} />
-                ) : null}
-                <Row
-                  label="Precio con descuento"
-                  value={`${currencySymbol}${Number(product.sale_price_min || 0).toLocaleString()}`}
-                  accent="text-destructive"
-                />
-                <div className="flex justify-between items-center pt-2 mt-2 border-t border-border">
-                  <span className="text-[13px] font-bold text-foreground">Precio sugerido</span>
-                  <span className="text-base font-extrabold text-foreground dark:text-primary">
-                    {currencySymbol}{Number(product.sale_price_max || 0).toLocaleString()}
-                  </span>
-                </div>
-              </>
-            )}
-          </div>
+          </DetailSection>
 
-          {/* Stock boxes - only for products */}
-          {!isService && (
-            <div className="grid grid-cols-3 gap-2">
-              {stockBoxes.map(({ l, v, i: Icon, alert }) => (
-                <div key={l} className="bg-[hsl(var(--surface-2))] rounded-xl px-2 py-2.5 text-center">
-                  <Icon
-                    className={cn(
-                      "w-4 h-4 mx-auto mb-1",
-                      alert && v >= product.min_stock ? "text-warning" : "text-foreground dark:text-primary",
-                    )}
-                  />
-                  <div className={cn("text-[18px] font-extrabold", isLow ? "text-warning" : "text-foreground")}>
-                    {v}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground">{l}</div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Instructions / Requirements */}
           {product.instructions && (
-            <div className="bg-[hsl(var(--surface-2))] rounded-2xl p-3.5 space-y-1">
-              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                {isService ? "Requisitos" : "Instrucciones de uso"}
-              </div>
-              <p className="text-[13px] text-foreground leading-relaxed whitespace-pre-wrap">
-                {product.instructions}
-              </p>
-            </div>
+            <DetailSection title={isService ? "Requisitos" : "Instrucciones de uso"} className="bg-muted shadow-none">
+              <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">{product.instructions}</p>
+            </DetailSection>
           )}
 
-          {/* Internal Notes */}
           {product.notes && (
-            <div className="bg-[hsl(var(--surface-2))] rounded-2xl p-3.5 space-y-1">
-              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                Notas internas
-              </div>
-              <p className="text-[13px] text-foreground leading-relaxed whitespace-pre-wrap">
-                {product.notes}
-              </p>
-            </div>
+            <DetailSection title="Notas internas" className="bg-muted shadow-none">
+              <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">{product.notes}</p>
+            </DetailSection>
           )}
-
         </div>
 
         <DialogFooter className="pt-1">
-          <DialogActionBar actions={footerActions} />
+          <DialogActionBar actions={footerActions} menuActions={menuActions} />
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function Row({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: string;
-  accent?: string;
-}) {
-  return (
-    <div className="flex justify-between items-center py-1">
-      <span className="text-[13px] text-muted-foreground">{label}</span>
-      <span className={cn("text-[13px] font-semibold", accent ?? "text-foreground")}>{value}</span>
-    </div>
   );
 }

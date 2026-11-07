@@ -6,10 +6,12 @@ import {
 } from "lucide-react";
 import { useWorkshopFeatures } from "@/hooks/useWorkshopFeatures";
 import { useWorkshop } from "@/hooks/useWorkshop";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { m as motion } from "framer-motion";
+import { useState } from "react";
 
 
+import { spawnRipple } from "@/lib/ripple";
+import { MaterialShape } from "@/design-system/shapes/MaterialShape";
+import { useVehicleHome } from "@/hooks/useVehicleHome";
 import {
   Dialog,
   DialogContent,
@@ -34,12 +36,21 @@ const navItems: NavItem[] = [
   { to: "/herramientas", icon: Car, label: "Vehículos", featureKey: null },
 ];
 
+// Cuando el inicio ES la herramienta de vehículos (useVehicleHome), el primer tab
+// pasa a ser "Vehículos" y el lugar que queda libre lo ocupa Ventas.
+const vehicleHomeNavItems: NavItem[] = [
+  { to: "/", icon: Car, label: "Vehículos", featureKey: null },
+  { to: "/servicios", icon: Wrench, label: "Servicios", featureKey: "services" },
+  { to: "/inventario", icon: Package, label: "Inventario", featureKey: "inventory" },
+  { to: "/ventas", icon: ShoppingCart, label: "Ventas", featureKey: "sales" },
+];
+
 const quickActions = [
-  { icon: Wrench, label: "Nuevo Servicio", dialog: "service", featureKey: "services" },
-  { icon: ShoppingCart, label: "Nueva Venta", dialog: "sale", featureKey: "sales" },
-  { icon: FileText, label: "Nueva Cotización", dialog: "quote", featureKey: "quotes" },
-  { icon: Users, label: "Nuevo Cliente", dialog: "customer", featureKey: "customers" },
-  { icon: Package, label: "Nuevo Producto", dialog: "product", featureKey: "inventory" },
+  { icon: Wrench, label: "Servicio", dialog: "service", featureKey: "services" },
+  { icon: ShoppingCart, label: "Venta", dialog: "sale", featureKey: "sales" },
+  { icon: FileText, label: "Cotización", dialog: "quote", featureKey: "quotes" },
+  { icon: Users, label: "Cliente", dialog: "customer", featureKey: "customers" },
+  { icon: Package, label: "Producto", dialog: "product", featureKey: "inventory" },
 ];
 
 export function BottomNav() {
@@ -54,7 +65,8 @@ export function BottomNav() {
   const [quoteDialogOpen, setQuoteDialogOpen] = useState(false);
   const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
 
-  const filteredNavItems = navItems.filter(
+  const vehicleHome = useVehicleHome();
+  const filteredNavItems = (vehicleHome ? vehicleHomeNavItems : navItems).filter(
     (i) => i.featureKey === null || isFeatureEnabled(i.featureKey),
   );
   const enabledQuickActions = quickActions.filter((a) =>
@@ -85,11 +97,6 @@ export function BottomNav() {
       ? location.pathname === "/"
       : location.pathname === to || location.pathname.startsWith(`${to}/`);
 
-  // Layout: mitad izquierda | FAB | mitad derecha (simétrico con 3 o 4 items)
-  const half = Math.ceil(filteredNavItems.length / 2);
-  const leftItems = filteredNavItems.slice(0, half);
-  const rightItems = filteredNavItems.slice(half);
-
   const directActionMap: Record<string, string> = {
     "/inventario": "product",
     "/cotizaciones": "quote",
@@ -109,125 +116,39 @@ export function BottomNav() {
     }
   };
 
-  const barRef = useRef<HTMLDivElement>(null);
-  const itemRefs = useRef<Record<string, HTMLElement | null>>({});
-  const [barWidth, setBarWidth] = useState(0);
-  const [notchX, setNotchX] = useState<number | null>(null);
-
-  const activeItem = filteredNavItems.find((i) => isItemActive(i.to)) || null;
-
-  const measure = useCallback(() => {
-    const bar = barRef.current;
-    if (!bar) return;
-    const rect = bar.getBoundingClientRect();
-    setBarWidth(rect.width);
-    const el = activeItem ? itemRefs.current[activeItem.to] : null;
-    if (el) {
-      const r = el.getBoundingClientRect();
-      setNotchX(r.left - rect.left + r.width / 2);
-    } else {
-      setNotchX(null);
-    }
-  }, [activeItem]);
-
-  useLayoutEffect(() => {
-    measure();
-  }, [measure, filteredNavItems.length, shouldShowFAB]);
-
-  useEffect(() => {
-    const bar = barRef.current;
-    if (!bar) return;
-    const ro = new ResizeObserver(() => measure());
-    ro.observe(bar);
-    window.addEventListener("orientationchange", measure);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("orientationchange", measure);
-    };
-  }, [measure]);
-
   if (isLoading) return null;
 
   return (
     <>
-      <nav className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 lg:hidden">
-        <div
-          ref={barRef}
-          className="relative h-[68px] drop-shadow-[0_8px_20px_hsl(var(--foreground)/0.12)] dark:drop-shadow-[0_8px_18px_hsl(0_0%_0%/0.45)]"
-        >
-          {/* Silueta de la barra con muesca que se mueve al tab activo */}
-          {barWidth > 0 && (
-            <svg
-              className="absolute inset-0 h-full w-full overflow-visible"
-              viewBox={`0 0 ${barWidth} 68`}
-              preserveAspectRatio="none"
-              aria-hidden="true"
-            >
-              <motion.path
-                d={buildBarPath(barWidth, notchX)}
-                fill="hsl(var(--card))"
-                stroke="hsl(var(--border))"
-                strokeWidth={1}
-                initial={false}
-                animate={{ d: buildBarPath(barWidth, notchX) }}
-                transition={{ type: "spring", stiffness: 260, damping: 26, mass: 0.7 }}
-              />
-            </svg>
-          )}
-
-          {/* Burbuja del tab activo, flotando sobre la muesca */}
-          {notchX !== null && activeItem && (
-            <motion.div
-              className="pointer-events-none absolute top-[-20px] z-10 flex h-[48px] w-[48px] items-center justify-center rounded-[14px] bg-primary text-primary-foreground shadow-[0_6px_14px_-6px_hsl(var(--foreground)/0.35)]"
-              initial={false}
-              animate={{ left: getNotchCenter(barWidth, notchX) - 24, scale: 1 }}
-              transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.7 }}
-            >
-              <motion.span
-                key={activeItem.to}
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.14, ease: "easeOut" }}
-              >
-                <activeItem.icon className="h-[22px] w-[22px]" strokeWidth={2} />
-              </motion.span>
-            </motion.div>
-          )}
-
-          <div className="relative flex h-full items-end justify-around px-2 pb-2">
-            {leftItems.map((item) => (
-              <NavBtn
-                key={item.to}
-                item={item}
-                active={isItemActive(item.to)}
-                innerRef={(el) => (itemRefs.current[item.to] = el)}
-              />
-            ))}
-
-            {/* Center FAB */}
-            {shouldShowFAB && (
-              <div className="flex flex-1 items-center justify-center self-center">
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  onClick={handleFabClick}
-                  aria-label={directAction ? "Crear" : "Acciones rápidas"}
-                  className="flex h-[46px] w-[46px] items-center justify-center rounded-[14px] bg-accent text-accent-foreground"
-                >
-                  <Plus className="h-5 w-5" strokeWidth={2.6} />
-                </motion.button>
-              </div>
-            )}
-
-            {rightItems.map((item) => (
-              <NavBtn
-                key={item.to}
-                item={item}
-                active={isItemActive(item.to)}
-                innerRef={(el) => (itemRefs.current[item.to] = el)}
-              />
-            ))}
-          </div>
+      {/* Barra flotante M3 Expressive ("floating toolbar") + FAB aparte.
+          El destino activo se expande en una píldora con ícono + nombre;
+          los demás muestran solo el ícono. Animación con CSS (flex-grow con
+          curva de resorte) porque LazyMotion usa domAnimation, sin layout. */}
+      <nav
+        aria-label="Navegación principal"
+        className="pointer-events-none fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 flex items-center gap-3 lg:hidden"
+      >
+        <div className="pointer-events-auto flex h-16 min-w-0 flex-1 items-center gap-1 rounded-full bg-card px-2 shadow-[0_6px_20px_-6px_hsl(var(--foreground)/0.22),0_2px_6px_-2px_hsl(var(--foreground)/0.12)] dark:bg-popover dark:shadow-[0_8px_24px_-6px_hsl(0_0%_0%/0.6)]">
+          {filteredNavItems.map((item) => (
+            <NavItemButton key={item.to} item={item} active={isItemActive(item.to)} />
+          ))}
         </div>
+
+        {shouldShowFAB && (
+          <button
+            type="button"
+            onClick={handleFabClick}
+            aria-label={directAction ? "Crear" : "Acciones rápidas"}
+            className="group pointer-events-auto relative flex h-16 w-16 shrink-0 items-center justify-center drop-shadow-[0_6px_14px_hsl(var(--primary)/0.35)] dark:drop-shadow-[0_6px_16px_hsl(0_0%_0%/0.55)]"
+          >
+            <MaterialShape
+              name="cookie9"
+              className="h-16 w-16 text-primary transition-transform duration-500 ease-spring group-active:rotate-45 group-active:scale-95"
+            >
+              <Plus className="h-7 w-7 text-primary-foreground" strokeWidth={2.4} />
+            </MaterialShape>
+          </button>
+        )}
       </nav>
 
 
@@ -235,33 +156,26 @@ export function BottomNav() {
       <Dialog open={actionsOpen} onOpenChange={setActionsOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <div className="flex items-center gap-3">
-              <div className="flex h-[52px] w-[52px] items-center justify-center rounded-[16px] bg-primary/10 text-primary">
-                <Plus className="h-6 w-6" strokeWidth={2.4} />
-              </div>
-              <div className="min-w-0">
-                <DialogTitle className="text-2xl font-extrabold tracking-tight">
-                  Crear nuevo
-                </DialogTitle>
-                <DialogDescription>
-                  Elige qué vas a registrar en el taller.
-                </DialogDescription>
-              </div>
-            </div>
+            <DialogTitle className="text-2xl font-bold">Crear</DialogTitle>
+            <DialogDescription className="sr-only">
+              Elige qué vas a registrar.
+            </DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-3 pt-2">
+          <div className="grid grid-cols-3 gap-x-3 gap-y-5 pb-2 pt-3">
             {enabledQuickActions.map((a) => (
               <button
                 key={a.dialog}
+                type="button"
                 onClick={() => openAction(a.dialog)}
-                className="flex min-h-[136px] flex-col items-start justify-end rounded-3xl bg-accent/50 p-4 text-left transition-transform active:scale-[0.98]"
+                className="flex flex-col items-center gap-2 text-center"
               >
-                <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-[14px] bg-primary/10 text-primary">
-                  <a.icon className="h-5 w-5" />
+                <span
+                  onPointerDown={spawnRipple}
+                  className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-[22px] bg-accent text-accent-foreground"
+                >
+                  <a.icon className="h-6 w-6" />
                 </span>
-                <span className="text-sm font-extrabold leading-tight text-foreground">
-                  {a.label}
-                </span>
+                <span className="text-sm font-medium text-foreground">{a.label}</span>
               </button>
             ))}
           </div>
@@ -278,115 +192,30 @@ export function BottomNav() {
   );
 }
 
-const BUBBLE = 48; // lado de la burbuja
-const BUBBLE_R = 14; // radio de la burbuja
-const GAP = 6; // aire entre burbuja y barra
-const BUBBLE_TOP = -20; // top de la burbuja respecto a la barra
-
-const NOTCH_HALF = BUBBLE / 2 + GAP; // 30
-const NOTCH_DEPTH = BUBBLE_TOP + BUBBLE + GAP; // 34
-const NOTCH_CORNER = BUBBLE_R + GAP; // 20 · mismo radio visual que la burbuja
-const NOTCH_LIP = 9; // curva suave de entrada en el borde superior
-
-/**
- * Mantiene la burbuja centrada sobre su icono. La burbuja mide 48 px,
- * por lo que su centro se ajusta a 24 px de los bordes.
- */
-function getNotchCenter(w: number, notchX: number | null): number {
-  if (w === 0) return 0;
-  if (notchX === null) return w / 2;
-  return Math.min(Math.max(notchX, 24), w - 24);
-}
-
-/**
- * Silueta de la barra: rectángulo redondeado con una muesca cuadrada de bordes
- * redondeados bajo el tab activo.
- *
- * IMPORTANTE: la estructura de comandos del path es SIEMPRE la misma (mismo
- * número y tipo de comandos) para que framer-motion pueda interpolar la "d"
- * sin glitches ni desapariciones. Solo cambian los números.
- */
-function buildBarPath(w: number, notchX: number | null): string {
-  const h = 68;
-  const r = 24;
-  const nw = NOTCH_HALF;
-  const nd = NOTCH_DEPTH;
-  const nc = NOTCH_CORNER;
-  const cx = getNotchCenter(w, notchX);
-
-  // Espacio libre a cada lado de la muesca: primero se conserva el "lip"
-  // (curva de entrada) y lo que sobre se usa para la esquina de la barra.
-  const spaceL = Math.max(0, cx - nw);
-  const spaceR = Math.max(0, w - (cx + nw));
-  const lipL = Math.min(NOTCH_LIP, spaceL);
-  const lipR = Math.min(NOTCH_LIP, spaceR);
-  const rL = Math.max(0.01, Math.min(r, spaceL - lipL));
-  const rR = Math.max(0.01, Math.min(r, spaceR - lipR));
-
-  return [
-    `M ${rL} 0`,
-    // entrada izquierda de la muesca
-    `H ${cx - nw - lipL}`,
-    `Q ${cx - nw} 0 ${cx - nw} ${lipL}`,
-    // pared izquierda
-    `V ${nd - nc}`,
-    // esquina inferior izquierda de la muesca
-    `A ${nc} ${nc} 0 0 0 ${cx - nw + nc} ${nd}`,
-    // fondo de la muesca
-    `H ${cx + nw - nc}`,
-    // esquina inferior derecha
-    `A ${nc} ${nc} 0 0 0 ${cx + nw} ${nd - nc}`,
-    // pared derecha
-    `V ${lipR}`,
-    // salida derecha
-    `Q ${cx + nw} 0 ${cx + nw + lipR} 0`,
-    `H ${w - rR}`,
-    `A ${rR} ${rR} 0 0 1 ${w} ${rR}`,
-    `V ${h - r}`,
-    `A ${r} ${r} 0 0 1 ${w - r} ${h}`,
-    `H ${r}`,
-    `A ${r} ${r} 0 0 1 0 ${h - r}`,
-    `V ${rL}`,
-    `A ${rL} ${rL} 0 0 1 ${rL} 0`,
-    "Z",
-  ].join(" ");
-}
-
-
-
-
-function NavBtn({
-  item,
-  active,
-  innerRef,
-}: {
-  item: Pick<NavItem, "to" | "icon" | "label">;
-  active: boolean;
-  innerRef?: (el: HTMLAnchorElement | null) => void;
-}) {
+function NavItemButton({ item, active }: { item: Pick<NavItem, "to" | "icon" | "label">; active: boolean }) {
   const Icon = item.icon;
   return (
     <NavLink
-      ref={innerRef}
       to={item.to}
       aria-label={item.label}
       aria-current={active ? "page" : undefined}
       onClick={(e) => {
         if (active) e.preventDefault();
       }}
-      className="relative flex h-full flex-1 flex-col items-center justify-end gap-1 rounded-[18px] pb-1 active:bg-muted/60"
+      onPointerDown={spawnRipple}
+      className={`relative flex h-12 min-w-12 items-center justify-center overflow-hidden rounded-full transition-[flex-grow,background-color,color] duration-500 ease-spring ${
+        active ? "grow-[2.6] bg-accent px-3 text-accent-foreground" : "grow text-muted-foreground"
+      }`}
     >
-      <span className="flex flex-col items-center gap-1">
-        <Icon
-          className={`h-[22px] w-[22px] text-muted-foreground ${active ? "invisible" : "visible"}`}
-          strokeWidth={1.9}
-        />
-        <span className={`text-[11px] ${active ? "font-bold text-foreground" : "font-medium text-muted-foreground"}`}>
-          {item.label}
-        </span>
+      <Icon className="h-6 w-6 shrink-0" strokeWidth={active ? 2.2 : 1.9} />
+      <span
+        aria-hidden="true"
+        className={`overflow-hidden whitespace-nowrap text-sm font-semibold transition-[max-width,opacity,margin] duration-500 ease-emphasized ${
+          active ? "ml-2 max-w-[7.5rem] opacity-100" : "ml-0 max-w-0 opacity-0"
+        }`}
+      >
+        {item.label}
       </span>
     </NavLink>
   );
 }
-
-

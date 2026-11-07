@@ -435,9 +435,8 @@ export default function Servicios() {
         <section className="ce-hero ce-hero-mobile-bleed p-[22px_16px] lg:p-[22px]">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
-              <div className="ce-hero-eyebrow">Servicios</div>
-              <h1 className="ce-hero-title mt-1.5 text-[clamp(1.55rem,5.4vw,2.15rem)] lg:mt-2 lg:text-[clamp(1.75rem,3vw,2.5rem)]">
-                En el taller
+              <h1 className="ce-hero-title text-[clamp(1.55rem,5.4vw,2.15rem)] lg:text-[clamp(1.75rem,3vw,2.5rem)]">
+                Servicios
               </h1>
               <p className="ce-hero-meta mt-2 max-w-[460px] lg:mt-3">
                 <b className="text-foreground">{stats.today} servicios</b>
@@ -494,7 +493,7 @@ export default function Servicios() {
                 type="button"
                 aria-label="Nuevo servicio"
                 onClick={() => { setEditingService(null); setFormDialogOpen(true); }}
-                className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex shrink-0 items-center justify-center shadow-[0_0_16px_hsl(var(--primary)/0.40)] active:scale-95 transition-transform lg:hidden"
+                className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex shrink-0 items-center justify-center active:scale-95 transition-transform lg:hidden"
               >
                 <Plus className="w-5 h-5" strokeWidth={2.5} />
               </button>
@@ -507,7 +506,7 @@ export default function Servicios() {
       {isLoading ? (
         <>
           {/* Mobile skeleton */}
-          <div className="md:hidden space-y-2.5">
+          <div className="md:hidden m3-list">
             {[0, 1, 2, 3].map((i) => <MobileListCardSkeleton key={i} />)}
           </div>
           {/* Desktop skeleton */}
@@ -552,13 +551,13 @@ export default function Servicios() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border bg-muted/30">
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide w-10" />
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Folio</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Estado</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Descripcion</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Cliente</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Fecha</th>
-                  <th className="px-4 py-3 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Precio</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground w-10" />
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Folio</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Estado</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Descripcion</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Cliente</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Fecha</th>
+                  <th className="px-4 py-3 text-right text-[11px] font-semibold text-muted-foreground">Precio</th>
                   <th className="w-12" />
                 </tr>
               </thead>
@@ -581,7 +580,7 @@ export default function Servicios() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="font-mono text-xs text-foreground dark:text-primary font-semibold whitespace-nowrap">{service.service_number}</span>
+                        <span className="tabular-nums text-xs text-foreground dark:text-primary font-semibold whitespace-nowrap">{service.service_number}</span>
                       </td>
                       <td className="px-4 py-3">
                         <Badge className={cn("text-xs whitespace-nowrap", status.color)}>
@@ -607,7 +606,7 @@ export default function Servicios() {
                       </td>
                       <td className="px-4 py-3 text-right whitespace-nowrap">
                         <p className="text-sm font-bold text-foreground">{currencySymbol}{Number(price).toLocaleString()}</p>
-                        <p className="text-[10px] text-muted-foreground">{service.final_price ? "Final" : "Estimado"}</p>
+                        <p className="text-[11px] text-muted-foreground">{service.final_price ? "Final" : "Estimado"}</p>
                       </td>
                       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>
@@ -666,7 +665,7 @@ export default function Servicios() {
           </div>
 
           {/* Mobile cards */}
-          <div className="md:hidden space-y-2.5">
+          <div className="md:hidden m3-list">
             {filteredServices.map((service) => {
               const status = getServiceDisplayStatus(service);
               const price = service.final_price ?? service.estimated_price ?? 0;

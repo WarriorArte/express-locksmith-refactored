@@ -176,8 +176,7 @@ export default function Ventas() {
       {/* Header bar - ya NO es sticky */}
       <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-3 pb-4">
         <PageHeader
-          eyebrow="Ventas"
-          title={<>Registro de ventas</>}
+          title="Ventas"
           subtitle={`${sales?.length || 0} ventas registradas`}
           action={
             <Button className="h-11 rounded-[12px] bg-primary text-primary-foreground hover:bg-primary-hover" onClick={() => setFormDialogOpen(true)}>
@@ -202,7 +201,7 @@ export default function Ventas() {
             type="button"
             aria-label="Nueva venta"
             onClick={() => setFormDialogOpen(true)}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[0_0_16px_hsl(var(--primary)/0.40)] transition-transform active:scale-95 lg:hidden"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-transform active:scale-95 lg:hidden"
           >
             <Plus className="w-5 h-5" strokeWidth={2.5} />
           </button>
@@ -215,7 +214,7 @@ export default function Ventas() {
       <div className="mt-6">
         {isLoading ? (
           <>
-            <div className="md:hidden space-y-2.5">
+            <div className="md:hidden m3-list">
               {[0, 1, 2, 3].map((i) => <MobileListCardSkeleton key={i} />)}
             </div>
             <div className="hidden md:block card-elevated overflow-hidden animate-pulse">
@@ -258,12 +257,12 @@ export default function Ventas() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border bg-muted/30">
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Folio</th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Pago</th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Cliente</th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Artículos</th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Fecha</th>
-                    <th className="px-4 py-3 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Total</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Folio</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Pago</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Cliente</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Artículos</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted-foreground">Fecha</th>
+                    <th className="px-4 py-3 text-right text-[11px] font-semibold text-muted-foreground">Total</th>
                     <th className="w-12" />
                   </tr>
                 </thead>
@@ -275,7 +274,7 @@ export default function Ventas() {
                       onClick={() => handleViewDetail(sale)}
                     >
                       <td className="px-4 py-3">
-                        <span className="font-mono text-xs text-foreground dark:text-primary font-semibold whitespace-nowrap">{sale.sale_number}</span>
+                        <span className="tabular-nums text-xs text-foreground dark:text-primary font-semibold whitespace-nowrap">{sale.sale_number}</span>
                       </td>
                       <td className="px-4 py-3">
                         <Badge className={cn("text-xs whitespace-nowrap", paymentMethodColors[sale.payment_method])}>
@@ -303,7 +302,7 @@ export default function Ventas() {
                       <td className="px-4 py-3 text-right whitespace-nowrap">
                         <p className="text-sm font-bold text-foreground dark:text-success">{currencySymbol}{Number(sale.total).toLocaleString()}</p>
                         {sale.discount && Number(sale.discount) > 0 && (
-                          <p className="text-[10px] text-destructive">-{currencySymbol}{Number(sale.discount).toLocaleString()} desc.</p>
+                          <p className="text-[11px] text-destructive">-{currencySymbol}{Number(sale.discount).toLocaleString()} desc.</p>
                         )}
                       </td>
                       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
@@ -338,7 +337,7 @@ export default function Ventas() {
             </div>
 
             {/* Mobile cards */}
-            <div className="md:hidden space-y-2.5">
+            <div className="md:hidden m3-list">
               {filteredSales.map((sale) => {
                 const statusTextClass =
                   sale.payment_method === "cash" ? "text-success" :

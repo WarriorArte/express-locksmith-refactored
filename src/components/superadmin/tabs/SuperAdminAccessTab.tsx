@@ -101,7 +101,7 @@ export function SuperAdminAccessTab({ isSuperAdmin }: { isSuperAdmin: boolean })
                 setForm({ ...form, workshopCode: event.target.value.toUpperCase() })
               }
               placeholder="ADMINWARRIOR"
-              className="uppercase"
+              className=""
               disabled={isLoading}
             />
           </div>
