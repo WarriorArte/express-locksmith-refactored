@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { m as motion } from "framer-motion";
 import { Wrench, Key, FileText, Cpu, Car, Truck, Bike } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { AccountMenu } from "@/components/layout/AccountMenu";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { ChipRow, FilterChip } from "@/design-system/detail/DetailScreen";
 import { NativeSelectField } from "@/design-system/pickers";
@@ -330,17 +330,12 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
     <div className="flex-1 min-h-0 flex flex-col">
       {!toolActive && (
         <div className="shrink-0 bg-background px-5 lg:px-6 pt-10 lg:pt-3 pb-4">
-          <section className="ce-hero ce-hero-mobile-bleed p-[22px_16px] lg:p-[22px]">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0 flex-1">
-                <h1 className="ce-hero-title text-[clamp(1.55rem,5.4vw,2.15rem)] lg:text-[clamp(1.75rem,3vw,2.5rem)]">
-                  {vehicleSelected ? `${selectedMake} ${selectedModel}` : "Vehículos"}
-                </h1>
-                {vehicleSelected && <p className="ce-hero-meta mt-2 text-base">{selectedYear}</p>}
-              </div>
-              <AccountMenu />
-            </div>
-
+          <PageHeader
+            title={vehicleSelected ? `${selectedMake} ${selectedModel}` : "Vehículos"}
+            subtitle={vehicleSelected ? String(selectedYear) : selectedCategory || "Año · Marca · Modelo"}
+            onBack={vehicleSelected ? clearVehicle : undefined}
+            backLabel={vehicleSelected ? "Volver a elegir vehículo" : "Volver al inicio"}
+          >
             {vehicleSelected ? (
               <div className="mt-4 flex flex-wrap gap-2">
                 <Button variant="secondary" size="sm" onClick={() => setSelectedModel("")}>
@@ -404,7 +399,7 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
                 </div>
               </div>
             )}
-          </section>
+          </PageHeader>
         </div>
       )}
       <div className={

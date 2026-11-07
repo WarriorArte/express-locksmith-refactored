@@ -10,18 +10,18 @@
 import { useEffect, useRef, useState } from "react";
 import { m as motion, useMotionValue, useTransform } from "framer-motion";
 import { toast } from "sonner";
-import { ArrowLeft, Check, Copy, ImageIcon, Search, X } from "lucide-react";
+import { Check, Copy, ImageIcon, Search, X } from "lucide-react";
 import { AccountMenu } from "@/components/layout/AccountMenu";
 import { ImageViewDialog } from "@/components/shared/ImageViewDialog";
-import { Button } from "@/components/ui/button";
 import { resolveStorageUrl } from "@/lib/phpApi";
 import { spawnRipple } from "@/lib/ripple";
 import { cn } from "@/lib/utils";
+import { ModuleHeader } from "@/design-system/layout/ModuleHeader";
 
 // ── Pantalla ────────────────────────────────────────────────────────────────
 
 interface DetailScreenProps {
-  /** Título grande; también aparece en la barra al desplazar. */
+  /** Título de una fila junto a la flecha. */
   title: string;
   /** Una línea bajo el título (año · marca, folio, etc.). */
   meta?: string;
@@ -34,8 +34,8 @@ interface DetailScreenProps {
 }
 
 /**
- * Contenedor con scroll propio + barra superior que gana fondo y título al
- * desplazar (large → small top app bar de Android) + título grande.
+ * Contenedor con scroll propio y encabezado compacto de dos filas que gana
+ * fondo al desplazar.
  */
 export function DetailScreen({
   title,
@@ -58,19 +58,7 @@ export function DetailScreen({
       >
         <div className="sticky top-0 z-30 px-2 pb-2 pt-10 lg:pt-3">
           <motion.div aria-hidden="true" style={{ opacity: barBackground }} className="absolute inset-0 bg-background shadow-sm" />
-          <div className="relative flex items-center gap-1">
-            <Button variant="ghost" size="icon" onClick={onBack} aria-label={backLabel}>
-              <ArrowLeft className="!h-6 !w-6" />
-            </Button>
-            <div className="min-w-0 flex-1 pl-1">
-              <p className="truncate text-lg font-semibold leading-tight text-foreground">{title}</p>
-              {meta && <p className="truncate text-xs leading-tight text-muted-foreground">{meta}</p>}
-            </div>
-            {actions}
-            <div className="shrink-0 pr-2">
-              <AccountMenu />
-            </div>
-          </div>
+          <ModuleHeader title={title} subtitle={meta} onBack={onBack} backLabel={backLabel} actions={actions} accountTrigger={<AccountMenu />} />
         </div>
 
         <div className="space-y-3 px-4 pb-4 pt-1">{children}</div>

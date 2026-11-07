@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef } from "react";
 import { m as motion } from "framer-motion";
 import {
-  Plus, Trash2, Edit, ArrowLeft, Check, Search,
+  Plus, Trash2, Edit, Check, Search,
   ImageIcon, Car, X, ChevronDown, Cpu, Radio,
   ShieldCheck, Wrench, ChevronUp, LayoutGrid, Loader2,
 } from "lucide-react";
@@ -30,6 +30,7 @@ import { RichTextEditor } from "@/components/herramientas/RichTextField";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import { phpApiDeleteFile, resolveStorageUrl } from "@/lib/phpApi";
+import { ModuleHeader } from "@/design-system/layout/ModuleHeader";
 
 import type {
   ImmoProfile, ImmoGenField, ImmoCatalogItem,
@@ -424,20 +425,11 @@ export function ImmoManager({ profiles, onSave, onUpdate, onDelete, catalog: _ca
   const title = isNew ? "Nueva entrada Immo" : profileTitle(draft);
   return (
     <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between gap-3 pb-3 shrink-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <button onClick={() => setView("list")} className="text-primary hover:text-primary/80 transition-colors shrink-0">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div className="min-w-0">
-            <h2 className="text-sm font-bold text-foreground truncate">{title}</h2>
-            <p className="text-xs text-muted-foreground">{isNew ? "Creando perfil" : "Editando perfil"}</p>
-          </div>
-        </div>
+      <ModuleHeader className="pb-3 shrink-0" title={title} subtitle={isNew ? "Creando perfil" : "Editando perfil"} onBack={() => setView("list")} backLabel="Volver a perfiles Immo" actions={
         <Button onClick={handleSave} size="sm" className="shrink-0">
           <Check className="w-4 h-4 mr-1" /> Guardar
         </Button>
-      </div>
+      } />
       <div className="flex-1 min-h-0 overflow-y-auto pr-1 custom-scrollbar">
         <ImmoProfileEditor
           draft={draft}

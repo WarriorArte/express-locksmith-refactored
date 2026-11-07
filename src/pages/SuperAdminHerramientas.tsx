@@ -1,4 +1,5 @@
-import { Navigate, useLocation } from "react-router";
+import { Navigate, useLocation, useNavigate } from "react-router";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import {
   HerramientasModule,
@@ -31,6 +32,7 @@ const ROUTE_TO_VIEW: Record<string, { view: SuperAdminHerramientasView; title: s
 export default function SuperAdminHerramientas() {
   const { isSuperAdmin, isLoading } = useWorkshop();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const config = ROUTE_TO_VIEW[pathname] ?? ROUTE_TO_VIEW["/superadmin/keycode"];
 
   if (isLoading) {
@@ -42,10 +44,7 @@ export default function SuperAdminHerramientas() {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col container mx-auto py-6 gap-6">
-      <div className="shrink-0">
-        <h1 className="text-3xl font-bold">{config.title}</h1>
-        <p className="text-muted-foreground">{config.subtitle}</p>
-      </div>
+      <PageHeader className="shrink-0" title={config.title} subtitle={config.subtitle} onBack={() => navigate("/superadmin")} backLabel="Volver a Superadministrador" />
       <div className="flex-1 min-h-0 flex flex-col">
         <HerramientasModule superAdminView={config.view} />
       </div>

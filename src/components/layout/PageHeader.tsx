@@ -24,6 +24,8 @@ interface PageHeaderProps {
   compact?: boolean;
   className?: string;
   children?: React.ReactNode;
+  onBack?: () => void;
+  backLabel?: string;
 }
 
 export function PageHeader({
@@ -36,10 +38,14 @@ export function PageHeader({
   compact = false,
   className,
   children,
+  onBack,
+  backLabel,
 }: PageHeaderProps) {
   return (
     <HeroHeader
       title={title}
+      onBack={onBack}
+      backLabel={backLabel}
       subtitle={subtitle}
       eyebrow={eyebrow}
       action={action}

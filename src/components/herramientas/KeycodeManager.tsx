@@ -30,6 +30,7 @@ import { useWorkshop } from "@/hooks/useWorkshop";
 import { phpApiDeleteFile, resolveStorageUrl } from "@/lib/phpApi";
 import { ImageGalleryDialog } from "@/components/shared/ImageGalleryDialog";
 import { KeycodeWorkspace } from "@/components/herramientas/KeycodeWorkspace";
+import { ModuleHeader } from "@/design-system/layout/ModuleHeader";
 
 import type { KeycodeProfile, KeyReference, CodeEntry, BittingConfig, ConfiguracionVisualLlave, TipoLlaveSVG, DecoderConfig, DecoderTipoLlave, DecoderAlineacion, ToolAssignment } from "@/types";
 
@@ -1118,17 +1119,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
     return (
       <div className="h-full flex flex-col">
         {/* Header compacto */}
-        <div className="flex items-center justify-between gap-3 pb-3 shrink-0">
-          <div className="flex items-center gap-2 min-w-0">
-            <button onClick={() => setView("list")} className="text-primary hover:text-primary/80 transition-colors shrink-0">
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div className="min-w-0">
-              <h2 className="text-sm font-bold text-foreground truncate">Serie: {series || "—"}</h2>
-              <p className="text-xs text-muted-foreground">IC: {icCard || "—"} · {currentCodes.length} códigos</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
+        <ModuleHeader className="pb-3 shrink-0" title={`Serie: ${series || "—"}`} subtitle={`IC: ${icCard || "—"} · ${currentCodes.length} códigos`} onBack={() => setView("list")} backLabel="Volver a perfiles Keycode" actions={<>
             <Button
               type="button"
               variant="outline"
@@ -1153,9 +1144,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                 <><Check className="w-4 h-4 mr-1" /> Guardar</>
               )}
             </Button>
-          </div>
-
-        </div>
+          </>} />
 
         {editingProfile.codesIncomplete && !isNewProfile && (
           <div className="mb-3 shrink-0 flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">

@@ -1,0 +1,2 @@
+# Architecture rules
+- Use `ModuleHeader` for module page and full-screen tool app bars so title, context, navigation and actions share one responsive two-row structure; keep dialog and sign-in headings independent.

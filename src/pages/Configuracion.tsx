@@ -186,6 +186,7 @@ export default function Configuracion() {
       {/* Header */}
       <PageHeader
         title="Configuración"
+        subtitle={currentWorkshop?.name || "Perfil y preferencias"}
         className="lg:hidden"
       />
 
@@ -237,6 +238,7 @@ export default function Configuracion() {
           <div className="sticky top-0 z-40 -mx-6 px-6 pt-4 pb-4 bg-background border-b border-border/60 shadow-[0_8px_24px_hsl(var(--background))]">
           <PageHeader
             title="Configuración"
+            subtitle={currentWorkshop?.name || "Perfil y preferencias"}
                 className="mb-5"
           />
           <TabsList className={cn(

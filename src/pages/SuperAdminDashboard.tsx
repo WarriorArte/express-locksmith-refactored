@@ -65,12 +65,7 @@ export default function SuperAdminDashboard() {
     <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain pt-10 lg:pt-3 px-5 lg:px-6 pb-mobile-nav space-y-6 no-scrollbar">
       {/* Header */}
       <PageHeader
-        title={
-          <span className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-secondary" />
-            Panel SuperAdmin
-          </span>
-        }
+        title="Panel SuperAdmin"
         subtitle={`Bienvenido${profile?.full_name ? `, ${profile.full_name}` : ""} · Administración Global`}
         action={
           <div className="hidden sm:flex items-center gap-1.5 text-xs text-sidebar-foreground/80 bg-background/10 rounded-full px-2.5 py-1.5">

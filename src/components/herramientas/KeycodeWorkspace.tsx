@@ -1,6 +1,6 @@
 import { Fragment, useState, useRef, useMemo, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Key, ArrowLeft, Check, X, Info, Camera, Lock, Search, List, ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
+import { Key, Check, X, Info, Camera, Lock, Search, List, ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { GeneradorLlaveSVG } from "@/components/llaves/GeneradorLlaveSVG";
 import { KeyPhotoDecoder } from "@/components/herramientas/KeyPhotoDecoder";
@@ -12,6 +12,7 @@ import { spawnRipple } from "@/lib/ripple";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AccountMenu } from "@/components/layout/AccountMenu";
+import { ModuleHeader } from "@/design-system/layout/ModuleHeader";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/responsive-dialog";
 import { MaterialShape } from "@/design-system/shapes/MaterialShape";
 import {
@@ -974,25 +975,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
 
       {/* ── Barra superior + protagonista + búsqueda por código ── */}
       <div className="shrink-0 px-4 pt-10 lg:px-6 lg:pt-3">
-        <div className="-mx-2 flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onBack}
-            aria-label={previewMode ? "Salir de la prueba" : "Volver a vehículos"}
-          >
-            {previewMode ? <X className="!h-6 !w-6" /> : <ArrowLeft className="!h-6 !w-6" />}
-          </Button>
-          <div className="min-w-0 flex-1 pl-1">
-            <h1 className="truncate text-lg font-semibold leading-tight text-foreground" title={seriesName}>{seriesName}</h1>
-            <p className="truncate text-xs leading-tight text-muted-foreground" title={vehicleLine}>{vehicleLine}</p>
-          </div>
-          {!previewMode && (
-            <div className="shrink-0 pr-2">
-              <AccountMenu />
-            </div>
-          )}
-        </div>
+        <ModuleHeader className="-mx-2" title={seriesName} subtitle={vehicleLine} onBack={onBack} backLabel={previewMode ? "Salir de la prueba" : "Volver a vehículos"} backIcon={previewMode ? <X className="!h-6 !w-6" /> : undefined} accountTrigger={!previewMode ? <AccountMenu /> : undefined} />
 
         {/* El código encontrado es el protagonista: grande y copiable */}
         {codeState === "exact" && exactEntry && (

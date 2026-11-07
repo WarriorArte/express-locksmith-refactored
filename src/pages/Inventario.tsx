@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { resolveStorageUrl } from "@/lib/phpApi";
-import { AccountMenu } from "@/components/layout/AccountMenu";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { m as motion } from "framer-motion";
 import { 
   Plus, 
@@ -217,39 +217,12 @@ export default function Inventario() {
     <div className="flex-1 min-h-0 flex flex-col">
       {/* Header bar - ya NO es sticky */}
       <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-3 pb-4">
-        <section className="ce-hero ce-hero-mobile-bleed p-[22px_16px] lg:p-[22px]">
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0 flex-1">
-              <h1 className="ce-hero-title text-[clamp(1.55rem,5.4vw,2.15rem)] lg:text-[clamp(1.75rem,3vw,2.5rem)]">
-                Inventario
-              </h1>
-              <p className="ce-hero-meta mt-2 max-w-[460px] lg:mt-3">
-                <b className="text-foreground">{productsCount} productos</b>
-                {" "}· {servicesCount} servicios
-                {lowStockCount > 0 && (
-                  <>
-                    {" "}·{" "}
-                    <b className="text-warning">{lowStockCount} alertas de stock</b>
-                  </>
-                )}
-              </p>
-            </div>
-            <div className="flex items-start gap-2">
-              <div className="hidden lg:flex gap-2">
-                <Button variant="secondary" onClick={() => setCategoryDialogOpen(true)}>
-                  <Palette className="w-4 h-4" />
-                  Categorías
-                </Button>
-                <Button onClick={handleNewProduct}>
-                  <Plus className="w-4 h-4 mr-1" />
-                  Nuevo
-                </Button>
-              </div>
-              <AccountMenu />
-            </div>
-          </div>
-
-          <div className="relative z-[1] mt-4 flex flex-row items-center gap-2 animate-hero-search-in lg:mt-5">
+        <PageHeader
+          title="Inventario"
+          subtitle={<>{productsCount} productos · {servicesCount} servicios{lowStockCount > 0 && <span className="text-warning"> · {lowStockCount} alertas de stock</span>}</>}
+          action={<div className="flex gap-2"><Button variant="secondary" onClick={() => setCategoryDialogOpen(true)}><Palette className="w-4 h-4" />Categorías</Button><Button onClick={handleNewProduct}><Plus className="w-4 h-4 mr-1" />Nuevo</Button></div>}
+        >
+          <div className="flex flex-row items-center gap-2">
             <UnifiedSearchInput
               className="flex-1 min-w-0"
               placeholder="Buscar producto..."
@@ -302,7 +275,7 @@ export default function Inventario() {
               {/* En móvil, "nuevo" lo hace el botón + de la barra inferior */}
             </div>
           </div>
-        </section>
+        </PageHeader>
       </div>
 
       <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain px-5 lg:px-6 pb-mobile-nav no-scrollbar">

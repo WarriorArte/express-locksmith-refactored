@@ -8,6 +8,7 @@ import { UsersTab } from "@/components/superadmin/tabs/UsersTab";
 import { SuperAdminAccessTab } from "@/components/superadmin/tabs/SuperAdminAccessTab";
 import { StorageTab } from "@/components/superadmin/tabs/StorageTab";
 import { UpdateNoticesTab } from "@/components/superadmin/tabs/UpdateNoticesTab";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function SuperAdmin() {
   const { isSuperAdmin, isLoading: workshopLoading } = useWorkshop();
@@ -22,12 +23,7 @@ export default function SuperAdmin() {
 
   return (
     <div className="flex-1 min-h-0 overflow-auto container mx-auto py-6 pb-10 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Panel de Superadministrador</h1>
-          <p className="text-muted-foreground">Gestión global de talleres y usuarios</p>
-        </div>
-      </div>
+      <PageHeader title="Panel de Superadministrador" subtitle="Gestión global de talleres y usuarios" />
 
       <Tabs defaultValue="workshops" className="space-y-6">
         <TabsList className="flex-wrap h-auto">

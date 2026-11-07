@@ -27,10 +27,8 @@
 
 ```
 ┌──────────────────────────────────────────┐
-│ ←                         (título)  (A)  │  barra: fondo y título aparecen al desplazar
-│                                          │
-│ Toyota Corolla                           │  título grande 32 px
-│ 2018 · Toyota                            │  una línea de contexto
+│ ←  Toyota Corolla                  (A)  │  encabezado compacto compartido
+│    2018 · Toyota                        │  segunda fila; ambas se truncan
 │ ╭──────────── primary-light ──────────╮  │
 │ │      (forma cookie)  + foto         │  │  DetailHero: el protagonista
 │ │  FCC ID                             │  │
@@ -64,8 +62,8 @@ Cuando la herramienta muestra muchos puntos o códigos (Alarmas, Keycode): `Deta
 ### Patrón “herramienta interactiva” (pantalla completa sin scroll de página)
 
 Para herramientas de trabajo (Keycode, decodificador): no se usa `DetailScreen`, porque el contenido debe caber en la pantalla. Se mantiene la misma gramática:
-- Barra con flecha atrás, una línea de contexto y avatar.
-- El protagonista en 32 px (`CopyableValue` cuando ya hay resultado, título de la serie si no).
+- Barra `ModuleHeader` con flecha atrás junto a dos filas: título y contexto; avatar y acciones conservados.
+- El protagonista en 32 px (`CopyableValue` cuando ya hay resultado); la serie sin resultado va en el encabezado, sin título grande duplicado.
 - Búsqueda en píldora de 56 px con íconos dentro.
 - Superficies `rounded-[28px] bg-card` para la zona de trabajo.
 - Teclas redondas `bg-muted`.
@@ -87,7 +85,8 @@ Todas en `src/design-system/` y `src/components/herramientas/`. **Importarlas, n
 
 | Pieza | Archivo | Para qué |
 |---|---|---|
-| `DetailScreen` | `design-system/detail/DetailScreen.tsx` | Pantalla de detalle completa: scroll, barra que se contrae, flecha atrás, avatar, título grande + `meta`. Prop `actions` para botones extra en la barra. |
+| `ModuleHeader` | `design-system/layout/ModuleHeader.tsx` | Encabezado uniforme para todos los módulos: flecha + título de 18 px y contexto de 12 px en dos filas truncadas; acciones y avatar a la derecha. La flecha vuelve al inicio por defecto; los detalles proporcionan su regreso propio. |
+| `DetailScreen` | `design-system/detail/DetailScreen.tsx` | Pantalla de detalle completa: scroll y `ModuleHeader` fijo con título + `meta` truncados; fondo al desplazar. Prop `actions` para botones extra en la barra. |
 | `DetailHero` | ídem | Bloque protagonista `primary-light`, 28 px. En `md` pone foto a la izquierda y datos a la derecha. |
 | `DetailSection` | ídem | Contenedor de sección. `tone`: `default` (card), `warning`, `destructive`. `icon` y `action` opcionales. |
 | `SubHeading` | ídem | Subtítulo dentro de una sección (14 px, `muted-foreground`). |
@@ -146,7 +145,7 @@ Si un módulo necesita una pieza que no existe y que otro módulo también usar�
 | Radio de chip | 8 px (`rounded-lg`) |
 | Padding de sección | 20 px (`p-5`) |
 | Espacio entre secciones | 12 px (`space-y-3`) |
-| Título de pantalla | 32 px bold |
+| Título de pantalla | 18 px semibold, una fila; contexto 12 px en la segunda fila |
 | Título de sección | 18 px semibold |
 | Subtítulo / etiqueta | 14 px medium `muted-foreground` |
 | Cuerpo | 15 px, `leading-relaxed` |
