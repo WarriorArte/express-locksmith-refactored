@@ -217,7 +217,7 @@ export default function Cotizaciones() {
       <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-3 pb-4">
         <PageHeader
           eyebrow="Cotizaciones"
-          title={<>Presupuestos al <span className="text-primary">instante.</span></>}
+          title={<>Presupuestos al instante</>}
           subtitle={`${stats.pending} pendientes · ${stats.accepted} aceptadas este mes`}
           action={
             <Button className="h-11 rounded-[12px] bg-primary text-primary-foreground hover:bg-primary-hover" onClick={() => { setEditingQuote(null); setFormDialogOpen(true); }}>

@@ -27,7 +27,7 @@ export function DashboardHero({
         <div className="min-w-0 flex-1 pr-56 lg:pr-0">
           <div className="ce-hero-eyebrow whitespace-nowrap">Panel principal</div>
           <h1 className="ce-hero-title mt-1.5 text-[clamp(1.55rem,5.4vw,2.15rem)] lg:mt-2 lg:text-[clamp(1.75rem,3vw,2.5rem)]">
-            Hola, <span className="text-primary">{firstName}.</span>
+            Hola, {firstName}
           </h1>
 
 

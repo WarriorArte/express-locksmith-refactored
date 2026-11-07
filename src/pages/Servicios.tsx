@@ -437,7 +437,7 @@ export default function Servicios() {
             <div className="min-w-0 flex-1">
               <div className="ce-hero-eyebrow">Servicios</div>
               <h1 className="ce-hero-title mt-1.5 text-[clamp(1.55rem,5.4vw,2.15rem)] lg:mt-2 lg:text-[clamp(1.75rem,3vw,2.5rem)]">
-                En el <span className="text-primary">taller.</span>
+                En el taller
               </h1>
               <p className="ce-hero-meta mt-2 max-w-[460px] lg:mt-3">
                 <b className="text-foreground">{stats.today} servicios</b>

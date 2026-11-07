@@ -210,10 +210,10 @@ export default function Inventario() {
             <div className="min-w-0 flex-1">
               <div className="ce-hero-eyebrow">Inventario</div>
               <h1 className="ce-hero-title mt-1.5 text-[clamp(1.55rem,5.4vw,2.15rem)] lg:mt-2 lg:text-[clamp(1.75rem,3vw,2.5rem)]">
-                Productos y <span className="text-primary">servicios.</span>
+                Productos y servicios
               </h1>
               <p className="ce-hero-meta mt-2 max-w-[460px] lg:mt-3">
-                <b className="text-[hsl(240_22%_95%)]">{productsCount} productos</b>
+                <b className="text-foreground">{productsCount} productos</b>
                 {" "}· {servicesCount} servicios
                 {lowStockCount > 0 && (
                   <>
@@ -225,7 +225,7 @@ export default function Inventario() {
             </div>
             <div className="flex items-start gap-2">
               <div className="hidden lg:flex gap-2">
-                <Button className="h-11 rounded-[12px] bg-white/[.09] border border-white/[.13] text-[hsl(240_22%_95%)] hover:bg-white/[.14]" onClick={() => setCategoryDialogOpen(true)}>
+                <Button className="h-11 rounded-[12px] bg-white/[.09] border border-white/[.13] text-foreground hover:bg-white/[.14]" onClick={() => setCategoryDialogOpen(true)}>
                   <Palette className="w-4 h-4 mr-1" />
                   Categorias
                 </Button>
@@ -250,13 +250,13 @@ export default function Inventario() {
                 type="button"
                 aria-label="Gestionar categorias"
                 onClick={() => setCategoryDialogOpen(true)}
-                className="h-10 w-10 shrink-0 flex items-center justify-center rounded-xl bg-white/[.09] border border-white/[.13] text-[hsl(240_22%_95%)] active:scale-95 transition-transform lg:hidden"
+                className="h-10 w-10 shrink-0 flex items-center justify-center rounded-xl bg-white/[.09] border border-white/[.13] text-foreground active:scale-95 transition-transform lg:hidden"
               >
                 <Palette className="w-4 h-4" />
               </button>
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger
-                  className="h-10 w-10 shrink-0 justify-center rounded-xl px-0 bg-white/[.09] border-white/[.13] text-[hsl(240_22%_95%)] hover:bg-white/[.14] focus:ring-0 focus:border-white/30 [&>svg:last-child]:hidden lg:w-56 lg:justify-start lg:px-3 lg:[&>svg:last-child]:block"
+                  className="h-10 w-10 shrink-0 justify-center rounded-xl px-0 bg-white/[.09] border-white/[.13] text-foreground hover:bg-white/[.14] focus:ring-0 focus:border-white/30 [&>svg:last-child]:hidden lg:w-56 lg:justify-start lg:px-3 lg:[&>svg:last-child]:block"
                   aria-label="Filtrar por categoria"
                 >
                   <div className="flex items-center gap-2">

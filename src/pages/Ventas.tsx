@@ -177,7 +177,7 @@ export default function Ventas() {
       <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-3 pb-4">
         <PageHeader
           eyebrow="Ventas"
-          title={<>Registro de <span className="text-primary">ventas.</span></>}
+          title={<>Registro de ventas</>}
           subtitle={`${sales?.length || 0} ventas registradas`}
           action={
             <Button className="h-11 rounded-[12px] bg-primary text-primary-foreground hover:bg-primary-hover" onClick={() => setFormDialogOpen(true)}>

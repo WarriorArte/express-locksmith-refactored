@@ -326,7 +326,7 @@ export function HerramientasModule({ superAdminView }: HerramientasModuleProps) 
               <div className="min-w-0 flex-1">
                 <div className="ce-hero-eyebrow">Herramientas</div>
                 <h1 className="ce-hero-title mt-1.5 text-[clamp(1.55rem,5.4vw,2.15rem)] lg:mt-2 lg:text-[clamp(1.75rem,3vw,2.5rem)]">
-                  Selección de <span className="text-primary">vehículo.</span>
+                  Selección de vehículo
                 </h1>
               </div>
               <AccountMenu />

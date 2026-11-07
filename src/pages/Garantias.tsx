@@ -124,7 +124,7 @@ export default function Garantias() {
       <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-3 pb-4">
         <PageHeader
           eyebrow="Garantías"
-          title={<>Control de <span className="text-primary">garantías.</span></>}
+          title={<>Control de garantías</>}
           subtitle={`${warranties?.length || 0} garantías registradas`}
           action={
             <Button className="h-11 rounded-[12px] bg-primary text-primary-foreground hover:bg-primary-hover" onClick={() => setSettingsDialogOpen(true)}>

@@ -90,7 +90,7 @@ export default function Clientes() {
       <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-3 pb-4">
         <PageHeader
           eyebrow="Clientes"
-          title={<>Tus <span className="text-primary">clientes.</span></>}
+          title={<>Tus clientes</>}
           subtitle={`${customers?.length || 0} clientes registrados`}
           action={
             <Button className="h-11 rounded-[12px] bg-primary text-primary-foreground hover:bg-primary-hover" onClick={handleNewCustomer}>

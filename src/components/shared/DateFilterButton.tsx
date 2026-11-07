@@ -127,7 +127,7 @@ export function DateFilterButton({
             type="button"
             aria-label={ariaLabel}
             className={cn(
-              "flex h-10 min-w-10 items-center justify-center gap-2 rounded-xl border border-white/[.13] bg-white/[.09] px-0 text-[hsl(240_22%_95%)] transition-colors active:scale-95 lg:min-w-[132px] lg:justify-start lg:px-3",
+              "flex h-10 min-w-10 items-center justify-center gap-2 rounded-xl border border-white/[.13] bg-white/[.09] px-0 text-foreground transition-colors active:scale-95 lg:min-w-[132px] lg:justify-start lg:px-3",
               active && "border-primary/50 bg-primary/18 text-primary",
             )}
           >
@@ -222,7 +222,7 @@ export function DateFilterButton({
           type="button"
           aria-label="Limpiar filtro de fecha"
           onClick={() => onChange(emptyDateFilter)}
-          className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/[.13] bg-white/[.09] text-[hsl(240_22%_95%)] transition-colors active:scale-95 lg:h-9 lg:w-9"
+          className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/[.13] bg-white/[.09] text-foreground transition-colors active:scale-95 lg:h-9 lg:w-9"
         >
           <X className="h-4 w-4" />
         </button>
