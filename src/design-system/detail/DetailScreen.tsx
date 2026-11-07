@@ -384,7 +384,7 @@ export function ImageCarousel({
 
   return (
     <>
-      <div className="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-5 pb-1 no-scrollbar" role="list">
+      <div className="-mx-5 flex min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-5 pb-1 no-scrollbar" role="list">
         {items.map((item) => (
           <button
             key={item.id}

@@ -58,8 +58,8 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
   const procedimiento = detail?.procedimientoProgramacion?.trim() ?? "";
   const notasGenerales = detail?.notasGenerales?.trim() ?? "";
 
-  const hasGeneracion = generacionRemoto.length > 0 || generadoCon.length > 0;
-  const hasTransponder = !!(transponder || transponderNotes);
+  const hasGeneracion = generacionRemoto.length > 0;
+  const hasTransponder = !!(transponder || transponderNotes) || generadoCon.length > 0;
   const hasMethods = !!(detail?.programacionManual || detail?.programacionOBD);
   const hasProgramacion = hasMethods || equiposRemoto.length > 0 || equiposTransponder.length > 0 || !!procedimiento;
   const toolIcon = <Wrench className="h-6 w-6" />;
@@ -101,7 +101,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
         {(hasGeneracion || hasTransponder) && (
           <div className={cn("grid gap-3", hasGeneracion && hasTransponder && "md:grid-cols-2")}>
             {hasGeneracion && (
-              <DetailSection title="Generación del remoto">
+              <DetailSection title="Generación del remoto" className="min-w-0">
                 {generacionRemoto.length > 0 && (
                   <div className="-my-1.5">
                     {generacionRemoto.map((f) => (
@@ -109,17 +109,11 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
                     ))}
                   </div>
                 )}
-                {generadoCon.length > 0 && (
-                  <div className={generacionRemoto.length > 0 ? "mt-5" : undefined}>
-                    <SubHeading>Se genera con</SubHeading>
-                    <ImageCarousel items={generadoCon} fallbackIcon={toolIcon} />
-                  </div>
-                )}
               </DetailSection>
             )}
 
             {hasTransponder && (
-              <DetailSection title="Transponder">
+              <DetailSection title="Transponder" className="min-w-0">
                 {transponder && (
                   <p className="text-2xl font-bold leading-tight tabular-nums text-foreground">{transponder}</p>
                 )}
@@ -127,6 +121,12 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
                   <p className={cn("whitespace-pre-wrap text-[15px] leading-relaxed text-muted-foreground", transponder && "mt-2")}>
                     {transponderNotes}
                   </p>
+                )}
+                {generadoCon.length > 0 && (
+                  <div className={transponder || transponderNotes ? "mt-5" : undefined}>
+                    <SubHeading>Se genera con</SubHeading>
+                    <ImageCarousel items={generadoCon} fallbackIcon={toolIcon} />
+                  </div>
                 )}
               </DetailSection>
             )}
