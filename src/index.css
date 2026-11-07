@@ -184,7 +184,7 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Roboto', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-family: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
     
 
     overscroll-behavior-x: none;
@@ -194,9 +194,9 @@
 
   h1, h2, h3, h4, h5, h6 {
     color: hsl(var(--foreground));
-    font-family: 'Roboto', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-family: 'Outfit', 'Figtree', system-ui, sans-serif;
     @apply font-bold tracking-tight;
-    letter-spacing: -0.015em;
+    letter-spacing: -0.02em;
     font-weight: 700;
   }
 
