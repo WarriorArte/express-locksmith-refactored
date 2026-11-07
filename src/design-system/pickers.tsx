@@ -99,7 +99,7 @@ export function NativeSelectField({
     <div
       className={cn(
         "relative flex h-16 w-full items-center justify-between gap-3 overflow-hidden rounded-2xl px-4 transition-opacity focus-within:ring-2 focus-within:ring-primary",
-        surface === "onHero" ? "bg-background/70" : "bg-card shadow-sm",
+        surface === "onHero" ? "bg-card text-card-foreground" : "bg-card text-card-foreground shadow-sm",
         disabled && "opacity-50",
         className,
       )}

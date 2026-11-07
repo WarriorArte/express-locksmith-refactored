@@ -69,12 +69,12 @@ export function DetailScreen({
 
 // ── Bloques ─────────────────────────────────────────────────────────────────
 
-/** Bloque protagonista en `primary-light` (foto + dato principal + specs). */
+/** Bloque protagonista en superficie neutra (foto + dato principal + specs). */
 export function DetailHero({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-[28px] bg-primary-light p-5 md:grid md:grid-cols-[auto_1fr] md:items-center md:gap-8",
+        "overflow-hidden rounded-[28px] bg-header-surface text-foreground p-5 md:grid md:grid-cols-[auto_1fr] md:items-center md:gap-8",
         className,
       )}
     >
@@ -138,7 +138,7 @@ export function SpecRow({ label, value }: { label: string; value: React.ReactNod
 /** Dato corto dentro de DetailHero (frecuencia, batería…). */
 export function SpecTile({ icon, label, value }: { icon?: React.ReactNode; label: string; value?: string | null }) {
   return (
-    <div className="rounded-2xl bg-background/70 px-3.5 py-3">
+    <div className="rounded-2xl bg-card text-card-foreground px-3.5 py-3">
       <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
         {icon}
         {label}

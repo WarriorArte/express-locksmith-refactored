@@ -155,9 +155,11 @@ Si un módulo necesita una pieza que no existe y que otro módulo también usar�
 
 ### 4.3 Color
 
-- **Protagonista:** `bg-primary-light` (hero).
+- **Superficies grandes y encabezados destacados:** `bg-header-surface`, gris industrial de baja saturación; no reutilizar `primary-light` porque también colorea indicadores y acentos.
+- **Fondo de pantalla:** neutral frío casi blanco en claro y casi negro en oscuro. En oscuro el encabezado usa un nivel más luminoso (20%) para distinguirse del fondo y las tarjetas.
+- **Acento:** conservar el celeste en acciones, selección, navegación y burbujas; no convertir toda la interfaz en gris.
 - **Secciones:** `bg-card` + `shadow-sm` sobre el fondo de la pantalla.
-- **Dentro del hero:** `bg-background/70` para tiles.
+- **Dentro del hero:** `bg-card text-card-foreground` para campos y tiles; superficies opacas para contraste consistente en ambos temas.
 - **Advertencias y notas:** `bg-warning-light`. Errores o “no hacer”: `bg-destructive-light`.
 - **Chips:** `accent` para la opción principal y `warning` para la alternativa manual o de riesgo.
 - **Formas M3E** sobre el hero: `text-background/60`. Detrás de números: `text-primary-light`.

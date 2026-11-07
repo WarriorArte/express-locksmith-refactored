@@ -11,7 +11,7 @@
      Celeste primario sobre superficies casi blancas.
      ───────────────────────────────────────────────────────── */
   :root {
-    --background: 200 35% 97%;          /* #F7F8FA */
+    --background: 210 12% 97%;          /* Neutral surface, slight cool cast */
     --foreground: 200 25% 8%;           /* #0D0D12 */
 
     --card: 0 0% 100%;                  /* #FFFFFF */
@@ -21,7 +21,7 @@
     --popover-foreground: 200 15% 10%;
 
     /* Surface 2 — used for nested chips / inputs / sub-tiles */
-    --surface-2: 200 35% 92%;           /* #F0F1F5 */
+    --surface-2: 210 10% 92%;
 
     /* Primary — celeste (acento de marca) */
     --primary: 199 88% 60%;            /* #00AEE6 */
@@ -31,16 +31,16 @@
     --primary-glow: 199 85% 62%;
 
     /* Header surface — gris industrial para las franjas de encabezado */
-    --header-surface: 210 9% 85%;
+    --header-surface: 210 9% 88%;
 
     /* Secondary — neutral surface tile */
-    --secondary: 200 35% 92%;
+    --secondary: 210 10% 92%;
     --secondary-foreground: 200 15% 10%;
-    --secondary-hover: 200 25% 89%;
-    --secondary-light: 200 30% 97%;
+    --secondary-hover: 210 10% 89%;
+    --secondary-light: 210 12% 97%;
 
     /* Muted */
-    --muted: 200 30% 92%;
+    --muted: 210 10% 92%;
     --muted-foreground: 200 10% 34%;    /* #5A5A72 */
 
     /* Accent — celeste container */
@@ -74,7 +74,7 @@
     --radius: 1rem;
 
     /* Sidebar — Light: deep dark sidebar still works as accent rail */
-    --sidebar-background: 200 30% 96%;   /* near-black, like the dark theme bg */
+    --sidebar-background: 210 12% 96%;
     --sidebar-foreground: 200 15% 10%;
     --sidebar-primary: 199 85% 62%;
     --sidebar-primary-foreground: 200 60% 12%;
@@ -94,16 +94,16 @@
      DARK THEME — casi negro con acentos celeste
      ───────────────────────────────────────────────────────── */
   .dark {
-    --background: 200 15% 7%;           /* #0A0A0F */
+    --background: 210 8% 7%;
     --foreground: 200 20% 96%;          /* #F0F0F8 */
 
-    --card: 200 14% 12%;                 /* #141419 */
+    --card: 210 8% 12%;
     --card-foreground: 200 20% 92%;
 
-    --popover: 200 12% 13%;             /* #1A1A22 */
+    --popover: 210 8% 13%;
     --popover-foreground: 200 20% 92%;
 
-    --surface-2: 200 14% 17%;           /* #1E1E26 */
+    --surface-2: 210 8% 17%;
 
     --primary: 199 90% 72%;
     --primary-foreground: 200 70% 12%;
@@ -111,14 +111,14 @@
     --primary-light: 199 50% 20%;
     --primary-glow: 199 90% 72%;
 
-    --header-surface: 213 9% 17%;
+    --header-surface: 210 8% 20%;
 
-    --secondary: 200 12% 16%;
+    --secondary: 210 8% 16%;
     --secondary-foreground: 200 20% 92%;
-    --secondary-hover: 200 12% 20%;
-    --secondary-light: 200 12% 13%;
+    --secondary-hover: 210 8% 20%;
+    --secondary-light: 210 8% 13%;
 
-    --muted: 200 12% 16%;
+    --muted: 210 8% 16%;
     --muted-foreground: 200 12% 72%;    /* #7878A0 */
 
     --accent: 199 50% 20%;
@@ -145,7 +145,7 @@
     --input: 200 10% 45%;
     --ring: 199 90% 72%;
 
-    --sidebar-background: 200 15% 7%;
+    --sidebar-background: 210 8% 7%;
     --sidebar-foreground: 200 20% 92%;
     --sidebar-primary: 199 90% 72%;
     --sidebar-primary-foreground: 200 70% 12%;
@@ -185,8 +185,8 @@
   h1, h2, h3, h4, h5, h6 {
     color: hsl(var(--foreground));
     font-family: 'Outfit', 'Figtree', system-ui, sans-serif;
-    @apply font-bold tracking-tight;
-    letter-spacing: -0.02em;
+    @apply font-bold;
+    letter-spacing: 0;
     font-weight: 700;
   }
 
@@ -291,7 +291,6 @@
     position: relative;
     padding-bottom: 4px;
     overflow: hidden;
-    border-radius: 16px;
     border-radius: 28px;
     background: hsl(var(--header-surface));
     color: hsl(var(--foreground));
@@ -307,7 +306,7 @@
     color: hsl(var(--foreground));
     font-weight: 800;
     line-height: 1.02;
-    letter-spacing: -0.03em;
+    letter-spacing: 0;
     text-wrap: balance;
   }
 

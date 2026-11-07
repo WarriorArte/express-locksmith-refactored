@@ -1,2 +1,3 @@
 # Architecture rules
 - Use `ModuleHeader` for module page and full-screen tool app bars so title, context, navigation and actions share one responsive two-row structure; keep dialog and sign-in headings independent.
+- Use the dedicated `header-surface` token for shared large hero surfaces and opaque card surfaces for their fields; keep primary/accent tokens independent so surface changes never recolor actions or navigation.
