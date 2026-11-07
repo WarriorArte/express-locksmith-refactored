@@ -12,7 +12,8 @@
       "minimatch@10.2.2>brace-expansion": "^5.0.9",
       "@eslint/eslintrc>minimatch": "^10.2.2",
       "@eslint/config-array>minimatch": "^10.2.2",
-      "eslint>minimatch": "^10.2.2"
+      "eslint>minimatch": "^10.2.2",
+      "postcss-selector-parser": "7.1.6"
     }
   },
   "scripts": {
@@ -103,7 +104,8 @@
       },
       "@eslint/config-array": {
         "minimatch": "^10.2.2"
-      }
+      },
+      "postcss-selector-parser": "7.1.6"
     }
   }
 }
