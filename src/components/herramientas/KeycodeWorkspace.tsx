@@ -816,8 +816,14 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                 <span className="w-4 shrink-0 text-xs font-semibold text-muted-foreground">{axis.label}</span>
               )}
               <div
-                className="grid"
-                style={{ gridTemplateColumns: `repeat(${axis.values.length}, 1.75rem)`, gap: "3px" }}
+                className="grid min-w-0 flex-1"
+                style={{
+                  gridTemplateColumns: `repeat(${axis.values.length}, minmax(0, 1fr))`,
+                  gap: "3px",
+                  // Tope para que en pantallas anchas no se estiren de más;
+                  // en pantallas angostas se encogen en vez de cortarse.
+                  maxWidth: `${axis.values.length * 28 + (axis.values.length - 1) * 3}px`,
+                }}
               >
                 {axis.values.map((val, posIdx) => {
                   const flatIdx = (ranges[aIdx]?.start ?? 0) + posIdx;
