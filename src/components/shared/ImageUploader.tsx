@@ -200,7 +200,7 @@ export function ImageUploader({
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); handleClear(); }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/85 backdrop-blur-sm text-white text-xs font-semibold"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-destructive backdrop-blur-sm text-white text-xs font-semibold"
                   >
                     <X className="w-3.5 h-3.5" />
                     Quitar
@@ -218,7 +218,7 @@ export function ImageUploader({
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); handleClear(); }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/80 backdrop-blur-sm text-white text-xs font-semibold hover:bg-red-500 transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-destructive backdrop-blur-sm text-white text-xs font-semibold hover:bg-destructive transition-colors"
                   >
                     <X className="w-3.5 h-3.5" />
                     Quitar

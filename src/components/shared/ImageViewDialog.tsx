@@ -401,7 +401,7 @@ export function ImageViewDialog({
                   e.stopPropagation();
                   onOpenChange(false);
                 }}
-                className="w-10 h-10 rounded-full bg-white/5 hover:bg-red-500/20 active:bg-red-500/35 text-white/80 hover:text-red-200 flex items-center justify-center backdrop-blur-md border border-white/10 transition-all"
+                className="w-10 h-10 rounded-full bg-white/5 hover:bg-destructive active:bg-destructive text-white/80 hover:text-destructive flex items-center justify-center backdrop-blur-md border border-white/10 transition-all"
               >
                 <X className="w-5 h-5" />
               </button>

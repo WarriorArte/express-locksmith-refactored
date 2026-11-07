@@ -206,7 +206,7 @@ export function ImageGalleryDialog({
                   editingFilename === file.filename ? (
                     <div
                       key={`${file.filename}-${file.cacheBuster}`}
-                      className="flex flex-col gap-1.5 w-full rounded-lg border-2 border-primary/50 bg-primary/5 p-2"
+                      className="flex flex-col gap-1.5 w-full rounded-lg border-2 bg-primary-light p-2"
                     >
                       <Input
                         value={titleDraft}

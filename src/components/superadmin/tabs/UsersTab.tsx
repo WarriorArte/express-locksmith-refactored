@@ -552,7 +552,7 @@ export function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
                             <TableCell>{role.profile?.email || "-"}</TableCell>
                             <TableCell>
                               {role.globalRole === "superadmin" ? (
-                                <Badge className="bg-amber-500 text-white">SuperAdmin</Badge>
+                                <Badge className="bg-warning text-white">SuperAdmin</Badge>
                               ) : (
                                 <Select
                                   value={role.role ?? undefined}
@@ -592,7 +592,7 @@ export function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
                                 </Button>
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="text-orange-500 hover:text-orange-600">
+                                    <Button variant="ghost" size="icon" className="text-warning hover:text-warning">
                                       <Trash2 className="h-4 w-4" />
                                     </Button>
                                   </AlertDialogTrigger>
@@ -610,7 +610,7 @@ export function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
                                           role.profile?.id && role.workshop_id &&
                                           deleteUserRole.mutate({ profileId: role.profile.id, workshopId: role.workshop_id })
                                         }
-                                        className="bg-orange-500 text-white hover:bg-orange-600"
+                                        className="bg-warning text-white hover:bg-warning"
                                       >
                                         Remover del taller
                                       </AlertDialogAction>
@@ -669,7 +669,7 @@ export function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
                           <TableCell>{role.profile?.email || "-"}</TableCell>
                           <TableCell>
                             {role.globalRole === "superadmin" ? (
-                              <Badge className="bg-amber-500 text-white">SuperAdmin</Badge>
+                              <Badge className="bg-warning text-white">SuperAdmin</Badge>
                             ) : (
                               <Badge variant="secondary">{role.role}</Badge>
                             )}

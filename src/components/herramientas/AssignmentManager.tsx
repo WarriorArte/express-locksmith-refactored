@@ -260,7 +260,7 @@ function AssignmentForm({
                   return (
                     <span 
                       key={pid} 
-                      className="inline-flex items-center gap-1 bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded text-xs font-medium"
+                      className="inline-flex items-center gap-1 bg-primary-light text-primary px-2 py-0.5 rounded-full text-xs font-medium"
                     >
                       IC: {p.icCard} · {p.series}{p.internalReference ? ` · ${p.internalReference}` : ""}
                       <button
@@ -531,7 +531,7 @@ export function AssignmentManager({ assignments, onSave, onUpdate, onDelete, key
           transition={{ duration: 0.2 }}
         >
           <Card className={`${editingAssignment ? "border-primary ring-1 ring-primary/20 shadow-sm" : "border-primary/20"} overflow-visible`}>
-            <CardContent className="pt-4 pb-4 px-4 bg-primary/5 rounded-[inherit]">
+            <CardContent className="pt-4 pb-4 px-4 bg-primary-light rounded-[inherit]">
               <AssignmentForm
                 initial={editingAssignment || undefined}
                 workshops={workshops}
@@ -649,7 +649,7 @@ export function AssignmentManager({ assignments, onSave, onUpdate, onDelete, key
                             {item.keycodeProfileIds.map((pid) => {
                               const p = keycodeProfiles.find((x) => x.id === pid);
                               return p ? (
-                                <span key={pid} className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800" title={`Serie: ${p.series}`}>
+                                <span key={pid} className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[11px] font-medium bg-warning-light text-foreground" title={`Serie: ${p.series}`}>
                                   IC:{p.icCard}
                                 </span>
                               ) : null;

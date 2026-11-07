@@ -378,7 +378,7 @@ export function ImmoManager({ profiles, onSave, onUpdate, onDelete, catalog: _ca
                     <img src={resolveStorageUrl(p.mainImage) ?? undefined} alt="" className="w-full h-full object-cover" />
                   </div>
                 ) : (
-                  <div className="w-12 h-10 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                  <div className="w-12 h-10 rounded-md bg-primary-light flex items-center justify-center shrink-0">
                     <Cpu className="w-5 h-5 text-primary" />
                   </div>
                 )}
@@ -605,7 +605,7 @@ export function ImmoAssignmentManager({
         </div>
 
         <Card className={editingId ? "border-primary ring-1 ring-primary/20 shadow-sm" : "border-primary/20"}>
-          <CardContent className="pt-4 pb-4 px-4 bg-primary/5 rounded-[inherit] space-y-4">
+          <CardContent className="pt-4 pb-4 px-4 bg-primary-light rounded-[inherit] space-y-4">
             {/* Vehicle */}
             <div className="space-y-2">
               <p className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
@@ -648,7 +648,7 @@ export function ImmoAssignmentManager({
                       const p = immoProfiles.find((x) => x.id === id);
                       if (!p) return null;
                       return (
-                        <span key={id} className="inline-flex items-center gap-1 bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded text-xs font-medium">
+                        <span key={id} className="inline-flex items-center gap-1 bg-primary-light text-primary px-2 py-0.5 rounded-full text-xs font-medium">
                           {profileTitle(p)}
                           <button type="button" onClick={(e) => { e.stopPropagation(); toggleProfile(id); }} className="text-primary hover:text-primary/70">
                             <X className="w-3 h-3" />
@@ -846,7 +846,7 @@ export function ImmoAssignmentManager({
                           const p = immoProfiles.find((x) => x.id === d.profileId);
                           return p ? (
                             <div key={d.profileId} className="flex flex-col gap-0.5">
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-accent-light text-accent border border-accent/20 dark:bg-accent/30 dark:text-accent-foreground dark:border-accent/40">
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[11px] font-medium bg-accent-light text-accent dark:bg-accent/30 dark:text-accent-foreground dark:border-accent/40">
                                 {profileTitle(p)}
                               </span>
                               {d.transponder && (

@@ -242,7 +242,7 @@ function AlarmaDataValueCard({ dv, index, onChange, onDelete }: DataValueCardPro
           />
           <div className="flex items-center gap-1 shrink-0">
             {dv.imageUrl && (
-              <span className="w-2 h-2 rounded-full bg-emerald-500" title="Tiene imagen" />
+              <span className="w-2 h-2 rounded-full bg-success" title="Tiene imagen" />
             )}
             <Badge variant="secondary" className="text-[11px] px-1.5 py-0 h-4">
               {dv.details.length}
@@ -341,7 +341,7 @@ function AlarmaDataValueCard({ dv, index, onChange, onDelete }: DataValueCardPro
                         return (
                           <div key={i} className="space-y-1">
                             <p className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
-                              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                              <span className="inline-block w-1.5 h-1.5 rounded-full bg-success" />
                               {yearLabel}
                             </p>
                             <div className="relative group">
@@ -367,7 +367,7 @@ function AlarmaDataValueCard({ dv, index, onChange, onDelete }: DataValueCardPro
                   {!dv.imageUrl && folderImageVariants.length === 0 && (
                     <div className="space-y-1.5">
                       {dv.yearImages?.length ? (
-                        <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400 border border-dashed border-amber-300 dark:border-amber-700 rounded-lg px-3 py-2">
+                        <div className="flex items-center gap-2 text-xs text-warning border border-dashed border-warning/50 rounded-lg px-3 py-2">
                           <Images className="w-3.5 h-3.5 shrink-0" />
                           {dv.yearImages.length} imagen{dv.yearImages.length !== 1 ? "es" : ""} en JSON — selecciona la carpeta para previsualizar
                         </div>
@@ -401,7 +401,7 @@ function AlarmaDataValueCard({ dv, index, onChange, onDelete }: DataValueCardPro
                       note.type === "image_variation" ? (
                         <div
                           key={note.id}
-                          className="flex items-start gap-2 rounded-lg bg-warning/10 border border-amber-200 dark:border-amber-800 px-3 py-2 text-xs text-amber-800 dark:text-amber-300"
+                          className="flex items-start gap-2 rounded-lg bg-warning-light px-3 py-2 text-xs text-foreground"
                         >
                           <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                           <div>
@@ -412,7 +412,7 @@ function AlarmaDataValueCard({ dv, index, onChange, onDelete }: DataValueCardPro
                       ) : (
                         <div
                           key={note.id}
-                          className="flex items-start gap-2 rounded-lg bg-primary/5 border border-primary/20 px-3 py-2 text-xs text-primary dark:text-primary"
+                          className="flex items-start gap-2 rounded-lg bg-primary-light px-3 py-2 text-xs text-primary dark:text-primary"
                         >
                           <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                           <div>
@@ -838,7 +838,7 @@ function AlarmaAsignacionTab({
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="border border-primary/50 rounded-xl p-4 bg-primary/5 space-y-4 shrink-0"
+            className="rounded-xl p-4 bg-primary-light space-y-4 shrink-0"
           >
             <p className="text-sm font-semibold">
               {creating ? "Nueva asignación de alarma" : "Editar asignación"}
@@ -956,7 +956,7 @@ function AlarmaAsignacionTab({
       {/* Assignment list */}
       <div className="flex-1 overflow-auto custom-scrollbar min-h-0 space-y-2">
         {alarmaProfiles.length === 0 && (
-          <div className="flex items-center gap-2 p-3 bg-warning/10 border border-amber-200 dark:border-amber-800 rounded-lg text-sm text-amber-800 dark:text-amber-300">
+          <div className="flex items-center gap-2 p-3 bg-warning-light rounded-lg text-sm text-foreground">
             <AlertCircle className="w-4 h-4 shrink-0" />
             Crea perfiles de alarma primero para poder asignarlos a vehículos.
           </div>
@@ -988,7 +988,7 @@ function AlarmaAsignacionTab({
             <Card key={a.id} className={`transition-all ${isEditing ? "border-primary ring-1 ring-primary/20" : "hover:border-primary/30"}`}>
               <CardContent className="p-4 flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
+                  <div className="p-2 rounded-lg bg-primary-light text-primary shrink-0">
                     <Car className="w-4 h-4" />
                   </div>
                   <div>

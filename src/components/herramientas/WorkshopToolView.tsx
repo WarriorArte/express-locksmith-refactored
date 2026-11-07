@@ -337,7 +337,7 @@ export function WorkshopToolView({
 
 function CountBadge({ n }: { n: number }) {
   if (n < 2) return null;
-  return <span className="rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-semibold text-primary">{n}</span>;
+  return <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-primary px-2 text-xs font-bold tabular-nums text-primary-foreground" aria-label={`${n} elementos`}>{n}</span>;
 }
 
 /** Fila horizontal con desplazamiento por tarjeta: admite uno o varios perfiles por herramienta. */

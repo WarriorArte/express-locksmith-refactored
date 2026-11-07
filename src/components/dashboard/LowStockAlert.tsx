@@ -27,7 +27,7 @@ export function LowStockAlert({ products }: LowStockAlertProps) {
     >
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-sm bg-warning/10 text-warning">
+          <div className="p-2 rounded-sm bg-warning-light text-foreground">
             <AlertTriangle className="w-5 h-5" />
           </div>
           <div>

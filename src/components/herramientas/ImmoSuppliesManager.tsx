@@ -118,7 +118,7 @@ function CatalogSection({
       <CardContent className="p-5 flex flex-col gap-4 h-full">
         {/* Header */}
         <div className="flex items-start gap-3">
-          <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0 mt-0.5">{icon}</div>
+          <div className="p-2 rounded-lg bg-primary-light text-primary shrink-0 mt-0.5">{icon}</div>
           <div>
             <h3 className="font-bold text-base text-foreground">{title}</h3>
             <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
@@ -189,7 +189,7 @@ function CatalogSection({
                     type="button"
                     title="Quitar imagen"
                     onClick={() => onUpdate({ ...item, image: undefined })}
-                    className="w-6 h-6 flex items-center justify-center rounded text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10 transition-colors"
+                    className="w-6 h-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-warning-light transition-colors"
                   >
                     <X className="w-3 h-3" />
                   </button>

@@ -77,7 +77,7 @@ function VisualRangeField({ label, value, min, max, step = 1, defaultValue, onCh
       <div className="flex items-center justify-between gap-2">
         <Label className="text-[11px] font-bold leading-none">{label}</Label>
         <div className="flex items-center gap-1">
-          <span className="min-w-10 rounded-md bg-primary/10 px-1.5 py-0.5 text-right tabular-nums text-[11px] font-semibold text-primary">
+          <span className="min-w-10 rounded-full bg-primary-light px-1.5 py-0.5 text-right tabular-nums text-[11px] font-semibold text-primary">
             {safeValue}
           </span>
           <button
@@ -922,7 +922,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                   animate={{ opacity: 1, y: 0 }}
                   className="flex items-center gap-4 p-4 rounded-lg border border-border bg-card hover:border-primary/30 transition-colors"
                 >
-                  <div className="p-2 bg-primary/10 rounded-lg shrink-0">
+                  <div className="p-2 bg-primary-light rounded-lg shrink-0">
                     <Key className="w-5 h-5 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -1147,7 +1147,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
           </>} />
 
         {editingProfile.codesIncomplete && !isNewProfile && (
-          <div className="mb-3 shrink-0 flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+          <div className="mb-3 shrink-0 flex items-center gap-2 rounded-lg bg-destructive-light px-3 py-2 text-xs text-destructive">
             <AlertTriangle className="w-4 h-4 shrink-0" />
             Esta serie quedó con una carga de códigos incompleta (se interrumpió antes de terminar). Guarda de nuevo para volver a subir todos los códigos.
           </div>
@@ -1241,7 +1241,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                           placeholder="Ej. V"
                           value={prefix}
                           onChange={(e) => updateMultiPrefix(i, e.target.value)}
-                          className="h-8 text-sm tabular-nums flex-1 "
+                          className="h-8 text-sm tabular-nums flex-1"
                         />
                         <Button variant="ghost" size="icon" onClick={() => removeMultiPrefix(i)} className="h-7 w-7 text-destructive hover:text-destructive">
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1419,7 +1419,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                   </div>
 
                   {/* Ajustes universales: colores y trazo — aplican a TODAS las series */}
-                  <div className="space-y-2.5 rounded-lg border border-dashed border-primary/40 bg-primary/5 p-2.5">
+                  <div className="space-y-2.5 rounded-lg border-dashed bg-primary-light p-2.5">
                     <div>
                       <p className="text-xs font-bold text-foreground">Colores y trazo</p>
                       <p className="text-[11px] text-muted-foreground">Ajuste universal: aplica a todas las series, no solo a esta.</p>
@@ -1543,7 +1543,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                       {(configuracionVisual.tipo === 'doble_lado' || configuracionVisual.tipo === 'estandar_1_lado' || configuracionVisual.tipo === '2_ejes_exterior') && (
                         <>
                           <Separator />
-                          <p className="text-[11px] font-bold text-muted-foreground ">Perfil de Corte</p>
+                          <p className="text-[11px] font-bold text-muted-foreground">Perfil de Corte</p>
                           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
                             {([
                               { label: "Escalón", key: "depthStep", min: 1, max: 15, def: 5 },
@@ -1569,7 +1569,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                         <>
                           <Separator />
                           <div className="flex items-center justify-between">
-                            <p className="text-[11px] font-bold text-muted-foreground ">Corte Extra en Punta</p>
+                            <p className="text-[11px] font-bold text-muted-foreground">Corte Extra en Punta</p>
                             <Button
                               type="button"
                               size="sm"
@@ -1608,7 +1608,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                         <>
                           <Separator />
                           <div className="flex items-center justify-between">
-                            <p className="text-[11px] font-bold text-muted-foreground ">Separación Extra Última Posición</p>
+                            <p className="text-[11px] font-bold text-muted-foreground">Separación Extra Última Posición</p>
                             <Button
                               type="button"
                               size="sm"
@@ -1648,7 +1648,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                       {(['pista_canal', 'pista_semi_canal', '1_eje_lateral', '2_ejes_internos'] as TipoLlaveSVG[]).includes(configuracionVisual.tipo) && (
                         <>
                           <Separator />
-                          <p className="text-[11px] font-bold text-muted-foreground ">Forma de Pista</p>
+                          <p className="text-[11px] font-bold text-muted-foreground">Forma de Pista</p>
                           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
                             <VisualRangeField
                               label="Posición Y (%)"
@@ -1748,7 +1748,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                       {(configuracionVisual.tipo === 'pista_semi_canal' || configuracionVisual.tipo === '1_eje_lateral') && (
                         <>
                           <Separator />
-                          <p className="text-[11px] font-bold text-muted-foreground ">Lado Activo</p>
+                          <p className="text-[11px] font-bold text-muted-foreground">Lado Activo</p>
                           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
                             {([
                               { label: "Prof.", key: "profundidadActiva", def: 4, step: 0.5 },
@@ -1908,7 +1908,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                   </div>
 
                   {/* Eliminar todos los códigos de la serie */}
-                  <div className="flex items-center justify-between gap-2 p-2.5 rounded-lg border border-destructive/30 bg-destructive/5">
+                  <div className="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-destructive-light">
                     <div className="min-w-0">
                       <Label className="text-xs font-semibold text-destructive block">Eliminar todos los códigos</Label>
                       <p className="text-[11px] text-muted-foreground">Borra permanentemente todos los códigos de esta serie de la base de datos. Útil si cargaste el JSON equivocado.</p>
@@ -1925,10 +1925,10 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                   </div>
 
                   {/* Códigos Valet: mismo código, bitting distinto (llave de acceso restringido) */}
-                  <div className="flex flex-col gap-2 p-2.5 rounded-lg border border-amber-500/30 bg-amber-500/5">
+                  <div className="flex flex-col gap-2 p-2.5 rounded-lg border border-transparent bg-warning">
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0">
-                        <Label className="text-xs font-semibold text-amber-700 dark:text-amber-400 block">Códigos Valet</Label>
+                        <Label className="text-xs font-semibold text-warning block">Códigos Valet</Label>
                         <p className="text-[11px] text-muted-foreground">
                           Mismo código, bitting distinto (llave de acceso restringido). Al buscar, si existe se mostrará marcado como Valet.
                           Los cambios se aplican al pulsar "Guardar".
@@ -2340,7 +2340,7 @@ function DecoderEditor({ decoderConfig, setDecoderConfig, configuracionVisual, b
             <Wand2 className="w-4 h-4 mr-2" /> Auto-configurar desde Visual
           </Button>
           {!inferredTipo && (
-            <p className="text-[11px] text-amber-600 dark:text-amber-400">
+            <p className="text-[11px] text-warning">
               Configura el tipo de llave en la pestaña <span className="font-semibold">Visual</span> primero.
             </p>
           )}
@@ -2383,7 +2383,7 @@ function DecoderEditor({ decoderConfig, setDecoderConfig, configuracionVisual, b
             <option value="pista_canal">Pista / Canal / Lateral</option>
           </select>
           {inferredTipo && inferredTipo !== decoderConfig.tipoLlave && (
-            <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1">
+            <p className="text-[11px] text-warning mt-1">
               ⚠ El visual sugiere <span className="tabular-nums">{inferredTipo}</span>
             </p>
           )}
@@ -2402,11 +2402,11 @@ function DecoderEditor({ decoderConfig, setDecoderConfig, configuracionVisual, b
 
         {isUnLado && (
           <div className="col-span-2">
-            <Label className="text-[11px] text-amber-600 dark:text-amber-400 font-bold">Lado activo de corte</Label>
+            <Label className="text-[11px] text-warning font-bold">Lado activo de corte</Label>
             <select
               value={decoderConfig.ladoEstandarUn}
               onChange={(e) => setDecoderConfig({ ...decoderConfig, ladoEstandarUn: e.target.value as 'izq' | 'der' })}
-              className="w-full mt-1 bg-background border border-amber-500/40 rounded-md px-2 py-1.5 text-sm"
+              className="w-full mt-1 bg-background border border-transparent rounded-md px-2 py-1.5 text-sm"
             >
               <option value="izq">Izquierdo</option>
               <option value="der">Derecho</option>
