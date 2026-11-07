@@ -8,31 +8,31 @@
 @layer base {
   /* ─────────────────────────────────────────────────────────
      LIGHT THEME (default) — Cerrajería Express
-     Celeste primario sobre superficies casi blancas.
+     Celeste protagonista y coral puntual sobre superficies claras.
      ───────────────────────────────────────────────────────── */
   :root {
-    --background: 210 12% 97%;          /* Neutral surface, slight cool cast */
-    --foreground: 200 25% 8%;           /* #0D0D12 */
+    --background: 204 33.3% 97.1%;      /* #F5F8FA */
+    --foreground: 204 42.2% 16.3%;      /* #182D3B */
 
     --card: 0 0% 100%;                  /* #FFFFFF */
-    --card-foreground: 200 15% 10%;
+    --card-foreground: 204 42.2% 16.3%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 200 15% 10%;
+    --popover-foreground: 204 42.2% 16.3%;
 
     /* Surface 2 — used for nested chips / inputs / sub-tiles */
     --surface-2: 210 10% 92%;
 
     /* Primary — celeste (acento de marca) */
-    --primary-text: var(--primary);
+    --primary-text: 200 74% 30%;
     --primary: 199 88% 60%;            /* #00AEE6 */
-    --primary-foreground: 200 80% 10%;   /* near-black on celeste */
+    --primary-foreground: 204 42.2% 16.3%;
     --primary-hover: 199 80% 55%;      /* #0097C7 */
     --primary-light: 199 92% 88%;
     --primary-glow: 199 85% 62%;
 
     /* Header surface — celeste suave, menos intenso que el acento */
-    --header-surface: 199 60% 92%;
+    --header-surface: 194.5 76.3% 85.1%; /* #BCE8F6 */
 
     /* Secondary — neutral surface tile */
     --secondary: 210 10% 92%;
@@ -42,12 +42,12 @@
 
     /* Muted */
     --muted: 210 10% 92%;
-    --muted-foreground: 200 10% 34%;    /* #5A5A72 */
+    --muted-foreground: 204 18% 32%;
 
-    /* Accent — celeste container */
-    --accent: 199 92% 88%;
-    --accent-foreground: 200 80% 10%;
-    --accent-light: 199 90% 95%;
+    /* Accent — coral for selection, not errors */
+    --accent: 7.5 81% 69%;              /* #F08070 */
+    --accent-foreground: 204 42.2% 16.3%;
+    --accent-light: 7.5 81% 94%;
 
     /* Destructive */
     --destructive: 350 100% 65%;        /* #FF4D6A */
@@ -71,18 +71,18 @@
 
     --border: 200 14% 78%;               /* rgba(0,0,0,0.07) approx */
     --input: 200 12% 62%;
-    --ring: 199 85% 55%;
+    --ring: 200 74% 30%;
     --radius: 1rem;
 
     /* Sidebar — Light: deep dark sidebar still works as accent rail */
     --sidebar-background: 210 12% 96%;
-    --sidebar-foreground: 200 15% 10%;
+    --sidebar-foreground: 204 42.2% 16.3%;
     --sidebar-primary: 199 85% 62%;
     --sidebar-primary-foreground: 200 60% 12%;
-    --sidebar-accent: 199 90% 92%;
-    --sidebar-accent-foreground: 200 60% 12%;
+    --sidebar-accent: 7.5 81% 69%;
+    --sidebar-accent-foreground: 204 42.2% 16.3%;
     --sidebar-border: 200 15% 88%;
-    --sidebar-ring: 199 85% 55%;
+    --sidebar-ring: 200 74% 30%;
 
     /* Shadows */
     --shadow-sm: 0 1px 3px 0 hsl(240 16% 6% / 0.04);
@@ -92,7 +92,7 @@
   }
 
   /* ─────────────────────────────────────────────────────────
-     DARK THEME — casi negro con acentos celeste
+     DARK THEME — casi negro con celeste y selección coral
      ───────────────────────────────────────────────────────── */
   .dark {
     --background: 210 8% 7%;
@@ -113,7 +113,7 @@
     --primary-light: 199 50% 20%;
     --primary-glow: 199 90% 72%;
 
-    --header-surface: 199 28% 20%;
+    --header-surface: 199 30% 23%;
 
     --secondary: 210 8% 16%;
     --secondary-foreground: 200 20% 92%;
@@ -123,9 +123,9 @@
     --muted: 210 8% 16%;
     --muted-foreground: 200 12% 72%;    /* #7878A0 */
 
-    --accent: 199 50% 20%;
-    --accent-foreground: 199 90% 88%;
-    --accent-light: 199 40% 16%;
+    --accent: 7.5 81% 74%;
+    --accent-foreground: 204 42.2% 16.3%;
+    --accent-light: 7.5 35% 20%;
 
     --destructive: 350 100% 65%;
     --destructive-foreground: 0 0% 100%;
@@ -151,8 +151,8 @@
     --sidebar-foreground: 200 20% 92%;
     --sidebar-primary: 199 90% 72%;
     --sidebar-primary-foreground: 200 70% 12%;
-    --sidebar-accent: 199 50% 20%;
-    --sidebar-accent-foreground: 199 90% 88%;
+    --sidebar-accent: 7.5 81% 74%;
+    --sidebar-accent-foreground: 204 42.2% 16.3%;
     --sidebar-border: 200 10% 20%;
 
     --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.4);

@@ -159,7 +159,7 @@ Los carruseles de imágenes y perfiles mantienen el espacio interior de la secci
 
 - **Superficies grandes y encabezados destacados:** `bg-header-surface`, celeste suave más ligero y menos saturado que las acciones; el gris industrial fue descartado por el usuario. No reutilizar `primary-light` porque también colorea indicadores y acentos.
 - **Fondo de pantalla:** neutral frío casi blanco en claro y casi negro en oscuro. En oscuro el encabezado usa un nivel más luminoso (20%) para distinguirse del fondo y las tarjetas.
-- **Acento:** conservar el celeste en acciones, selección, navegación y burbujas; no convertir toda la interfaz en gris.
+- **Prueba vigente:** celeste y coral, elegida por el usuario: fondo `#F5F8FA`, encabezados celeste `#BCE8F6`, coral `#F08070` en selección y navegación activa, tinta `#182D3B`. Conservar celeste en acciones principales y burbujas; formas y animaciones intactas. `text-primary` usa un celeste más oscuro para legibilidad. Adaptar los tonos al tema oscuro. Violeta y ámbar quedaron descartados.
 - **Secciones:** `bg-card` + `shadow-sm` sobre el fondo de la pantalla.
 - **Dentro del hero:** `bg-card text-card-foreground` para campos y tiles; superficies opacas para contraste consistente en ambos temas.
 - **Advertencias y notas:** `bg-warning-light`. Errores o “no hacer”: `bg-destructive-light`.
