@@ -166,10 +166,10 @@ Si un módulo necesita una pieza que no existe y que otro módulo también usar�
 
 ### 4.4 Formas M3E: cuándo sí
 
-- **Forma preferida:** `sunny`, estrella suave de ocho puntas, para el FAB y los usos que antes mostraban `cookie9`; el nombre heredado resuelve a Sunny para mantener dimensiones, contenido y animaciones. Gem fue descartada por el usuario. No afecta las burbujas redondas de notificación ni de creación.
-- Detrás de la **foto principal** del objeto (llavero, llave, módulo): `sunny` con `spin`.
+- **Forma preferida:** la estrella original `cookie9`, de nueve lóbulos suaves, para el FAB y las formas compartidas; no sustituirla por Gem ni por Sunny. Conservar dimensiones, contenido y animaciones. No afecta las burbujas redondas de notificación ni de creación.
+- Detrás de la **foto principal** del objeto (llavero, llave, módulo): `cookie9` con `spin`.
 - La foto del remoto se escala por **ancho**, no por alto: si queda más alta que la forma, sobresale hacia abajo y se oculta con un degradado (`mask-image` vertical de opaco a transparente) en lugar de cortarse de golpe. El degradado solo afecta el **último ~8%** de la foto: el resto se muestra completo, así que subir la foto revela más imagen.
-- Detrás de **números de paso**: `sunny`.
+- Detrás de **números de paso**: `cookie9`.
 - Detrás del **avatar** de un cliente (pendiente): `cookie6`.
 - **No** detrás de íconos decorativos ni en todas las tarjetas. Máximo dos usos por pantalla.
 
