@@ -194,7 +194,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent fixedHeight className="max-w-[95vw] sm:max-w-2xl">
+      <DialogContent fixedHeight className="m3e-form max-w-[95vw] sm:max-w-2xl">
         <DialogHeader>
           <CreationDialogHeader
             icon={UserPlus}
@@ -211,7 +211,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
                 control={form.control}
                 name="name"
                 render={({ field }) => (
-                  <FormItem className="col-span-2">
+                  <FormItem className="md:col-span-2">
                     <FormLabel>Nombre *</FormLabel>
                     <FormControl>
                       <Input
@@ -293,7 +293,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
                 control={form.control}
                 name="address"
                 render={({ field }) => (
-                  <FormItem className="col-span-2">
+                  <FormItem className="md:col-span-2">
                     <FormLabel>Dirección</FormLabel>
                     <FormControl>
                       <Input placeholder="Calle, número, colonia, ciudad" {...field} />
@@ -304,7 +304,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
               />
 
               {/* Etiquetas: filas con interruptor, estilo Ajustes de Android */}
-              <div className="col-span-2">
+              <div className="md:col-span-2">
                 <p className="mb-2 text-sm font-medium text-foreground">Etiquetas</p>
                 <div className="m3-list">
                   {TAG_FIELDS.map((tag) => (
@@ -332,7 +332,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
                   control={form.control}
                   name="no_work_reason"
                   render={({ field }) => (
-                    <FormItem className="col-span-2">
+                    <FormItem className="md:col-span-2">
                       <FormLabel>Razón (No Trabajar)</FormLabel>
                       <FormControl>
                         <Textarea
@@ -351,7 +351,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
                 control={form.control}
                 name="notes"
                 render={({ field }) => (
-                  <FormItem className="col-span-2">
+                  <FormItem className="md:col-span-2">
                     <FormLabel>Notas</FormLabel>
                     <FormControl>
                       <Textarea placeholder="Notas adicionales sobre el cliente..." {...field} />

@@ -1,4 +1,6 @@
 # Roadmap
+- [x] Adaptar formularios de servicio, cotización, venta, producto y cliente a Material Expressive sin cambiar datos ni reglas; piezas compartidas verificadas en claro/oscuro a 393/1280 px.
+- [ ] Verificar creación/edición real de los cinco formularios. Bloqueo: sesión del servicio de acceso externo no disponible.
 - [x] Probar celeste y coral sin cambiar formas ni animaciones; piezas verificadas a 393/1280 px y contraste AA de textos en claro/oscuro. Pantallas autenticadas pendientes por sesión externa no disponible.
 - [x] Retirar la prueba violeta y ámbar descartada y restaurar el celeste anterior, sin cambiar formas ni animaciones.
 - [x] Restaurar la estrella original cookie9 en FAB y formas compartidas (Gem y reemplazo Sunny descartados); conservar dimensiones y animación. Flujo autenticado pendiente por sesión externa no disponible.

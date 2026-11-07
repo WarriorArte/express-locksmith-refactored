@@ -303,7 +303,7 @@ export function SaleFormDialog({ open, onOpenChange, initialProduct }: SaleFormD
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent fixedHeight className="max-w-[95vw] sm:max-w-2xl">
+      <DialogContent fixedHeight className="m3e-form max-w-[95vw] sm:max-w-2xl">
         <DialogHeader>
           <CreationDialogHeader
             icon={ShoppingCart}
@@ -389,7 +389,7 @@ export function SaleFormDialog({ open, onOpenChange, initialProduct }: SaleFormD
           {/* Tab: Resumen */}
           <TabsContent value="resumen" className="space-y-4 mt-4">
             {/* Totals */}
-            <div className="space-y-3 rounded-[28px] bg-muted p-5">
+            <div className="m3e-form-summary space-y-3 rounded-[28px] bg-muted p-5">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Subtotal:</span>
                 <span className="font-medium">{currencySymbol}{subtotal.toLocaleString()}</span>

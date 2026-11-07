@@ -469,8 +469,8 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
     </Dialog>
 
     <Dialog open={open && (isEditing || isInventoryItemTypeSelected)} onOpenChange={onOpenChange}>
-      <DialogContent fixedHeight className="max-w-[95vw] sm:max-w-2xl">
-        <DialogHeader className="text-left">
+      <DialogContent fixedHeight className="m3e-form max-w-[95vw] sm:max-w-2xl">
+        <DialogHeader data-m3e-form-heading className="pr-8 text-left">
           <DialogTitle className="text-2xl font-bold leading-tight">
             {isEditing
               ? (isServiceMode ? "Editar servicio" : "Editar producto")

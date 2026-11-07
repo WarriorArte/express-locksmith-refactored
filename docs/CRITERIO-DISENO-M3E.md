@@ -138,6 +138,8 @@ Si un módulo necesita una pieza que no existe y que otro módulo también usar�
 
 ### 4.2 Medidas
 
+Los formularios de alta y edición (servicio, venta, cotización, producto y cliente) usan `m3e-form`: superficie opaca, campos neutros de 48 px con esquinas de 16 px y texto de 16 px, foco visible sin saltos de borde, pestañas sobre superficie neutra y selección coral. Resúmenes con cifras principales en `primary-text`, sin líneas decorativas. Mantener encabezados independientes, botones de acción celestes y selectores nativos; no cambiar validaciones, cálculos ni guardado. Comprobación visual de piezas compartidas en claro/oscuro a 393/1280 px; revisión completa con sesión externa pendiente.
+
 | Elemento | Valor |
 |---|---|
 | Radio de sección / hero | 28 px (`rounded-[28px]`) |

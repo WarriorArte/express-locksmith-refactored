@@ -20,7 +20,7 @@ interface CreationDialogHeaderProps {
 
 export function CreationDialogHeader({ title, description }: CreationDialogHeaderProps) {
   return (
-    <div className="text-left">
+    <div data-m3e-form-heading className="pr-8 text-left">
       <DialogTitle className="text-2xl font-bold leading-tight">{title}</DialogTitle>
       <DialogDescription className="sr-only">{description}</DialogDescription>
     </div>

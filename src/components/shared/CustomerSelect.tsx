@@ -44,9 +44,9 @@ export function CustomerSelect({ value, onValueChange, onCreateNew, invalid = fa
           )}
         >
           {selectedCustomer ? (
-            <span className="flex items-center gap-2">
-              <User className="w-4 h-4" />
-              {selectedCustomer.name}
+            <span className="flex min-w-0 items-center gap-2">
+              <User className="w-4 h-4 shrink-0 text-primary" />
+              <span className="truncate">{selectedCustomer.name}</span>
             </span>
           ) : (
             <span className={cn(invalid ? "text-destructive" : "text-muted-foreground")}>

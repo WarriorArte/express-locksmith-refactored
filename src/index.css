@@ -198,6 +198,73 @@
 }
 
 @layer components {
+  /* Creation forms share a scoped visual language, independent of sign-in and tools. */
+  .m3e-form[data-ce-dialog-content] {
+    background: hsl(var(--card));
+    color: hsl(var(--card-foreground));
+  }
+  .m3e-form [data-m3e-form-heading] {
+    padding-bottom: 8px;
+  }
+  .m3e-form input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  .m3e-form textarea,
+  .m3e-form select,
+  .m3e-form button[role="combobox"] {
+    min-width: 0;
+    border-radius: 16px;
+    border-width: 1px;
+    border-color: hsl(var(--input));
+    background-color: hsl(var(--secondary-light));
+    color: hsl(var(--foreground));
+    font-size: 16px;
+    transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+  }
+  .m3e-form input:focus-visible,
+  .m3e-form textarea:focus-visible,
+  .m3e-form select:focus-visible,
+  .m3e-form button[role="combobox"]:focus-visible {
+    border-color: hsl(var(--ring));
+    box-shadow: 0 0 0 2px hsl(var(--ring) / 0.18);
+    outline: none;
+  }
+  .m3e-form [aria-invalid="true"] {
+    border-color: hsl(var(--destructive));
+  }
+  .m3e-form [aria-invalid="true"]:focus-visible {
+    box-shadow: 0 0 0 2px hsl(var(--destructive) / 0.18);
+  }
+  .m3e-form input:disabled {
+    background-color: hsl(var(--muted));
+  }
+  .m3e-form label {
+    line-height: 1.4;
+    letter-spacing: 0;
+  }
+  .m3e-form [role="tablist"] {
+    border-radius: 20px;
+    background: hsl(var(--secondary));
+    padding: 6px 4px;
+  }
+  .m3e-form [role="tabpanel"] {
+    margin-top: 24px;
+    padding-bottom: 12px;
+  }
+  .m3e-form-summary {
+    background: hsl(var(--secondary));
+  }
+  .m3e-form-summary .text-xl {
+    color: hsl(var(--primary-text));
+  }
+  .m3e-form-summary .text-xl > span:last-child {
+    color: inherit;
+  }
+  @media (min-width: 768px) {
+    .m3e-form[data-ce-dialog-content] {
+      border-radius: 28px;
+      border: 0;
+    }
+  }
+
   /* Surface tile (sub-card inside cards / sheets) */
   .surface-2 {
     background: hsl(var(--surface-2));
