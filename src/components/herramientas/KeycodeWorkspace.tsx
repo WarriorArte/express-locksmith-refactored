@@ -1322,18 +1322,32 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
           {profileLockSelections && (() => {
             const axes = profile.bittingConfig.axes;
             const isDosEjes = !!(axes && axes.length >= 2);
-            const renderCuts = (arr: boolean[], start: number, end: number) =>
-              arr.slice(start, end).map((checked, i) => (
-                <span
-                  key={start + i}
-                  aria-label={`Corte ${start + i + 1}${checked ? " incluido" : ""}`}
-                  className={`flex h-6 w-6 items-center justify-center rounded-md ${
-                    checked ? "bg-primary text-primary-foreground" : "bg-background"
-                  }`}
+            // Fila fluida: todos los cortes de un eje caben en una sola línea,
+            // encogiéndose en pantallas angostas en lugar de saltar a otra fila.
+            const renderCuts = (arr: boolean[], start: number, end: number) => {
+              const n = Math.max(end - start, 1);
+              return (
+                <div
+                  className="grid min-w-0 flex-1 gap-1"
+                  style={{
+                    gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))`,
+                    maxWidth: `${n * 28 + (n - 1) * 4}px`,
+                  }}
                 >
-                  {checked && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
-                </span>
-              ));
+                  {arr.slice(start, end).map((checked, i) => (
+                    <span
+                      key={start + i}
+                      aria-label={`Corte ${start + i + 1}${checked ? " incluido" : ""}`}
+                      className={`flex aspect-square w-full items-center justify-center rounded-full ${
+                        checked ? "bg-primary text-primary-foreground" : "bg-background"
+                      }`}
+                    >
+                      {checked && <Check className="h-3/5 w-3/5 max-h-3.5 max-w-3.5" strokeWidth={3} />}
+                    </span>
+                  ))}
+                </div>
+              );
+            };
             return (
               <DetailSection title="Cerraduras" className="bg-muted shadow-none" icon={<Lock className="h-5 w-5 text-primary" />}>
                 <SubHeading>Cortes que lleva cada cerradura</SubHeading>
@@ -1341,22 +1355,22 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                   {LOCK_ORDER.filter((lk) => profileLockSelections[lk]).map((lk) => {
                     const arr = profileLockSelections[lk]!;
                     return (
-                      <div key={lk} className="flex items-center gap-3">
-                        <span className="w-24 shrink-0 text-sm font-medium text-foreground">{LOCK_LABELS[lk]}</span>
+                      <div key={lk} className="flex items-center gap-2">
+                        <span className="w-16 shrink-0 truncate text-sm font-medium text-foreground sm:w-24">{LOCK_LABELS[lk]}</span>
                         {isDosEjes ? (
                           // Una fila por eje: cada eje con su etiqueta y sus cortes, sin partirse.
-                          <div className="flex min-w-0 flex-col gap-1.5">
-                            <div className="flex items-center gap-1.5">
+                          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                            <div className="flex min-w-0 items-center gap-1.5">
                               <span className="w-4 shrink-0 text-xs font-semibold text-muted-foreground">{axes![0].label}</span>
-                              <div className="flex gap-1">{renderCuts(arr, 0, axes![0].length)}</div>
+                              {renderCuts(arr, 0, axes![0].length)}
                             </div>
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex min-w-0 items-center gap-1.5">
                               <span className="w-4 shrink-0 text-xs font-semibold text-muted-foreground">{axes![1].label}</span>
-                              <div className="flex gap-1">{renderCuts(arr, axes![0].length, axes![0].length + axes![1].length)}</div>
+                              {renderCuts(arr, axes![0].length, axes![0].length + axes![1].length)}
                             </div>
                           </div>
                         ) : (
-                          <div className="flex flex-wrap gap-1">{renderCuts(arr, 0, arr.length)}</div>
+                          renderCuts(arr, 0, arr.length)
                         )}
                       </div>
                     );
