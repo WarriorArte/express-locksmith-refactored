@@ -259,6 +259,29 @@
     .m3-shape-spin { animation: none; }
   }
 
+  /* Full-width tonal band: decoration never changes the shared header layout. */
+  .dashboard-surface {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .dashboard-surface::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: -2.5rem -1.25rem -1rem;
+    border-radius: 0 0 3rem 0.75rem;
+    background: hsl(var(--primary-light));
+    pointer-events: none;
+  }
+
+  @media (min-width: 1024px) {
+    .dashboard-surface::before {
+      inset: -0.75rem -1.5rem -1rem;
+      border-radius: 0 0 3.5rem 1rem;
+    }
+  }
+
   .ce-hero {
     position: relative;
     padding-bottom: 4px;

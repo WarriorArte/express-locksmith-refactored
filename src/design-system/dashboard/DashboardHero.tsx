@@ -20,7 +20,7 @@ export function DashboardHero({
   className,
 }: DashboardHeroProps) {
   return (
-    <section className={cn("rounded-[28px] bg-primary-light p-4 lg:p-5", className)}>
+    <section className={cn("dashboard-surface py-1", className)}>
       <ModuleHeader className="-mx-2" title={`Hola, ${firstName}`} subtitle={`${inProgressServices} servicios en curso · ${expiringQuotes} cotizaciones por vencer`} accountTrigger={accountTrigger} />
     </section>
   );
