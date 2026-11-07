@@ -19,6 +19,12 @@ import { resolveStorageUrl } from "@/lib/phpApi";
 import { cn } from "@/lib/utils";
 import type { ImmoProfile, ImmoAssignmentDetail, ImmoCatalogItem } from "@/types";
 
+/**
+ * Desvanecido inferior de la foto del remoto: lo que sobresale por abajo de la
+ * forma se oculta con un degradado en lugar de cortarse de golpe.
+ */
+const PHOTO_FADE = "linear-gradient(to bottom, #000 0%, #000 68%, transparent 100%)";
+
 /*
  * Immo Info — pantalla de detalle de referencia del criterio M3E.
  * Ver docs/CRITERIO-DISENO-M3E.md.
@@ -77,11 +83,20 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
               className="mx-auto mb-4 block outline-none md:mb-0"
             >
               <MaterialShape name="cookie9" spin className="h-52 w-52 text-background/60 md:h-56 md:w-56">
-                <img
-                  src={resolveStorageUrl(profile.mainImage) ?? undefined}
-                  alt={title}
-                  className="h-40 w-40 object-contain drop-shadow-md md:h-44 md:w-44"
-                />
+                {/* La foto crece más que la forma: lo que sobresale abajo se desvanece. */}
+                <span
+                  className="block h-48 w-[184px] overflow-hidden md:h-52 md:w-[200px]"
+                  style={{
+                    WebkitMaskImage: PHOTO_FADE,
+                    maskImage: PHOTO_FADE,
+                  }}
+                >
+                  <img
+                    src={resolveStorageUrl(profile.mainImage) ?? undefined}
+                    alt={title}
+                    className="block h-auto w-full drop-shadow-md"
+                  />
+                </span>
               </MaterialShape>
             </button>
           )}
