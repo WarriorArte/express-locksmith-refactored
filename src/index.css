@@ -11,7 +11,7 @@
      Celeste primario sobre superficies casi blancas.
      ───────────────────────────────────────────────────────── */
   :root {
-    --background: 210 12% 93%;          /* gris celeste industrial */
+    --background: 200 35% 97%;          /* #F7F8FA */
     --foreground: 200 25% 8%;           /* #0D0D12 */
 
     --card: 0 0% 100%;                  /* #FFFFFF */
@@ -21,7 +21,7 @@
     --popover-foreground: 200 15% 10%;
 
     /* Surface 2 — used for nested chips / inputs / sub-tiles */
-    --surface-2: 210 10% 88%;           /* gris celeste anidado */
+    --surface-2: 200 35% 92%;           /* #F0F1F5 */
 
     /* Primary — celeste (acento de marca) */
     --primary: 199 88% 60%;            /* #00AEE6 */
@@ -91,7 +91,7 @@
      DARK THEME — casi negro con acentos celeste
      ───────────────────────────────────────────────────────── */
   .dark {
-    --background: 210 10% 10%;          /* gris azulado oscuro industrial */
+    --background: 200 15% 7%;           /* #0A0A0F */
     --foreground: 200 20% 96%;          /* #F0F0F8 */
 
     --card: 200 14% 12%;                 /* #141419 */
@@ -100,7 +100,7 @@
     --popover: 200 12% 13%;             /* #1A1A22 */
     --popover-foreground: 200 20% 92%;
 
-    --surface-2: 210 9% 18%;            /* gris azulado anidado */
+    --surface-2: 200 14% 17%;           /* #1E1E26 */
 
     --primary: 199 90% 72%;
     --primary-foreground: 200 70% 12%;
