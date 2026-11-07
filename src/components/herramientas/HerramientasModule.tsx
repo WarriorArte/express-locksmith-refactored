@@ -331,6 +331,7 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
       {!toolActive && (
         <div className="shrink-0 bg-background px-5 lg:px-6 pt-10 lg:pt-3 pb-4">
           <PageHeader
+            className={homeContent ? "rounded-[28px] !bg-primary-light p-4 lg:p-5" : undefined}
             title={vehicleSelected ? `${selectedMake} ${selectedModel}` : "Vehículos"}
             subtitle={vehicleSelected ? String(selectedYear) : selectedCategory || "Año · Marca · Modelo"}
             onBack={vehicleSelected ? clearVehicle : undefined}
