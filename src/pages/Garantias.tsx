@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { EmptyState } from "@/design-system/feedback/EmptyState";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { m as motion } from "framer-motion";
 import { 
@@ -121,12 +122,12 @@ export default function Garantias() {
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* Header bar - ya NO es sticky */}
-      <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-3 pb-4">
+      <div className="bg-background px-5 lg:px-6 pt-app-top lg:pt-3 pb-4">
         <PageHeader
           title="Garantías"
           subtitle={`${warranties?.length || 0} garantías registradas`}
           action={
-            <Button className="h-11 rounded-[12px] bg-primary text-primary-foreground hover:bg-primary-hover" onClick={() => setSettingsDialogOpen(true)}>
+            <Button onClick={() => setSettingsDialogOpen(true)}>
               <Clock className="w-4 h-4 mr-1" />
               Duración
             </Button>
@@ -143,9 +144,9 @@ export default function Garantias() {
             type="button"
             aria-label="Ajustar duración"
             onClick={() => setSettingsDialogOpen(true)}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-transform active:scale-95 lg:hidden"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-card text-foreground shadow-sm lg:hidden"
           >
-            <Clock className="w-5 h-5" strokeWidth={2.5} />
+            <Clock className="h-5 w-5" />
           </button>
         </div>
         </PageHeader>
@@ -153,7 +154,7 @@ export default function Garantias() {
 
       <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain px-5 lg:px-6 pb-mobile-nav no-scrollbar">
       {/* Warranties List */}
-      <div className="mt-6">
+      <div>
         {isLoading ? (
           <>
             <div className="md:hidden m3-list">
@@ -175,17 +176,11 @@ export default function Garantias() {
             </div>
           </>
         ) : filteredWarranties.length === 0 ? (
-          <div className="card-elevated p-10 text-center">
-            <ShieldCheck className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="font-semibold text-lg mb-2">
-              {searchQuery ? "Sin resultados" : "Sin garantías registradas"}
-            </h3>
-            <p className="text-muted-foreground max-w-xs mx-auto">
-              {searchQuery
-                ? "Intenta con otro código, cliente o producto."
-                : "Las garantías aparecen aquí cuando las activas al crear ventas o servicios."}
-            </p>
-          </div>
+          <EmptyState
+            icon={ShieldCheck}
+            title={searchQuery ? "Sin resultados" : "Sin garantías registradas"}
+            description={searchQuery ? "Intenta con otro código, cliente o producto." : "Las garantías aparecen aquí cuando las activas al crear ventas o servicios."}
+          />
         ) : (
           <>
             {/* Desktop table */}

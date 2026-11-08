@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { EmptyState } from "@/design-system/feedback/EmptyState";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { m as motion } from "framer-motion";
 import {
@@ -174,12 +175,12 @@ export default function Ventas() {
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* Header bar - ya NO es sticky */}
-      <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-3 pb-4">
+      <div className="bg-background px-5 lg:px-6 pt-app-top lg:pt-3 pb-4">
         <PageHeader
           title="Ventas"
           subtitle={`${sales?.length || 0} ventas registradas`}
           action={
-            <Button className="h-11 rounded-[12px] bg-primary text-primary-foreground hover:bg-primary-hover" onClick={() => setFormDialogOpen(true)}>
+            <Button onClick={() => setFormDialogOpen(true)}>
               <Plus className="w-4 h-4 mr-1" />
               Nueva
             </Button>
@@ -197,21 +198,13 @@ export default function Ventas() {
             onChange={setDateFilter}
             ariaLabel="Filtrar ventas por fecha"
           />
-          <button
-            type="button"
-            aria-label="Nueva venta"
-            onClick={() => setFormDialogOpen(true)}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-transform active:scale-95 lg:hidden"
-          >
-            <Plus className="w-5 h-5" strokeWidth={2.5} />
-          </button>
         </div>
         </PageHeader>
       </div>
 
       <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain px-5 lg:px-6 pb-mobile-nav no-scrollbar">
       {/* Sales List */}
-      <div className="mt-6">
+      <div>
         {isLoading ? (
           <>
             <div className="md:hidden m3-list">
@@ -233,23 +226,12 @@ export default function Ventas() {
             </div>
           </>
         ) : filteredSales.length === 0 ? (
-          <div className="card-elevated p-10 text-center">
-            <ShoppingCart className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="font-semibold text-lg mb-2">
-              {hasActiveFilters ? "Sin resultados" : "Sin ventas registradas"}
-            </h3>
-            <p className="text-muted-foreground mb-5 max-w-xs mx-auto">
-              {hasActiveFilters
-                ? "Intenta con otro folio, cliente o fecha."
-                : "Registra la primera venta para ver el historial aquí."}
-            </p>
-            {!hasActiveFilters && (
-              <Button onClick={() => setFormDialogOpen(true)}>
-                <Plus className="w-4 h-4 mr-1.5" />
-                Nueva venta
-              </Button>
-            )}
-          </div>
+          <EmptyState
+            icon={ShoppingCart}
+            title={hasActiveFilters ? "Sin resultados" : "Sin ventas registradas"}
+            description={hasActiveFilters ? "Intenta con otro folio, cliente o fecha." : "Registra la primera venta para ver el historial aquí."}
+            action={!hasActiveFilters ? { label: "Nueva venta", onClick: () => setFormDialogOpen(true) } : undefined}
+          />
         ) : (
           <>
             {/* Desktop table */}

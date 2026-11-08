@@ -1,12 +1,15 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useTheme } from "next-themes";
+import { useTheme } from "@/hooks/useTheme";
 import { Toaster as Sonner, toast } from "sonner";
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
-/** Snackbar M3: abajo al centro, por encima de la barra inferior móvil. */
+/**
+ * Snackbar M3 (único sistema de notificaciones de la app; use-toast redirige aquí):
+ * abajo al centro, por encima de la barra inferior móvil, superficie inversa.
+ */
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme();
+  const { theme } = useTheme();
 
   return (
     <Sonner
@@ -18,9 +21,13 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         classNames: {
           toast:
-            "group toast group-[.toaster]:bg-foreground group-[.toaster]:text-background group-[.toaster]:border-0 group-[.toaster]:rounded-[12px] group-[.toaster]:shadow-lg",
+            "group toast group-[.toaster]:min-h-12 group-[.toaster]:bg-foreground group-[.toaster]:text-background group-[.toaster]:border-0 group-[.toaster]:rounded-2xl group-[.toaster]:px-4 group-[.toaster]:shadow-lg group-[.toaster]:text-[15px]",
+          title: "group-[.toast]:font-medium",
           description: "group-[.toast]:text-background/80",
-          actionButton: "group-[.toast]:bg-transparent group-[.toast]:text-primary group-[.toast]:font-semibold",
+          actionButton: "group-[.toast]:bg-transparent group-[.toast]:text-primary-light group-[.toast]:font-semibold",
+          icon: "group-[.toast]:text-background",
+          error: "[&_[data-icon]]:!text-destructive",
+          success: "[&_[data-icon]]:!text-success",
           cancelButton: "group-[.toast]:bg-transparent group-[.toast]:text-background/80",
         },
       }}

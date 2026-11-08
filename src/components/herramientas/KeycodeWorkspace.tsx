@@ -6,7 +6,6 @@ import { GeneradorLlaveSVG } from "@/components/llaves/GeneradorLlaveSVG";
 import { KeyPhotoDecoder } from "@/components/herramientas/KeyPhotoDecoder";
 import { buildDefaultDecoderConfig } from "@/lib/decoderPresets";
 import { useKeycodeVisualSettings } from "@/hooks/useKeycodeVisualSettings";
-import { useTheme } from "@/hooks/useTheme";
 import { spawnRipple } from "@/lib/ripple";
 
 import { Button } from "@/components/ui/button";
@@ -141,9 +140,10 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
   const profileId = assignment.keycodeProfileIds?.[0] ?? assignment.keycodeProfileId ?? null;
   const baseProfile = keycodeProfiles.find((p) => p.id === profileId);
 
+  // Del ajuste de SuperAdmin solo se usa el grosor. El color del trazo NO se pasa:
+  // así el dibujo usa el color de marca del tema (hsl(var(--primary))) y sigue al
+  // modo claro/oscuro y a la paleta elegida, en lugar de un color fijo.
   const { settings: visualSettings } = useKeycodeVisualSettings();
-  const { theme } = useTheme();
-  const resolvedStrokeColor = theme === "dark" ? visualSettings.strokeColorDark : visualSettings.strokeColorLight;
 
   // Series grandes: no se descargan completas, se consultan en el servidor.
   const remoteMode = !!(
@@ -980,7 +980,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
     <div className="h-full flex flex-col">
 
       {/* ── Barra superior + protagonista + búsqueda por código ── */}
-      <div className="shrink-0 px-5 pt-11 lg:px-6 lg:pt-4">
+      <div className="shrink-0 px-5 pt-app-top lg:px-6 lg:pt-4">
         <ModuleHeader className="-mx-2" title={seriesName} subtitle={vehicleLine} onBack={onBack} backLabel={previewMode ? "Salir de la prueba" : "Volver a vehículos"} backIcon={previewMode ? <X className="!h-6 !w-6" /> : undefined} accountTrigger={!previewMode ? <AccountMenu /> : undefined} />
 
         {/* El código encontrado es el protagonista: grande y copiable */}
@@ -1065,7 +1065,6 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                   selectedGlobalIdx={selectedCellIdx}
                   onSelectCell={setSelectedCellIdx}
                   virtualKeypadMode
-                  strokeColor={resolvedStrokeColor}
                   strokeWidth={visualSettings.strokeWidth}
                   boxSize={profile.configuracionVisual.tamCaja}
                   numberSize={profile.configuracionVisual.tamNumero}
@@ -1199,7 +1198,7 @@ export function KeycodeWorkspace({ assignment, keycodeProfiles, onFetchCodes, on
                 variant="ghost"
                 onPointerDown={(e) => { e.preventDefault(); handleVirtualKeypad("?"); }}
                 aria-label="Corte desconocido"
-                className="h-12 w-12 rounded-full bg-accent p-0 text-xl font-semibold text-accent-foreground hover:bg-accent"
+                className="h-12 w-12 rounded-full bg-secondary p-0 text-xl font-semibold text-primary hover:bg-secondary"
               >
                 ?
               </Button>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { EmptyState } from "@/design-system/feedback/EmptyState";
 import { resolveStorageUrl } from "@/lib/phpApi";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { m as motion } from "framer-motion";
@@ -216,7 +217,7 @@ export default function Inventario() {
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* Header bar - ya NO es sticky */}
-      <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-3 pb-4">
+      <div className="bg-background px-5 lg:px-6 pt-app-top lg:pt-3 pb-4">
         <PageHeader
           title="Inventario"
           subtitle={<>{productsCount} productos · {servicesCount} servicios{lowStockCount > 0 && <span className="text-warning"> · {lowStockCount} alertas de stock</span>}</>}
@@ -235,7 +236,7 @@ export default function Inventario() {
                 aria-label="Gestionar categorías"
                 onClick={() => setCategoryDialogOpen(true)}
                 onPointerDown={spawnRipple}
-                className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-background/70 text-foreground lg:hidden"
+                className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-card text-foreground shadow-sm lg:hidden"
               >
                 <Palette className="h-[18px] w-[18px]" />
               </button>
@@ -312,25 +313,12 @@ export default function Inventario() {
 
       {/* Empty State */}
       {!isLoading && filteredProducts.length === 0 && (
-        <div className="flex flex-col items-center rounded-[28px] bg-card px-6 py-10 text-center shadow-sm">
-          <MaterialShape name="cookie9" className="mb-4 h-20 w-20 text-primary-light">
-            <Package className="h-8 w-8 text-primary" />
-          </MaterialShape>
-          <h3 className="mb-1 text-lg font-semibold text-foreground">
-            {searchQuery ? "Sin resultados" : "Sin productos registrados"}
-          </h3>
-          <p className="mx-auto mb-5 max-w-xs text-[15px] text-muted-foreground">
-            {searchQuery
-              ? "Prueba con otro nombre o cambia el filtro de categoría."
-              : "Agrega productos o servicios para gestionar tu inventario y precios."}
-          </p>
-          {!searchQuery && (
-            <Button onClick={handleNewProduct}>
-              <Plus className="w-4 h-4" />
-              Agregar producto
-            </Button>
-          )}
-        </div>
+        <EmptyState
+          icon={Package}
+          title={searchQuery ? "Sin resultados" : "Sin productos registrados"}
+          description={searchQuery ? "Prueba con otro nombre o cambia el filtro de categoría." : "Agrega productos o servicios para gestionar tu inventario y precios."}
+          action={!searchQuery ? { label: "Agregar producto", onClick: handleNewProduct } : undefined}
+        />
       )}
 
       {/* MOBILE products view (Redesign v2) */}

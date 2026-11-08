@@ -147,12 +147,9 @@ export function ImageGalleryDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-2xl max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <ImageIcon className="w-5 h-5" />
-                Galería de Imágenes
-              </span>
-              <Button variant="ghost" size="icon" onClick={() => void reload()} disabled={loading}>
+            <DialogTitle className="flex items-center justify-between gap-2">
+              <span>Galería</span>
+              <Button variant="ghost" size="icon" onClick={() => void reload()} disabled={loading} aria-label="Recargar galería">
                 <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
               </Button>
             </DialogTitle>
@@ -206,7 +203,7 @@ export function ImageGalleryDialog({
                   editingFilename === file.filename ? (
                     <div
                       key={`${file.filename}-${file.cacheBuster}`}
-                      className="flex flex-col gap-1.5 w-full rounded-lg border-2 bg-primary-light p-2"
+                      className="flex w-full flex-col gap-1.5 rounded-2xl bg-primary-light p-3 ring-2 ring-inset ring-primary"
                     >
                       <Input
                         value={titleDraft}
@@ -239,14 +236,13 @@ export function ImageGalleryDialog({
                         type="button"
                         onClick={() => setSelectedFile(file.filename)}
                         className={cn(
-                          "flex items-center gap-3 w-full rounded-lg border-2 p-1.5 pr-16 text-left transition-all",
-                          "hover:border-primary/50",
+                          "flex w-full items-center gap-3 rounded-2xl p-2 pr-16 text-left transition-shadow",
                           selectedFile === file.filename
-                            ? "border-primary bg-primary/5"
-                            : "border-transparent bg-muted/40",
+                            ? "bg-accent-light ring-2 ring-inset ring-accent"
+                            : "bg-muted",
                         )}
                       >
-                        <div className="w-14 h-10 rounded overflow-hidden bg-muted shrink-0 flex items-center justify-center">
+                        <div className="flex h-10 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-card">
                           <img
                             key={`img-${file.filename}-${file.cacheBuster}`}
                             src={resolveStorageUrl(file.previewUrl) ?? undefined}
@@ -354,8 +350,8 @@ export function ImageGalleryDialog({
             )}
           </ScrollArea>
 
-          <div className="flex justify-end gap-2 pt-4 border-t">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="proto-ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
             <Button onClick={handleSelect} disabled={!selectedFile}>Seleccionar</Button>
           </div>
         </DialogContent>

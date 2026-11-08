@@ -89,49 +89,46 @@ export function CategoryManagementDialog({ open, onOpenChange }: CategoryManagem
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Palette className="w-5 h-5 text-primary" />
-              Gestión de Categorías
-            </DialogTitle>
+            <DialogTitle>Categorías</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="flex justify-end">
-              <Button size="sm" className="gap-2" onClick={openCreate}>
-                <Plus className="w-4 h-4" />
-                Nueva Categoría
-              </Button>
-            </div>
+            <Button className="w-full" onClick={openCreate}>
+              <Plus className="w-4 h-4" />
+              Nueva categoría
+            </Button>
 
             {isLoading ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin" />
               </div>
             ) : (
-              <div className="space-y-2 max-h-80 overflow-y-auto">
+              <div className="m3-list max-h-[50vh] overflow-y-auto">
                 {categories?.map((cat) => (
-                  <div key={cat.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                  <div key={cat.id} className="m3-list-item flex min-h-14 items-center justify-between gap-3 bg-muted py-2 pl-4 pr-2">
                     <div className="flex items-center gap-3">
                       <div
                         className="w-4 h-4 rounded-full flex-shrink-0"
                         style={{ backgroundColor: cat.color }}
                       />
-                      <span className="font-medium">{cat.name}</span>
+                      <span className="truncate text-[15px] font-medium">{cat.name}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-8 w-8"
+                        className="h-11 w-11"
                         onClick={() => openEdit(cat)}
+                        aria-label={`Editar ${cat.name}`}
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        className="h-11 w-11 text-destructive hover:text-destructive"
                         onClick={() => setDeleteConfirmCategory(cat)}
+                        aria-label={`Eliminar ${cat.name}`}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -139,7 +136,7 @@ export function CategoryManagementDialog({ open, onOpenChange }: CategoryManagem
                   </div>
                 ))}
                 {categories?.length === 0 && (
-                  <p className="text-center text-muted-foreground py-4">No hay categorías</p>
+                  <p className="rounded-[20px] bg-muted py-6 text-center text-[15px] text-muted-foreground">Aún no hay categorías</p>
                 )}
               </div>
             )}
@@ -151,7 +148,7 @@ export function CategoryManagementDialog({ open, onOpenChange }: CategoryManagem
       <Dialog open={newCategoryOpen} onOpenChange={setNewCategoryOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nueva Categoría</DialogTitle>
+            <DialogTitle>Nueva categoría</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -180,7 +177,7 @@ export function CategoryManagementDialog({ open, onOpenChange }: CategoryManagem
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setNewCategoryOpen(false)}>
+            <Button variant="proto-ghost" onClick={() => setNewCategoryOpen(false)}>
               Cancelar
             </Button>
             <Button onClick={handleCreate} disabled={createCategory.isPending || !categoryName.trim()}>
@@ -195,7 +192,7 @@ export function CategoryManagementDialog({ open, onOpenChange }: CategoryManagem
       <Dialog open={!!editingCategory} onOpenChange={() => setEditingCategory(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Editar Categoría</DialogTitle>
+            <DialogTitle>Editar categoría</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -224,7 +221,7 @@ export function CategoryManagementDialog({ open, onOpenChange }: CategoryManagem
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingCategory(null)}>
+            <Button variant="proto-ghost" onClick={() => setEditingCategory(null)}>
               Cancelar
             </Button>
             <Button onClick={handleUpdate} disabled={updateCategory.isPending || !categoryName.trim()}>

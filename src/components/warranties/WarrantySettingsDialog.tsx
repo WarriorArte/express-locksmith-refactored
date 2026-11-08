@@ -4,17 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { NativeSelect } from "@/components/ui/native-select";
 import { Loader2, Save } from "lucide-react";
-import { getReadableTextColor } from "@/lib/colorContrast";
 import { useCategories } from "@/hooks/useCategories";
 import {
   useWarrantyCategorySettings,
@@ -130,15 +122,17 @@ export function WarrantySettingsDialog({ open, onOpenChange }: WarrantySettingsD
           onChange={(e) => setCfg({ ...cfg, value: parseInt(e.target.value) || 1 })}
           className="w-20 text-center"
         />
-        <Select value={cfg.unit} onValueChange={(unit: DurationUnit) => setCfg({ ...cfg, unit })}>
-          <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="days">días</SelectItem>
-            <SelectItem value="weeks">semanas</SelectItem>
-            <SelectItem value="months">meses</SelectItem>
-            <SelectItem value="years">años</SelectItem>
-          </SelectContent>
-        </Select>
+        <NativeSelect
+          value={cfg.unit}
+          onChange={(e) => setCfg({ ...cfg, unit: e.target.value as DurationUnit })}
+          aria-label={`Unidad de ${label.toLowerCase()}`}
+          className="w-36"
+        >
+          <option value="days">días</option>
+            <option value="weeks">semanas</option>
+            <option value="months">meses</option>
+            <option value="years">años</option>
+        </NativeSelect>
       </div>
     </div>
   );
@@ -147,7 +141,7 @@ export function WarrantySettingsDialog({ open, onOpenChange }: WarrantySettingsD
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent fixedHeight className="max-w-[95vw] sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Configuración de Garantías</DialogTitle>
+          <DialogTitle>Ajustes de garantías</DialogTitle>
           <DialogDescription>
             Configura duración por defecto, duraciones por categoría, términos y políticas de cobertura.
           </DialogDescription>
@@ -184,7 +178,7 @@ export function WarrantySettingsDialog({ open, onOpenChange }: WarrantySettingsD
             </TabsContent>
 
             {/* CATEGORIAS */}
-            <TabsContent value="categorias" className="space-y-3 pt-4">
+            <TabsContent value="categorias" className="m3-list pt-4">
               {!categories || categories.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <p>No hay categorías de productos configuradas.</p>
@@ -195,16 +189,10 @@ export function WarrantySettingsDialog({ open, onOpenChange }: WarrantySettingsD
                   const cfg = getCatCfg(category.id);
                   const hasChanges = !!localCat[category.id];
                   return (
-                    <div key={category.id} className="flex items-center gap-3 p-3 rounded-lg border bg-card">
-                      <div className="flex-1 min-w-0">
-                        <Badge
-                          style={{
-                            backgroundColor: category.color,
-                            color: getReadableTextColor(category.color),
-                          }}
-                        >
-                          {category.name}
-                        </Badge>
+                    <div key={category.id} className="m3-list-item flex items-center gap-3 bg-muted px-4 py-3">
+                      <div className="flex min-w-0 flex-1 items-center gap-2">
+                        <span aria-hidden="true" className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: category.color }} />
+                        <span className="truncate text-[15px] font-medium text-foreground">{category.name}</span>
                       </div>
                       <Input
                         type="number"
@@ -218,20 +206,19 @@ export function WarrantySettingsDialog({ open, onOpenChange }: WarrantySettingsD
                         }
                         className="w-16 text-center"
                       />
-                      <Select
+                      <NativeSelect
                         value={cfg.unit}
-                        onValueChange={(unit: DurationUnit) =>
-                          setLocalCat(prev => ({ ...prev, [category.id]: { ...cfg, unit } }))
+                        onChange={(e) =>
+                          setLocalCat(prev => ({ ...prev, [category.id]: { ...cfg, unit: e.target.value as DurationUnit } }))
                         }
+                        aria-label={`Unidad para ${category.name}`}
+                        className="w-32"
                       >
-                        <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="days">días</SelectItem>
-                          <SelectItem value="weeks">semanas</SelectItem>
-                          <SelectItem value="months">meses</SelectItem>
-                          <SelectItem value="years">años</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        <option value="days">días</option>
+            <option value="weeks">semanas</option>
+            <option value="months">meses</option>
+            <option value="years">años</option>
+                      </NativeSelect>
 
                     </div>
                   );

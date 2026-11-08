@@ -253,7 +253,7 @@ export function QuoteDocSettingsPanel({
       </div>
 
       {mobilePreviewOpen && (
-        <div className="fixed inset-0 z-[120] bg-background/95 backdrop-blur-sm p-3 overflow-auto xl:hidden">
+        <div className="fixed inset-0 z-[120] overflow-auto bg-background p-3 xl:hidden">
           <div className="flex items-center justify-between mb-3">
             <div className="font-semibold">Preview</div>
             <Button type="button" variant="ghost" size="icon" onClick={() => setMobilePreviewOpen(false)}>

@@ -124,7 +124,7 @@ export function VehicleHomeExtras() {
                 code={s.service_number}
                 statusLabel={format(parseISO(s.scheduled_start_at!), "HH:mm")}
                 statusTextClass="text-foreground"
-                statusDotClass="bg-accent"
+                statusDotClass="bg-primary-light ring-2 ring-inset ring-primary"
                 title={s.description || s.service_number}
                 subtitle={s.customer?.name ?? "Sin cliente"}
                 valueText={price(s)}

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { EmptyState } from "@/design-system/feedback/EmptyState";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { m as motion } from "framer-motion";
 import {
@@ -214,12 +215,12 @@ export default function Cotizaciones() {
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* Header bar - ya NO es sticky */}
-      <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-3 pb-4">
+      <div className="bg-background px-5 lg:px-6 pt-app-top lg:pt-3 pb-4">
         <PageHeader
           title="Cotizaciones"
           subtitle={`${stats.pending} pendientes · ${stats.accepted} aceptadas este mes`}
           action={
-            <Button className="h-11 rounded-[12px] bg-primary text-primary-foreground hover:bg-primary-hover" onClick={() => { setEditingQuote(null); setFormDialogOpen(true); }}>
+            <Button onClick={() => { setEditingQuote(null); setFormDialogOpen(true); }}>
               <Plus className="w-4 h-4 mr-1" />
               Nueva
             </Button>
@@ -232,21 +233,13 @@ export default function Cotizaciones() {
             value={searchQuery}
             onChange={setSearchQuery}
           />
-          <button
-            type="button"
-            aria-label="Nueva cotización"
-            onClick={() => { setEditingQuote(null); setFormDialogOpen(true); }}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-transform active:scale-95 lg:hidden"
-          >
-            <Plus className="w-5 h-5" strokeWidth={2.5} />
-          </button>
         </div>
         </PageHeader>
       </div>
 
       <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain px-5 lg:px-6 pb-mobile-nav no-scrollbar">
       {/* Quotes List */}
-      <div className="mt-6">
+      <div>
         {isLoading ? (
           <>
             <div className="md:hidden m3-list">
@@ -268,23 +261,12 @@ export default function Cotizaciones() {
             </div>
           </>
         ) : filteredQuotes.length === 0 ? (
-          <div className="card-elevated p-10 text-center">
-            <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="font-semibold text-lg mb-2">
-              {searchQuery ? "Sin resultados" : "Sin cotizaciones registradas"}
-            </h3>
-            <p className="text-muted-foreground mb-5 max-w-xs mx-auto">
-              {searchQuery
-                ? "Intenta con otro folio, cliente o descripción."
-                : "Crea una cotización para compartirla con tus clientes."}
-            </p>
-            {!searchQuery && (
-              <Button onClick={() => { setEditingQuote(null); setFormDialogOpen(true); }}>
-                <Plus className="w-4 h-4 mr-1.5" />
-                Nueva cotización
-              </Button>
-            )}
-          </div>
+          <EmptyState
+            icon={FileText}
+            title={searchQuery ? "Sin resultados" : "Sin cotizaciones registradas"}
+            description={searchQuery ? "Intenta con otro folio, cliente o descripción." : "Crea una cotización para compartirla con tus clientes."}
+            action={!searchQuery ? { label: "Nueva cotización", onClick: () => { setEditingQuote(null); setFormDialogOpen(true); } } : undefined}
+          />
         ) : (
           <>
             {/* Desktop table */}

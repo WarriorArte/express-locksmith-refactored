@@ -42,8 +42,8 @@ export function NativeSelectButton({
   return (
     <div
       className={cn(
-        "relative flex h-10 shrink-0 items-center justify-center gap-2 overflow-hidden rounded-full bg-background/70 text-foreground focus-within:ring-2 focus-within:ring-primary",
-        showLabel ? "px-4" : "w-10",
+        "relative flex h-12 shrink-0 items-center justify-center gap-2 overflow-hidden rounded-full bg-card text-foreground shadow-sm focus-within:ring-2 focus-within:ring-primary",
+        showLabel ? "px-4" : "w-12",
         className,
       )}
     >

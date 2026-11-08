@@ -759,7 +759,7 @@ const DialogContent = React.forwardRef<
         {...contentA11yProps}
         data-ce-dialog-content="true"
         className={cn(
-          "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] border bg-background shadow-lg duration-200",
+          "fixed left-[50%] top-[50%] z-50 grid w-[calc(100%-2rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] overflow-hidden rounded-[28px] bg-popover shadow-xl duration-200",
           fixedHeight 
             ? "h-[85vh] grid-rows-[auto_1fr_auto] overflow-hidden p-0 gap-0" 
             : "gap-4 p-6",
@@ -768,7 +768,6 @@ const DialogContent = React.forwardRef<
           "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
           "data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%]",
           "data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]",
-          "sm:rounded-sm",
           className,
         )}
         style={style}
@@ -804,8 +803,8 @@ const DialogContent = React.forwardRef<
         ) : (
           <div className="gap-4 p-6">{children}</div>
         )}
-        <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
-          <X className="h-4 w-4" />
+        <DialogPrimitive.Close className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none">
+          <X className="h-5 w-5" />
           <span className="sr-only">Close</span>
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>
@@ -824,7 +823,7 @@ const DialogHeader = ({
     <div
       className={cn(
         "flex flex-col space-y-1.5",
-        mode === "sheet" ? "text-left" : "text-center sm:text-left",
+        "text-left",
         className,
       )}
       {...props}
@@ -860,7 +859,7 @@ const DialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn("text-lg font-semibold leading-none tracking-tight", className)}
+    className={cn("text-2xl font-bold leading-tight", className)}
     {...props}
   />
 ));
@@ -872,7 +871,7 @@ const DialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn("text-sm text-muted-foreground", className)}
+    className={cn("text-[15px] text-muted-foreground", className)}
     {...props}
   />
 ));

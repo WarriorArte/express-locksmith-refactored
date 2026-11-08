@@ -85,7 +85,7 @@ export function ServiceDetailSheet({
   if (!service) return null;
 
   const isScheduled = service.status === "pending" && !!service.scheduled_start_at;
-  const st = isScheduled ? { label: "Programado", dot: "bg-accent" } : STATUS_META[service.status];
+  const st = isScheduled ? { label: "Programado", dot: "bg-primary-light ring-2 ring-inset ring-primary" } : STATUS_META[service.status];
   const typeLabel = TYPE_LABEL[service.service_type] ?? service.service_type;
   const next = onStatusChange ? NEXT_STATUS[service.status] : undefined;
 

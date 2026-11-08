@@ -8,6 +8,7 @@ import {
   DialogDescription,
 } from "@/components/ui/responsive-dialog";
 import { Button } from "@/components/ui/button";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2, ShoppingCart, Wrench } from "lucide-react";
@@ -34,6 +35,7 @@ export function ConvertQuoteDialog({ open, onOpenChange, quote }: ConvertQuoteDi
   const { updateForSale, updateForService } = useBatchInventoryUpdate();
   const { currentWorkshop } = useWorkshop();
   const { toast } = useToast();
+  const { data: settings } = useBusinessSettings();
 
   const handleConvert = async () => {
     if (!quote) return;
@@ -158,11 +160,13 @@ export function ConvertQuoteDialog({ open, onOpenChange, quote }: ConvertQuoteDi
 
   if (!quote) return null;
 
+  const currencySymbol = settings?.currency_symbol || "$";
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Convertir Cotización</DialogTitle>
+          <DialogTitle>Convertir cotización</DialogTitle>
           <DialogDescription>
             Convierte la cotización {quote.quote_number} en una venta o servicio
           </DialogDescription>
@@ -176,10 +180,10 @@ export function ConvertQuoteDialog({ open, onOpenChange, quote }: ConvertQuoteDi
             onValueChange={(value) => setConvertTo(value as "sale" | "service")}
             className="space-y-3"
           >
-            <div className="flex items-center space-x-3 p-4 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors">
+            <div className="flex cursor-pointer items-center gap-3 rounded-[20px] bg-muted p-4 transition-shadow has-[[data-state=checked]]:ring-2 has-[[data-state=checked]]:ring-inset has-[[data-state=checked]]:ring-accent">
               <RadioGroupItem value="sale" id="sale" />
               <Label htmlFor="sale" className="flex items-center gap-3 cursor-pointer flex-1">
-                <div className="p-2 rounded-lg bg-secondary-light text-secondary">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-card text-primary">
                   <ShoppingCart className="w-5 h-5" />
                 </div>
                 <div>
@@ -189,10 +193,10 @@ export function ConvertQuoteDialog({ open, onOpenChange, quote }: ConvertQuoteDi
               </Label>
             </div>
             
-            <div className="flex items-center space-x-3 p-4 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors">
+            <div className="flex cursor-pointer items-center gap-3 rounded-[20px] bg-muted p-4 transition-shadow has-[[data-state=checked]]:ring-2 has-[[data-state=checked]]:ring-inset has-[[data-state=checked]]:ring-accent">
               <RadioGroupItem value="service" id="service" />
               <Label htmlFor="service" className="flex items-center gap-3 cursor-pointer flex-1">
-                <div className="p-2 rounded-lg bg-success-light text-foreground dark:text-success">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-card text-primary">
                   <Wrench className="w-5 h-5" />
                 </div>
                 <div>
@@ -203,7 +207,7 @@ export function ConvertQuoteDialog({ open, onOpenChange, quote }: ConvertQuoteDi
             </div>
           </RadioGroup>
 
-          <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+          <div className="mt-6 space-y-1 rounded-[20px] bg-muted p-4">
             <p className="text-sm text-muted-foreground mb-2">Resumen de la cotización:</p>
             <div className="flex justify-between text-sm">
               <span>Items:</span>
@@ -213,15 +217,15 @@ export function ConvertQuoteDialog({ open, onOpenChange, quote }: ConvertQuoteDi
               <span>Cliente:</span>
               <span>{quote.customer_name || quote.customer?.name || "Sin cliente"}</span>
             </div>
-            <div className="flex justify-between font-medium mt-2 pt-2 border-t">
+            <div className="flex justify-between pt-2 text-base font-semibold">
               <span>Total:</span>
-              <span>${Number(quote.total).toLocaleString()}</span>
+              <span className="tabular-nums">{currencySymbol}{Number(quote.total).toLocaleString()}</span>
             </div>
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="proto-ghost" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
           <Button onClick={handleConvert} disabled={isConverting}>

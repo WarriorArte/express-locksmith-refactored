@@ -1,4 +1,4 @@
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
@@ -35,9 +35,11 @@ export function UnifiedSearchInput({
   spellCheck,
   inputRef,
 }: UnifiedSearchInputProps) {
+  // Barra de búsqueda M3 (criterio docs/CRITERIO-DISENO-M3E.md): píldora tonal
+  // sin borde, texto de 16 px (evita el zoom automático de iOS) y botón para borrar.
   return (
     <div className={cn("relative", className)}>
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
+      <Search className="pointer-events-none absolute left-4 top-1/2 z-10 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
       <Input
         ref={inputRef}
         type={type}
@@ -52,14 +54,24 @@ export function UnifiedSearchInput({
         onFocus={onFocus}
         onBlur={onBlur}
         className={cn(
-          "pl-9 rounded-2xl h-11 text-[13px]",
-          "bg-card border-foreground/25 text-foreground",
-          "placeholder:text-muted-foreground placeholder:font-normal",
-          "focus-visible:border-primary focus-visible:border-2",
-          "transition-[border-color,background-color] duration-200",
+          "h-12 rounded-full border-0 bg-card pl-12 text-base text-foreground shadow-sm",
+          value ? "pr-12" : "pr-4",
+          "placeholder:font-normal placeholder:text-muted-foreground",
+          "focus-visible:border-0 focus-visible:ring-2 focus-visible:ring-primary",
+          "[&::-webkit-search-cancel-button]:hidden",
           inputClassName,
         )}
       />
+      {value && (
+        <button
+          type="button"
+          onClick={() => onChange("")}
+          aria-label="Borrar búsqueda"
+          className="absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground active:bg-muted"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      )}
     </div>
   );
 }

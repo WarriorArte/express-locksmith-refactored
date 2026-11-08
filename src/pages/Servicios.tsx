@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { EmptyState } from "@/design-system/feedback/EmptyState";
 import { resolveStorageUrl } from "@/lib/phpApi";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { m as motion } from "framer-motion";
@@ -42,12 +43,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -65,6 +60,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+import { NativeSelectButton } from "@/design-system/pickers";
 import { clearActiveElementFocus } from "@/lib/focus";
 import { useServices, useDeleteService, useUpdateService, type Service, type ServiceStatus, type ServiceType } from "@/hooks/useServices";
 import { useAuth } from "@/hooks/useAuth";
@@ -147,7 +143,7 @@ export default function Servicios() {
     if (service.status === "pending" && service.scheduled_start_at) {
       return {
         label: "Programado",
-        color: "bg-accent text-accent-foreground",
+        color: "bg-primary-light text-foreground",
         icon: Clock,
       };
     }
@@ -431,7 +427,7 @@ export default function Servicios() {
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* Header bar */}
-      <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-3 pb-4">
+      <div className="bg-background px-5 lg:px-6 pt-app-top lg:pt-3 pb-4">
         <PageHeader
           title="Servicios"
           subtitle={`${stats.today} servicios hoy · ${stats.inProgress} en curso`}
@@ -445,39 +441,20 @@ export default function Servicios() {
               onChange={setSearchQuery}
             />
             <div className="flex shrink-0 items-center gap-2">
-              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as "all" | ServiceStatus)}>
-                <SelectTrigger
-                  className="h-10 w-10 shrink-0 justify-center rounded-xl px-0 bg-card border-[1.5px] border-foreground/25 text-foreground hover:border-foreground/45 focus:ring-0 focus:border-primary [&>svg:last-child]:hidden lg:w-48 lg:justify-start lg:px-3 lg:[&>svg:last-child]:block"
-                  aria-label="Filtrar por estado"
-                >
-                  <div className="flex items-center gap-2">
-                    <Filter className="w-4 h-4 shrink-0" />
-                    <span className="hidden truncate lg:inline">
-                      {statusOptions.find((o) => o.key === statusFilter)?.label ?? "Todos"}
-                    </span>
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  {statusOptions.map((option) => (
-                    <SelectItem key={option.key} value={option.key}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <NativeSelectButton
+                icon={<Filter className="h-[18px] w-[18px]" />}
+                label="Filtrar por estado"
+                value={statusFilter}
+                onChange={(v) => setStatusFilter(v as "all" | ServiceStatus)}
+                options={statusOptions.map((o) => ({ value: o.key, label: o.label }))}
+                className={statusFilter !== "all" ? "bg-accent text-accent-foreground" : undefined}
+              />
               <DateFilterButton
                 value={dateFilter}
                 onChange={setDateFilter}
                 ariaLabel="Filtrar servicios por fecha"
               />
-              <button
-                type="button"
-                aria-label="Nuevo servicio"
-                onClick={() => { setEditingService(null); setFormDialogOpen(true); }}
-                className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex shrink-0 items-center justify-center active:scale-95 transition-transform lg:hidden"
-              >
-                <Plus className="w-5 h-5" strokeWidth={2.5} />
-              </button>
+              {/* En móvil, "nuevo" lo hace el botón + de la barra inferior */}
             </div>
           </div>
         </PageHeader>
@@ -508,23 +485,12 @@ export default function Servicios() {
           </div>
         </>
       ) : filteredServices.length === 0 ? (
-        <div className="card-elevated p-10 text-center">
-          <Wrench className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="font-semibold text-lg mb-2">
-            {hasActiveFilters ? "Sin resultados" : "Sin servicios registrados"}
-          </h3>
-          <p className="text-muted-foreground mb-5 max-w-xs mx-auto">
-            {hasActiveFilters
-              ? "Intenta con otra busqueda, estado o fecha."
-              : "Registra el primer servicio para comenzar a gestionar tu operacion."}
-          </p>
-          {!hasActiveFilters && (
-            <Button onClick={() => { setEditingService(null); setFormDialogOpen(true); }}>
-              <Plus className="w-4 h-4 mr-1.5" />
-              Nuevo servicio
-            </Button>
-          )}
-        </div>
+        <EmptyState
+          icon={Wrench}
+          title={hasActiveFilters ? "Sin resultados" : "Sin servicios registrados"}
+          description={hasActiveFilters ? "Intenta con otra búsqueda, estado o fecha." : "Registra el primer servicio para empezar a gestionar tu taller."}
+          action={!hasActiveFilters ? { label: "Nuevo servicio", onClick: () => { setEditingService(null); setFormDialogOpen(true); } } : undefined}
+        />
       ) : (
         <>
           {/* Desktop table */}
@@ -656,13 +622,13 @@ export default function Servicios() {
                 service.status === "delivered" ? "text-primary" :
                 service.status === "completed" ? "text-success" :
                 service.status === "in_progress" ? "text-info" :
-                isScheduled ? "text-accent" : "text-warning";
+                isScheduled ? "text-primary" : "text-warning";
               const statusDotClass =
                 service.status === "cancelled" ? "bg-destructive/70" :
                 service.status === "delivered" ? "bg-primary" :
                 service.status === "completed" ? "bg-success" :
                 service.status === "in_progress" ? "bg-info" :
-                isScheduled ? "bg-accent" : "bg-warning";
+                isScheduled ? "bg-primary-light ring-2 ring-inset ring-primary" : "bg-warning";
               return (
                 <MobileListCard
                   key={service.id}

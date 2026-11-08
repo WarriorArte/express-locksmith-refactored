@@ -8,49 +8,49 @@
 @layer base {
   /* ─────────────────────────────────────────────────────────
      LIGHT THEME (default) — Cerrajería Express
-     Celeste protagonista y coral puntual sobre superficies claras.
+     Acero y naranja de seguridad (base). Otras paletas: data-palette.
      ───────────────────────────────────────────────────────── */
   :root {
-    --background: 204 33.3% 97.1%;      /* #F5F8FA */
-    --foreground: 204 42.2% 16.3%;      /* #182D3B */
+    --background: 210 14% 96%;
+    --foreground: 215 28% 14%;
 
-    --card: 0 0% 100%;                  /* #FFFFFF */
-    --card-foreground: 204 42.2% 16.3%;
+    --card: 0 0% 100%;
+    --card-foreground: 215 28% 14%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 204 42.2% 16.3%;
+    --popover-foreground: 215 28% 14%;
 
     /* Surface 2 — used for nested chips / inputs / sub-tiles */
-    --surface-2: 210 10% 92%;
+    --surface-2: 210 12% 90%;
 
     /* Primary — celeste (acento de marca) */
-    --primary-text: 200 74% 30%;
-    --primary: 199 88% 60%;            /* #00AEE6 */
-    --primary-foreground: 204 42.2% 16.3%;
-    --primary-hover: 199 80% 55%;      /* #0097C7 */
-    --primary-light: 199 92% 88%;
-    --primary-glow: 199 85% 62%;
+    --primary-text: 208 45% 32%;
+    --primary: 208 38% 40%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 208 38% 35%;
+    --primary-light: 208 35% 88%;
+    --primary-glow: 208 38% 40%;
 
     /* Header alone carries the large brand surface; detail content stays neutral. */
-    --header-surface: 199 84% 74%;
+    --header-surface: 208 22% 78%;
 
     /* Secondary — neutral surface tile */
-    --secondary: 210 10% 92%;
-    --secondary-foreground: 200 15% 10%;
-    --secondary-hover: 210 10% 89%;
+    --secondary: 210 12% 90%;
+    --secondary-foreground: 215 28% 14%;
+    --secondary-hover: 210 12% 86%;
     --secondary-light: 210 12% 97%;
 
     /* Muted */
-    --muted: 210 10% 92%;
-    --muted-foreground: 204 18% 32%;
+    --muted: 210 12% 90%;
+    --muted-foreground: 215 12% 34%;
 
-    /* Accent — coral for selection, not errors */
-    --accent: 7.5 81% 69%;              /* #F08070 */
-    --accent-foreground: 204 42.2% 16.3%;
-    --accent-light: 7.5 81% 94%;
+    /* Accent — naranja de seguridad: solo selección activa, no errores */
+    --accent: 24 95% 53%;
+    --accent-foreground: 215 28% 10%;
+    --accent-light: 24 95% 92%;
 
     /* Destructive */
-    --destructive: 350 100% 65%;        /* #FF4D6A */
+    --destructive: 350 100% 65%;
     --destructive-foreground: 0 0% 100%;
     --destructive-light: 350 100% 95%;
 
@@ -60,29 +60,29 @@
     --success-light: 140 50% 90%;
 
     /* Warning */
-    --warning: 36 100% 59%;             /* #FFB830 */
+    --warning: 45 95% 48%;
     --warning-foreground: 240 21% 5%;
-    --warning-light: 36 100% 94%;
+    --warning-light: 45 95% 90%;
 
     /* Info — primary celeste */
-    --info: 210 70% 48%;
+    --info: 180 60% 33%;
     --info-foreground: 0 0% 100%;
-    --info-light: 210 80% 93%;
+    --info-light: 180 45% 90%;
 
     --border: 200 14% 78%;               /* rgba(0,0,0,0.07) approx */
     --input: 200 12% 62%;
-    --ring: 200 74% 30%;
+    --ring: 208 45% 32%;
     --radius: 1rem;
 
     /* Sidebar — Light: deep dark sidebar still works as accent rail */
-    --sidebar-background: 210 12% 96%;
-    --sidebar-foreground: 204 42.2% 16.3%;
-    --sidebar-primary: 199 85% 62%;
-    --sidebar-primary-foreground: 200 60% 12%;
-    --sidebar-accent: 7.5 81% 69%;
-    --sidebar-accent-foreground: 204 42.2% 16.3%;
+    --sidebar-background: 210 14% 95%;
+    --sidebar-foreground: 215 28% 14%;
+    --sidebar-primary: 208 38% 40%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 24 95% 53%;
+    --sidebar-accent-foreground: 215 28% 10%;
     --sidebar-border: 200 15% 88%;
-    --sidebar-ring: 200 74% 30%;
+    --sidebar-ring: 208 45% 32%;
 
     /* Shadows */
     --shadow-sm: 0 1px 3px 0 hsl(240 16% 6% / 0.04);
@@ -92,40 +92,40 @@
   }
 
   /* ─────────────────────────────────────────────────────────
-     DARK THEME — casi negro con celeste y selección coral
+     DARK THEME — casi negro con acero y selección naranja
      ───────────────────────────────────────────────────────── */
   .dark {
-    --background: 210 8% 7%;
-    --foreground: 200 20% 96%;          /* #F0F0F8 */
+    --background: 215 14% 7%;
+    --foreground: 210 20% 94%;
 
-    --card: 210 8% 12%;
-    --card-foreground: 200 20% 92%;
+    --card: 215 12% 11%;
+    --card-foreground: 210 20% 92%;
 
-    --popover: 210 8% 13%;
-    --popover-foreground: 200 20% 92%;
+    --popover: 215 12% 12%;
+    --popover-foreground: 210 20% 92%;
 
-    --surface-2: 210 8% 17%;
+    --surface-2: 215 10% 16%;
 
-    --primary-text: var(--primary);
-    --primary: 199 90% 72%;
-    --primary-foreground: 200 70% 12%;
-    --primary-hover: 199 90% 78%;
-    --primary-light: 199 50% 20%;
-    --primary-glow: 199 90% 72%;
+    --primary-text: 208 50% 70%;
+    --primary: 208 45% 62%;
+    --primary-foreground: 215 30% 10%;
+    --primary-hover: 208 45% 68%;
+    --primary-light: 208 30% 20%;
+    --primary-glow: 208 45% 62%;
 
-    --header-surface: 199 48% 24%;
+    --header-surface: 208 25% 22%;
 
-    --secondary: 210 8% 16%;
-    --secondary-foreground: 200 20% 92%;
-    --secondary-hover: 210 8% 20%;
-    --secondary-light: 210 8% 13%;
+    --secondary: 215 10% 16%;
+    --secondary-foreground: 210 20% 92%;
+    --secondary-hover: 215 10% 20%;
+    --secondary-light: 215 10% 13%;
 
-    --muted: 210 8% 16%;
-    --muted-foreground: 200 12% 72%;    /* #7878A0 */
+    --muted: 215 10% 16%;
+    --muted-foreground: 210 10% 70%;
 
-    --accent: 7.5 81% 74%;
-    --accent-foreground: 204 42.2% 16.3%;
-    --accent-light: 7.5 35% 20%;
+    --accent: 24 95% 58%;
+    --accent-foreground: 215 28% 10%;
+    --accent-light: 24 40% 18%;
 
     --destructive: 350 100% 65%;
     --destructive-foreground: 0 0% 100%;
@@ -135,34 +135,260 @@
     --success-foreground: 145 60% 10%;
     --success-light: 145 35% 18%;
 
-    --warning: 36 100% 59%;
+    --warning: 45 95% 55%;
     --warning-foreground: 240 22% 5%;
-    --warning-light: 36 100% 14%;
+    --warning-light: 45 50% 16%;
 
-    --info: 210 80% 74%;
+    --info: 180 50% 55%;
     --info-foreground: 210 60% 12%;
-    --info-light: 210 40% 20%;
+    --info-light: 180 35% 18%;
 
     --border: 200 10% 26%;              /* subtle line, no alpha (Tailwind-friendly) */
     --input: 200 10% 45%;
-    --ring: 199 90% 72%;
+    --ring: 208 45% 62%;
 
-    --sidebar-background: 210 8% 7%;
-    --sidebar-foreground: 200 20% 92%;
-    --sidebar-primary: 199 90% 72%;
-    --sidebar-primary-foreground: 200 70% 12%;
-    --sidebar-accent: 7.5 81% 74%;
-    --sidebar-accent-foreground: 204 42.2% 16.3%;
+    --sidebar-background: 215 14% 7%;
+    --sidebar-foreground: 210 20% 92%;
+    --sidebar-primary: 208 45% 62%;
+    --sidebar-primary-foreground: 215 30% 10%;
+    --sidebar-accent: 24 95% 58%;
+    --sidebar-accent-foreground: 215 28% 10%;
     --sidebar-border: 200 10% 20%;
 
     --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.4);
     --shadow-lg: 0 10px 24px -8px hsl(0 0% 0% / 0.5);
     --shadow-xl: 0 20px 40px -8px hsl(0 0% 0% / 0.6);
 
+    --sidebar-ring: 208 45% 62%;
   }
 }
 
 @layer base {
+  /* ─────────────────────────────────────────────────────────
+     PALETAS ALTERNATIVAS (Configuración → Sistema → Colores)
+     La base (:root / .dark) es Acero y naranja. Estas se activan con
+     <html data-palette="…"> y solo redefinen tokens.
+     ───────────────────────────────────────────────────────── */
+  /* Latón y grafito */
+  :root:not(.dark)[data-palette="laton"] {
+    --background: 40 14% 96%;
+    --foreground: 220 18% 14%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 18% 14%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 18% 14%;
+    --surface-2: 36 10% 90%;
+    --primary: 41 78% 50%;
+    --primary-text: 36 80% 28%;
+    --primary-foreground: 220 20% 10%;
+    --primary-hover: 41 78% 45%;
+    --primary-light: 42 70% 88%;
+    --primary-glow: 41 78% 50%;
+    --header-surface: 38 40% 80%;
+    --secondary: 36 10% 90%;
+    --secondary-foreground: 220 18% 14%;
+    --secondary-hover: 36 10% 86%;
+    --secondary-light: 36 12% 97%;
+    --muted: 36 10% 90%;
+    --muted-foreground: 220 10% 34%;
+    --accent: 220 15% 22%;
+    --accent-foreground: 0 0% 100%;
+    --accent-light: 220 10% 90%;
+    --ring: 36 80% 28%;
+    --warning: 22 92% 52%;
+    --warning-light: 22 92% 93%;
+    --sidebar-background: 36 12% 95%;
+    --sidebar-foreground: 220 18% 14%;
+    --sidebar-primary: 41 78% 50%;
+    --sidebar-primary-foreground: 220 20% 10%;
+    --sidebar-accent: 220 15% 22%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-ring: 36 80% 28%;
+  }
+  :root.dark[data-palette="laton"] {
+    --background: 220 12% 7%;
+    --foreground: 40 15% 94%;
+    --card: 220 10% 11%;
+    --card-foreground: 40 15% 92%;
+    --popover: 220 10% 12%;
+    --popover-foreground: 40 15% 92%;
+    --surface-2: 220 9% 16%;
+    --primary: 41 80% 56%;
+    --primary-text: 41 80% 62%;
+    --primary-foreground: 220 20% 10%;
+    --primary-hover: 41 80% 62%;
+    --primary-light: 40 40% 18%;
+    --primary-glow: 41 80% 56%;
+    --header-surface: 38 30% 20%;
+    --secondary: 220 9% 16%;
+    --secondary-foreground: 40 15% 92%;
+    --secondary-hover: 220 9% 20%;
+    --secondary-light: 220 9% 13%;
+    --muted: 220 9% 16%;
+    --muted-foreground: 40 8% 70%;
+    --accent: 40 15% 88%;
+    --accent-foreground: 220 18% 12%;
+    --accent-light: 220 8% 22%;
+    --ring: 41 80% 56%;
+    --warning: 22 92% 58%;
+    --warning-light: 22 50% 18%;
+    --sidebar-background: 220 12% 7%;
+    --sidebar-foreground: 40 15% 92%;
+    --sidebar-primary: 41 80% 56%;
+    --sidebar-primary-foreground: 220 20% 10%;
+    --sidebar-accent: 40 15% 88%;
+    --sidebar-accent-foreground: 220 18% 12%;
+    --sidebar-ring: 41 80% 56%;
+  }
+  /* Petróleo y latón */
+  :root:not(.dark)[data-palette="petroleo"] {
+    --background: 40 12% 96%;
+    --foreground: 195 30% 13%;
+    --card: 0 0% 100%;
+    --card-foreground: 195 30% 13%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 195 30% 13%;
+    --surface-2: 190 8% 90%;
+    --primary: 188 55% 30%;
+    --primary-text: 188 60% 26%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 188 55% 26%;
+    --primary-light: 186 35% 88%;
+    --primary-glow: 188 55% 30%;
+    --header-surface: 186 30% 78%;
+    --secondary: 190 8% 90%;
+    --secondary-foreground: 195 30% 13%;
+    --secondary-hover: 190 8% 86%;
+    --secondary-light: 190 10% 97%;
+    --muted: 190 8% 90%;
+    --muted-foreground: 195 12% 32%;
+    --accent: 41 80% 52%;
+    --accent-foreground: 195 30% 12%;
+    --accent-light: 41 70% 90%;
+    --ring: 188 60% 26%;
+    --warning: 22 92% 52%;
+    --warning-light: 22 92% 93%;
+    --sidebar-background: 40 10% 95%;
+    --sidebar-foreground: 195 30% 13%;
+    --sidebar-primary: 188 55% 30%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 41 80% 52%;
+    --sidebar-accent-foreground: 195 30% 12%;
+    --sidebar-ring: 188 60% 26%;
+  }
+  :root.dark[data-palette="petroleo"] {
+    --background: 195 14% 7%;
+    --foreground: 40 15% 94%;
+    --card: 195 12% 11%;
+    --card-foreground: 40 15% 92%;
+    --popover: 195 12% 12%;
+    --popover-foreground: 40 15% 92%;
+    --surface-2: 195 10% 16%;
+    --primary: 186 50% 52%;
+    --primary-text: 186 55% 62%;
+    --primary-foreground: 195 30% 8%;
+    --primary-hover: 186 50% 58%;
+    --primary-light: 188 35% 18%;
+    --primary-glow: 186 50% 52%;
+    --header-surface: 188 32% 20%;
+    --secondary: 195 10% 16%;
+    --secondary-foreground: 40 15% 92%;
+    --secondary-hover: 195 10% 20%;
+    --secondary-light: 195 10% 13%;
+    --muted: 195 10% 16%;
+    --muted-foreground: 40 8% 70%;
+    --accent: 41 80% 58%;
+    --accent-foreground: 195 30% 10%;
+    --accent-light: 41 35% 18%;
+    --ring: 186 50% 52%;
+    --warning: 22 92% 58%;
+    --warning-light: 22 50% 18%;
+    --sidebar-background: 195 14% 7%;
+    --sidebar-foreground: 40 15% 92%;
+    --sidebar-primary: 186 50% 52%;
+    --sidebar-primary-foreground: 195 30% 8%;
+    --sidebar-accent: 41 80% 58%;
+    --sidebar-accent-foreground: 195 30% 10%;
+    --sidebar-ring: 186 50% 52%;
+  }
+  /* Cobre y carbón */
+  :root:not(.dark)[data-palette="cobre"] {
+    --background: 30 12% 96%;
+    --foreground: 220 18% 14%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 18% 14%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 18% 14%;
+    --surface-2: 28 10% 90%;
+    --primary: 18 62% 42%;
+    --primary-text: 18 70% 32%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 18 62% 37%;
+    --primary-light: 20 60% 90%;
+    --primary-glow: 18 62% 42%;
+    --header-surface: 22 40% 80%;
+    --secondary: 28 10% 90%;
+    --secondary-foreground: 220 18% 14%;
+    --secondary-hover: 28 10% 86%;
+    --secondary-light: 28 12% 97%;
+    --muted: 28 10% 90%;
+    --muted-foreground: 220 10% 34%;
+    --accent: 215 18% 24%;
+    --accent-foreground: 0 0% 100%;
+    --accent-light: 215 10% 90%;
+    --ring: 18 70% 32%;
+    --warning: 45 95% 48%;
+    --warning-light: 45 95% 90%;
+    --sidebar-background: 30 12% 95%;
+    --sidebar-foreground: 220 18% 14%;
+    --sidebar-primary: 18 62% 42%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 215 18% 24%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-ring: 18 70% 32%;
+  }
+  :root.dark[data-palette="cobre"] {
+    --background: 220 10% 7%;
+    --foreground: 30 15% 94%;
+    --card: 220 9% 11%;
+    --card-foreground: 30 15% 92%;
+    --popover: 220 9% 12%;
+    --popover-foreground: 30 15% 92%;
+    --surface-2: 220 8% 16%;
+    --primary: 20 65% 58%;
+    --primary-text: 20 70% 66%;
+    --primary-foreground: 220 20% 8%;
+    --primary-hover: 20 65% 64%;
+    --primary-light: 20 35% 18%;
+    --primary-glow: 20 65% 58%;
+    --header-surface: 20 30% 20%;
+    --secondary: 220 8% 16%;
+    --secondary-foreground: 30 15% 92%;
+    --secondary-hover: 220 8% 20%;
+    --secondary-light: 220 8% 13%;
+    --muted: 220 8% 16%;
+    --muted-foreground: 30 8% 70%;
+    --accent: 30 15% 88%;
+    --accent-foreground: 220 18% 12%;
+    --accent-light: 220 8% 22%;
+    --ring: 20 65% 58%;
+    --warning: 45 95% 55%;
+    --warning-light: 45 50% 16%;
+    --sidebar-background: 220 10% 7%;
+    --sidebar-foreground: 30 15% 92%;
+    --sidebar-primary: 20 65% 58%;
+    --sidebar-primary-foreground: 220 20% 8%;
+    --sidebar-accent: 30 15% 88%;
+    --sidebar-accent-foreground: 220 18% 12%;
+    --sidebar-ring: 20 65% 58%;
+  }
+}
+
+@layer base {
+  :root {
+    --app-top-gap: calc(env(safe-area-inset-top, 0px) + 0.75rem);
+  }
+
   * {
     @apply border-border;
   }
@@ -343,7 +569,7 @@
     content: "";
     position: absolute;
     z-index: -1;
-    inset: -2.5rem -1.25rem -1rem;
+    inset: calc(-1 * var(--app-top-gap)) -1.25rem -1rem;
     border-radius: 0 0 3rem 0.75rem;
     background: hsl(var(--header-surface));
     pointer-events: none;
@@ -435,7 +661,7 @@
 
   @media (max-width: 1023px) {
     .ce-hero-mobile-bleed {
-      margin: -2.5rem -1.25rem 1rem;
+      margin: calc(-1 * var(--app-top-gap)) -1.25rem 1rem;
       border-top: 0;
       border-right: 0;
       border-left: 0;
@@ -494,6 +720,13 @@
 
   .safe-area-pb {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Espacio superior de las pantallas en móvil: área segura del sistema
+     (0 con la barra de estado opaca actual) + 12 px. Antes era pt-10 (40 px)
+     más el relleno del encabezado: el título quedaba ~60 px por debajo del borde. */
+  .pt-app-top {
+    padding-top: var(--app-top-gap);
   }
 
   /* Espacio inferior para vistas móviles con bottom nav fija */

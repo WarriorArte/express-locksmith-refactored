@@ -51,7 +51,7 @@ interface HerramientasModuleProps {
 export function HerramientasModule({ superAdminView, homeContent }: HerramientasModuleProps) {
   const { isSuperAdmin } = useWorkshop();
   const { profiles, addProfile, updateProfile, deleteProfile, fetchProfileWithCodes, searchCodes, uploadCodesInChunks } = useKeycodeProfiles();
-  const { assignments, addAssignment, updateAssignment, deleteAssignment } = useToolAssignments();
+  const { assignments, addAssignment, updateAssignment, deleteAssignment, loading: assignmentsLoading } = useToolAssignments();
   const vehicleDb = useVehicleDatabase({ readOnly: !isSuperAdmin });
   const { profiles: alarmaProfiles, addProfile: addAlarmaProfile, updateProfile: updateAlarmaProfile, deleteProfile: deleteAlarmaProfile } = useAlarmaProfiles();
   const { profiles: immoProfiles, addProfile: addImmoProfile, updateProfile: updateImmoProfile, deleteProfile: deleteImmoProfile } = useImmoProfiles();
@@ -62,7 +62,10 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
   const showInternalSuperAdminTabs = superAdminView === undefined;
 
   // ── Vehicle selection state (workshop view) ────────────────────────────────
-  const { isFeatureEnabled } = useWorkshopFeatures();
+  const { isFeatureEnabled, isLoading: featuresLoading } = useWorkshopFeatures();
+  // Mientras llegan permisos y asignaciones, los campos se muestran vacíos y
+  // desactivados en lugar de un mensaje de "no hay vehículos" que parece un error.
+  const vehicleDataLoading = assignmentsLoading || featuresLoading;
   const isKeycodeAuth = isFeatureEnabled("tool_keycode");
   const isAlarmasAuth = isFeatureEnabled("tool_alarmas");
   const isImmoAuth    = isFeatureEnabled("tool_immo");
@@ -330,7 +333,7 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {!toolActive && (
-        <div className={cn("shrink-0 bg-background px-5 lg:px-6 pt-10 lg:pt-3", homeContent ? "pb-9" : "pb-4")}>
+        <div className={cn("shrink-0 bg-background px-5 lg:px-6 pt-app-top lg:pt-3", homeContent ? "pb-9" : "pb-4")}>
           <PageHeader
             className={homeContent ? "dashboard-surface !bg-transparent" : undefined}
             title={vehicleSelected ? `${selectedMake} ${selectedModel}` : "Vehículos"}
@@ -340,9 +343,9 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
             action={vehicleSelected ? <Button size="sm" className="rounded-full" onClick={() => setSelectedModel("")}>Cambiar modelo</Button> : undefined}
             mobileAction={vehicleSelected ? <Button size="sm" className="rounded-full px-4" onClick={() => setSelectedModel("")}>Cambiar</Button> : undefined}
           >
-            {vehicleSelected ? null : !hasAnyTool ? (
+            {vehicleSelected ? null : !vehicleDataLoading && !hasAnyTool ? (
               <p className="mt-3 text-[15px] text-muted-foreground">No tienes herramientas asignadas en este taller.</p>
-            ) : availableYears.length === 0 && !selectedCategory ? (
+            ) : !vehicleDataLoading && availableYears.length === 0 && !selectedCategory ? (
               <p className="mt-3 text-[15px] text-muted-foreground">
                 Aún no hay vehículos configurados para tus herramientas.
               </p>
@@ -368,16 +371,16 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
                     surface="onHero"
                     label="Año"
                     value={selectedYear ? String(selectedYear) : null}
-                    placeholder={availableYears.length ? "Elige el año" : "Sin vehículos de este tipo"}
+                    placeholder={vehicleDataLoading ? "Cargando…" : availableYears.length ? "Elige el año" : "Sin vehículos de este tipo"}
                     options={availableYears.map((y) => ({ value: String(y) }))}
                     onChange={(v) => { setSelectedYear(Number(v)); setSelectedMake(""); setSelectedModel(""); }}
-                    disabled={availableYears.length === 0}
+                    disabled={vehicleDataLoading || availableYears.length === 0}
                   />
                   <NativeSelectField
                     surface="onHero"
                     label="Marca"
                     value={selectedMake || null}
-                    placeholder="Elige la marca"
+                    placeholder={vehicleDataLoading ? "Cargando…" : "Elige la marca"}
                     options={availableMakes.map((m) => ({ value: m }))}
                     onChange={(v) => { setSelectedMake(v); setSelectedModel(""); }}
                     disabled={!selectedYear}
@@ -386,7 +389,7 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
                     surface="onHero"
                     label="Modelo"
                     value={selectedModel || null}
-                    placeholder="Elige el modelo"
+                    placeholder={vehicleDataLoading ? "Cargando…" : "Elige el modelo"}
                     options={availableModels.map((m) => ({ value: m }))}
                     onChange={setSelectedModel}
                     disabled={!selectedMake}

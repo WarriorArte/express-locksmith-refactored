@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/responsive-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/responsive-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { UnitNumberInput } from "@/components/ui/unit-number-input";
@@ -79,11 +79,12 @@ export function InventoryMovementDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Movimientos de Inventario - {product?.name}</DialogTitle>
+          <DialogTitle>Movimiento de inventario</DialogTitle>
+          <DialogDescription>{product?.name}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+          <div className="grid grid-cols-2 gap-4 rounded-[20px] bg-muted p-4">
             <div className="flex items-center gap-2">
               <Store className="w-5 h-5 text-muted-foreground" />
               <div>

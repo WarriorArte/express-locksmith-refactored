@@ -188,21 +188,21 @@ export function ImageUploader({
                   className="w-full max-h-52 object-cover rounded-2xl"
                   onError={() => { if (previewUrl) setPreviewUrl(null); }}
                 />
-                <div className="absolute inset-x-0 bottom-0 p-3 sm:hidden flex items-center justify-center gap-2 bg-black/60 rounded-b-2xl">
+                <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 rounded-b-2xl bg-gradient-to-t from-black/60 to-transparent p-3 pt-8 sm:hidden">
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/20 backdrop-blur-sm text-white text-xs font-semibold border border-white/30"
+                    className="flex h-10 items-center gap-2 rounded-full bg-background px-4 text-sm font-semibold text-foreground shadow-sm"
                   >
-                    <Upload className="w-3.5 h-3.5" />
+                    <Upload className="h-4 w-4" />
                     Cambiar
                   </button>
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); handleClear(); }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-destructive backdrop-blur-sm text-white text-xs font-semibold"
+                    className="flex h-10 items-center gap-2 rounded-full bg-destructive px-4 text-sm font-semibold text-destructive-foreground shadow-sm"
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <X className="h-4 w-4" />
                     Quitar
                   </button>
                 </div>
@@ -210,24 +210,24 @@ export function ImageUploader({
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/20 backdrop-blur-sm text-white text-xs font-semibold border border-white/30 hover:bg-white/30 transition-colors"
+                    className="flex h-10 items-center gap-2 rounded-full bg-background px-4 text-sm font-semibold text-foreground shadow-sm"
                   >
-                    <Upload className="w-3.5 h-3.5" />
+                    <Upload className="h-4 w-4" />
                     Cambiar
                   </button>
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); handleClear(); }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-destructive backdrop-blur-sm text-white text-xs font-semibold hover:bg-destructive transition-colors"
+                    className="flex h-10 items-center gap-2 rounded-full bg-destructive px-4 text-sm font-semibold text-destructive-foreground shadow-sm"
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <X className="h-4 w-4" />
                     Quitar
                   </button>
                 </div>
               </div>
             ) : isProcessing ? (
               <div className="flex flex-col items-center gap-3 py-2 w-full px-4">
-                <div className="w-10 h-10 rounded-full bg-accent text-accent-foreground flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
                   <Loader2 className="w-5 h-5 text-primary animate-spin" />
                 </div>
                 <p className="text-sm text-muted-foreground">Procesando imagen…</p>
@@ -247,9 +247,10 @@ export function ImageUploader({
                   type="button"
                   onClick={(e) => { e.stopPropagation(); cameraInputRef.current?.click(); }}
                   disabled={disabled || isProcessing || !storageConfigured}
-                  className="absolute top-3 right-3 w-8 h-8 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
+                  aria-label="Tomar foto con la cámara"
+                  className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-full bg-card text-primary shadow-sm"
                 >
-                  <Camera className="w-3.5 h-3.5 text-muted-foreground" />
+                  <Camera className="h-5 w-5" />
                 </button>
               </>
             )}
@@ -293,9 +294,10 @@ export function ImageUploader({
               <button
                 type="button"
                 onClick={handleClear}
-                className="absolute top-2 right-2 w-7 h-7 rounded-xl bg-black/50 backdrop-blur-sm flex items-center justify-center hover:bg-black/70 transition-colors"
+                aria-label="Quitar imagen"
+                className="absolute right-2 top-2 flex h-10 w-10 items-center justify-center rounded-full bg-background text-foreground shadow-sm"
               >
-                <X className="w-3.5 h-3.5 text-white" />
+                <X className="h-5 w-5" />
               </button>
             </div>
           )}

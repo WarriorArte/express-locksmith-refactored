@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { Car, Key, Radio, Cpu } from "lucide-react";
 
-import { DetailSection } from "@/design-system/detail/DetailScreen";
 import { MaterialShape } from "@/design-system/shapes/MaterialShape";
 import { useImageFolder, getImageByFile } from "@/hooks/useImageFolder";
 import { spawnRipple } from "@/lib/ripple";
@@ -49,6 +48,8 @@ export function WorkshopToolView({
   const [activeKeycodeProfileId, setActiveKeycodeProfileId] = useState<string | null>(null);
   const [activeAlarmaProfileId, setActiveAlarmaProfileId] = useState<string | null>(null);
   const [activeImmoProfileId, setActiveImmoProfileId] = useState<string | null>(null);
+  // Herramienta visible en la vista del vehículo (se conserva al volver de un workspace).
+  const [toolTab, setToolTab] = useState<ToolId | null>(null);
 
   // ── Authorization ──────────────────────────────────────────────────────────
 
@@ -255,104 +256,148 @@ export function WorkshopToolView({
     onToolActive?.(true);
   };
 
+  // Cada herramienta disponible con sus perfiles ya preparados como miniaturas.
+  const tools: ToolGroup[] = [];
+  if (hasKeycodeData) {
+    tools.push({
+      id: "keycode",
+      label: "Keycode",
+      icon: Key,
+      shape: "landscape",
+      items: availableKeycodeProfileIds
+        .map((id) => keycodeProfiles.find((p) => p.id === id))
+        .filter((p): p is KeycodeProfile => !!p)
+        .map((p) => {
+          const primaryRef = p.references.find((r) => r.isPrimary) ?? p.references[0];
+          return {
+            key: p.id,
+            onClick: () => openTool("keycode", p.id),
+            image: resolveStorageUrl(p.profileImage),
+            imageClassName: "object-contain mix-blend-multiply dark:mix-blend-screen dark:invert",
+            fallbackIcon: <Key className="h-8 w-8" />,
+            title: primaryRef?.refCode || (p.series ? `Serie ${p.series}` : `IC ${p.icCard}`),
+            subtitle: primaryRef?.refCode && p.series ? `Serie ${p.series}` : undefined,
+          };
+        }),
+    });
+  }
+  if (hasImmoData) {
+    tools.push({
+      id: "immo",
+      label: "Immo Info",
+      icon: Cpu,
+      shape: "portrait",
+      items: availableImmoProfileIds
+        .map((id) => immoProfiles.find((p) => p.id === id))
+        .filter((p): p is ImmoProfile => !!p)
+        .map((p) => ({
+          key: p.id,
+          onClick: () => openTool("immo", p.id),
+          image: resolveStorageUrl(p.mainImage),
+          imageClassName: "object-cover object-top",
+          fallbackIcon: <Cpu className="h-8 w-8" />,
+          title: [p.marca, p.fccId].filter(Boolean).join(" ") || "Sin título",
+          subtitle: immoDetailByProfileId.get(p.id)?.transponder || undefined,
+        })),
+    });
+  }
+  if (hasAlarmaData) {
+    tools.push({
+      id: "alarmas",
+      label: "Alarmas",
+      icon: Radio,
+      shape: "square",
+      items: availableAlarmaProfileIds
+        .map((id) => alarmaProfiles.find((p) => p.id === id))
+        .filter((p): p is AlarmaProfile => !!p)
+        .map((p) => {
+          // Las imágenes de alarmas viven en la carpeta local: se resuelven por nombre de archivo.
+          const thumbFile =
+            p.vehicleImages?.find((v) => v.kind === "logo")?.file ??
+            p.vehicleImages?.find((v) => v.kind === "vehicle")?.file;
+          return {
+            key: p.id,
+            onClick: () => openTool("alarmas", p.id),
+            image: thumbFile ? getImageByFile(thumbFile) : null,
+            imageClassName: "object-contain p-3",
+            fallbackIcon: <Radio className="h-8 w-8" />,
+            title: p.nombre,
+            subtitle: [p.marca, p.modelo].filter(Boolean).join(" ") || undefined,
+          };
+        }),
+    });
+  }
+
+  const current = tools.find((t) => t.id === toolTab) ?? tools[0];
+
   return (
-    <div className="flex flex-col gap-3">
-      {hasKeycodeData && (
-        <DetailSection title="Keycode" icon={<Key className="h-5 w-5 text-primary" />} action={<CountBadge n={availableKeycodeProfileIds.length} />}>
-          <ToolCarousel>
-            {availableKeycodeProfileIds
-              .map((id) => keycodeProfiles.find((p) => p.id === id))
-              .filter((p): p is KeycodeProfile => !!p)
-              .map((p) => {
-                const primaryRef = p.references.find((r) => r.isPrimary) ?? p.references[0];
-                return (
-                  <ToolTile
-                    key={p.id}
-                    onClick={() => openTool("keycode", p.id)}
-                    image={resolveStorageUrl(p.profileImage)}
-                    imageClassName="object-contain mix-blend-multiply dark:mix-blend-screen dark:invert"
-                    shape="landscape"
-                    fallbackIcon={<Key className="h-8 w-8" />}
-                    title={primaryRef?.refCode || (p.series ? `Serie ${p.series}` : `IC ${p.icCard}`)}
-                    subtitle={primaryRef?.refCode && p.series ? `Serie ${p.series}` : undefined}
-                  />
-                );
-              })}
-          </ToolCarousel>
-        </DetailSection>
-      )}
+    <div className="flex flex-col gap-4">
+      {/* Grupo de botones M3 Expressive: una herramienta a la vez, con su cantidad de perfiles */}
+      <div role="tablist" aria-label="Herramientas del vehículo" className="-mx-5 flex gap-2 overflow-x-auto px-5 py-0.5 no-scrollbar lg:-mx-6 lg:px-6">
+        {tools.map((t) => {
+          const selected = t.id === current.id;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              onClick={() => setToolTab(t.id)}
+              onPointerDown={spawnRipple}
+              className={cn(
+                "relative flex h-12 shrink-0 items-center gap-2 overflow-hidden rounded-full px-4 text-[15px] font-semibold transition-colors duration-300 ease-emphasized",
+                selected ? "bg-accent text-accent-foreground" : "bg-card text-foreground shadow-sm",
+              )}
+            >
+              <t.icon className="h-5 w-5" />
+              {t.label}
+              <span
+                className={cn(
+                  "inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs font-bold tabular-nums",
+                  selected ? "bg-accent-foreground/15" : "bg-muted text-muted-foreground",
+                )}
+              >
+                {t.items.length}
+              </span>
+            </button>
+          );
+        })}
+      </div>
 
-      {hasImmoData && (
-        <DetailSection title="Immo Info" icon={<Cpu className="h-5 w-5 text-primary" />} action={<CountBadge n={availableImmoProfileIds.length} />}>
-          <ToolCarousel>
-            {availableImmoProfileIds
-              .map((id) => immoProfiles.find((p) => p.id === id))
-              .filter((p): p is ImmoProfile => !!p)
-              .map((p) => (
-                <ToolTile
-                  key={p.id}
-                  onClick={() => openTool("immo", p.id)}
-                  image={resolveStorageUrl(p.mainImage)}
-                  imageClassName="object-cover object-top"
-                  shape="portrait"
-                  fallbackIcon={<Cpu className="h-8 w-8" />}
-                  title={[p.marca, p.fccId].filter(Boolean).join(" ") || "Sin título"}
-                  subtitle={immoDetailByProfileId.get(p.id)?.transponder || undefined}
-                />
-              ))}
-          </ToolCarousel>
-        </DetailSection>
-      )}
-
-      {hasAlarmaData && (
-        <DetailSection title="Alarmas" icon={<Radio className="h-5 w-5 text-primary" />} action={<CountBadge n={availableAlarmaProfileIds.length} />}>
-          <ToolCarousel>
-            {availableAlarmaProfileIds
-              .map((id) => alarmaProfiles.find((p) => p.id === id))
-              .filter((p): p is AlarmaProfile => !!p)
-              .map((p) => {
-                // Las imágenes de alarmas viven en la carpeta local: se resuelven por nombre de archivo.
-                const thumbFile =
-                  p.vehicleImages?.find((v) => v.kind === "logo")?.file ??
-                  p.vehicleImages?.find((v) => v.kind === "vehicle")?.file;
-                return (
-                  <ToolTile
-                    key={p.id}
-                    onClick={() => openTool("alarmas", p.id)}
-                    image={thumbFile ? getImageByFile(thumbFile) : null}
-                    imageClassName="object-contain p-3"
-                    shape="square"
-                    fallbackIcon={<Radio className="h-8 w-8" />}
-                    title={p.nombre}
-                    subtitle={[p.marca, p.modelo].filter(Boolean).join(" ") || undefined}
-                  />
-                );
-              })}
-          </ToolCarousel>
-        </DetailSection>
-      )}
+      {/* Miniaturas de la herramienta elegida: cuadrícula que cabe en la pantalla */}
+      <div role="tabpanel" aria-label={current.label} className="grid grid-cols-2 gap-3">
+        {current.items.map(({ key, ...item }) => (
+          <ToolTile key={key} {...item} shape={current.shape} />
+        ))}
+      </div>
     </div>
   );
 }
 
-function CountBadge({ n }: { n: number }) {
-  if (n < 2) return null;
-  return <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-primary px-2 text-xs font-bold tabular-nums text-primary-foreground" aria-label={`${n} elementos`}>{n}</span>;
-}
+type ToolId = "keycode" | "immo" | "alarmas";
 
-/** Fila horizontal con desplazamiento por tarjeta: admite uno o varios perfiles por herramienta. */
-function ToolCarousel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-1 no-scrollbar">
-      {children}
-    </div>
-  );
-}
+type ToolGroup = {
+  id: ToolId;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  shape: keyof typeof SHAPE_CLASSES;
+  items: {
+    key: string;
+    onClick: () => void;
+    image: string | null | undefined;
+    imageClassName?: string;
+    fallbackIcon: React.ReactNode;
+    title: string;
+    subtitle?: string;
+  }[];
+};
 
 const SHAPE_CLASSES = {
-  landscape: { card: "w-[78%] max-w-[320px]", media: "aspect-[16/10] px-4 py-3" },
-  portrait: { card: "w-[46%] max-w-[190px]", media: "aspect-[3/4]" },
-  square: { card: "w-[46%] max-w-[190px]", media: "aspect-square" },
+  // Keycode: la silueta de la llave es apaisada → ocupa las 2 columnas.
+  landscape: { card: "col-span-2", media: "aspect-[16/7] px-6 py-3" },
+  // Immo Info: el llavero es vertical; Alarmas: cuadrada.
+  portrait: { card: "", media: "aspect-[4/5]" },
+  square: { card: "", media: "aspect-square" },
 } as const;
 
 /** Acceso a un perfil de herramienta: vista previa con la proporción propia de cada herramienta. */
@@ -380,14 +425,14 @@ function ToolTile({
       type="button"
       onClick={onClick}
       onPointerDown={spawnRipple}
-      className={cn("relative flex shrink-0 snap-start flex-col overflow-hidden rounded-[20px] bg-muted text-left", c.card)}
+      className={cn("relative flex min-w-0 flex-col overflow-hidden rounded-[24px] bg-card text-left shadow-sm", c.card)}
     >
-      <span className={cn("m-1.5 mb-0 flex items-center justify-center overflow-hidden rounded-[16px] bg-background text-muted-foreground", c.media)}>
+      <span className={cn("m-1.5 mb-0 flex items-center justify-center overflow-hidden rounded-[18px] bg-muted text-muted-foreground", c.media)}>
         {image ? <img src={image} alt="" loading="lazy" className={cn("h-full w-full", imageClassName)} /> : fallbackIcon}
       </span>
       <span className="block px-3 pb-3 pt-2">
-        <span className="block truncate text-sm font-semibold text-foreground">{title}</span>
-        <span className="block min-h-[16px] truncate text-xs text-muted-foreground">{subtitle ?? "\u00a0"}</span>
+        <span className="block truncate text-[15px] font-semibold text-foreground">{title}</span>
+        <span className="block min-h-[18px] truncate text-[13px] text-muted-foreground">{subtitle ?? "\u00a0"}</span>
       </span>
     </button>
   );

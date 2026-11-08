@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/responsive-dialog";
 import { Button } from "@/components/ui/button";
@@ -169,35 +170,36 @@ export function ServiceImagesDialog({ open, onOpenChange, service: initialServic
         className="max-w-[95vw] sm:max-w-xl max-h-[90vh] overflow-y-auto"
       >
         <DialogHeader>
-          <DialogTitle className="text-base sm:text-lg">Imágenes del Servicio {service.service_number}</DialogTitle>
+          <DialogTitle>Fotos del servicio</DialogTitle>
+          <DialogDescription className="tabular-nums">{service.service_number}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
           {/* Add new image */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label>Agregar Nueva Imagen ({currentImagesCount}/{MAX_SERVICE_IMAGES})</Label>
-              <div className="flex gap-1 p-1 bg-muted rounded-lg">
+              <Label className="mb-0">Agregar foto ({currentImagesCount}/{MAX_SERVICE_IMAGES})</Label>
+              <div className="flex gap-1 rounded-full bg-muted p-1">
                 <Button
                   type="button"
                   variant={inputMode === 'upload' ? 'default' : 'ghost'}
                   size="sm"
-                  className="h-7 text-xs"
+                  className="h-9 rounded-full px-3 text-sm"
                   disabled={!canAddMoreImages}
                   onClick={() => setInputMode('upload')}
                 >
-                  <Upload className="w-3 h-3 mr-1" />
+                  <Upload className="h-4 w-4" />
                   Subir
                 </Button>
                 <Button
                   type="button"
                   variant={inputMode === 'url' ? 'default' : 'ghost'}
                   size="sm"
-                  className="h-7 text-xs"
+                  className="h-9 rounded-full px-3 text-sm"
                   disabled={!canAddMoreImages}
                   onClick={() => setInputMode('url')}
                 >
-                  <Link className="w-3 h-3 mr-1" />
+                  <Link className="h-4 w-4" />
                   URL
                 </Button>
               </div>
@@ -233,7 +235,7 @@ export function ServiceImagesDialog({ open, onOpenChange, service: initialServic
                 <div className="flex gap-2">
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="secondary"
                     className="flex-1 gap-2"
                     disabled={isAdding || isUploading || !storageConfigured || !canAddMoreImages}
                     onClick={() => document.getElementById('service-file-upload')?.click()}
@@ -243,7 +245,7 @@ export function ServiceImagesDialog({ open, onOpenChange, service: initialServic
                   </Button>
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="secondary"
                     className="gap-2"
                     disabled={isAdding || isUploading || !storageConfigured || !canAddMoreImages}
                     onClick={() => document.getElementById('service-camera-upload')?.click()}
@@ -309,11 +311,11 @@ export function ServiceImagesDialog({ open, onOpenChange, service: initialServic
 
           {/* Current images */}
           <div className="space-y-3">
-            <Label>Imágenes Actuales ({service.service_images?.length || 0})</Label>
+            <Label>Fotos guardadas ({service.service_images?.length || 0})</Label>
             
             {(!service.service_images || service.service_images.length === 0) ? (
-              <p className="text-sm text-muted-foreground text-center py-8 bg-muted/50 rounded-lg">
-                No hay imágenes registradas
+              <p className="rounded-[20px] bg-muted py-8 text-center text-[15px] text-muted-foreground">
+                Aún no hay fotos
               </p>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -322,7 +324,7 @@ export function ServiceImagesDialog({ open, onOpenChange, service: initialServic
                     <img
                       src={resolveStorageUrl(image.image_url) ?? undefined}
                       alt={image.description || "Imagen del servicio"}
-                      className="w-full h-32 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition-opacity"
+                      className="h-32 w-full cursor-pointer rounded-2xl object-cover transition-opacity hover:opacity-90"
                       onClick={() => setViewImageIndex(index)}
                     />
                     <Button
@@ -363,7 +365,7 @@ export function ServiceImagesDialog({ open, onOpenChange, service: initialServic
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="proto-ghost" onClick={() => onOpenChange(false)}>
             Cerrar
           </Button>
         </DialogFooter>

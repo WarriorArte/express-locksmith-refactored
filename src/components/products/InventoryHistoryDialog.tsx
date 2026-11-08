@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/responsive-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/responsive-dialog";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
@@ -63,7 +63,8 @@ export function InventoryHistoryDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Historial de Movimientos - {product?.name}</DialogTitle>
+          <DialogTitle>Historial</DialogTitle>
+          <DialogDescription>{product?.name}</DialogDescription>
         </DialogHeader>
 
         {isLoading ? (
@@ -72,16 +73,16 @@ export function InventoryHistoryDialog({
           </div>
         ) : (
           <ScrollArea className="h-[500px] pr-4">
-            <div className="space-y-3">
+            <div className="m3-list">
               {movements && movements.length > 0 ? (
                 movements.map((movement) => (
                   <div 
                     key={movement.id} 
-                    className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                    className="m3-list-item bg-muted p-4"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3 flex-1">
-                        <div className="mt-1 p-2 rounded-lg bg-muted">
+                        <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-card">
                           {movementTypeIcons[movement.movement_type]}
                         </div>
                         
@@ -90,9 +91,9 @@ export function InventoryHistoryDialog({
                             <span className="font-semibold">
                               {movementTypeLabels[movement.movement_type]}
                             </span>
-                            <Badge variant="outline" className="text-xs">
+                            <span className="text-[15px] font-semibold tabular-nums text-foreground">
                               {movement.quantity > 0 ? "+" : ""}{movement.quantity}
-                            </Badge>
+                            </span>
                           </div>
                           
                           {movement.movement_type === "transfer" && (
@@ -127,9 +128,9 @@ export function InventoryHistoryDialog({
                   </div>
                 ))
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>No hay movimientos registrados</p>
-                </div>
+                <p className="rounded-[20px] bg-muted py-8 text-center text-[15px] text-muted-foreground">
+                  Aún no hay movimientos
+                </p>
               )}
             </div>
           </ScrollArea>

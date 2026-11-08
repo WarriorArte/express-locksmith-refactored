@@ -17,6 +17,7 @@ import { useWorkshopFeatures } from "@/hooks/useWorkshopFeatures";
 import { useVehicleHome } from "@/hooks/useVehicleHome";
 import { cn } from "@/lib/utils";
 import { spawnRipple } from "@/lib/ripple";
+import { ShortcutTile } from "@/design-system/actions/ShortcutTile";
 import {
   Dialog,
   DialogContent,
@@ -122,20 +123,7 @@ export function AccountMenu({ triggerClassName }: AccountMenuProps) {
 
           <nav aria-label="Secciones" className="grid grid-cols-3 gap-x-3 gap-y-5">
             {items.map((item) => (
-              <button
-                key={item.to}
-                type="button"
-                onClick={() => goTo(item.to)}
-                className="flex flex-col items-center gap-2 text-center"
-              >
-                <span
-                  onPointerDown={spawnRipple}
-                  className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-[22px] bg-accent text-accent-foreground"
-                >
-                  <item.icon className="h-6 w-6" />
-                </span>
-                <span className="text-sm font-medium text-foreground">{item.label}</span>
-              </button>
+              <ShortcutTile key={item.to} icon={item.icon} label={item.label} onClick={() => goTo(item.to)} />
             ))}
           </nav>
 

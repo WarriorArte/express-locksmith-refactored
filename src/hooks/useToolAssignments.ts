@@ -27,7 +27,7 @@ function migrate(items: any[]): ToolAssignment[] {
 }
 
 export function useToolAssignments() {
-  const { items, setItems, addItem, updateItem, deleteItem } = useJsonResource<ToolAssignment>({
+  const { items, setItems, addItem, updateItem, deleteItem, loading } = useJsonResource<ToolAssignment>({
     endpoint: "/herramientas/tool-assignments",
     migrate,
   });
@@ -38,6 +38,8 @@ export function useToolAssignments() {
 
   return {
     assignments: items,
+    /** true mientras se descargan las asignaciones del servidor. */
+    loading,
     setAssignments,
     addAssignment: addItem,
     updateAssignment: updateItem,

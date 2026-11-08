@@ -45,7 +45,7 @@ const STATUS: Record<string, { label: string; text: string; dot: string }> = {
 
 const getServiceStatus = (service: Service) =>
   service.status === "pending" && service.scheduled_start_at
-    ? { label: "Programado", text: "text-accent-foreground", dot: "bg-accent" }
+    ? { label: "Programado", text: "text-primary", dot: "bg-primary-light ring-2 ring-inset ring-primary" }
     : STATUS[service.status] ?? STATUS.pending;
 
 const getServiceDate = (service: Service) =>

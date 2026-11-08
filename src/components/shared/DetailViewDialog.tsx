@@ -105,7 +105,6 @@ export function DetailViewDialog({
                     <TonalChip
                       label={statusConfig.label}
                       tone={statusTone[data.status!] ?? "neutral"}
-                      className={statusTone[data.status!] === "accent" ? "bg-background/70 text-foreground" : undefined}
                     />
                   )}
                   {data.payment_method && (

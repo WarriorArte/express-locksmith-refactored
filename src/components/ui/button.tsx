@@ -13,9 +13,9 @@ const buttonVariants = cva(
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary/90",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline: "border-[1.5px] border-input bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground",
-        secondary: "bg-accent text-accent-foreground hover:bg-accent/80",
-        ghost: "border-transparent hover:bg-accent hover:text-accent-foreground",
+        outline: "border-[1.5px] border-input bg-transparent text-foreground hover:bg-muted hover:text-foreground",
+        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary-hover",
+        ghost: "border-transparent hover:bg-muted hover:text-foreground",
         link: "border-transparent text-primary underline-offset-4 hover:underline",
         // Prototype (Redesign.html) — chunky, bold, neon
         proto: "bg-primary text-primary-foreground font-bold hover:bg-primary/90",

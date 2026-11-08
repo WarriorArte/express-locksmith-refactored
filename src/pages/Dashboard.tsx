@@ -57,7 +57,7 @@ export default function Dashboard() {
   return (
     <div className="flex-1 min-h-0 overflow-hidden lg:overflow-auto lg:overscroll-y-contain no-scrollbar lg:pt-3 lg:px-6 lg:pb-6">
       {/* Mobile: hero + grid llenan exactamente la pantalla sin scroll */}
-      <div className="lg:hidden h-full flex flex-col pt-10 px-5 pb-mobile-nav">
+      <div className="lg:hidden h-full flex flex-col pt-app-top px-5 pb-mobile-nav">
         <DashboardHero
           firstName={firstName}
           inProgressServices={inProgress}
@@ -141,7 +141,7 @@ export default function Dashboard() {
                   <RecentActivity />
                   <div className="hidden lg:block card-elevated p-4">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-accent-foreground">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-primary">
                         <ShoppingCart className="h-5 w-5" />
                       </div>
                       <div className="min-w-0">

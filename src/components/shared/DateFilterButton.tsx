@@ -127,11 +127,11 @@ export function DateFilterButton({
             type="button"
             aria-label={ariaLabel}
             className={cn(
-              "flex h-10 min-w-10 items-center justify-center gap-2 rounded-full bg-muted px-0 text-foreground transition-colors active:scale-95 lg:min-w-[132px] lg:justify-start lg:px-3",
-              active && "border-primary/50 bg-primary/18 text-primary",
+              "flex h-12 min-w-12 items-center justify-center gap-2 rounded-full bg-card px-0 text-foreground shadow-sm transition-colors lg:min-w-[132px] lg:justify-start lg:px-4",
+              active && "bg-accent text-accent-foreground",
             )}
           >
-            <Calendar className="h-4 w-4 shrink-0" />
+            <Calendar className="h-[18px] w-[18px] shrink-0" />
             <span className="hidden truncate text-sm font-semibold lg:inline">
               {label}
             </span>
@@ -139,7 +139,7 @@ export function DateFilterButton({
         </PopoverTrigger>
         <PopoverContent
           align="end"
-          className="w-[min(calc(100vw-2rem),22rem)] rounded-[16px] border-white/10 bg-popover/95 p-3 shadow-xl backdrop-blur-xl"
+          className="w-[min(calc(100vw-2rem),22rem)] rounded-[28px] bg-popover p-3 shadow-xl"
         >
           <div className="grid grid-cols-4 gap-1 rounded-[14px] bg-muted p-1">
             {modes.map((mode) => (

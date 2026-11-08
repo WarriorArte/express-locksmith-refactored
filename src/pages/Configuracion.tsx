@@ -41,6 +41,7 @@ import { Switch } from "@/components/ui/switch";
 import { NativeSelect } from "@/components/ui/native-select";
 import { IconTabs } from "@/components/ui/icon-tabs";
 import { MaterialShape } from "@/design-system/shapes/MaterialShape";
+import { PalettePicker } from "@/design-system/PalettePicker";
 import { spawnRipple } from "@/lib/ripple";
 import { toast as sonnerToast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -182,7 +183,7 @@ export default function Configuracion() {
 
 
   return (
-    <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain pt-10 lg:pt-0 px-5 lg:px-6 pb-mobile-nav space-y-6 lg:space-y-0 no-scrollbar">
+    <div className="flex-1 min-h-0 overflow-auto overscroll-y-contain pt-app-top lg:pt-0 px-5 lg:px-6 pb-mobile-nav space-y-6 lg:space-y-0 no-scrollbar">
       {/* Header */}
       <PageHeader
         title="Configuración"
@@ -904,6 +905,10 @@ function MobileConfigTabs({
       {/* Sistema */}
       {tab === "sistema" && (
         <div className="space-y-3">
+          <div>
+            <p className="mb-2 text-base font-semibold text-foreground">Colores</p>
+            <PalettePicker />
+          </div>
           <div className="m3-list">
             <div className="m3-list-item flex min-h-16 items-center justify-between gap-4 bg-muted px-4 py-3">
               <div className="flex items-center gap-3">

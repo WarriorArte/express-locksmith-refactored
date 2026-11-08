@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { EmptyState } from "@/design-system/feedback/EmptyState";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { m as motion } from "framer-motion";
 import {
@@ -87,12 +88,12 @@ export default function Clientes() {
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* Header bar - ya NO es sticky */}
-      <div className="bg-background px-5 lg:px-6 pt-10 lg:pt-3 pb-4">
+      <div className="bg-background px-5 lg:px-6 pt-app-top lg:pt-3 pb-4">
         <PageHeader
           title="Clientes"
           subtitle={`${customers?.length || 0} clientes registrados`}
           action={
-            <Button className="h-11 rounded-[12px] bg-primary text-primary-foreground hover:bg-primary-hover" onClick={handleNewCustomer}>
+            <Button onClick={handleNewCustomer}>
               <Plus className="w-4 h-4 mr-1" />
               Nuevo
             </Button>
@@ -105,14 +106,6 @@ export default function Clientes() {
             value={searchQuery}
             onChange={setSearchQuery}
           />
-          <button
-            type="button"
-            aria-label="Nuevo cliente"
-            onClick={handleNewCustomer}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-transform active:scale-95 lg:hidden"
-          >
-            <Plus className="w-5 h-5" strokeWidth={2.5} />
-          </button>
         </div>
         </PageHeader>
       </div>
@@ -146,23 +139,12 @@ export default function Clientes() {
           </div>
         </>
       ) : filteredClients.length === 0 ? (
-        <div className="card-elevated p-10 text-center">
-          <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">
-            {searchQuery ? "Sin resultados" : "Sin clientes registrados"}
-          </h3>
-          <p className="text-muted-foreground mb-5 max-w-xs mx-auto">
-            {searchQuery
-              ? "Intenta con otro nombre, email o teléfono."
-              : "Agrega clientes para llevar el historial de servicios y ventas."}
-          </p>
-          {!searchQuery && (
-            <Button onClick={handleNewCustomer}>
-              <Plus className="w-4 h-4 mr-1.5" />
-              Agregar cliente
-            </Button>
-          )}
-        </div>
+        <EmptyState
+          icon={Users}
+          title={searchQuery ? "Sin resultados" : "Sin clientes registrados"}
+          description={searchQuery ? "Intenta con otro nombre, email o teléfono." : "Agrega clientes para llevar el historial de servicios y ventas."}
+          action={!searchQuery ? { label: "Agregar cliente", onClick: handleNewCustomer } : undefined}
+        />
       ) : null}
 
       {/* Clients List */}

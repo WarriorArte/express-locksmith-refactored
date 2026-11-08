@@ -56,7 +56,7 @@ export function DetailScreen({
         className="h-full min-h-0 overflow-y-auto overscroll-y-contain pb-mobile-nav"
         style={{ overflowAnchor: "none" }}
       >
-        <div className="sticky top-0 z-30 px-3 pb-2 pt-11 lg:px-4 lg:pt-4">
+        <div className="sticky top-0 z-30 px-3 pb-2 pt-app-top lg:px-4 lg:pt-4">
           <motion.div aria-hidden="true" style={{ opacity: barBackground }} className="absolute inset-0 bg-background shadow-sm" />
           <ModuleHeader title={title} subtitle={meta} onBack={onBack} backLabel={backLabel} actions={actions} accountTrigger={<AccountMenu />} />
         </div>
@@ -154,18 +154,23 @@ export function SpecTile({ icon, label, value }: { icon?: React.ReactNode; label
 export function TonalChip({
   icon,
   label,
-  tone = "accent",
+  tone = "primary",
   className,
 }: {
   icon?: React.ReactNode;
   label: React.ReactNode;
-  tone?: "accent" | "warning" | "neutral" | "destructive";
+  /** primary (marca), success/info (estados), warning, neutral, destructive.
+   *  "accent" (color de selección; naranja de seguridad en la base) solo para selección activa. */
+  tone?: "primary" | "success" | "info" | "accent" | "warning" | "neutral" | "destructive";
   className?: string;
 }) {
   return (
     <span
       className={cn(
         "inline-flex h-8 items-center gap-2 rounded-lg px-3 text-sm font-medium",
+        tone === "primary" && "bg-primary-light text-foreground",
+        tone === "success" && "bg-success-light text-foreground",
+        tone === "info" && "bg-info-light text-foreground",
         tone === "accent" && "bg-accent text-accent-foreground",
         tone === "warning" && "bg-warning-light text-foreground",
         tone === "neutral" && "bg-muted text-foreground",
