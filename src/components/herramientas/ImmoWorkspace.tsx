@@ -83,10 +83,10 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
               <span className="relative block h-52 w-52 md:h-56 md:w-56">
                 <MaterialShape
                   name="cookie9"
-                  clipChildren
+                  clipChildren="bottom"
                   className="absolute inset-0 h-full w-full text-background/60"
                 >
-                  <span className="relative block h-[240px] w-[119px] overflow-hidden md:h-[256px] md:w-[130px]">
+                  <span className="absolute -top-4 left-1/2 block w-[119px] -translate-x-1/2 md:w-[130px]">
                     <img
                       src={resolveStorageUrl(profile.mainImage) ?? undefined}
                       alt={title}
@@ -94,16 +94,6 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
                     />
                   </span>
                 </MaterialShape>
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute left-1/2 -top-4 z-10 block h-[240px] w-[119px] -translate-x-1/2 overflow-hidden [clip-path:inset(0_0_28%_0)] md:h-[256px] md:w-[130px]"
-                >
-                  <img
-                    src={resolveStorageUrl(profile.mainImage) ?? undefined}
-                    alt=""
-                    className="block h-auto w-full drop-shadow-md"
-                  />
-                </span>
               </span>
             </button>
           )}

@@ -174,7 +174,7 @@ Los carruseles de imágenes y perfiles mantienen el espacio interior de la secci
 
 - **Forma preferida:** la estrella original `cookie9`, de nueve lóbulos suaves, para el FAB y las formas compartidas; no sustituirla por Gem ni por Sunny. Conservar dimensiones, contenido y animaciones. No afecta las burbujas redondas de notificación ni de creación.
 - Detrás de la **foto principal** del objeto (llavero, llave, módulo): `cookie9` con `spin`.
-- La foto del remoto se escala por **ancho**, no por alto: si queda más alta que la forma, sobresale hacia abajo y se oculta con un degradado (`mask-image` vertical de opaco a transparente) en lugar de cortarse de golpe. El degradado solo afecta el **último ~8%** de la foto: el resto se muestra completo, así que subir la foto revela más imagen.
+- La foto del remoto se escala por **ancho**, no por alto. Sobresale libremente por arriba de la estrella, y abajo se recorta siguiendo su contorno, como parcialmente metida en una bolsa. Usar una sola foto, sin degradado, y el recorte inferior de `MaterialShape` sobre una capa del tamaño completo de la forma para que los contornos coincidan.
 - Detrás de **números de paso**: `cookie9`.
 - Detrás del **avatar** de un cliente (pendiente): `cookie6`.
 - **No** detrás de íconos decorativos ni en todas las tarjetas. Máximo dos usos por pantalla.

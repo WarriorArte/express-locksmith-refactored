@@ -54,8 +54,8 @@ interface MaterialShapeProps {
   className?: string;
   /** Gira lentamente (se desactiva con prefers-reduced-motion). */
   spin?: boolean;
-  /** Recorta los hijos siguiendo la silueta, útil para imágenes parcialmente contenidas. */
-  clipChildren?: boolean;
+  /** "bottom" deja sobresalir la mitad superior y recorta solo el contorno inferior. */
+  clipChildren?: boolean | "bottom";
   children?: React.ReactNode;
 }
 
@@ -79,13 +79,14 @@ export function MaterialShape({ name, className, spin = false, clipChildren = fa
           <defs>
             <clipPath id={clipId} clipPathUnits="objectBoundingBox">
               <path d={path} transform="scale(0.01)" />
+              {clipChildren === "bottom" && <rect x="-1" y="-1" width="3" height="1.5" />}
             </clipPath>
           </defs>
         )}
         <path d={path} fill="currentColor" />
       </svg>
       {children !== undefined && (
-        <span className="relative" style={clipChildren ? { clipPath: `url(#${clipId})` } : undefined}>
+        <span className={cn(clipChildren ? "absolute inset-0" : "relative")} style={clipChildren ? { clipPath: `url(#${clipId})` } : undefined}>
           {children}
         </span>
       )}
