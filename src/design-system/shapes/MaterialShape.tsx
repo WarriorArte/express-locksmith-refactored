@@ -8,6 +8,7 @@
  * Uso: detrás de un número, de un ícono o de una foto, para dar una silueta
  * con identidad en lugar del típico "cuadrito con tinte".
  */
+import { useId } from "react";
 import { cn } from "@/lib/utils";
 
 export type MaterialShapeName = "gem" | "cookie9" | "cookie6" | "clover4" | "sunny" | "softBurst";
@@ -53,6 +54,8 @@ interface MaterialShapeProps {
   className?: string;
   /** Gira lentamente (se desactiva con prefers-reduced-motion). */
   spin?: boolean;
+  /** Recorta los hijos siguiendo la silueta, útil para imágenes parcialmente contenidas. */
+  clipChildren?: boolean;
   children?: React.ReactNode;
 }
 
@@ -60,9 +63,11 @@ interface MaterialShapeProps {
  * Contenedor con silueta M3E. La forma se pinta con `currentColor` en una capa
  * de fondo; los hijos quedan centrados encima y no giran.
  */
-export function MaterialShape({ name, className, spin = false, children }: MaterialShapeProps) {
+export function MaterialShape({ name, className, spin = false, clipChildren = false, children }: MaterialShapeProps) {
   // A silhouette is a filled surface, not brand-colored text.
   const surfaceClassName = className?.replace(/\btext-primary\b(?!-)/g, "text-primary-fill");
+  const clipId = `material-shape-clip-${useId().replace(/:/g, "")}`;
+  const path = buildPath(name);
   return (
     <span className={cn("relative inline-flex shrink-0 items-center justify-center", surfaceClassName)}>
       <svg
@@ -70,9 +75,20 @@ export function MaterialShape({ name, className, spin = false, children }: Mater
         aria-hidden="true"
         className={cn("absolute inset-0 h-full w-full", spin && "m3-shape-spin")}
       >
-        <path d={buildPath(name)} fill="currentColor" />
+        {clipChildren && (
+          <defs>
+            <clipPath id={clipId} clipPathUnits="objectBoundingBox">
+              <path d={path} transform="scale(0.01)" />
+            </clipPath>
+          </defs>
+        )}
+        <path d={path} fill="currentColor" />
       </svg>
-      {children !== undefined && <span className="relative">{children}</span>}
+      {children !== undefined && (
+        <span className="relative" style={clipChildren ? { clipPath: `url(#${clipId})` } : undefined}>
+          {children}
+        </span>
+      )}
     </span>
   );
 }

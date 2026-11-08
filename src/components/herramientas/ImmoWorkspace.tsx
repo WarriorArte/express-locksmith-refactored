@@ -19,12 +19,6 @@ import { resolveStorageUrl } from "@/lib/phpApi";
 import { cn } from "@/lib/utils";
 import type { ImmoProfile, ImmoAssignmentDetail, ImmoCatalogItem } from "@/types";
 
-/**
- * Desvanecido inferior de la foto del remoto: la foto se muestra casi completa
- * y solo lo último que sobresale por abajo se oculta con un degradado.
- */
-const PHOTO_FADE = "linear-gradient(to bottom, #000 0%, #000 92%, transparent 100%)";
-
 /*
  * Immo Info — pantalla de detalle de referencia del criterio M3E.
  * Ver docs/CRITERIO-DISENO-M3E.md.
@@ -86,23 +80,31 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
               aria-label={`Ver ${title} ampliado`}
               className="mx-auto mb-4 block outline-none md:mb-0"
             >
-              <MaterialShape name="cookie9" spin className="h-52 w-52 text-background/60 md:h-56 md:w-56">
-                {/* La foto crece más que la forma: se muestra casi completa y
-                    solo lo último que sobresale abajo se desvanece. */}
+              <span className="relative block h-52 w-52 md:h-56 md:w-56">
+                <MaterialShape
+                  name="cookie9"
+                  clipChildren
+                  className="absolute inset-0 h-full w-full text-background/60"
+                >
+                  <span className="relative block h-[240px] w-[119px] overflow-hidden md:h-[256px] md:w-[130px]">
+                    <img
+                      src={resolveStorageUrl(profile.mainImage) ?? undefined}
+                      alt={title}
+                      className="block h-auto w-full drop-shadow-md"
+                    />
+                  </span>
+                </MaterialShape>
                 <span
-                  className="relative -top-1 block h-[176px] w-[119px] overflow-hidden md:-top-2 md:h-[188px] md:w-[130px]"
-                  style={{
-                    WebkitMaskImage: PHOTO_FADE,
-                    maskImage: PHOTO_FADE,
-                  }}
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-1/2 -top-4 z-10 block h-[240px] w-[119px] -translate-x-1/2 overflow-hidden [clip-path:inset(0_0_28%_0)] md:h-[256px] md:w-[130px]"
                 >
                   <img
                     src={resolveStorageUrl(profile.mainImage) ?? undefined}
-                    alt={title}
+                    alt=""
                     className="block h-auto w-full drop-shadow-md"
                   />
                 </span>
-              </MaterialShape>
+              </span>
             </button>
           )}
           <div className="min-w-0 space-y-3">
