@@ -86,7 +86,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
                   clipChildren="bottom"
                   className="absolute inset-0 h-full w-full text-background/60"
                 >
-                  <span className="absolute -top-4 left-1/2 block w-[119px] -translate-x-1/2 md:w-[130px]">
+                  <span className="absolute -top-1 left-1/2 block w-[119px] -translate-x-1/2 md:w-[130px]">
                     <img
                       src={resolveStorageUrl(profile.mainImage) ?? undefined}
                       alt={title}
