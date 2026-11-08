@@ -85,6 +85,8 @@
     --sidebar-ring: 208 45% 32%;
 
     /* Shadows */
+    --shape-inset-shadow: hsl(240 16% 6%);
+    --shape-inset-shadow-opacity: 0.22;
     --shadow-sm: 0 1px 3px 0 hsl(240 16% 6% / 0.04);
     --shadow-md: 0 4px 6px -1px hsl(240 16% 6% / 0.06), 0 2px 4px -2px hsl(240 16% 6% / 0.04);
     --shadow-lg: 0 10px 24px -8px hsl(240 16% 6% / 0.10);
@@ -156,6 +158,8 @@
     --sidebar-border: 200 10% 20%;
 
     --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.4);
+    --shape-inset-shadow: hsl(0 0% 0%);
+    --shape-inset-shadow-opacity: 0.5;
     --shadow-lg: 0 10px 24px -8px hsl(0 0% 0% / 0.5);
     --shadow-xl: 0 20px 40px -8px hsl(0 0% 0% / 0.6);
 

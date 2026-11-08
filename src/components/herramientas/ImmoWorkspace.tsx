@@ -84,6 +84,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
                 <MaterialShape
                   name="cookie9"
                   clipChildren="bottom"
+                  bottomInsetShadow
                   className="absolute inset-0 h-full w-full text-background/60"
                 >
                   <span className="absolute -top-1 left-1/2 block w-[119px] -translate-x-1/2 md:w-[130px]">

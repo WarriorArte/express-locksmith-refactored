@@ -56,6 +56,8 @@ interface MaterialShapeProps {
   spin?: boolean;
   /** "bottom" deja sobresalir la mitad superior y recorta solo el contorno inferior. */
   clipChildren?: boolean | "bottom";
+  /** Sombra interior localizada en el borde inferior, sin afectar la parte superior. */
+  bottomInsetShadow?: boolean;
   children?: React.ReactNode;
 }
 
@@ -63,7 +65,7 @@ interface MaterialShapeProps {
  * Contenedor con silueta M3E. La forma se pinta con `currentColor` en una capa
  * de fondo; los hijos quedan centrados encima y no giran.
  */
-export function MaterialShape({ name, className, spin = false, clipChildren = false, children }: MaterialShapeProps) {
+export function MaterialShape({ name, className, spin = false, clipChildren = false, bottomInsetShadow = false, children }: MaterialShapeProps) {
   // A silhouette is a filled surface, not brand-colored text.
   const surfaceClassName = className?.replace(/\btext-primary\b(?!-)/g, "text-primary-fill");
   const clipId = `material-shape-clip-${useId().replace(/:/g, "")}`;
@@ -89,6 +91,17 @@ export function MaterialShape({ name, className, spin = false, clipChildren = fa
         <span className={cn(clipChildren ? "absolute inset-0" : "relative")} style={clipChildren ? { clipPath: `url(#${clipId})` } : undefined}>
           {children}
         </span>
+      )}
+      {bottomInsetShadow && (
+        <svg viewBox="0 0 100 100" aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full">
+          <defs>
+            <linearGradient id={`${clipId}-shadow`} x1="0" y1="0.75" x2="0" y2="1">
+              <stop offset="0" stopColor="var(--shape-inset-shadow)" stopOpacity="0" />
+              <stop offset="1" stopColor="var(--shape-inset-shadow)" stopOpacity="var(--shape-inset-shadow-opacity)" />
+            </linearGradient>
+          </defs>
+          <path d={path} fill={`url(#${clipId}-shadow)`} />
+        </svg>
       )}
     </span>
   );
