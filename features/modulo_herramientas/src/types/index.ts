@@ -197,6 +197,9 @@ export interface ImmoProfile {
 export interface ImmoAssignmentDetail {
   profileId: string;
   transponder: string;
+  pincodeRequerido?: boolean;
+  formaObtencionPincode?: string;
+  notasPincode?: string;
   generadoConIds: string[];
   equiposRemotoIds: string[];
   equiposTransponderIds: string[];

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BatteryMedium, Hand, KeyRound, Plug, Radio, StickyNote, Wrench } from "lucide-react";
+import { BatteryMedium, Check, Hand, KeyRound, Plug, Radio, StickyNote, Wrench, X } from "lucide-react";
 import { ImageViewDialog } from "@/components/shared/ImageViewDialog";
 import { FormattedText } from "@/components/herramientas/RichTextField";
 import { ProcedureSteps } from "@/components/herramientas/ProcedureSteps";
@@ -61,15 +61,15 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
   const equiposTransponder = catalogItems(detail?.equiposTransponderIds ?? [], catalog);
   const transponder = detail?.transponder?.trim() ?? "";
   const transponderNotes = detail?.transponderNotes?.trim() ?? "";
-  const pincode = detail?.pincode?.trim() ?? "";
   const pincodeRequerido = !!detail?.pincodeRequerido;
   const formaObtencionPincode = detail?.formaObtencionPincode?.trim() ?? "";
+  const notasPincode = detail?.notasPincode?.trim() ?? "";
   const procedimiento = detail?.procedimientoProgramacion?.trim() ?? "";
   const notasGenerales = detail?.notasGenerales?.trim() ?? "";
 
   const hasGeneracion = generacionRemoto.length > 0;
   const hasTransponder = !!(transponder || transponderNotes) || generadoCon.length > 0;
-  const hasPincode = pincodeRequerido || !!pincode || !!formaObtencionPincode;
+  const hasPincode = pincodeRequerido || !!formaObtencionPincode || !!notasPincode;
   const hasMethods = !!(detail?.programacionManual || detail?.programacionOBD);
   const hasProgramacion = hasMethods || equiposRemoto.length > 0 || equiposTransponder.length > 0 || !!procedimiento;
   const toolIcon = <Wrench className="h-6 w-6" />;
@@ -156,26 +156,26 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
         {hasPincode && (
           <DetailSection
             title="Pincode"
-            tone="warning"
-            icon={<KeyRound className="h-5 w-5 text-warning" />}
+            icon={<KeyRound className="h-5 w-5 text-muted-foreground" />}
           >
             <div className="space-y-4">
               <div className="flex flex-wrap gap-2">
                 <TonalChip
-                  icon={<KeyRound className="h-4 w-4" />}
+                  icon={pincodeRequerido ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
                   label={pincodeRequerido ? "Requerido para programar" : "No requerido"}
-                  tone={pincodeRequerido ? "warning" : "neutral"}
+                  tone="neutral"
                 />
               </div>
-              {pincode ? (
-                <CopyableValue label="Código pincode" value={pincode} />
-              ) : pincodeRequerido ? (
-                <p className="text-sm text-muted-foreground">No hay un código registrado. Consulta la forma de obtención.</p>
-              ) : null}
               {formaObtencionPincode && (
                 <div>
-                  <SubHeading>Cómo obtenerlo</SubHeading>
+                  <SubHeading className="font-bold">Cómo obtenerlo:</SubHeading>
                   <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">{formaObtencionPincode}</p>
+                </div>
+              )}
+              {notasPincode && (
+                <div>
+                  <SubHeading className="font-bold">Notas del pincode:</SubHeading>
+                  <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">{notasPincode}</p>
                 </div>
               )}
             </div>

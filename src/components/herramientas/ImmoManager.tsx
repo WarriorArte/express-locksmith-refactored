@@ -59,9 +59,9 @@ function emptyDetail(): Omit<ImmoAssignmentDetail, "profileId"> {
   return {
     transponder: "",
     transponderNotes: "",
-    pincode: "",
     pincodeRequerido: false,
     formaObtencionPincode: "",
+    notasPincode: "",
     generadoConIds: [],
     equiposRemotoIds: [],
     equiposTransponderIds: [],
@@ -541,9 +541,9 @@ export function ImmoAssignmentManager({
       map[d.profileId] = {
         transponder: d.transponder,
         transponderNotes: d.transponderNotes ?? "",
-        pincode: d.pincode ?? "",
         pincodeRequerido: d.pincodeRequerido ?? false,
         formaObtencionPincode: d.formaObtencionPincode ?? "",
+        notasPincode: d.notasPincode ?? "",
         generadoConIds: d.generadoConIds ?? [],
         equiposRemotoIds: d.equiposRemotoIds ?? [],
         equiposTransponderIds: d.equiposTransponderIds ?? [],
@@ -766,23 +766,23 @@ export function ImmoAssignmentManager({
                                  <Label htmlFor={`pincode-required-${id}`} className="cursor-pointer text-sm">Requiere pincode</Label>
                                </div>
                              </div>
-                             <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2">
+                             <div className="space-y-3">
                                <div className="space-y-1">
-                                 <Label className="text-xs font-bold">Código pincode</Label>
-                                 <Input
-                                   value={detail.pincode ?? ""}
-                                   onChange={(e) => updateDetail(id, "pincode", e.target.value)}
-                                   placeholder="Ej. 1234 o IMMO PIN"
-                                   autoComplete="off"
-                                   className="h-8 text-sm tabular-nums"
-                                 />
-                               </div>
-                               <div className="space-y-1">
-                                 <Label className="text-xs font-bold">Cómo obtenerlo</Label>
+                                 <Label className="text-xs font-bold">Cómo obtenerlo:</Label>
                                  <Textarea
                                    value={detail.formaObtencionPincode ?? ""}
                                    onChange={(e) => updateDetail(id, "formaObtencionPincode", e.target.value)}
                                    placeholder="Ej. Leer por OBD con Xhorse o solicitar al concesionario"
+                                   rows={2}
+                                   className="resize-none text-sm"
+                                 />
+                               </div>
+                               <div className="space-y-1">
+                                 <Label className="text-xs font-bold">Notas del pincode:</Label>
+                                 <Textarea
+                                   value={detail.notasPincode ?? ""}
+                                   onChange={(e) => updateDetail(id, "notasPincode", e.target.value)}
+                                   placeholder="Observaciones sobre el PIN o su proceso de obtención"
                                    rows={2}
                                    className="resize-none text-sm"
                                  />

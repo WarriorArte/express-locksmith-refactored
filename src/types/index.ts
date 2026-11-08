@@ -243,12 +243,12 @@ export interface ImmoAssignmentDetail {
   transponder: string;
   /** Optional notes shown alongside the transponder details. */
   transponderNotes?: string;
-  /** PIN/security code associated with this vehicle and remote profile. */
-  pincode?: string;
   /** Indicates whether the technician needs a PIN to complete programming. */
   pincodeRequerido?: boolean;
   /** Instructions or source used to obtain the PIN when it is needed. */
   formaObtencionPincode?: string;
+  /** Additional notes about the PIN requirement or retrieval process. */
+  notasPincode?: string;
   generadoConIds: string[];
   equiposRemotoIds: string[];
   equiposTransponderIds: string[];

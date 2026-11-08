@@ -1,4 +1,4 @@
-import { ArrowLeft, Cpu, Radio, Wrench, ShieldCheck, Check } from "lucide-react";
+import { ArrowLeft, Cpu, KeyRound, Radio, Wrench, ShieldCheck, Check, X } from "lucide-react";
 import type { ImmoProfile, ImmoAssignmentDetail, ImmoCatalogItem } from "@/types";
 
 function profileTitle(p: ImmoProfile) {
@@ -90,6 +90,10 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
   const hasEquiposRemoto = equiposRemotoIds.length > 0;
   const hasEquiposTransponder = equiposTransponderIds.length > 0;
   const hasTransponder = !!(detail?.transponder?.trim());
+  const pincodeRequerido = !!detail?.pincodeRequerido;
+  const formaObtencionPincode = detail?.formaObtencionPincode?.trim() ?? "";
+  const notasPincode = detail?.notasPincode?.trim() ?? "";
+  const hasPincode = pincodeRequerido || !!formaObtencionPincode || !!notasPincode;
   const hasProgramacion = hasEquiposRemoto || hasEquiposTransponder ||
     detail?.programacionManual || detail?.programacionOBD ||
     !!(detail?.procedimientoProgramacion?.trim());
@@ -195,6 +199,32 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
           )}
 
           {/* Detalles de Programación */}
+          {hasPincode && (
+            <section>
+              <SectionLabel icon={<KeyRound className="w-3 h-3" />} text="Pincode" />
+              <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-xs font-semibold text-foreground">
+                    {pincodeRequerido ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                    {pincodeRequerido ? "Requerido para programar" : "No requerido"}
+                  </span>
+                </div>
+                {formaObtencionPincode && (
+                  <div className="space-y-1.5">
+                    <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground/70 leading-none">Cómo obtenerlo:</p>
+                    <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{formaObtencionPincode}</p>
+                  </div>
+                )}
+                {notasPincode && (
+                  <div className="space-y-1.5">
+                    <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground/70 leading-none">Notas del pincode:</p>
+                    <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{notasPincode}</p>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
           {hasProgramacion && (
             <section>
               <SectionLabel icon={<ShieldCheck className="w-3 h-3" />} text="Detalles de Programación" />

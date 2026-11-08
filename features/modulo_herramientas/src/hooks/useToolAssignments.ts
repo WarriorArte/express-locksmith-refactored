@@ -9,6 +9,9 @@ function migrateAssignment(a: any): ToolAssignment {
     (a.immoProfileIds ?? []).map((id: string) => ({
       profileId: id,
       transponder: "",
+      pincodeRequerido: false,
+      formaObtencionPincode: "",
+      notasPincode: "",
       generadoConIds: [],
       equiposRemotoIds: [],
       equiposTransponderIds: [],

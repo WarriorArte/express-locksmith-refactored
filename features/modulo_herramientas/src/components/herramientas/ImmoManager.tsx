@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import {
   Plus, Trash2, Edit, ArrowLeft, Check, Search,
   ImageIcon, Car, X, ChevronDown, Cpu, Radio,
-  ShieldCheck, Wrench, ChevronUp,
+  ShieldCheck, Wrench, ChevronUp, KeyRound,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -42,6 +42,9 @@ function emptyProfile(): Omit<ImmoProfile, "id" | "dateAdded"> {
 function emptyDetail(): Omit<ImmoAssignmentDetail, "profileId"> {
   return {
     transponder: "",
+    pincodeRequerido: false,
+    formaObtencionPincode: "",
+    notasPincode: "",
     generadoConIds: [],
     equiposRemotoIds: [],
     equiposTransponderIds: [],
@@ -442,6 +445,9 @@ export function ImmoAssignmentManager({
     details.forEach((d) => {
       map[d.profileId] = {
         transponder: d.transponder,
+        pincodeRequerido: d.pincodeRequerido ?? false,
+        formaObtencionPincode: d.formaObtencionPincode ?? "",
+        notasPincode: d.notasPincode ?? "",
         generadoConIds: d.generadoConIds ?? [],
         equiposRemotoIds: d.equiposRemotoIds ?? [],
         equiposTransponderIds: d.equiposTransponderIds ?? [],
@@ -631,6 +637,36 @@ export function ImmoAssignmentManager({
                           <div className="space-y-1">
                             <Label className="text-xs font-bold">Transponder</Label>
                             <Input value={detail.transponder} onChange={(e) => updateDetail(id, "transponder", e.target.value)} placeholder="Philips ID46…" className="h-8 text-sm font-mono" />
+                          </div>
+                          {/* Pincode */}
+                          <div className="space-y-3 rounded-md border border-border/60 bg-muted/30 p-3">
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                              <div className="flex items-start gap-2">
+                                <KeyRound className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                                <div>
+                                  <Label className="text-xs font-bold">Pincode</Label>
+                                  <p className="mt-0.5 text-[11px] text-muted-foreground">Indica si el técnico lo necesita para programar.</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Checkbox
+                                  id={`pincode-required-${id}`}
+                                  checked={!!detail.pincodeRequerido}
+                                  onCheckedChange={(v) => updateDetail(id, "pincodeRequerido", !!v)}
+                                />
+                                <Label htmlFor={`pincode-required-${id}`} className="cursor-pointer text-sm">Requiere pincode</Label>
+                              </div>
+                            </div>
+                            <div className="space-y-3">
+                              <div className="space-y-1">
+                                <Label className="text-xs font-bold">Cómo obtenerlo:</Label>
+                                <Textarea value={detail.formaObtencionPincode ?? ""} onChange={(e) => updateDetail(id, "formaObtencionPincode", e.target.value)} placeholder="Ej. Leer por OBD con Xhorse o solicitar al concesionario" rows={2} className="resize-none text-sm" />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs font-bold">Notas del pincode:</Label>
+                                <Textarea value={detail.notasPincode ?? ""} onChange={(e) => updateDetail(id, "notasPincode", e.target.value)} placeholder="Observaciones sobre el PIN o su proceso de obtención" rows={2} className="resize-none text-sm" />
+                              </div>
+                            </div>
                           </div>
                           {/* Se genera con */}
                           <div className="space-y-1.5">
