@@ -34,6 +34,7 @@ import { FilterChip } from "@/design-system/detail/DetailScreen";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { resolveStorageUrl } from "@/lib/phpApi";
+import { formatFrecuencia, getModulacion } from "@/lib/immo";
 import { cn } from "@/lib/utils";
 import type {
   ImmoAssignmentDetail, ImmoCatalogItem, ImmoProfile, KeycodeProfile,
@@ -210,7 +211,7 @@ export function MobileAssignmentWizard({
   const filteredIm = useMemo(() => {
     const q = imSearch.trim().toLowerCase();
     if (!q) return immoProfiles;
-    return immoProfiles.filter((p) => [profileTitle(p), p.frecuencia, p.bateria].some((v) => String(v ?? "").toLowerCase().includes(q)));
+    return immoProfiles.filter((p) => [profileTitle(p), formatFrecuencia(p), p.bateria].some((v) => String(v ?? "").toLowerCase().includes(q)));
   }, [immoProfiles, imSearch]);
 
   // ── Cerraduras ──
@@ -280,6 +281,7 @@ export function MobileAssignmentWizard({
       marca,
       fccId,
       frecuencia: clean(profileDraft.frecuencia),
+      modulacion: getModulacion(profileDraft) ?? "",
       bateria: clean(profileDraft.bateria),
       id: uid(),
       dateAdded: new Date().toLocaleDateString(),
@@ -594,7 +596,7 @@ export function MobileAssignmentWizard({
             {immoProfiles.length > 0 && (
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input value={imSearch} onChange={(e) => setImSearch(e.target.value)} placeholder="Buscar marca, FCC ID o frecuencia…" className="pl-9" />
+                <Input value={imSearch} onChange={(e) => setImSearch(e.target.value)} placeholder="Buscar marca, FCC ID, frecuencia, FSK/ASK…" className="pl-9" />
               </div>
             )}
             {filteredIm.length === 0 && (
@@ -603,7 +605,7 @@ export function MobileAssignmentWizard({
               </p>
             )}
             {filteredIm.map((p) => (
-              <SelectableRow key={p.id} selected={imIds.includes(p.id)} onClick={() => toggleIm(p.id)} title={profileTitle(p)} subtitle={[p.frecuencia, p.bateria].filter(Boolean).join(" · ")} image={p.mainImage} />
+              <SelectableRow key={p.id} selected={imIds.includes(p.id)} onClick={() => toggleIm(p.id)} title={profileTitle(p)} subtitle={[formatFrecuencia(p), p.bateria].filter(Boolean).join(" · ")} image={p.mainImage} />
             ))}
             {validKcIds.length === 0 && validImIds.length === 0 && (
               <p className="text-xs text-muted-foreground">Necesitas al menos una serie de Keycode o un perfil Immo para continuar.</p>

@@ -36,6 +36,9 @@ import type {
   ImmoProfile, ImmoGenField, ImmoCatalogItem,
   ImmoAssignmentDetail, ToolAssignment,
 } from "@/types";
+import { IMMO_MODULACIONES } from "@/types";
+import { formatFrecuencia, getModulacion } from "@/lib/immo";
+import { cn } from "@/lib/utils";
 import { uid } from "./assignment-wizard/wizardUtils";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -45,6 +48,7 @@ export function emptyProfile(): Omit<ImmoProfile, "id" | "dateAdded"> {
     marca: "",
     fccId: "",
     frecuencia: "",
+    modulacion: "",
     bateria: "",
     mainImage: undefined,
     generacionRemoto: [
@@ -260,7 +264,36 @@ export function ImmoProfileEditor({
           {([["marca", "Marca", "Toyota, Honda…", ""], ["fccId", "FCC ID", "HYQ12BFB…", "tabular-nums"], ["frecuencia", "Frecuencia", "433 MHz…", ""], ["bateria", "Batería", "CR2032…", ""]] as const).map(([key, lbl, ph, cls]) => (
             <div key={key} className="space-y-1">
               <Label className="text-xs font-bold">{lbl}</Label>
-              <Input value={draft[key]} onChange={(e) => set(key, e.target.value)} placeholder={ph} className={`h-8 text-sm ${cls}`} />
+              {key === "frecuencia" ? (
+                // Frecuencia y modulación van juntas: el técnico necesita ambas para generar el remoto.
+                <div className="flex items-center gap-2">
+                  <Input value={draft.frecuencia} onChange={(e) => set("frecuencia", e.target.value)} placeholder={ph} className="h-8 min-w-0 flex-1 text-sm" />
+                  <div role="radiogroup" aria-label="Modulación" className="flex shrink-0 gap-1 rounded-full bg-muted p-0.5">
+                    {IMMO_MODULACIONES.map((m) => {
+                      const active = getModulacion(draft) === m;
+                      return (
+                        <button
+                          key={m}
+                          type="button"
+                          role="radio"
+                          aria-checked={active}
+                          title={active ? `Quitar ${m}` : `Modulación ${m}`}
+                          // Tocar la opción activa la desmarca (por si no se conoce la modulación).
+                          onClick={() => set("modulacion", active ? "" : m)}
+                          className={cn(
+                            "h-7 rounded-full px-3 text-xs font-bold transition-colors",
+                            active ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-secondary",
+                          )}
+                        >
+                          {m}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <Input value={draft[key]} onChange={(e) => set(key, e.target.value)} placeholder={ph} className={`h-8 text-sm ${cls}`} />
+              )}
             </div>
           ))}
         </div>
@@ -342,7 +375,7 @@ export function ImmoManager({ profiles, onSave, onUpdate, onDelete, catalog: _ca
   const filtered = useMemo(() => {
     if (!search.trim()) return profiles;
     const q = search.toLowerCase();
-    return profiles.filter((p) => p.marca.toLowerCase().includes(q) || p.fccId.toLowerCase().includes(q));
+    return profiles.filter((p) => [p.marca, p.fccId, formatFrecuencia(p)].some((v) => (v ?? "").toLowerCase().includes(q)));
   }, [profiles, search]);
 
   if (view === "list") {
@@ -387,7 +420,7 @@ export function ImmoManager({ profiles, onSave, onUpdate, onDelete, catalog: _ca
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold text-foreground">{profileTitle(p)}</span>
-                    {p.frecuencia && <Badge variant="secondary">{p.frecuencia}</Badge>}
+                    {formatFrecuencia(p) && <Badge variant="secondary">{formatFrecuencia(p)}</Badge>}
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">{p.bateria && `Batería: ${p.bateria} · `}{p.dateAdded}</p>
                 </div>
@@ -806,7 +839,7 @@ export function ImmoAssignmentManager({
                                 {isSelected && <Check className="w-3 h-3" />}
                               </div>
                               <span className="font-medium text-xs">{profileTitle(p)}</span>
-                              {p.frecuencia && <span className="text-muted-foreground text-xs">· {p.frecuencia}</span>}
+                              {formatFrecuencia(p) && <span className="text-muted-foreground text-xs">· {formatFrecuencia(p)}</span>}
                             </div>
                           );
                         })}

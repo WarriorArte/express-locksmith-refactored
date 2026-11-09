@@ -16,6 +16,7 @@ import {
   TonalChip,
 } from "@/design-system/detail/DetailScreen";
 import { resolveStorageUrl } from "@/lib/phpApi";
+import { formatFrecuencia } from "@/lib/immo";
 import { cn } from "@/lib/utils";
 import type { ImmoProfile, ImmoAssignmentDetail, ImmoCatalogItem } from "@/types";
 
@@ -105,7 +106,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
               <p className="text-sm text-muted-foreground">Sin FCC ID registrado</p>
             )}
             <div className="grid grid-cols-2 gap-2">
-              <SpecTile icon={<Radio className="h-3.5 w-3.5" />} label="Frecuencia" value={profile.frecuencia} />
+              <SpecTile icon={<Radio className="h-3.5 w-3.5" />} label="Frecuencia" value={formatFrecuencia(profile)} />
               <SpecTile icon={<BatteryMedium className="h-3.5 w-3.5" />} label="Batería" value={profile.bateria} />
             </div>
           </div>

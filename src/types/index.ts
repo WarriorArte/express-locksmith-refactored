@@ -221,12 +221,18 @@ export interface ImmoGenField {
   value: string;
 }
 
+/** Modulación de la señal del remoto. */
+export type ImmoModulacion = "FSK" | "ASK";
+export const IMMO_MODULACIONES: ImmoModulacion[] = ["FSK", "ASK"];
+
 /** Remote/FCC profile — vehicle-independent data. */
 export interface ImmoProfile {
   id: string;
   marca: string;
   fccId: string;
   frecuencia: string;
+  /** FSK o ASK; vacío/ausente si no se ha indicado (perfiles anteriores). */
+  modulacion?: ImmoModulacion | "";
   bateria: string;
   mainImage?: string;
   generacionRemoto: ImmoGenField[];
