@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils";
 import { useState, useMemo } from "react";
 import { m as motion } from "framer-motion";
-import { Wrench, Key, FileText, Cpu, Car, Truck, Bike, Plus } from "lucide-react";
-import { MobileAssignmentWizard } from "./MobileAssignmentWizard";
+import { Wrench, Key, FileText, Cpu, Car, Truck, Bike, Plus, Loader2 } from "lucide-react";
+import { MobileAssignmentWizard } from "./assignment-wizard/MobileAssignmentWizard";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -51,14 +51,17 @@ interface HerramientasModuleProps {
 
 export function HerramientasModule({ superAdminView, homeContent }: HerramientasModuleProps) {
   const { isSuperAdmin } = useWorkshop();
-  const { profiles, addProfile, updateProfile, deleteProfile, fetchProfileWithCodes, searchCodes, uploadCodesInChunks } = useKeycodeProfiles();
+  const { profiles, addProfile, updateProfile, deleteProfile, fetchProfileWithCodes, searchCodes, uploadCodesInChunks, loading: keycodeLoading } = useKeycodeProfiles();
   const { assignments, addAssignment, updateAssignment, deleteAssignment, loading: assignmentsLoading } = useToolAssignments();
   const vehicleDb = useVehicleDatabase({ readOnly: !isSuperAdmin });
   const { profiles: alarmaProfiles, addProfile: addAlarmaProfile, updateProfile: updateAlarmaProfile, deleteProfile: deleteAlarmaProfile } = useAlarmaProfiles();
-  const { profiles: immoProfiles, addProfile: addImmoProfile, updateProfile: updateImmoProfile, deleteProfile: deleteImmoProfile } = useImmoProfiles();
+  const { profiles: immoProfiles, addProfile: addImmoProfile, updateProfile: updateImmoProfile, deleteProfile: deleteImmoProfile, loading: immoLoading } = useImmoProfiles();
   const { catalog, addItem, updateItem, deleteItem, previewReorder, commitReorder } = useImmoCatalog();
   const [toolActive, setToolActive] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
+  // El asistente móvil necesita todos los datos cargados para validar duplicados y no
+  // pisar la base de vehículos con una lista aún vacía.
+  const wizardDataLoading = assignmentsLoading || keycodeLoading || immoLoading || !vehicleDb.loaded;
   const [localSuperAdminView, setLocalSuperAdminView] = useState<SuperAdminHerramientasView>("keycode");
   const activeSuperAdminView = superAdminView ?? localSuperAdminView;
   const showInternalSuperAdminTabs = superAdminView === undefined;
@@ -138,8 +141,9 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
               <p className="text-muted-foreground mb-6">
                 Asigna Keycode e Immo Info a un auto en un solo paso. Puedes crear autos y perfiles Immo; las series de Keycode se crean desde una PC.
               </p>
-              <Button size="lg" className="rounded-full" onClick={() => setWizardOpen(true)}>
-                <Plus className="w-5 h-5 mr-1.5" /> Nueva asignación
+              <Button size="lg" className="rounded-full" onClick={() => setWizardOpen(true)} disabled={wizardDataLoading}>
+                {wizardDataLoading ? <Loader2 className="w-5 h-5 mr-1.5 animate-spin" /> : <Plus className="w-5 h-5 mr-1.5" />}
+                {wizardDataLoading ? "Cargando datos…" : "Nueva asignación"}
               </Button>
             </>
           ) : (
@@ -151,7 +155,7 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
             </>
           )}
         </div>
-        {wizardOpen && (
+        {wizardOpen && !wizardDataLoading && (
           <div className="lg:hidden">
             <MobileAssignmentWizard
               onClose={() => setWizardOpen(false)}
@@ -160,7 +164,9 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
               onCreateImmoProfile={addImmoProfile}
               catalog={catalog}
               vehicleDb={vehicleDb}
+              assignments={assignments}
               onSaveAssignment={addAssignment}
+              onUpdateAssignment={updateAssignment}
             />
           </div>
         )}

@@ -36,10 +36,9 @@ import type {
   ImmoProfile, ImmoGenField, ImmoCatalogItem,
   ImmoAssignmentDetail, ToolAssignment,
 } from "@/types";
+import { uid } from "./assignment-wizard/wizardUtils";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
-
-function uid() { return crypto.randomUUID(); }
 
 export function emptyProfile(): Omit<ImmoProfile, "id" | "dateAdded"> {
   return {
@@ -690,11 +689,13 @@ export function ImmoAssignmentManager({
     }));
     const orig = editingId ? assignments.find((a) => a.id === editingId) : undefined;
     const base: ToolAssignment = {
+      // Conserva cerraduras, alarmas, etc. si el registro también tiene otras herramientas.
+      ...(orig ?? {}),
       id: editingId ?? uid(),
       make, model,
       yearStart: parseInt(yearStart),
       yearEnd: parseInt(yearEnd),
-      tools: ["immo"],
+      tools: Array.from(new Set([...(orig?.tools ?? []), "immo"])),
       workshops: [],
       dateAdded: orig?.dateAdded ?? new Date().toLocaleDateString(),
       keycodeProfileIds: orig?.keycodeProfileIds ?? [],

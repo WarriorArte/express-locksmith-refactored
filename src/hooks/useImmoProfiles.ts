@@ -9,12 +9,14 @@ function migrate(items: any[]): ImmoProfile[] {
 }
 
 export function useImmoProfiles() {
-  const { items, addItem, updateItem, deleteItem } = useJsonResource<ImmoProfile>({
+  const { items, addItem, updateItem, deleteItem, loading } = useJsonResource<ImmoProfile>({
     endpoint: "/herramientas/immo-profiles",
     migrate,
   });
   return {
     profiles: items,
+    /** true mientras se descargan los perfiles del servidor. */
+    loading,
     addProfile: addItem,
     updateProfile: updateItem,
     deleteProfile: deleteItem,

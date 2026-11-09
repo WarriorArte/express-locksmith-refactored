@@ -18,7 +18,7 @@ import { LOCK_LABELS, LOCK_ORDER } from "@/types";
 const PAGE_SIZE = 20;
 
 /** Longitud total del bitting de un perfil (suma de ejes si los hay). */
-function getProfileBittingLength(p: KeycodeProfile): number {
+export function getProfileBittingLength(p: KeycodeProfile): number {
   const cfg = p.bittingConfig;
   if (cfg.axes && cfg.axes.length >= 2) {
     return cfg.axes.reduce((s, a) => s + a.length, 0);
@@ -166,13 +166,17 @@ function AssignmentForm({
     });
 
     // Generate assignments
+    const editingSingle = !!initial && vehicles.length === 1;
     const newAssignments: ToolAssignment[] = vehicles.map((v, i) => ({
-      id: initial && vehicles.length === 1 ? initial.id : Date.now().toString() + i, // Preserve ID if editing single
+      // Al editar se conservan los datos de otras herramientas (Immo, Alarmas)
+      // que puedan vivir en el mismo registro.
+      ...(editingSingle ? initial : {}),
+      id: editingSingle ? initial!.id : Date.now().toString() + i, // Preserve ID if editing single
       make: v.make,
       model: v.model,
       yearStart: v.yearStart,
       yearEnd: v.yearEnd,
-      tools: ["keycode"],
+      tools: editingSingle ? Array.from(new Set([...(initial!.tools ?? []), "keycode"])) : ["keycode"],
       workshops: [],
       dateAdded: initial?.dateAdded ?? new Date().toLocaleDateString(),
       keycodeProfileIds: selectedProfileIds,

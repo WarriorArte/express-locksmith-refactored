@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type CarRecord, type VehicleCategory } from "@/data/carDatabase";
+import { toast } from "sonner";
 import { phpApiRequest } from "@/lib/phpApi";
 
 export interface VehicleImportResult {
@@ -39,6 +40,8 @@ function normalize(records: CarRecord[]): CarRecord[] {
 export function useVehicleDatabase({ readOnly = false }: { readOnly?: boolean } = {}) {
   const [records, setRecords] = useState<CarRecord[]>([]);
   const hasLoadedFromApi = useRef(false);
+  /** true cuando terminó la carga inicial (con o sin éxito); antes de eso no conviene editar. */
+  const [loaded, setLoaded] = useState(false);
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Carga inicial desde la API.
@@ -58,6 +61,7 @@ export function useVehicleDatabase({ readOnly = false }: { readOnly?: boolean } 
         // Backend no disponible: lista vacia.
       } finally {
         hasLoadedFromApi.current = true;
+        if (!cancelled) setLoaded(true);
       }
     })();
     return () => { cancelled = true; };
@@ -73,7 +77,10 @@ export function useVehicleDatabase({ readOnly = false }: { readOnly?: boolean } 
       phpApiRequest("/herramientas/vehicle-database", {
         method: "POST",
         body: JSON.stringify({ results: records }),
-      }).catch(() => { /* offline-safe */ });
+      }).catch(() => {
+        // Los cambios siguen en memoria y se reenvían con el siguiente cambio.
+        toast.error("No se pudo guardar la base de vehículos. Revisa tu conexión; se reintentará con el próximo cambio.");
+      });
     }, 800);
   }, [records, readOnly]);
 
@@ -276,6 +283,7 @@ export function useVehicleDatabase({ readOnly = false }: { readOnly?: boolean } 
 
   return {
     records,
+    loaded,
     makes,
     getModelsByMake,
     getYearsByMakeModel,

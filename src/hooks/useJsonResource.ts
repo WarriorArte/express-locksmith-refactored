@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { phpApiRequest } from "@/lib/phpApi";
 
 /**
@@ -35,28 +35,62 @@ export function useJsonResource<T extends { id: string }>(opts: {
     return () => { cancelled = true; };
   }, [endpoint, migrate]);
 
-  const addItem = useCallback((item: T) => {
-    const prev = items;
-    setItems((p) => [item, ...p]);
-    phpApiRequest(endpoint, { method: "POST", body: JSON.stringify(item) })
-      .catch(() => setItems(prev));
-  }, [endpoint, items]);
+  // Espejo del estado para leer la versión previa de un elemento sin depender
+  // de `items` en las mutaciones (evita restaurar instantáneas obsoletas).
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
 
-  const updateItem = useCallback((item: T) => {
-    const prev = items;
+  /**
+   * Las mutaciones son optimistas y devuelven `true` si el servidor confirmó.
+   * Si falla, se revierte SOLO el elemento afectado (no toda la lista), para no
+   * deshacer otros cambios hechos mientras la petición estaba en curso.
+   */
+  const addItem = useCallback(async (item: T): Promise<boolean> => {
+    setItems((p) => [item, ...p.filter((x) => x.id !== item.id)]);
+    try {
+      await phpApiRequest(endpoint, { method: "POST", body: JSON.stringify(item) });
+      return true;
+    } catch {
+      setItems((p) => p.filter((x) => x.id !== item.id));
+      return false;
+    }
+  }, [endpoint]);
+
+  const updateItem = useCallback(async (item: T): Promise<boolean> => {
+    const previous = itemsRef.current.find((x) => x.id === item.id);
     setItems((p) => p.map((x) => (x.id === item.id ? item : x)));
-    phpApiRequest(`${endpoint}?id=${encodeURIComponent(item.id)}`, {
-      method: "PUT",
-      body: JSON.stringify(item),
-    }).catch(() => setItems(prev));
-  }, [endpoint, items]);
+    try {
+      await phpApiRequest(`${endpoint}?id=${encodeURIComponent(item.id)}`, {
+        method: "PUT",
+        body: JSON.stringify(item),
+      });
+      return true;
+    } catch {
+      if (previous) setItems((p) => p.map((x) => (x.id === item.id ? previous : x)));
+      return false;
+    }
+  }, [endpoint]);
 
-  const deleteItem = useCallback((id: string) => {
-    const prev = items;
+  const deleteItem = useCallback(async (id: string): Promise<boolean> => {
+    const list = itemsRef.current;
+    const index = list.findIndex((x) => x.id === id);
+    const previous = index >= 0 ? list[index] : undefined;
     setItems((p) => p.filter((x) => x.id !== id));
-    phpApiRequest(`${endpoint}?id=${encodeURIComponent(id)}`, { method: "DELETE" })
-      .catch(() => setItems(prev));
-  }, [endpoint, items]);
+    try {
+      await phpApiRequest(`${endpoint}?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      return true;
+    } catch {
+      if (previous) {
+        setItems((p) => {
+          if (p.some((x) => x.id === id)) return p;
+          const next = [...p];
+          next.splice(Math.min(index, next.length), 0, previous);
+          return next;
+        });
+      }
+      return false;
+    }
+  }, [endpoint]);
 
   return { items, setItems, addItem, updateItem, deleteItem, loading };
 }
