@@ -1,7 +1,8 @@
 import { cn } from "@/lib/utils";
 import { useState, useMemo } from "react";
 import { m as motion } from "framer-motion";
-import { Wrench, Key, FileText, Cpu, Car, Truck, Bike } from "lucide-react";
+import { Wrench, Key, FileText, Cpu, Car, Truck, Bike, Plus } from "lucide-react";
+import { MobileAssignmentWizard } from "./MobileAssignmentWizard";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -57,6 +58,7 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
   const { profiles: immoProfiles, addProfile: addImmoProfile, updateProfile: updateImmoProfile, deleteProfile: deleteImmoProfile } = useImmoProfiles();
   const { catalog, addItem, updateItem, deleteItem, previewReorder, commitReorder } = useImmoCatalog();
   const [toolActive, setToolActive] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
   const [localSuperAdminView, setLocalSuperAdminView] = useState<SuperAdminHerramientasView>("keycode");
   const activeSuperAdminView = superAdminView ?? localSuperAdminView;
   const showInternalSuperAdminTabs = superAdminView === undefined;
@@ -130,11 +132,38 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
         {/* Fallback para Móvil */}
         <div className="flex flex-col items-center justify-center p-8 text-center flex-1 min-h-0 lg:hidden">
           <Wrench className="w-16 h-16 text-muted-foreground mb-4" />
-          <h2 className="text-xl font-bold mb-2">Se requiere PC</h2>
-          <p className="text-muted-foreground">
-            Las herramientas de administración avanzada están diseñadas para ser utilizadas en una pantalla grande. Por favor, accede desde una PC para continuar.
-          </p>
+          {activeSuperAdminView === "keycode" || activeSuperAdminView === "immo" ? (
+            <>
+              <h2 className="text-xl font-bold mb-2">Asignaciones desde el teléfono</h2>
+              <p className="text-muted-foreground mb-6">
+                Asigna Keycode e Immo Info a un auto en un solo paso. Puedes crear autos y perfiles Immo; las series de Keycode se crean desde una PC.
+              </p>
+              <Button size="lg" className="rounded-full" onClick={() => setWizardOpen(true)}>
+                <Plus className="w-5 h-5 mr-1.5" /> Nueva asignación
+              </Button>
+            </>
+          ) : (
+            <>
+              <h2 className="text-xl font-bold mb-2">Se requiere PC</h2>
+              <p className="text-muted-foreground">
+                Las herramientas de administración avanzada están diseñadas para ser utilizadas en una pantalla grande. Por favor, accede desde una PC para continuar.
+              </p>
+            </>
+          )}
         </div>
+        {wizardOpen && (
+          <div className="lg:hidden">
+            <MobileAssignmentWizard
+              onClose={() => setWizardOpen(false)}
+              keycodeProfiles={profiles}
+              immoProfiles={immoProfiles}
+              onCreateImmoProfile={addImmoProfile}
+              catalog={catalog}
+              vehicleDb={vehicleDb}
+              onSaveAssignment={addAssignment}
+            />
+          </div>
+        )}
 
         {/* Vista Escritorio */}
         <div className="hidden lg:flex flex-col flex-1 min-h-0 space-y-4">

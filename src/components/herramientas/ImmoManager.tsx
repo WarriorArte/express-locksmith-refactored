@@ -41,7 +41,7 @@ import type {
 
 function uid() { return crypto.randomUUID(); }
 
-function emptyProfile(): Omit<ImmoProfile, "id" | "dateAdded"> {
+export function emptyProfile(): Omit<ImmoProfile, "id" | "dateAdded"> {
   return {
     marca: "",
     fccId: "",
@@ -55,7 +55,7 @@ function emptyProfile(): Omit<ImmoProfile, "id" | "dateAdded"> {
   };
 }
 
-function emptyDetail(): Omit<ImmoAssignmentDetail, "profileId"> {
+export function emptyDetail(): Omit<ImmoAssignmentDetail, "profileId"> {
   return {
     transponder: "",
     transponderNotes: "",
@@ -72,7 +72,7 @@ function emptyDetail(): Omit<ImmoAssignmentDetail, "profileId"> {
   };
 }
 
-function profileTitle(p: Pick<ImmoProfile, "marca" | "fccId">) {
+export function profileTitle(p: Pick<ImmoProfile, "marca" | "fccId">) {
   const parts = [p.marca, p.fccId].filter(Boolean);
   return parts.length ? parts.join(" ") : "Sin título";
 }
@@ -182,7 +182,7 @@ interface ImmoProfileEditorProps {
   workshopCode?: string;
 }
 
-function ImmoProfileEditor({
+export function ImmoProfileEditor({
   draft, onChange, onImageChange, isUploadingImage, uploadFile, galleryOpen, setGalleryOpen, workshopCode,
 }: ImmoProfileEditorProps) {
   const mainImgRef = useRef<HTMLInputElement>(null);
@@ -446,6 +446,129 @@ export function ImmoManager({ profiles, onSave, onUpdate, onDelete, catalog: _ca
         />
       </div>
     </div>
+  );
+}
+
+// ── ImmoDetailFields ──────────────────────────────────────────────────────────
+
+export interface ImmoDetailFieldsProps {
+  id: string;
+  detail: Omit<ImmoAssignmentDetail, "profileId">;
+  onChange: (key: keyof Omit<ImmoAssignmentDetail, "profileId">, value: unknown) => void;
+  transponderCatalog: ImmoCatalogItem[];
+  equipoCatalog: ImmoCatalogItem[];
+}
+
+/** Campos de datos por vehículo de un perfil Immo (compartidos por escritorio y asistente móvil). */
+export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equipoCatalog }: ImmoDetailFieldsProps) {
+  return (
+    <>
+                          <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2">
+                          {/* Transponder */}
+                          <div className="space-y-1">
+                            <Label className="text-xs font-bold">Transponder</Label>
+                            <Input value={detail.transponder} onChange={(e) => onChange("transponder", e.target.value)} placeholder="Philips ID46…" className="h-8 text-sm tabular-nums" />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs font-bold">Notas del transponder</Label>
+                            <Textarea
+                              value={detail.transponderNotes ?? ""}
+                              onChange={(e) => onChange("transponderNotes", e.target.value)}
+                              placeholder="Notas breves para el técnico…"
+                              rows={2}
+                              className="text-sm resize-none"
+                            />
+                          </div>
+                          </div>
+                           {/* Pincode */}
+                           <div className="space-y-3 rounded-md border border-border/60 bg-muted/30 p-3">
+                             <div className="flex flex-wrap items-start justify-between gap-3">
+                               <div className="flex items-start gap-2">
+                                 <KeyRound className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                                 <div>
+                                   <Label className="text-xs font-bold">Pincode</Label>
+                                   <p className="mt-0.5 text-[11px] text-muted-foreground">Indica si el técnico lo necesita para programar.</p>
+                                 </div>
+                               </div>
+                               <div className="flex items-center gap-2">
+                                 <Checkbox
+                                   id={`pincode-required-${id}`}
+                                   checked={!!detail.pincodeRequerido}
+                                   onCheckedChange={(v) => onChange("pincodeRequerido", !!v)}
+                                 />
+                                 <Label htmlFor={`pincode-required-${id}`} className="cursor-pointer text-sm">Requiere pincode</Label>
+                               </div>
+                             </div>
+                             <div className="space-y-3">
+                               <div className="space-y-1">
+                                 <Label className="text-xs font-bold">Cómo obtenerlo:</Label>
+                                 <Textarea
+                                   value={detail.formaObtencionPincode ?? ""}
+                                   onChange={(e) => onChange("formaObtencionPincode", e.target.value)}
+                                   placeholder="Ej. Leer por OBD con Xhorse o solicitar al concesionario"
+                                   rows={2}
+                                   className="resize-none text-sm"
+                                 />
+                               </div>
+                               <div className="space-y-1">
+                                 <Label className="text-xs font-bold">Notas del pincode:</Label>
+                                 <Textarea
+                                   value={detail.notasPincode ?? ""}
+                                   onChange={(e) => onChange("notasPincode", e.target.value)}
+                                   placeholder="Observaciones sobre el PIN o su proceso de obtención"
+                                   rows={2}
+                                   className="resize-none text-sm"
+                                 />
+                               </div>
+                             </div>
+                           </div>
+                          {/* Se genera con */}
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">Se genera con</Label>
+                            <CatalogChipSelector catalogItems={transponderCatalog} selectedIds={detail.generadoConIds} onChange={(ids) => onChange("generadoConIds", ids)} />
+                          </div>
+                          {/* Equipos remoto */}
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">Equipos — Remoto</Label>
+                            <CatalogChipSelector catalogItems={equipoCatalog} selectedIds={detail.equiposRemotoIds} onChange={(ids) => onChange("equiposRemotoIds", ids)} />
+                          </div>
+                          {/* Equipos transponder */}
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">Equipos — Transponder</Label>
+                            <CatalogChipSelector catalogItems={equipoCatalog} selectedIds={detail.equiposTransponderIds} onChange={(ids) => onChange("equiposTransponderIds", ids)} />
+                          </div>
+                          {/* Programación */}
+                          <div className="flex items-center gap-6">
+                            <div className="flex items-center gap-2">
+                              <Checkbox id={`manual-${id}`} checked={detail.programacionManual} onCheckedChange={(v) => onChange("programacionManual", !!v)} />
+                              <Label htmlFor={`manual-${id}`} className="text-sm cursor-pointer">Programación manual</Label>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Checkbox id={`obd-${id}`} checked={detail.programacionOBD} onCheckedChange={(v) => onChange("programacionOBD", !!v)} />
+                              <Label htmlFor={`obd-${id}`} className="text-sm cursor-pointer">Programación OBD</Label>
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs font-bold">Procedimiento de Programación</Label>
+                            <RichTextEditor
+                              value={detail.procedimientoProgramacion}
+                              onChange={(v) => onChange("procedimientoProgramacion", v)}
+                              placeholder="Describe el procedimiento paso a paso…"
+                              rows={4}
+                              className="text-sm"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs font-bold">Notas Generales</Label>
+                            <RichTextEditor
+                              value={detail.notasGenerales ?? ""}
+                              onChange={(v) => onChange("notasGenerales", v)}
+                              placeholder="Cualquier otra observación para el técnico…"
+                              rows={3}
+                              className="text-sm"
+                            />
+                          </div>
+    </>
   );
 }
 
@@ -730,111 +853,7 @@ export function ImmoAssignmentManager({
                       {/* Accordion body */}
                       {isExpanded && (
                         <div className="px-3 pb-4 space-y-4 border-t border-border/50 pt-3">
-                          <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2">
-                          {/* Transponder */}
-                          <div className="space-y-1">
-                            <Label className="text-xs font-bold">Transponder</Label>
-                            <Input value={detail.transponder} onChange={(e) => updateDetail(id, "transponder", e.target.value)} placeholder="Philips ID46…" className="h-8 text-sm tabular-nums" />
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs font-bold">Notas del transponder</Label>
-                            <Textarea
-                              value={detail.transponderNotes ?? ""}
-                              onChange={(e) => updateDetail(id, "transponderNotes", e.target.value)}
-                              placeholder="Notas breves para el técnico…"
-                              rows={2}
-                              className="text-sm resize-none"
-                            />
-                          </div>
-                          </div>
-                           {/* Pincode */}
-                           <div className="space-y-3 rounded-md border border-border/60 bg-muted/30 p-3">
-                             <div className="flex flex-wrap items-start justify-between gap-3">
-                               <div className="flex items-start gap-2">
-                                 <KeyRound className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                                 <div>
-                                   <Label className="text-xs font-bold">Pincode</Label>
-                                   <p className="mt-0.5 text-[11px] text-muted-foreground">Indica si el técnico lo necesita para programar.</p>
-                                 </div>
-                               </div>
-                               <div className="flex items-center gap-2">
-                                 <Checkbox
-                                   id={`pincode-required-${id}`}
-                                   checked={!!detail.pincodeRequerido}
-                                   onCheckedChange={(v) => updateDetail(id, "pincodeRequerido", !!v)}
-                                 />
-                                 <Label htmlFor={`pincode-required-${id}`} className="cursor-pointer text-sm">Requiere pincode</Label>
-                               </div>
-                             </div>
-                             <div className="space-y-3">
-                               <div className="space-y-1">
-                                 <Label className="text-xs font-bold">Cómo obtenerlo:</Label>
-                                 <Textarea
-                                   value={detail.formaObtencionPincode ?? ""}
-                                   onChange={(e) => updateDetail(id, "formaObtencionPincode", e.target.value)}
-                                   placeholder="Ej. Leer por OBD con Xhorse o solicitar al concesionario"
-                                   rows={2}
-                                   className="resize-none text-sm"
-                                 />
-                               </div>
-                               <div className="space-y-1">
-                                 <Label className="text-xs font-bold">Notas del pincode:</Label>
-                                 <Textarea
-                                   value={detail.notasPincode ?? ""}
-                                   onChange={(e) => updateDetail(id, "notasPincode", e.target.value)}
-                                   placeholder="Observaciones sobre el PIN o su proceso de obtención"
-                                   rows={2}
-                                   className="resize-none text-sm"
-                                 />
-                               </div>
-                             </div>
-                           </div>
-                          {/* Se genera con */}
-                          <div className="space-y-1.5">
-                            <Label className="text-xs font-bold">Se genera con</Label>
-                            <CatalogChipSelector catalogItems={transponderCatalog} selectedIds={detail.generadoConIds} onChange={(ids) => updateDetail(id, "generadoConIds", ids)} />
-                          </div>
-                          {/* Equipos remoto */}
-                          <div className="space-y-1.5">
-                            <Label className="text-xs font-bold">Equipos — Remoto</Label>
-                            <CatalogChipSelector catalogItems={equipoCatalog} selectedIds={detail.equiposRemotoIds} onChange={(ids) => updateDetail(id, "equiposRemotoIds", ids)} />
-                          </div>
-                          {/* Equipos transponder */}
-                          <div className="space-y-1.5">
-                            <Label className="text-xs font-bold">Equipos — Transponder</Label>
-                            <CatalogChipSelector catalogItems={equipoCatalog} selectedIds={detail.equiposTransponderIds} onChange={(ids) => updateDetail(id, "equiposTransponderIds", ids)} />
-                          </div>
-                          {/* Programación */}
-                          <div className="flex items-center gap-6">
-                            <div className="flex items-center gap-2">
-                              <Checkbox id={`manual-${id}`} checked={detail.programacionManual} onCheckedChange={(v) => updateDetail(id, "programacionManual", !!v)} />
-                              <Label htmlFor={`manual-${id}`} className="text-sm cursor-pointer">Programación manual</Label>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Checkbox id={`obd-${id}`} checked={detail.programacionOBD} onCheckedChange={(v) => updateDetail(id, "programacionOBD", !!v)} />
-                              <Label htmlFor={`obd-${id}`} className="text-sm cursor-pointer">Programación OBD</Label>
-                            </div>
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs font-bold">Procedimiento de Programación</Label>
-                            <RichTextEditor
-                              value={detail.procedimientoProgramacion}
-                              onChange={(v) => updateDetail(id, "procedimientoProgramacion", v)}
-                              placeholder="Describe el procedimiento paso a paso…"
-                              rows={4}
-                              className="text-sm"
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs font-bold">Notas Generales</Label>
-                            <RichTextEditor
-                              value={detail.notasGenerales ?? ""}
-                              onChange={(v) => updateDetail(id, "notasGenerales", v)}
-                              placeholder="Cualquier otra observación para el técnico…"
-                              rows={3}
-                              className="text-sm"
-                            />
-                          </div>
+                          <ImmoDetailFields id={id} detail={detail} onChange={(k, v) => updateDetail(id, k, v)} transponderCatalog={transponderCatalog} equipoCatalog={equipoCatalog} />
                         </div>
                       )}
                     </div>
