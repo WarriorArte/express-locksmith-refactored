@@ -75,6 +75,16 @@ const STEP_SUMMARY = 4;
 
 const PART_LABELS: Record<Part, string> = { keycode: "Keycode", immo: "Immo Info" };
 
+/** Minúsculas, sin acentos y con espacios simples, para comparar búsquedas. */
+const normalizeSearch = (s: string) => clean(s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+/** Referencia principal del perfil Keycode (p. ej. «Lishi HU66»), o la primera con marca. */
+function referenceLabel(p: KeycodeProfile): string {
+  const refs = (p.references ?? []).filter((r) => clean(r.brand) || clean(r.refCode));
+  const ref = refs.find((r) => r.isPrimary) ?? refs[0];
+  return ref ? clean(`${ref.brand} ${ref.refCode}`) : "";
+}
+
 function SelectableRow({ selected, onClick, title, subtitle, image }: { selected: boolean; onClick: () => void; title: string; subtitle?: string; image?: string }) {
   return (
     <button
@@ -181,9 +191,20 @@ export function MobileAssignmentWizard({
   const equipoCatalog = useMemo(() => catalog.filter((i) => i.category === "equipo"), [catalog]);
 
   const filteredKc = useMemo(() => {
-    const q = kcSearch.trim().toLowerCase();
-    if (!q) return keycodeProfiles;
-    return keycodeProfiles.filter((p) => [p.series, p.icCard, p.internalReference].some((v) => String(v ?? "").toLowerCase().includes(q)));
+    // Todas las palabras deben aparecer (p. ej. «lishi hu66»), sin importar mayúsculas ni acentos.
+    const terms = normalizeSearch(kcSearch).split(" ").filter(Boolean);
+    if (!terms.length) return keycodeProfiles;
+    return keycodeProfiles.filter((p) => {
+      const haystack = normalizeSearch([
+        p.series,
+        p.icCard,
+        p.internalReference,
+        ...(p.seriesAliases ?? []),
+        // Marca y código de cada referencia (donde normalmente va «Lishi»).
+        ...(p.references ?? []).flatMap((r) => [r.brand, r.refCode, `${r.brand} ${r.refCode}`]),
+      ].filter(Boolean).join(" "));
+      return terms.every((t) => haystack.includes(t));
+    });
   }, [keycodeProfiles, kcSearch]);
 
   const filteredIm = useMemo(() => {
@@ -510,7 +531,7 @@ export function MobileAssignmentWizard({
               <>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input value={kcSearch} onChange={(e) => setKcSearch(e.target.value)} placeholder="Buscar serie, IC o referencia…" className="pl-9" />
+                  <Input value={kcSearch} onChange={(e) => setKcSearch(e.target.value)} placeholder="Buscar marca (Lishi…), serie o IC…" className="pl-9" />
                 </div>
                 {filteredKc.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">No hay series que coincidan.</p>}
                 {filteredKc.map((p) => {
@@ -520,7 +541,7 @@ export function MobileAssignmentWizard({
                   const activeLocks = LOCK_ORDER.filter((lk) => pl[lk]);
                   return (
                     <div key={p.id} className="space-y-2">
-                      <SelectableRow selected={sel} onClick={() => toggleKc(p.id)} title={`IC ${p.icCard} · ${p.series}`} subtitle={[p.internalReference, `${len} cortes`].filter(Boolean).join(" · ")} />
+                      <SelectableRow selected={sel} onClick={() => toggleKc(p.id)} title={`IC ${p.icCard} · ${p.series}`} subtitle={[referenceLabel(p), p.internalReference, `${len} cortes`].filter(Boolean).join(" · ")} />
                       {sel && (
                         <div className="space-y-3 rounded-2xl bg-card p-3 shadow-sm">
                           <p className="text-xs font-medium text-muted-foreground">Cerraduras (opcional)</p>
