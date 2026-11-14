@@ -252,6 +252,8 @@ export interface ImmoAssignmentDetail {
    * pero no se muestran al técnico.
    */
   sinInmovilizador?: boolean;
+  /** Matices de `sinInmovilizador` (p. ej. variantes o mercados que sí lo traen). */
+  notasSinInmovilizador?: string;
   transponder: string;
   /** Optional notes shown alongside the transponder details. */
   transponderNotes?: string;

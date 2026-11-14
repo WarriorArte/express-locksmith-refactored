@@ -64,6 +64,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
   // Sin inmovilizador: se muestra el aviso y se ocultan transponder, pincode y su equipo
   // (los datos pueden seguir guardados por si el administrador desmarca la opción).
   const sinInmovilizador = !!detail?.sinInmovilizador;
+  const notasSinInmovilizador = detail?.notasSinInmovilizador?.trim() ?? "";
   const hasGeneracion = generacionRemoto.length > 0;
   const hasTransponder = !sinInmovilizador && (!!(transponder || transponderNotes) || generadoCon.length > 0);
   const hasPincode = !sinInmovilizador && (pincodeRequerido || !!formaObtencionPincode || !!notasPincode);
@@ -126,7 +127,12 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
                 className="min-w-0"
               >
                 <p className="text-[15px] font-semibold leading-relaxed text-foreground">{SIN_INMOVILIZADOR_TEXTO}.</p>
-                <p className="mt-1 text-sm text-muted-foreground">No requiere transponder ni pincode.</p>
+                {notasSinInmovilizador && (
+                  <FormattedText
+                    text={notasSinInmovilizador}
+                    className="mt-2 space-y-1 text-[15px] leading-relaxed text-muted-foreground"
+                  />
+                )}
               </DetailSection>
             )}
 

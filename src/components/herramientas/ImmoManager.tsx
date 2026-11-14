@@ -61,6 +61,7 @@ export function emptyProfile(): Omit<ImmoProfile, "id" | "dateAdded"> {
 export function emptyDetail(): Omit<ImmoAssignmentDetail, "profileId"> {
   return {
     sinInmovilizador: false,
+    notasSinInmovilizador: "",
     transponder: "",
     transponderNotes: "",
     pincodeRequerido: false,
@@ -533,7 +534,7 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                               checked={sinInmovilizador}
                               onCheckedChange={(v) => markNoImmo(!!v)}
                             />
-                            <div className="min-w-0">
+                            <div className="min-w-0 flex-1">
                               <Label htmlFor={`sin-immo-${id}`} className="cursor-pointer text-sm font-semibold">
                                 {SIN_INMOVILIZADOR_TEXTO}
                               </Label>
@@ -542,6 +543,19 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                                   ? "El técnico verá este aviso en lugar del transponder y el pincode. Lo que ya habías capturado se conserva por si lo desmarcas."
                                   : "Márcalo si este vehículo no usa transponder."}
                               </p>
+                              {sinInmovilizador && (
+                                <div className="mt-3 space-y-1">
+                                  <Label htmlFor={`sin-immo-notas-${id}`} className="text-xs font-bold">Notas (opcional)</Label>
+                                  <Textarea
+                                    id={`sin-immo-notas-${id}`}
+                                    value={detail.notasSinInmovilizador ?? ""}
+                                    onChange={(e) => onChange("notasSinInmovilizador", e.target.value)}
+                                    placeholder="Ej. [Algunas variantes sí lo traen] [Autos procedentes de Europa…]"
+                                    rows={2}
+                                    className="resize-none bg-background text-sm"
+                                  />
+                                </div>
+                              )}
                             </div>
                           </div>
                           {!sinInmovilizador && (
@@ -769,6 +783,7 @@ export function ImmoAssignmentManager({
     details.forEach((d) => {
       map[d.profileId] = {
         sinInmovilizador: d.sinInmovilizador ?? false,
+        notasSinInmovilizador: d.notasSinInmovilizador ?? "",
         transponder: d.transponder,
         transponderNotes: d.transponderNotes ?? "",
         pincodeRequerido: d.pincodeRequerido ?? false,
