@@ -86,13 +86,13 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
                   name="cookie9"
                   clipChildren="bottom"
                   bottomInsetShadow
-                  className="absolute inset-0 h-full w-full text-primary"
+                  className="absolute inset-0 h-full w-full text-background/60"
                 >
-                  <span className="absolute -top-3 left-1/2 block h-[108%] w-[140px] -translate-x-1/2 md:w-[154px]">
+                  <span className="absolute -top-1 left-1/2 block w-[119px] -translate-x-1/2 md:w-[130px]">
                     <img
                       src={resolveStorageUrl(profile.mainImage) ?? undefined}
                       alt={title}
-                      className="block h-full w-full object-contain object-center drop-shadow-md"
+                      className="block h-auto w-full drop-shadow-md"
                     />
                   </span>
                 </MaterialShape>
