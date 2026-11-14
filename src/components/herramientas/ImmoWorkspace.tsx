@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { BatteryMedium, Check, Hand, KeyRound, Plug, Radio, StickyNote, Wrench, X } from "lucide-react";
 import { ImageViewDialog } from "@/components/shared/ImageViewDialog";
 import { FormattedText } from "@/components/herramientas/RichTextField";
@@ -44,11 +44,22 @@ interface ImmoWorkspaceProps {
   onBack: () => void;
 }
 
+/**
+ * Width of the remote photo inside the 208px star, based on its proportions
+ * (height / width): tall photos stay narrow so their lower part tucks into the
+ * shape; short photos grow a little so they don't look tiny. Never crops.
+ */
+export function immoPhotoWidth(ratio: number | null): number {
+  if (!ratio || !Number.isFinite(ratio)) return 136;
+  return Math.round(Math.min(148, Math.max(128, 185 / ratio)));
+}
+
 export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: ImmoWorkspaceProps) {
   const title = profileTitle(profile);
   const heading = vehicle ? `${vehicle.make} ${vehicle.model}` : title;
   const headingMeta = [vehicle?.year, vehicle ? profile.marca : null].filter(Boolean).join(" · ");
   const [mainImageViewerOpen, setMainImageViewerOpen] = useState(false);
+  const [mainImageRatio, setMainImageRatio] = useState<number | null>(null);
 
   const generacionRemoto = (profile.generacionRemoto ?? []).filter((f) => f.value.trim());
   const generadoCon = catalogItems(detail?.generadoConIds ?? [], catalog);
@@ -88,8 +99,15 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
                   bottomInsetShadow
                   className="absolute inset-0 h-full w-full text-background/60"
                 >
-                  <span className="absolute -top-1 left-1/2 block w-[150px] -translate-x-1/2 md:w-[162px]">
+                  <span
+                    className="absolute -top-1 left-1/2 block w-[var(--immo-w)] -translate-x-1/2 md:w-[calc(var(--immo-w)*1.08)]"
+                    style={{ "--immo-w": `${immoPhotoWidth(mainImageRatio)}px` } as CSSProperties}
+                  >
                     <img
+                      onLoad={(e) => {
+                        const { naturalWidth, naturalHeight } = e.currentTarget;
+                        if (naturalWidth > 0) setMainImageRatio(naturalHeight / naturalWidth);
+                      }}
                       src={resolveStorageUrl(profile.mainImage) ?? undefined}
                       alt={title}
                       className="block h-auto w-full drop-shadow-md"
