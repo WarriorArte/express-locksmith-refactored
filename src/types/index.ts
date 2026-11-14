@@ -259,6 +259,13 @@ export interface ImmoAssignmentDetail {
   transponderNotes?: string;
   /** Indicates whether the technician needs a PIN to complete programming. */
   pincodeRequerido?: boolean;
+  /**
+   * true cuando el auto NO lleva pincode: el técnico ve «No se necesita pincode».
+   * Excluyente con `pincodeRequerido`. Los datos de obtención se conservan.
+   */
+  sinPincode?: boolean;
+  /** Matices de `sinPincode` (p. ej. versiones que sí lo piden). */
+  notasSinPincode?: string;
   /** Instructions or source used to obtain the PIN when it is needed. */
   formaObtencionPincode?: string;
   /** Additional notes about the PIN requirement or retrieval process. */

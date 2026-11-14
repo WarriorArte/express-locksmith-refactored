@@ -65,6 +65,8 @@ export function emptyDetail(): Omit<ImmoAssignmentDetail, "profileId"> {
     transponder: "",
     transponderNotes: "",
     pincodeRequerido: false,
+    sinPincode: false,
+    notasSinPincode: "",
     formaObtencionPincode: "",
     notasPincode: "",
     generadoConIds: [],
@@ -596,15 +598,48 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                                    <p className="mt-0.5 text-[11px] text-muted-foreground">Indica si el técnico lo necesita para programar.</p>
                                  </div>
                                </div>
-                               <div className="flex items-center gap-2">
-                                 <Checkbox
-                                   id={`pincode-required-${id}`}
-                                   checked={!!detail.pincodeRequerido}
-                                   onCheckedChange={(v) => onChange("pincodeRequerido", !!v)}
-                                 />
-                                 <Label htmlFor={`pincode-required-${id}`} className="cursor-pointer text-sm">Requiere pincode</Label>
+                               {/* Requiere / No lleva: excluyentes; ninguna marcada = sin indicar. */}
+                               <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                                 <div className="flex items-center gap-2">
+                                   <Checkbox
+                                     id={`pincode-required-${id}`}
+                                     checked={!!detail.pincodeRequerido}
+                                     onCheckedChange={(v) => {
+                                       onChange("pincodeRequerido", !!v);
+                                       if (v) onChange("sinPincode", false);
+                                     }}
+                                   />
+                                   <Label htmlFor={`pincode-required-${id}`} className="cursor-pointer text-sm">Requiere pincode</Label>
+                                 </div>
+                                 <div className="flex items-center gap-2">
+                                   <Checkbox
+                                     id={`pincode-none-${id}`}
+                                     checked={!!detail.sinPincode}
+                                     onCheckedChange={(v) => {
+                                       onChange("sinPincode", !!v);
+                                       if (v) onChange("pincodeRequerido", false);
+                                     }}
+                                   />
+                                   <Label htmlFor={`pincode-none-${id}`} className="cursor-pointer text-sm">No lleva pincode</Label>
+                                 </div>
                                </div>
                              </div>
+                             {detail.sinPincode ? (
+                               <div className="space-y-1">
+                                 <Label htmlFor={`pincode-none-notas-${id}`} className="text-xs font-bold">Notas (opcional)</Label>
+                                 <Textarea
+                                   id={`pincode-none-notas-${id}`}
+                                   value={detail.notasSinPincode ?? ""}
+                                   onChange={(e) => onChange("notasSinPincode", e.target.value)}
+                                   placeholder="Ej. [Las versiones con arranque por botón sí lo piden]"
+                                   rows={2}
+                                   className="resize-none text-sm"
+                                 />
+                                 <p className="text-[11px] text-muted-foreground">
+                                   El técnico verá «No se necesita pincode». Lo de «Cómo obtenerlo» se conserva por si lo desmarcas.
+                                 </p>
+                               </div>
+                             ) : (
                              <div className="space-y-3">
                                <div className="space-y-1">
                                  <Label className="text-xs font-bold">Cómo obtenerlo:</Label>
@@ -627,6 +662,7 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                                  />
                                </div>
                              </div>
+                             )}
                            </div>
                           {/* Se genera con */}
                           <div className="space-y-1.5">
@@ -787,6 +823,8 @@ export function ImmoAssignmentManager({
         transponder: d.transponder,
         transponderNotes: d.transponderNotes ?? "",
         pincodeRequerido: d.pincodeRequerido ?? false,
+        sinPincode: d.sinPincode ?? false,
+        notasSinPincode: d.notasSinPincode ?? "",
         formaObtencionPincode: d.formaObtencionPincode ?? "",
         notasPincode: d.notasPincode ?? "",
         generadoConIds: d.generadoConIds ?? [],

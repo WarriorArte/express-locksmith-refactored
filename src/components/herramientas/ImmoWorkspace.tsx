@@ -58,6 +58,8 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
   const pincodeRequerido = !!detail?.pincodeRequerido;
   const formaObtencionPincode = detail?.formaObtencionPincode?.trim() ?? "";
   const notasPincode = detail?.notasPincode?.trim() ?? "";
+  const sinPincode = !!detail?.sinPincode;
+  const notasSinPincode = detail?.notasSinPincode?.trim() ?? "";
   const procedimiento = detail?.procedimientoProgramacion?.trim() ?? "";
   const notasGenerales = detail?.notasGenerales?.trim() ?? "";
 
@@ -67,7 +69,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
   const notasSinInmovilizador = detail?.notasSinInmovilizador?.trim() ?? "";
   const hasGeneracion = generacionRemoto.length > 0;
   const hasTransponder = !sinInmovilizador && (!!(transponder || transponderNotes) || generadoCon.length > 0);
-  const hasPincode = !sinInmovilizador && (pincodeRequerido || !!formaObtencionPincode || !!notasPincode);
+  const hasPincode = !sinInmovilizador && (sinPincode || pincodeRequerido || !!formaObtencionPincode || !!notasPincode);
   const showEquiposTransponder = !sinInmovilizador && equiposTransponder.length > 0;
   const hasMethods = !!(detail?.programacionManual || detail?.programacionOBD);
   const hasProgramacion = hasMethods || equiposRemoto.length > 0 || showEquiposTransponder || !!procedimiento;
@@ -166,30 +168,42 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
             title="Pincode"
             icon={<KeyRound className="h-5 w-5 text-muted-foreground" />}
           >
-            <div className="space-y-4">
-              <div className="flex flex-wrap gap-2">
-                <TonalChip
-                  icon={pincodeRequerido ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
-                  label={pincodeRequerido ? "Requerido para programar" : "No requerido"}
-                  tone="neutral"
-                />
+            {sinPincode ? (
+              // El auto no lleva pincode: aviso claro + notas opcionales.
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  <TonalChip icon={<X className="h-4 w-4" />} label="No se necesita pincode" tone="neutral" />
+                </div>
+                {notasSinPincode && (
+                  <FormattedText text={notasSinPincode} className="space-y-1 text-[15px] leading-relaxed text-foreground" />
+                )}
               </div>
-              {formaObtencionPincode && (
-                <div>
-                  <SubHeading className="font-bold">Cómo obtenerlo:</SubHeading>
-                  <FormattedText
-                    text={formaObtencionPincode}
-                    className="space-y-1 text-[15px] leading-relaxed text-foreground"
+            ) : (
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  <TonalChip
+                    icon={pincodeRequerido ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
+                    label={pincodeRequerido ? "Requerido para programar" : "No requerido"}
+                    tone="neutral"
                   />
                 </div>
-              )}
-              {notasPincode && (
-                <div>
-                  <SubHeading className="font-bold">Notas del pincode:</SubHeading>
-                  <FormattedText text={notasPincode} className="space-y-1 text-[15px] leading-relaxed text-foreground" />
-                </div>
-              )}
-            </div>
+                {formaObtencionPincode && (
+                  <div>
+                    <SubHeading className="font-bold">Cómo obtenerlo:</SubHeading>
+                    <FormattedText
+                      text={formaObtencionPincode}
+                      className="space-y-1 text-[15px] leading-relaxed text-foreground"
+                    />
+                  </div>
+                )}
+                {notasPincode && (
+                  <div>
+                    <SubHeading className="font-bold">Notas del pincode:</SubHeading>
+                    <FormattedText text={notasPincode} className="space-y-1 text-[15px] leading-relaxed text-foreground" />
+                  </div>
+                )}
+              </div>
+            )}
           </DetailSection>
         )}
 
