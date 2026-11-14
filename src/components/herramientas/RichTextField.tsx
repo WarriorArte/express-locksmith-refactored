@@ -99,7 +99,8 @@ export function BlockImage({ url, className }: { url: string; className?: string
       alt=""
       loading="lazy"
       className={cn(
-        "mx-auto my-1 block max-w-full rounded-2xl bg-muted object-contain",
+        // Sin fondo ni esquinas redondeadas: la foto se ve tal cual (los PNG transparentes no quedan en una caja).
+        "mx-auto my-1 block max-w-full object-contain",
         size ? cn(IMAGE_SIZE_CLASS[size], "w-auto") : "h-auto max-h-[420px]",
         className,
       )}
@@ -395,7 +396,7 @@ export function renderInline(line: string, keyPrefix: string): React.ReactNode[]
           src={resolveStorageUrl(splitImageSize(img[1]).url) ?? splitImageSize(img[1]).url}
           alt=""
           loading="lazy"
-          className="mx-0.5 inline-block h-[1.6em] w-auto rounded-md align-middle object-contain"
+          className="mx-0.5 inline-block h-[1.6em] w-auto align-middle object-contain"
         />
       );
     }
