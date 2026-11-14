@@ -109,6 +109,12 @@ abstract class JsonResourceController
         $data = $row->getAttribute('data') ?? [];
         if (!is_array($data)) $data = [];
         $data['id'] = $row->getKey();
+        // Fecha real de alta (la pone el servidor): sirve para estadisticas por dia.
+        // Siempre se toma de la columna, aunque el cliente reenvie un valor viejo.
+        $createdAt = $row->getAttribute('created_at');
+        if ($createdAt) {
+            $data['_createdAt'] = \Illuminate\Support\Carbon::parse($createdAt)->toIso8601String();
+        }
         return $data;
     }
 }

@@ -10,6 +10,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
+import { ImmoProgressCard } from "@/components/dashboard/ImmoProgressCard";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -84,6 +85,9 @@ export default function SuperAdminDashboard() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6 mt-6">
+          {/* Estadística interna: avance de autos ingresados en Immo Info */}
+          <ImmoProgressCard />
+
           {/* Stats Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard title="Total Talleres" value={stats?.totalWorkshops || 0} subtitle={`${stats?.activeWorkshops || 0} activos`} icon={Building2} variant="primary" delay={0.1} />

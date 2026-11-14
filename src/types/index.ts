@@ -192,6 +192,8 @@ export interface ToolAssignment {
   tools: string[];
   workshops: string[];
   dateAdded: string;
+  /** Fecha real de alta (ISO), la añade el servidor al leer; no se edita. */
+  _createdAt?: string;
   /** @deprecated Use keycodeProfileIds instead */
   keycodeProfileId?: string | null;
   keycodeProfileIds: string[];
