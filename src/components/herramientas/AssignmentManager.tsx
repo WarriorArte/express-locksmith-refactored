@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
-import { Car, Wrench, Users, Settings, Check, Trash2, Pencil, X, Plus, Search, ChevronLeft, ChevronRight, ChevronDown, Lock } from "lucide-react";
+import { Car, Wrench, Users, Settings, Check, Trash2, Pencil, X, Plus, Search, ChevronLeft, ChevronRight, ChevronDown, Lock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { m as motion, AnimatePresence } from "framer-motion";
 
@@ -28,18 +28,18 @@ export function getProfileBittingLength(p: KeycodeProfile): number {
 
 interface AssignmentManagerProps {
   assignments: ToolAssignment[];
-  onSave: (assignment: ToolAssignment) => void;
-  onUpdate: (assignment: ToolAssignment) => void;
-  onDelete: (id: string) => void;
+  onSave: (assignment: ToolAssignment) => Promise<boolean> | void;
+  onUpdate: (assignment: ToolAssignment) => Promise<boolean> | void;
+  onDelete: (id: string) => Promise<boolean> | void;
   keycodeProfiles: KeycodeProfile[];
   vehicleRecords: CarRecord[];
 }
 
 interface AssignmentManagerProps {
   assignments: ToolAssignment[];
-  onSave: (assignment: ToolAssignment) => void;
-  onUpdate: (assignment: ToolAssignment) => void;
-  onDelete: (id: string) => void;
+  onSave: (assignment: ToolAssignment) => Promise<boolean> | void;
+  onUpdate: (assignment: ToolAssignment) => Promise<boolean> | void;
+  onDelete: (id: string) => Promise<boolean> | void;
   keycodeProfiles: KeycodeProfile[];
   vehicleRecords: CarRecord[];
 }
@@ -61,12 +61,16 @@ function AssignmentForm({
   workshops: { id: string; name: string }[];
   keycodeProfiles: KeycodeProfile[];
   vehicleRecords: CarRecord[];
-  onSubmit?: (a: ToolAssignment) => void;
-  onBulkSubmit?: (items: ToolAssignment[]) => void;
+  /** Debe resolver `true` solo si el servidor confirmó; con `false` el formulario sigue abierto. */
+  onSubmit?: (a: ToolAssignment) => Promise<boolean>;
+  onBulkSubmit?: (items: ToolAssignment[]) => Promise<boolean>;
   onCancel?: () => void;
   submitLabel: string;
 }) {
-  // Temporary vehicle selection state
+  // Al editar, los selectores SON el vehículo (uno solo). Al crear, son un borrador que
+  // se agrega a la lista con «Añadir» (o automáticamente al guardar si quedó completo).
+  const isEditing = !!initial;
+  const [submitting, setSubmitting] = useState(false);
   const [make, setMake] = useState(initial?.make ?? "");
   const [model, setModel] = useState(initial?.model ?? "");
   const [yearStart, setYearStart] = useState(initial?.yearStart?.toString() ?? "");
@@ -118,8 +122,14 @@ function AssignmentForm({
   }, [make, vehicleRecords]);
   const availableYears = useMemo(() => {
     if (!make || !model) return [];
-    return [...new Set(vehicleRecords.filter((c) => c.Make === make && c.Model === model && c.Year > 0).map((c) => c.Year))].sort((a, b) => a - b);
-  }, [make, model, vehicleRecords]);
+    const years = new Set(vehicleRecords.filter((c) => c.Make === make && c.Model === model && c.Year > 0).map((c) => c.Year));
+    // Si la asignación usa años que no están en la base, se siguen mostrando en vez de quedar en blanco.
+    if (initial && initial.make === make && initial.model === model) {
+      years.add(initial.yearStart);
+      years.add(initial.yearEnd);
+    }
+    return [...years].sort((a, b) => a - b);
+  }, [make, model, vehicleRecords, initial]);
 
   const toggleProfile = (profileId: string) =>
     setSelectedProfileIds((prev) =>
@@ -147,8 +157,35 @@ function AssignmentForm({
     setVehicles(vehicles.filter((_, i) => i !== idx));
   };
 
-  const handleSubmit = () => {
-    if (vehicles.length === 0) {
+  /** Vehículo de los selectores, o un mensaje si está incompleto/incorrecto. */
+  const readSelectedVehicle = (): VehicleItem | string | null => {
+    const anyField = make || model || yearStart || yearEnd;
+    if (!anyField) return null;
+    if (!make || !model || !yearStart || !yearEnd) return "Completa marca, modelo, año inicio y año fin.";
+    const ys = parseInt(yearStart);
+    const ye = parseInt(yearEnd);
+    if (Number.isNaN(ys) || Number.isNaN(ye)) return "Los años no son válidos.";
+    if (ys > ye) return "El año de inicio no puede ser mayor que el año de fin.";
+    return { make, model, yearStart: ys, yearEnd: ye };
+  };
+
+  const handleSubmit = async () => {
+    if (submitting) return;
+
+    let targets: VehicleItem[];
+    const selected = readSelectedVehicle();
+    if (isEditing) {
+      if (selected === null) { toast.error("Elige el vehículo de la asignación."); return; }
+      if (typeof selected === "string") { toast.error(selected); return; }
+      targets = [selected];
+    } else {
+      if (typeof selected === "string") { toast.error(`${selected} O vacía los campos si ya añadiste todos los vehículos.`); return; }
+      // Un vehículo elegido pero sin pulsar «Añadir» también se incluye.
+      const pendingIsNew = selected && !vehicles.some((v) =>
+        v.make === selected.make && v.model === selected.model && v.yearStart === selected.yearStart && v.yearEnd === selected.yearEnd);
+      targets = pendingIsNew ? [...vehicles, selected] : vehicles;
+    }
+    if (targets.length === 0) {
       toast.error("Añade al menos un vehículo a la lista.");
       return;
     }
@@ -156,7 +193,7 @@ function AssignmentForm({
       toast.error("Selecciona al menos una serie (perfil).");
       return;
     }
-    
+
     // Conserva sólo las cerraduras de los perfiles que siguen seleccionados
     const cleanedLockSelections: LockSelectionsMap = {};
     selectedProfileIds.forEach((pid) => {
@@ -164,29 +201,40 @@ function AssignmentForm({
         cleanedLockSelections[pid] = lockSelections[pid]!;
       }
     });
+    const locks = Object.keys(cleanedLockSelections).length > 0 ? cleanedLockSelections : undefined;
 
-    // Generate assignments
-    const editingSingle = !!initial && vehicles.length === 1;
-    const newAssignments: ToolAssignment[] = vehicles.map((v, i) => ({
-      // Al editar se conservan los datos de otras herramientas (Immo, Alarmas)
-      // que puedan vivir en el mismo registro.
-      ...(editingSingle ? initial : {}),
-      id: editingSingle ? initial!.id : Date.now().toString() + i, // Preserve ID if editing single
-      make: v.make,
-      model: v.model,
-      yearStart: v.yearStart,
-      yearEnd: v.yearEnd,
-      tools: editingSingle ? Array.from(new Set([...(initial!.tools ?? []), "keycode"])) : ["keycode"],
-      workshops: [],
-      dateAdded: initial?.dateAdded ?? new Date().toLocaleDateString(),
-      keycodeProfileIds: selectedProfileIds,
-      lockSelections: Object.keys(cleanedLockSelections).length > 0 ? cleanedLockSelections : undefined,
-    }));
-
-    if (onBulkSubmit) {
-      onBulkSubmit(newAssignments);
-    } else if (onSubmit && newAssignments[0]) {
-      onSubmit(newAssignments[0]);
+    setSubmitting(true);
+    try {
+      if (isEditing) {
+        const v = targets[0];
+        await onSubmit?.({
+          // Se conservan los datos de otras herramientas (Immo, Alarmas) del mismo registro.
+          ...initial!,
+          make: v.make,
+          model: v.model,
+          yearStart: v.yearStart,
+          yearEnd: v.yearEnd,
+          tools: Array.from(new Set([...(initial!.tools ?? []), "keycode"])),
+          keycodeProfileIds: selectedProfileIds,
+          lockSelections: locks,
+        });
+      } else {
+        const now = Date.now();
+        await onBulkSubmit?.(targets.map((v, i) => ({
+          id: `${now}${i}`,
+          make: v.make,
+          model: v.model,
+          yearStart: v.yearStart,
+          yearEnd: v.yearEnd,
+          tools: ["keycode"],
+          workshops: [],
+          dateAdded: new Date().toLocaleDateString(),
+          keycodeProfileIds: selectedProfileIds,
+          lockSelections: locks,
+        })));
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -221,13 +269,19 @@ function AssignmentForm({
               .filter((y) => !yearStart || y >= parseInt(yearStart))
               .map((y) => <option key={y} value={y}>{y}</option>)}
           </select>
-          <Button variant="secondary" onClick={handleAddVehicle} className="w-full sm:w-auto h-9 px-3shrink-0">
-            <Plus className="w-4 h-4 mr-1" /> Añadir
-          </Button>
+          {!isEditing && (
+            <Button variant="secondary" onClick={handleAddVehicle} className="w-full sm:w-auto h-9 px-3 shrink-0">
+              <Plus className="w-4 h-4 mr-1" /> Añadir
+            </Button>
+          )}
         </div>
 
-        {/* Vehículos Seleccionados (Lista) */}
-        {vehicles.length > 0 && (
+        {isEditing && (
+          <p className="text-xs text-muted-foreground">Cambia marca, modelo o años aquí y pulsa «{submitLabel}».</p>
+        )}
+
+        {/* Vehículos Seleccionados (Lista) — solo al crear */}
+        {!isEditing && vehicles.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-2 p-3 bg-muted/50 rounded-lg border">
             {vehicles.map((v, i) => (
               <Badge key={i} variant="secondary" className="gap-1.5 px-2.5 py-1 text-xs">
@@ -447,11 +501,12 @@ function AssignmentForm({
 
       {/* Actions */}
       <div className="flex gap-2 pt-1">
-        <Button onClick={handleSubmit} className="flex-1">
-          <Settings className="w-4 h-4 mr-1.5" /> {submitLabel}
+        <Button onClick={handleSubmit} className="flex-1" disabled={submitting}>
+          {submitting ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Settings className="w-4 h-4 mr-1.5" />}
+          {submitting ? "Guardando…" : submitLabel}
         </Button>
         {onCancel && (
-          <Button variant="outline" onClick={onCancel}>
+          <Button variant="outline" onClick={onCancel} disabled={submitting}>
             <X className="w-4 h-4 mr-1" /> Cancelar
           </Button>
         )}
@@ -490,22 +545,37 @@ export function AssignmentManager({ assignments, onSave, onUpdate, onDelete, key
   const safePage = Math.min(page, totalPages - 1);
   const pageItems = filtered.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
 
-  const handleBulkSave = useCallback((items: ToolAssignment[]) => {
-    items.reverse().forEach(a => onSave(a));
-    toast.success(`${items.length} asignacion(es) creada(s).`);
-    setShowNewForm(false);
+  // Los avisos se muestran según la respuesta del servidor (antes salía «guardado» aunque fallara).
+  const handleBulkSave = useCallback(async (items: ToolAssignment[]) => {
+    const results = await Promise.all([...items].reverse().map(async (a) => (await onSave(a)) !== false));
+    const failed = results.filter((ok) => !ok).length;
+    if (failed === 0) {
+      toast.success(`${items.length} asignacion(es) creada(s).`);
+      setShowNewForm(false);
+      return true;
+    }
+    toast.error(failed === items.length
+      ? "No se pudo crear la asignación. Revisa tu conexión e inténtalo de nuevo."
+      : `Se crearon ${items.length - failed} de ${items.length}; ${failed} fallaron. Revisa la lista antes de reintentar.`);
+    return false;
   }, [onSave]);
 
-  const handleUpdate = useCallback((a: ToolAssignment) => {
-    onUpdate(a);
+  const handleUpdate = useCallback(async (a: ToolAssignment) => {
+    const ok = (await onUpdate(a)) !== false;
+    if (!ok) {
+      toast.error("No se pudieron guardar los cambios. Revisa tu conexión e inténtalo de nuevo.");
+      return false;
+    }
     toast.success("Asignación actualizada.");
     setEditingId(null);
+    return true;
   }, [onUpdate]);
 
-  const handleDelete = useCallback((id: string) => {
-    onDelete(id);
-    toast.success("Asignación eliminada.");
+  const handleDelete = useCallback(async (id: string) => {
     setConfirmDeleteId(null);
+    const ok = (await onDelete(id)) !== false;
+    if (ok) toast.success("Asignación eliminada.");
+    else toast.error("No se pudo eliminar la asignación. Revisa tu conexión.");
   }, [onDelete]);
 
   const selectClass =

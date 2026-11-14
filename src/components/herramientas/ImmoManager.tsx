@@ -642,9 +642,9 @@ type DetailMap = Record<string, Omit<ImmoAssignmentDetail, "profileId">>;
 interface ImmoAssignmentManagerProps {
   immoProfiles: ImmoProfile[];
   assignments: ToolAssignment[];
-  onSave: (a: ToolAssignment) => void;
-  onUpdate: (a: ToolAssignment) => void;
-  onDelete: (id: string) => void;
+  onSave: (a: ToolAssignment) => Promise<boolean> | void;
+  onUpdate: (a: ToolAssignment) => Promise<boolean> | void;
+  onDelete: (id: string) => Promise<boolean> | void;
   vehicleDb: VehicleDbRef;
   catalog: ImmoCatalogItem[];
 }
@@ -703,12 +703,14 @@ export function ImmoAssignmentManager({
     setSelectedIds([]); setDetailMap({}); setExpandedProfileId(null); setEditingId(null);
   };
 
-  const confirmDeleteAssignment = () => {
+  const confirmDeleteAssignment = async () => {
     if (!deleteAssignmentId) return;
-    onDelete(deleteAssignmentId);
-    toast.success("Asignación eliminada.");
-    if (editingId === deleteAssignmentId) resetForm();
+    const id = deleteAssignmentId;
     setDeleteAssignmentId(null);
+    const ok = (await onDelete(id)) !== false;
+    if (!ok) { toast.error("No se pudo eliminar la asignación. Revisa tu conexión."); return; }
+    toast.success("Asignación eliminada.");
+    if (editingId === id) resetForm();
   };
 
   const loadForEdit = (a: ToolAssignment) => {
@@ -738,8 +740,12 @@ export function ImmoAssignmentManager({
     setEditingId(a.id);
   };
 
-  const handleSubmit = () => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (submitting) return;
     if (!make || !model || !yearStart || !yearEnd) { toast.error("Selecciona marca, modelo y rango de años."); return; }
+    if (parseInt(yearStart) > parseInt(yearEnd)) { toast.error("El año de inicio no puede ser mayor que el año de fin."); return; }
     if (selectedIds.length === 0) { toast.error("Selecciona al menos un perfil Immo."); return; }
     const immoDetails: ImmoAssignmentDetail[] = selectedIds.map((id) => ({
       profileId: id,
@@ -759,8 +765,17 @@ export function ImmoAssignmentManager({
       keycodeProfileIds: orig?.keycodeProfileIds ?? [],
       immoDetails,
     };
-    if (editingId) { onUpdate(base); toast.success("Asignación actualizada."); }
-    else { onSave(base); toast.success("Asignación creada."); }
+    // El aviso depende de la respuesta del servidor; si falla, el formulario conserva los cambios.
+    setSubmitting(true);
+    const ok = (await (editingId ? onUpdate(base) : onSave(base))) !== false;
+    setSubmitting(false);
+    if (!ok) {
+      toast.error(editingId
+        ? "No se pudieron guardar los cambios. Revisa tu conexión e inténtalo de nuevo."
+        : "No se pudo crear la asignación. Revisa tu conexión e inténtalo de nuevo.");
+      return;
+    }
+    toast.success(editingId ? "Asignación actualizada." : "Asignación creada.");
     resetForm();
   };
 
@@ -922,10 +937,11 @@ export function ImmoAssignmentManager({
             )}
 
             <div className="flex gap-2 pt-1">
-              <Button onClick={handleSubmit} className="flex-1">
-                <Check className="w-4 h-4 mr-1.5" /> {editingId ? "Guardar Cambios" : "Crear Asignación"}
+              <Button onClick={handleSubmit} className="flex-1" disabled={submitting}>
+                {submitting ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Check className="w-4 h-4 mr-1.5" />}
+                {submitting ? "Guardando…" : editingId ? "Guardar Cambios" : "Crear Asignación"}
               </Button>
-              {editingId && <Button variant="outline" onClick={resetForm}><X className="w-4 h-4 mr-1" /> Cancelar</Button>}
+              {editingId && <Button variant="outline" onClick={resetForm} disabled={submitting}><X className="w-4 h-4 mr-1" /> Cancelar</Button>}
             </div>
           </CardContent>
         </Card>
