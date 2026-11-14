@@ -17,6 +17,11 @@ const ROUTE_TO_VIEW: Record<string, { view: SuperAdminHerramientasView; title: s
     title: "Immo Info",
     subtitle: "Perfiles de inmovilizadores, asignaciones y suministros",
   },
+  "/superadmin/asistente": {
+    view: "asistente",
+    title: "Asistente de asignación",
+    subtitle: "Asigna Keycode e Immo Info a un vehículo paso a paso",
+  },
   "/superadmin/alarmas": {
     view: "alarmas",
     title: "Auto Alarmas",

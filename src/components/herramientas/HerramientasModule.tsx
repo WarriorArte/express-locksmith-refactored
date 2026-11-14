@@ -1,9 +1,9 @@
 import { cn } from "@/lib/utils";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { m as motion } from "framer-motion";
 import { Wrench, Key, FileText, Cpu, Car, Truck, Bike, Plus, Loader2, Wand2 } from "lucide-react";
 import { AssignmentWizard } from "./assignment-wizard/AssignmentWizard";
-import { useIsDesktop } from "@/hooks/useIsDesktop";
+import { useHasRoomForPanel } from "@/hooks/useIsDesktop";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -42,7 +42,8 @@ const HERO_CHIP_LABELS: Record<VehicleCategory, string> = {
   Motocicleta: "Motocicleta",
 };
 
-export type SuperAdminHerramientasView = "keycode" | "immo" | "alarmas" | "vehiculos";
+/** `asistente`: página propia del asistente de asignación (funciona en cualquier ancho). */
+export type SuperAdminHerramientasView = "keycode" | "immo" | "alarmas" | "vehiculos" | "asistente";
 
 interface HerramientasModuleProps {
   superAdminView?: SuperAdminHerramientasView;
@@ -63,10 +64,22 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
   // El asistente móvil necesita todos los datos cargados para validar duplicados y no
   // pisar la base de vehículos con una lista aún vacía.
   const wizardDataLoading = assignmentsLoading || keycodeLoading || immoLoading || !vehicleDb.loaded;
-  const isDesktop = useIsDesktop();
+  // Panel de escritorio siempre que haya espacio (≥ md), aunque la app esté en vista móvil
+  // por escalado de pantalla; a pantalla completa solo en teléfonos.
+  const wizardAsPanel = useHasRoomForPanel();
   const [localSuperAdminView, setLocalSuperAdminView] = useState<SuperAdminHerramientasView>("keycode");
   const activeSuperAdminView = superAdminView ?? localSuperAdminView;
   const showInternalSuperAdminTabs = superAdminView === undefined;
+
+  // En la página del Asistente se abre solo al entrar, en cuanto los datos están listos
+  // (una vez por visita; al cerrarlo queda la portada con el botón para empezar otra).
+  const wizardAutoOpenedRef = useRef(false);
+  useEffect(() => {
+    if (activeSuperAdminView !== "asistente") { wizardAutoOpenedRef.current = false; return; }
+    if (!isSuperAdmin || wizardDataLoading || wizardAutoOpenedRef.current) return;
+    wizardAutoOpenedRef.current = true;
+    setWizardOpen(true);
+  }, [activeSuperAdminView, isSuperAdmin, wizardDataLoading]);
 
   // ── Vehicle selection state (workshop view) ────────────────────────────────
   const { isFeatureEnabled, isLoading: featuresLoading } = useWorkshopFeatures();
@@ -140,6 +153,45 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
       </Button>
     );
 
+    // Una sola instancia: si la ventana cambia de tamaño se conserva lo capturado.
+    const wizard = wizardOpen && !wizardDataLoading && (
+      <AssignmentWizard
+        layout={wizardAsPanel ? "desktop" : "mobile"}
+        onClose={() => setWizardOpen(false)}
+        keycodeProfiles={profiles}
+        immoProfiles={immoProfiles}
+        onCreateImmoProfile={addImmoProfile}
+        catalog={catalog}
+        vehicleDb={vehicleDb}
+        assignments={assignments}
+        onSaveAssignment={addAssignment}
+        onUpdateAssignment={updateAssignment}
+      />
+    );
+
+    // Página «Asistente» (barra lateral): misma portada en cualquier ancho de ventana.
+    if (activeSuperAdminView === "asistente") {
+      return (
+        <>
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center p-8 text-center">
+            <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-[28px] bg-secondary">
+              <Wand2 className="h-9 w-9 text-primary-text" />
+            </div>
+            <h2 className="mb-2 text-xl font-bold text-foreground">Nueva asignación guiada</h2>
+            <p className="mb-6 max-w-md text-muted-foreground">
+              Elige el vehículo (o agrégalo), las series de Keycode y los perfiles de Immo Info, revisa el resumen y guarda.
+              Puedes crear marcas, modelos, años y perfiles Immo sin salir del asistente.
+            </p>
+            <Button size="lg" className="rounded-full" onClick={() => setWizardOpen(true)} disabled={wizardDataLoading}>
+              {wizardDataLoading ? <Loader2 className="mr-1.5 h-5 w-5 animate-spin" /> : <Plus className="mr-1.5 h-5 w-5" />}
+              {wizardDataLoading ? "Cargando datos…" : "Nueva asignación"}
+            </Button>
+          </div>
+          {wizard}
+        </>
+      );
+    }
+
     return (
       <>
         {/* Fallback para Móvil */}
@@ -165,21 +217,7 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
             </>
           )}
         </div>
-        {/* Una sola instancia: si la ventana cambia de tamaño se conserva lo capturado. */}
-        {wizardOpen && !wizardDataLoading && (
-            <AssignmentWizard
-              layout={isDesktop ? "desktop" : "mobile"}
-              onClose={() => setWizardOpen(false)}
-              keycodeProfiles={profiles}
-              immoProfiles={immoProfiles}
-              onCreateImmoProfile={addImmoProfile}
-              catalog={catalog}
-              vehicleDb={vehicleDb}
-              assignments={assignments}
-              onSaveAssignment={addAssignment}
-              onUpdateAssignment={updateAssignment}
-            />
-        )}
+        {wizard}
 
         {/* Vista Escritorio */}
         <div className="hidden lg:flex flex-col flex-1 min-h-0 space-y-4">

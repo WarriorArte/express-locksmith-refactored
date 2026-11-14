@@ -20,6 +20,7 @@ import {
   LogOut,
   Cpu,
   Database,
+  Wand2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -51,6 +52,8 @@ const superAdminNavItems = [
   { icon: Building2, label: "Gestión de Talleres", path: "/superadmin" },
   { icon: Key, label: "Keycode", path: "/superadmin/keycode" },
   { icon: Cpu, label: "Immo Info", path: "/superadmin/immo" },
+  // Alta guiada de Keycode + Immo para un vehículo (funciona en cualquier tamaño de pantalla).
+  { icon: Wand2, label: "Asistente", path: "/superadmin/asistente" },
   { icon: Shield, label: "Auto Alarmas", path: "/superadmin/alarmas" },
   { icon: Database, label: "Vehículos", path: "/superadmin/vehiculos" },
 ];

@@ -128,6 +128,7 @@ const App = () => (
               <Route path="/superadmin" element={<SuperAdmin />} />
               <Route path="/superadmin/keycode" element={<SuperAdminHerramientas />} />
               <Route path="/superadmin/immo" element={<SuperAdminHerramientas />} />
+              <Route path="/superadmin/asistente" element={<SuperAdminHerramientas />} />
               <Route path="/superadmin/alarmas" element={<SuperAdminHerramientas />} />
               <Route path="/superadmin/vehiculos" element={<SuperAdminHerramientas />} />
             </Route>
