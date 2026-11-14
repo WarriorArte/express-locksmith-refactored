@@ -1,6 +1,7 @@
 /**
- * Paso «Vehículo» del asistente móvil. Flujo ordenado Tipo → Marca → Modelo → Años,
- * y en cada nivel se puede agregar lo que falte o corregir lo existente:
+ * Paso «Vehículo» del asistente. Flujo ordenado Marca → Modelo → Años (sin filtro de tipo:
+ * las marcas registradas ya lo tienen; se pide solo al crear una marca nueva). En cada nivel se
+ * puede agregar lo que falte o corregir lo existente:
  *
  *  - Nueva marca (con su tipo) → abre directamente «Nuevo modelo».
  *  - Editar marca: nombre y tipo. Renombrar actualiza también las asignaciones que la usan.
@@ -79,14 +80,11 @@ function SectionLabel({ index, children }: { index: number; children: React.Reac
 export function VehicleStep({
   value, onChange, editor, onEditorChange, onBusyChange, vehicleDb, assignments, onUpdateAssignment, error,
 }: VehicleStepProps) {
-  const [categoryFilter, setCategoryFilter] = useState<VehicleCategory | null>(null);
   const { make, model, yearStart, yearEnd } = value;
 
-  const makeOptions = useMemo(() => {
-    const list = categoryFilter ? vehicleDb.makes.filter((m) => vehicleDb.getMakeCategory(m) === categoryFilter) : vehicleDb.makes;
-    // La marca elegida siempre debe verse, aunque no coincida con el filtro.
-    return make && !list.includes(make) ? [make, ...list] : list;
-  }, [vehicleDb, categoryFilter, make]);
+  // Las marcas registradas ya tienen su tipo: aquí no se filtra por tipo. El tipo solo
+  // se pide al crear una marca nueva (y se puede corregir en «Editar marca»).
+  const makeOptions = vehicleDb.makes;
   const models = useMemo(() => (make ? vehicleDb.getModelsByMake(make).filter(Boolean) : []), [make, vehicleDb]);
   const years = useMemo(() => (make && model ? vehicleDb.getYearsByMakeModel(make, model).filter((y) => y > 0) : []), [make, model, vehicleDb]);
 
@@ -96,7 +94,6 @@ export function VehicleStep({
         key={editor}
         kind={editor}
         value={value}
-        defaultCategory={categoryFilter ?? "Vehiculo"}
         vehicleDb={vehicleDb}
         assignments={assignments}
         onUpdateAssignment={onUpdateAssignment}
@@ -110,22 +107,11 @@ export function VehicleStep({
   return (
     <div className="space-y-5">
       <section className="space-y-2">
-        <SectionLabel index={1}>Tipo</SectionLabel>
-        <ChipRow label="Filtrar marcas por tipo">
-          {VEHICLE_CATEGORIES.map((c) => (
-            <FilterChip key={c} selected={categoryFilter === c} onClick={() => setCategoryFilter(categoryFilter === c ? null : c)}>
-              {CATEGORY_LABELS[c]}
-            </FilterChip>
-          ))}
-        </ChipRow>
-      </section>
-
-      <section className="space-y-2">
-        <SectionLabel index={2}>Marca</SectionLabel>
+        <SectionLabel index={1}>Marca</SectionLabel>
         <NativeSelectField
           label={make ? `Marca · ${CATEGORY_LABELS[vehicleDb.getMakeCategory(make)]}` : "Marca"}
           value={make || null}
-          placeholder={makeOptions.length ? "Elige la marca" : "Sin marcas de este tipo"}
+          placeholder={makeOptions.length ? "Elige la marca" : "No hay marcas; agrega una"}
           options={makeOptions.map((m) => ({ value: m }))}
           onChange={(v) => onChange({ ...EMPTY_VEHICLE, make: v })}
           disabled={makeOptions.length === 0}
@@ -137,7 +123,7 @@ export function VehicleStep({
       </section>
 
       <section className="space-y-2">
-        <SectionLabel index={3}>Modelo</SectionLabel>
+        <SectionLabel index={2}>Modelo</SectionLabel>
         <NativeSelectField
           label="Modelo"
           value={model || null}
@@ -155,7 +141,7 @@ export function VehicleStep({
       </section>
 
       <section className="space-y-2">
-        <SectionLabel index={4}>Años</SectionLabel>
+        <SectionLabel index={3}>Años</SectionLabel>
         <div className="grid grid-cols-2 gap-2">
           <NativeSelectField
             label="Desde"
@@ -196,7 +182,6 @@ export function VehicleStep({
 interface EditorCardProps {
   kind: VehicleEditor;
   value: VehicleValue;
-  defaultCategory: VehicleCategory;
   vehicleDb: WizardVehicleDb;
   assignments: ToolAssignment[];
   onUpdateAssignment: (a: ToolAssignment) => Promise<boolean>;
@@ -206,11 +191,12 @@ interface EditorCardProps {
 }
 
 function VehicleEditorCard({
-  kind, value, defaultCategory, vehicleDb, assignments, onUpdateAssignment, onBusyChange, onChange, onEditorChange,
+  kind, value, vehicleDb, assignments, onUpdateAssignment, onBusyChange, onChange, onEditorChange,
 }: EditorCardProps) {
   const { make, model } = value;
   const [name, setName] = useState(kind === "editMake" ? make : kind === "editModel" ? model : "");
-  const [category, setCategory] = useState<VehicleCategory>(kind === "editMake" ? vehicleDb.getMakeCategory(make) : defaultCategory);
+  // Marca nueva: sin tipo por defecto, para que se elija a conciencia.
+  const [category, setCategory] = useState<VehicleCategory | null>(kind === "editMake" ? vehicleDb.getMakeCategory(make) : null);
   const [ys, setYs] = useState("");
   const [ye, setYe] = useState("");
   const [showErrors, setShowErrors] = useState(false);
@@ -232,6 +218,8 @@ function VehicleEditorCard({
   const needsYears = kind === "newModel" || kind === "addYears";
   const nameError = needsName ? validateName(name, kind === "newMake" || kind === "editMake" ? "la marca" : "el modelo") : null;
   const yearsError = needsYears ? validateYearRange(ys, ye) : null;
+  const needsCategory = kind === "newMake" || kind === "editMake";
+  const categoryError = needsCategory && !category ? "Elige el tipo de vehículo de la marca." : null;
 
   const close = () => { if (!saving) onEditorChange(null); };
 
@@ -245,7 +233,7 @@ function VehicleEditorCard({
   const submit = async () => {
     if (saving) return;
     setShowErrors(true);
-    if (nameError || yearsError) { toast.error(nameError ?? yearsError!); return; }
+    if (nameError || categoryError || yearsError) { toast.error(nameError ?? categoryError ?? yearsError!); return; }
     const newName = clean(name);
     const range = needsYears ? { start: Number(ys), end: Number(ye) } : null;
 
@@ -258,7 +246,7 @@ function VehicleEditorCard({
           toast.info(`La marca «${existing}» ya existía; quedó seleccionada.`);
           return;
         }
-        vehicleDb.addMake(newName, category);
+        vehicleDb.addMake(newName, category!);
         onChange({ ...EMPTY_VEHICLE, make: newName });
         // Una marca sin modelos no sirve para asignar: se pasa directo a crear el primero.
         onEditorChange("newModel");
@@ -276,7 +264,7 @@ function VehicleEditorCard({
         if (!renamed && category === currentCategory) { onEditorChange(null); return; }
         setSaving(true); onBusyChange(true);
         if (renamed) vehicleDb.renameMake(make, newName);
-        if (category !== currentCategory) vehicleDb.setCategoryForMake(newName, category);
+        if (category && category !== currentCategory) vehicleDb.setCategoryForMake(newName, category);
         if (renamed) await updateAffected((a) => ({ ...a, make: newName }));
         setSaving(false); onBusyChange(false);
         onChange({ ...value, make: newName });
@@ -360,12 +348,15 @@ function VehicleEditorCard({
           </div>
         )}
 
-        {(kind === "newMake" || kind === "editMake") && (
-          <ChipRow label="Tipo de vehículo">
-            {VEHICLE_CATEGORIES.map((c) => (
-              <FilterChip key={c} onCard selected={category === c} onClick={() => setCategory(c)}>{CATEGORY_LABELS[c]}</FilterChip>
-            ))}
-          </ChipRow>
+        {needsCategory && (
+          <div className="space-y-1.5">
+            <ChipRow label="Tipo de vehículo">
+              {VEHICLE_CATEGORIES.map((c) => (
+                <FilterChip key={c} onCard selected={category === c} onClick={() => setCategory(c)}>{CATEGORY_LABELS[c]}</FilterChip>
+              ))}
+            </ChipRow>
+            {showErrors && categoryError && <FieldError>{categoryError}</FieldError>}
+          </div>
         )}
 
         {needsYears && (
