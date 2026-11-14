@@ -523,7 +523,7 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                             <Textarea
                               value={detail.transponderNotes ?? ""}
                               onChange={(e) => onChange("transponderNotes", e.target.value)}
-                              placeholder="Notas breves para el técnico…"
+                              placeholder="Notas entre corchetes: [nota para el técnico]"
                               rows={2}
                               className="text-sm resize-none"
                             />
@@ -564,7 +564,7 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                                  <Textarea
                                    value={detail.notasPincode ?? ""}
                                    onChange={(e) => onChange("notasPincode", e.target.value)}
-                                   placeholder="Observaciones sobre el PIN o su proceso de obtención"
+                                   placeholder="Notas entre corchetes: [observación sobre el PIN]"
                                    rows={2}
                                    className="resize-none text-sm"
                                  />
@@ -599,6 +599,9 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                           </div>
                           <div className="space-y-1">
                             <Label className="text-xs font-bold">Procedimiento de Programación</Label>
+                            <p className="text-xs text-muted-foreground">
+                              Pasos con «-» o «1.»; las notas entre corchetes: [nota para el técnico]
+                            </p>
                             <RichTextEditor
                               value={detail.procedimientoProgramacion}
                               onChange={(v) => onChange("procedimientoProgramacion", v)}
@@ -609,6 +612,9 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                           </div>
                           <div className="space-y-1">
                             <Label className="text-xs font-bold">Notas Generales</Label>
+                            <p className="text-xs text-muted-foreground">
+                              Escribe cada nota entre corchetes: [nota para el técnico]
+                            </p>
                             <RichTextEditor
                               value={detail.notasGenerales ?? ""}
                               onChange={(v) => onChange("notasGenerales", v)}

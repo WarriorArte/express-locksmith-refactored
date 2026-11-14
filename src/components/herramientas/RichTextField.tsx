@@ -1,11 +1,16 @@
 import { useRef } from "react";
-import { Bold, Italic, List } from "lucide-react";
+import { Bold, Brackets, Info, Italic, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 // ── Sintaxis soportada (mini-markdown, sin HTML) ────────────────────────────
 // **negrita**, *cursiva*, líneas que empiezan con "- " como viñetas.
+//
+// Criterio de notas (usuario, 2026-11-14): una nota se escribe entre corchetes,
+// [nota para el técnico], y se muestra como aviso aparte (NoteCallout). Queda
+// descartado el criterio anterior: "**título** descripción" con el párrafo
+// terminado en ":".
 
 type TextCommand = (text: string, start: number, end: number) => {
   value: string;
@@ -13,17 +18,19 @@ type TextCommand = (text: string, start: number, end: number) => {
   selectionEnd: number;
 };
 
-const wrapSelection: (marker: string, placeholder: string) => TextCommand =
-  (marker, placeholder) => (text, start, end) => {
+const wrapWith: (open: string, close: string, placeholder: string) => TextCommand =
+  (open, close, placeholder) => (text, start, end) => {
     const before = text.slice(0, start);
     const selected = text.slice(start, end) || placeholder;
     const after = text.slice(end);
     return {
-      value: `${before}${marker}${selected}${marker}${after}`,
-      selectionStart: before.length + marker.length,
-      selectionEnd: before.length + marker.length + selected.length,
+      value: `${before}${open}${selected}${close}${after}`,
+      selectionStart: before.length + open.length,
+      selectionEnd: before.length + open.length + selected.length,
     };
   };
+
+const wrapSelection = (marker: string, placeholder: string) => wrapWith(marker, marker, placeholder);
 
 const toggleBulletLines: TextCommand = (text, start, end) => {
   const lineStart = text.lastIndexOf("\n", start - 1) + 1;
@@ -49,6 +56,72 @@ const toggleBulletLines: TextCommand = (text, start, end) => {
     selectionEnd: lineStart + nextBlock.length,
   };
 };
+
+// ── Notas entre corchetes ────────────────────────────────────────────────────
+
+const NOTE_ONLY = /^\s*(?:[-*]|\d+[.)])?\s*\[(.+)\]\s*$/;
+const NOTE_OPEN = /^\s*(?:[-*]|\d+[.)])?\s*\[(.*)$/;
+const NOTE_CLOSE = /^(.*?)\]\s*$/;
+
+export type TextChunk = { kind: "note"; text: string } | { kind: "line"; text: string };
+
+/**
+ * Separa el texto en notas (corchetes, pueden abarcar varias líneas) y líneas
+ * normales. Es el criterio vigente para marcar una nota.
+ */
+export function splitBracketNotes(text: string): TextChunk[] {
+  const chunks: TextChunk[] = [];
+  let note: string[] | null = null;
+
+  for (const raw of text.split("\n")) {
+    const line = raw.trim();
+
+    if (note) {
+      const close = NOTE_CLOSE.exec(line);
+      if (close && close[1].trim()) {
+        note.push(close[1].trim());
+        chunks.push({ kind: "note", text: note.filter(Boolean).join(" ") });
+        note = null;
+      } else if (line) {
+        note.push(line);
+      }
+      continue;
+    }
+
+    if (!line) {
+      chunks.push({ kind: "line", text: "" });
+      continue;
+    }
+    const only = NOTE_ONLY.exec(line);
+    if (only) {
+      chunks.push({ kind: "note", text: only[1].trim() });
+      continue;
+    }
+    if (NOTE_OPEN.test(line)) {
+      note = [line.replace(NOTE_OPEN, (_m, inner: string) => inner.trim())];
+      continue;
+    }
+    chunks.push({ kind: "line", text: line });
+  }
+
+  if (note) chunks.push({ kind: "note", text: note.filter(Boolean).join(" ") });
+  return chunks;
+}
+
+/** Aviso M3: la nota escrita entre corchetes se muestra así, no como texto suelto. */
+export function NoteCallout({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <p
+      className={cn(
+        "flex gap-3 rounded-2xl bg-background/70 p-3.5 text-sm leading-relaxed text-muted-foreground",
+        className,
+      )}
+    >
+      <Info className="mt-0.5 h-[18px] w-[18px] shrink-0 text-primary" />
+      <span className="min-w-0 flex-1">{children}</span>
+    </p>
+  );
+}
 
 interface RichTextEditorProps {
   value: string;
@@ -76,6 +149,11 @@ export function RichTextEditor({ value, onChange, placeholder, rows = 4, classNa
     { icon: <Bold className="w-3.5 h-3.5" />, label: "Negrita", command: wrapSelection("**", "negrita") },
     { icon: <Italic className="w-3.5 h-3.5" />, label: "Cursiva", command: wrapSelection("*", "cursiva") },
     { icon: <List className="w-3.5 h-3.5" />, label: "Viñetas", command: toggleBulletLines },
+    {
+      icon: <Brackets className="w-3.5 h-3.5" />,
+      label: "Nota entre corchetes",
+      command: wrapWith("[", "]", "nota para el técnico"),
+    },
   ];
 
   return (
@@ -111,7 +189,7 @@ export function RichTextEditor({ value, onChange, placeholder, rows = 4, classNa
 // ── Renderizado de solo lectura ──────────────────────────────────────────────
 
 export function renderInline(line: string, keyPrefix: string): React.ReactNode[] {
-  const parts = line.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g).filter((p) => p !== "");
+  const parts = line.split(/(\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\])/g).filter((p) => p !== "");
   if (parts.length === 0) return [line];
   return parts.map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
@@ -119,6 +197,16 @@ export function renderInline(line: string, keyPrefix: string): React.ReactNode[]
     }
     if (part.startsWith("*") && part.endsWith("*") && part.length > 2) {
       return <em key={`${keyPrefix}-${i}`}>{part.slice(1, -1)}</em>;
+    }
+    if (part.startsWith("[") && part.endsWith("]") && part.length > 2) {
+      return (
+        <span
+          key={`${keyPrefix}-${i}`}
+          className="mx-0.5 inline-block rounded-md bg-foreground/10 px-1.5 py-0.5 font-medium text-foreground"
+        >
+          {part.slice(1, -1)}
+        </span>
+      );
     }
     return <span key={`${keyPrefix}-${i}`}>{part}</span>;
   });
@@ -130,7 +218,6 @@ interface FormattedTextProps {
 }
 
 export function FormattedText({ text, className }: FormattedTextProps) {
-  const lines = text.split("\n");
   const blocks: React.ReactNode[] = [];
   let bulletBuffer: string[] = [];
 
@@ -146,7 +233,15 @@ export function FormattedText({ text, className }: FormattedTextProps) {
     bulletBuffer = [];
   };
 
-  lines.forEach((line, idx) => {
+  splitBracketNotes(text).forEach((chunk, idx) => {
+    if (chunk.kind === "note") {
+      flushBullets(`bullets-${idx}`);
+      blocks.push(
+        <NoteCallout key={`note-${idx}`}>{renderInline(chunk.text, `note-${idx}`)}</NoteCallout>,
+      );
+      return;
+    }
+    const line = chunk.text;
     const bulletMatch = /^-\s+(.*)/.exec(line);
     if (bulletMatch) {
       bulletBuffer.push(bulletMatch[1]);

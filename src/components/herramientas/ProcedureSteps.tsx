@@ -1,7 +1,11 @@
 /* eslint-disable react-refresh/only-export-components */
-import { Info } from "lucide-react";
 import { MaterialShape } from "@/design-system/shapes/MaterialShape";
-import { FormattedText, renderInline } from "@/components/herramientas/RichTextField";
+import {
+  FormattedText,
+  NoteCallout,
+  renderInline,
+  splitBracketNotes,
+} from "@/components/herramientas/RichTextField";
 import { cn } from "@/lib/utils";
 
 /**
@@ -13,8 +17,9 @@ import { cn } from "@/lib/utils";
  *  - Cada línea "- texto" o "1. texto" es un paso.
  *  - "Título: cuerpo" o "**Título:** cuerpo" se separa en título + cuerpo
  *    si el título es corto (≤ 48 caracteres).
- *  - Si el PRIMER paso termina en ":" (p. ej. "El procedimiento puede variar
- *    según el equipo:"), se muestra como nota informativa, no como paso.
+ *  - Una línea entre corchetes — [texto] — es una nota: se muestra como aviso
+ *    con ícono de información. Criterio vigente (usuario, 2026-11-14); antes
+ *    se usaba el primer paso terminado en ":" y quedó descartado.
  *  - Las líneas sueltas se muestran como párrafos donde aparecen.
  */
 
@@ -26,7 +31,6 @@ type Block =
 type Step = { title?: string; body: string; raw: string };
 
 const STEP_LINE = /^\s*(?:-|\d+[.)])\s+(.*)$/;
-const plain = (s: string) => s.replace(/\*\*?/g, "").trim();
 
 function splitTitle(text: string): Step {
   const bold = /^\*\*(.+?)\*\*\s*:?\s*(.*)$/.exec(text);
@@ -43,8 +47,13 @@ export function parseProcedure(text: string): Block[] {
   const blocks: Block[] = [];
   let current: Step[] | null = null;
 
-  for (const raw of text.split("\n")) {
-    const line = raw.trimEnd();
+  for (const chunk of splitBracketNotes(text)) {
+    if (chunk.kind === "note") {
+      current = null;
+      blocks.push({ kind: "note", text: chunk.text });
+      continue;
+    }
+    const line = chunk.text;
     if (!line.trim()) continue;
     const step = STEP_LINE.exec(line);
     if (step) {
@@ -59,18 +68,6 @@ export function parseProcedure(text: string): Block[] {
     }
   }
 
-  // Primer paso que en realidad es un aviso ("…dependiendo del equipo:")
-  const first = blocks.find((b) => b.kind === "steps");
-  if (first && first.kind === "steps" && first.items.length >= 2) {
-    const lead = first.items[0];
-    if (plain(lead.raw).endsWith(":")) {
-      first.items.shift();
-      blocks.splice(blocks.indexOf(first), 0, {
-        kind: "note",
-        text: lead.raw.replace(/:\s*$/, "."),
-      });
-    }
-  }
   return blocks;
 }
 
@@ -90,15 +87,7 @@ export function ProcedureSteps({ text, className }: ProcedureStepsProps) {
     <div className={cn("space-y-4", className)}>
       {blocks.map((block, bi) => {
         if (block.kind === "note") {
-          return (
-            <p
-              key={bi}
-              className="flex gap-3 rounded-2xl bg-background/70 p-3.5 text-sm leading-relaxed text-muted-foreground"
-            >
-              <Info className="mt-0.5 h-[18px] w-[18px] shrink-0 text-primary" />
-              <span>{renderInline(block.text, `note-${bi}`)}</span>
-            </p>
-          );
+          return <NoteCallout key={bi}>{renderInline(block.text, `note-${bi}`)}</NoteCallout>;
         }
         if (block.kind === "paragraph") {
           return (

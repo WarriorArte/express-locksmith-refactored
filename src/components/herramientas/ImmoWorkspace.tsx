@@ -120,9 +120,13 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
                   <p className="text-2xl font-bold leading-tight tabular-nums text-foreground">{transponder}</p>
                 )}
                 {transponderNotes && (
-                  <p className={cn("whitespace-pre-wrap text-[15px] leading-relaxed text-muted-foreground", transponder && "mt-2")}>
-                    {transponderNotes}
-                  </p>
+                  <FormattedText
+                    text={transponderNotes}
+                    className={cn(
+                      "space-y-1 text-[15px] leading-relaxed text-muted-foreground",
+                      transponder && "mt-2",
+                    )}
+                  />
                 )}
                 {generadoCon.length > 0 && (
                   <div className={transponder || transponderNotes ? "mt-5" : undefined}>
@@ -151,13 +155,16 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
               {formaObtencionPincode && (
                 <div>
                   <SubHeading className="font-bold">Cómo obtenerlo:</SubHeading>
-                  <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">{formaObtencionPincode}</p>
+                  <FormattedText
+                    text={formaObtencionPincode}
+                    className="space-y-1 text-[15px] leading-relaxed text-foreground"
+                  />
                 </div>
               )}
               {notasPincode && (
                 <div>
                   <SubHeading className="font-bold">Notas del pincode:</SubHeading>
-                  <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">{notasPincode}</p>
+                  <FormattedText text={notasPincode} className="space-y-1 text-[15px] leading-relaxed text-foreground" />
                 </div>
               )}
             </div>
