@@ -1,5 +1,8 @@
-import { useRef } from "react";
-import { Bold, Brackets, Info, Italic, List } from "lucide-react";
+import { useRef, useState } from "react";
+import { Bold, Brackets, Image as ImageIcon, ImagePlus, Info, Italic, List, Loader2 } from "lucide-react";
+import { useFileUpload } from "@/hooks/useFileUpload";
+import { useWorkshop } from "@/hooks/useWorkshop";
+import { resolveStorageUrl } from "@/lib/phpApi";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -56,6 +59,42 @@ const toggleBulletLines: TextCommand = (text, start, end) => {
     selectionEnd: lineStart + nextBlock.length,
   };
 };
+
+// ── Imágenes ─────────────────────────────────────────────────────────────────
+// ![](url) sola en su línea → imagen de párrafo (ancho completo).
+// ![](url) entre palabras → imagen pequeña en línea (altura de una línea de texto).
+// El alt va siempre vacío para no chocar con las notas entre corchetes.
+
+export const IMAGE_TOKEN = /!\[\]\(([^)\s]+)\)/;
+const IMAGE_LINE = /^\s*!\[\]\(([^)\s]+)\)\s*$/;
+
+export function blockImageUrl(line: string): string | null {
+  const m = IMAGE_LINE.exec(line);
+  return m ? m[1] : null;
+}
+
+export function imageMarkup(url: string, inline: boolean, text: string, start: number) {
+  const token = `![](${url})`;
+  if (inline) {
+    const before = text.slice(0, start);
+    const pad = before && !/\s$/.test(before) ? " " : "";
+    return `${pad}${token} `;
+  }
+  const before = text.slice(0, start);
+  const lead = before && !before.endsWith("\n") ? "\n" : "";
+  return `${lead}${token}\n`;
+}
+
+export function BlockImage({ url, className }: { url: string; className?: string }) {
+  return (
+    <img
+      src={resolveStorageUrl(url) ?? url}
+      alt=""
+      loading="lazy"
+      className={cn("my-1 block h-auto max-h-[420px] max-w-full rounded-2xl bg-muted object-contain", className)}
+    />
+  );
+}
 
 // ── Notas entre corchetes ────────────────────────────────────────────────────
 
@@ -129,10 +168,41 @@ interface RichTextEditorProps {
   placeholder?: string;
   rows?: number;
   className?: string;
+  /** Carpeta del servidor donde se suben las imágenes; sin ella no hay botones de imagen. */
+  imageFolder?: "immo";
 }
 
-export function RichTextEditor({ value, onChange, placeholder, rows = 4, className }: RichTextEditorProps) {
+export function RichTextEditor({ value, onChange, placeholder, rows = 4, className, imageFolder }: RichTextEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const insertInline = useRef(false);
+  const savedCursor = useRef(0);
+  const { currentWorkshop } = useWorkshop();
+  const { uploadFile } = useFileUpload({ folder: imageFolder ?? "immo", workshopCode: currentWorkshop?.code });
+  const [uploading, setUploading] = useState(false);
+
+  const pickImage = (inline: boolean) => {
+    insertInline.current = inline;
+    savedCursor.current = textareaRef.current?.selectionStart ?? value.length;
+    fileRef.current?.click();
+  };
+
+  const onFile = async (file: File | undefined) => {
+    if (!file) return;
+    setUploading(true);
+    const result = await uploadFile(file);
+    setUploading(false);
+    if (!result.success || !result.url) return;
+    const pos = Math.min(savedCursor.current, value.length);
+    const insert = imageMarkup(result.url, insertInline.current, value, pos);
+    const next = value.slice(0, pos) + insert + value.slice(pos);
+    onChange(next);
+    const el = textareaRef.current;
+    requestAnimationFrame(() => {
+      el?.focus();
+      el?.setSelectionRange(pos + insert.length, pos + insert.length);
+    });
+  };
 
   const runCommand = (command: TextCommand) => {
     const el = textareaRef.current;
@@ -173,6 +243,20 @@ export function RichTextEditor({ value, onChange, placeholder, rows = 4, classNa
             {icon}
           </Button>
         ))}
+        {imageFolder && (
+          <>
+            <Button type="button" variant="outline" size="icon" className="h-7 w-7" title="Imagen en párrafo"
+              aria-label="Imagen en párrafo" disabled={uploading} onClick={() => pickImage(false)}>
+              {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImagePlus className="w-3.5 h-3.5" />}
+            </Button>
+            <Button type="button" variant="outline" size="icon" className="h-7 w-7" title="Imagen pequeña entre palabras"
+              aria-label="Imagen pequeña entre palabras" disabled={uploading} onClick={() => pickImage(true)}>
+              <ImageIcon className="w-3 h-3" />
+            </Button>
+            <input ref={fileRef} type="file" accept="image/*" className="hidden"
+              onChange={(e) => { void onFile(e.target.files?.[0]); e.target.value = ""; }} />
+          </>
+        )}
       </div>
       <Textarea
         ref={textareaRef}
@@ -189,9 +273,21 @@ export function RichTextEditor({ value, onChange, placeholder, rows = 4, classNa
 // ── Renderizado de solo lectura ──────────────────────────────────────────────
 
 export function renderInline(line: string, keyPrefix: string): React.ReactNode[] {
-  const parts = line.split(/(\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\])/g).filter((p) => p !== "");
+  const parts = line.split(/(!\[\]\([^)\s]+\)|\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\])/g).filter((p) => p !== "");
   if (parts.length === 0) return [line];
   return parts.map((part, i) => {
+    const img = /^!\[\]\(([^)\s]+)\)$/.exec(part);
+    if (img) {
+      return (
+        <img
+          key={`${keyPrefix}-${i}`}
+          src={resolveStorageUrl(img[1]) ?? img[1]}
+          alt=""
+          loading="lazy"
+          className="mx-0.5 inline-block h-[1.6em] w-auto rounded-md align-middle object-contain"
+        />
+      );
+    }
     if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
       return <strong key={`${keyPrefix}-${i}`}>{part.slice(2, -2)}</strong>;
     }
@@ -248,7 +344,10 @@ export function FormattedText({ text, className }: FormattedTextProps) {
       return;
     }
     flushBullets(`bullets-${idx}`);
-    if (line.trim() === "") {
+    const blockUrl = blockImageUrl(line);
+    if (blockUrl) {
+      blocks.push(<BlockImage key={`img-${idx}`} url={blockUrl} />);
+    } else if (line.trim() === "") {
       blocks.push(<br key={`br-${idx}`} />);
     } else {
       blocks.push(<p key={`p-${idx}`}>{renderInline(line, `p-${idx}`)}</p>);

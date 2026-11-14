@@ -1,6 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
 import { MaterialShape } from "@/design-system/shapes/MaterialShape";
 import {
+  BlockImage,
+  blockImageUrl,
   FormattedText,
   NoteCallout,
   renderInline,
@@ -26,9 +28,10 @@ import { cn } from "@/lib/utils";
 type Block =
   | { kind: "note"; text: string }
   | { kind: "paragraph"; text: string }
+  | { kind: "image"; url: string }
   | { kind: "steps"; items: Step[] };
 
-type Step = { title?: string; body: string; raw: string };
+type Step = { title?: string; body: string; raw: string; images?: string[] };
 
 const STEP_LINE = /^\s*(?:-|\d+[.)])\s+(.*)$/;
 
@@ -55,7 +58,21 @@ export function parseProcedure(text: string): Block[] {
     }
     const line = chunk.text;
     if (!line.trim()) continue;
-    const step = STEP_LINE.exec(line);
+    const imgUrl = blockImageUrl(line);
+    if (imgUrl) {
+      // Una imagen de párrafo justo tras un paso queda dentro de ese paso.
+      const last = current?.[current.length - 1];
+      if (last) last.images = [...(last.images ?? []), imgUrl];
+      else blocks.push({ kind: "image", url: imgUrl });
+      continue;
+    }
+    const stepImg = STEP_LINE.exec(line);
+    const stepOnlyImg = stepImg ? blockImageUrl(stepImg[1]) : null;
+    if (stepOnlyImg && current?.length) {
+      current[current.length - 1].images = [...(current[current.length - 1].images ?? []), stepOnlyImg];
+      continue;
+    }
+    const step = stepImg;
     if (step) {
       if (!current) {
         current = [];
@@ -89,6 +106,7 @@ export function ProcedureSteps({ text, className }: ProcedureStepsProps) {
         if (block.kind === "note") {
           return <NoteCallout key={bi}>{renderInline(block.text, `note-${bi}`)}</NoteCallout>;
         }
+        if (block.kind === "image") return <BlockImage key={bi} url={block.url} />;
         if (block.kind === "paragraph") {
           return (
             <p key={bi} className="text-[15px] leading-relaxed text-foreground">
@@ -119,6 +137,7 @@ export function ProcedureSteps({ text, className }: ProcedureStepsProps) {
                     >
                       {renderInline(item.body, `b-${bi}-${ii}`)}
                     </p>
+                    {item.images?.map((url) => <BlockImage key={url} url={url} className="mt-2" />)}
                   </div>
                 </li>
               );

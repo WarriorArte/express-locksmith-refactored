@@ -600,12 +600,13 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                           <div className="space-y-1">
                             <Label className="text-xs font-bold">Procedimiento de Programación</Label>
                             <p className="text-xs text-muted-foreground">
-                              Pasos con «-» o «1.»; las notas entre corchetes: [nota para el técnico]
+                              Pasos con «-» o «1.»; notas entre corchetes: [nota]; imágenes con los botones de foto
                             </p>
                             <RichTextEditor
                               value={detail.procedimientoProgramacion}
                               onChange={(v) => onChange("procedimientoProgramacion", v)}
                               placeholder="Describe el procedimiento paso a paso…"
+                              imageFolder="immo"
                               rows={4}
                               className="text-sm"
                             />
@@ -619,6 +620,7 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                               value={detail.notasGenerales ?? ""}
                               onChange={(v) => onChange("notasGenerales", v)}
                               placeholder="Cualquier otra observación para el técnico…"
+                              imageFolder="immo"
                               rows={3}
                               className="text-sm"
                             />
