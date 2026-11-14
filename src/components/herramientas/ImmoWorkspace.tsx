@@ -47,7 +47,7 @@ interface ImmoWorkspaceProps {
 /**
  * Placement of the remote photo inside the star, as % of the star size, from
  * the photo's proportions (height / width). Never crops the sides:
- * - width stays between 54% and 64% of the star (tall photos narrower);
+ * - width stays between 54% and 70% of the star (tall photos narrower);
  * - the photo's bottom always sinks just past the star's lower edge (~102%),
  *   so it looks tucked into the shape;
  * - the top may stick out at most 4% above the star and starts at most 20%
@@ -55,7 +55,7 @@ interface ImmoWorkspaceProps {
  */
 export function immoPhotoLayout(ratio: number | null): { width: number; top: number } {
   const r = ratio && Number.isFinite(ratio) && ratio > 0 ? ratio : 1.4;
-  const width = Math.min(64, Math.max(54, 92 / r));
+  const width = Math.min(70, Math.max(54, 98 / r));
   const top = Math.min(20, Math.max(-4, 102 - width * r));
   return { width: Math.round(width * 10) / 10, top: Math.round(top * 10) / 10 };
 }
