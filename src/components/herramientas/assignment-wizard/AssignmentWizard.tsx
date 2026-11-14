@@ -329,6 +329,41 @@ export function AssignmentWizard({
   }, [assignments, vehicle, vehicleValid, validKcIds.length, validImIds.length, savedParts]);
   const hasOverlaps = overlaps.keycode.length + overlaps.immo.length > 0;
 
+  /** Lo que el vehículo ya tiene asignado por herramienta (sin importar lo elegido ahora). */
+  const existingForVehicle = useMemo(() => {
+    const empty = { keycode: [] as ToolAssignment[], immo: [] as ToolAssignment[] };
+    if (!vehicleValid) return empty;
+    const same = assignments.filter(
+      (a) => sameText(clean(a.make), vehicle.make) && sameText(clean(a.model), vehicle.model)
+        && a.yearStart <= vehicle.ye && a.yearEnd >= vehicle.ys,
+    );
+    return {
+      keycode: same.filter((a) => (a.keycodeProfileIds?.length ?? 0) > 0),
+      immo: same.filter((a) => (a.immoDetails?.length ?? 0) > 0),
+    };
+  }, [assignments, vehicle, vehicleValid]);
+
+  /**
+   * Omitir una herramienta: p. ej. el auto comparte el Keycode de otro pero su Immo es
+   * distinto (o al revés). Se quita lo elegido de esa parte y se avanza.
+   * No se pueden omitir las dos: al menos una debe guardarse.
+   */
+  const skipPart = (part: Part) => {
+    if (part === "keycode") {
+      if (kcIds.length) toast.info("Se quitaron las series de Keycode elegidas.");
+      setKcIds([]);
+      goTo(STEP_IMMO);
+      return;
+    }
+    if (validKcIds.length === 0) {
+      toast.error("No puedes omitir Keycode e Immo Info a la vez. Elige al menos una serie de Keycode o un perfil Immo.");
+      return;
+    }
+    if (imIds.length) toast.info("Se quitaron los perfiles Immo elegidos.");
+    setImIds([]);
+    goTo(STEP_SUMMARY);
+  };
+
   // ── Validación por paso ──
   const stepError = (s: number): string | null => {
     if (s === STEP_VEHICLE && vehicleEditor) return "Guarda o cancela la edición del vehículo antes de continuar.";
@@ -506,7 +541,48 @@ export function AssignmentWizard({
   };
 
   const footerBtn = cn("rounded-full", isDesktop ? "min-w-36" : "flex-1");
-  const stepSkipped = (i: number) => i === STEP_IMMO_DATA && step > STEP_IMMO && validImIds.length === 0;
+  /** Paso recorrido sin elegir nada (la herramienta se omitió). */
+  const stepSkipped = (i: number) =>
+    (i === STEP_KEYCODE && step > STEP_KEYCODE && validKcIds.length === 0)
+    || ((i === STEP_IMMO || i === STEP_IMMO_DATA) && step > STEP_IMMO && validImIds.length === 0);
+
+  /** Aviso al inicio de Keycode / Immo: qué tiene ya el vehículo y botón para omitir esta parte. */
+  const renderSkipCard = (part: Part) => {
+    const existing = existingForVehicle[part];
+    const selectedCount = part === "keycode" ? validKcIds.length : validImIds.length;
+    const blocked = part === "immo" && validKcIds.length === 0;
+    return (
+      <div className="flex flex-col gap-3 rounded-3xl bg-card p-4 shadow-sm sm:flex-row sm:items-center">
+        <div className="min-w-0 flex-1 space-y-1">
+          {existing.length > 0 ? (
+            <>
+              <p className="text-sm font-semibold text-foreground">Este vehículo ya tiene {PART_LABELS[part]}</p>
+              {existing.map((a) => <p key={a.id} className="text-xs tabular-nums text-muted-foreground">{describeAssignment(a, part)}</p>)}
+              <p className="text-xs text-muted-foreground">Si es el mismo, omite este paso y asigna solo lo que cambia.</p>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {part === "keycode"
+                ? "¿Este auto no necesita Keycode ahora? Puedes omitirlo y asignar solo Immo Info."
+                : blocked
+                  ? "Omitiste Keycode, así que aquí necesitas elegir al menos un perfil Immo."
+                  : "¿Solo cambia el Keycode? Puedes omitir Immo Info y guardar solo las series."}
+            </p>
+          )}
+        </div>
+        <Button
+          type="button"
+          variant="secondary"
+          className="shrink-0 rounded-full"
+          onClick={() => skipPart(part)}
+          disabled={blocked}
+        >
+          {selectedCount ? "Quitar selección y omitir" : `Omitir ${PART_LABELS[part]}`}
+          <ChevronRight className="ml-1 h-4 w-4" />
+        </Button>
+      </div>
+    );
+  };
 
   return (
     <div
@@ -595,7 +671,7 @@ export function AssignmentWizard({
                 className={cn(
                   "h-1.5 flex-1 rounded-full transition-colors",
                   i <= step ? "bg-primary" : "bg-muted",
-                  i === STEP_IMMO_DATA && step > STEP_IMMO && validImIds.length === 0 && "opacity-40",
+                  stepSkipped(i) && "opacity-40",
                 )}
               />
             ))}
@@ -631,6 +707,7 @@ export function AssignmentWizard({
           />
         ) : step === STEP_KEYCODE ? (
           <div className="space-y-3">
+            {renderSkipCard("keycode")}
             <p className="text-sm text-muted-foreground">
               Elige las series de Keycode (opcional). Las series nuevas se crean {isDesktop ? "en Keycode › Perfiles y Keycodes" : "desde una computadora"}.
             </p>
@@ -698,6 +775,7 @@ export function AssignmentWizard({
           </div>
         ) : step === STEP_IMMO ? (
           <div className="space-y-3">
+            {renderSkipCard("immo")}
             <p className="text-sm text-muted-foreground">Elige los remotos de Immo Info o crea uno nuevo si no existe.</p>
             <Button variant="secondary" className="w-full rounded-full" onClick={() => { setProfileDraft(emptyProfile()); setCreatingProfile(true); }}>
               <Plus className="mr-1.5 h-4 w-4" /> Crear perfil Immo
@@ -716,9 +794,6 @@ export function AssignmentWizard({
             {filteredIm.map((p) => (
               <SelectableRow key={p.id} selected={imIds.includes(p.id)} onClick={() => toggleIm(p.id)} title={profileTitle(p)} subtitle={[formatFrecuencia(p), p.bateria].filter(Boolean).join(" · ")} image={p.mainImage} />
             ))}
-            {validKcIds.length === 0 && validImIds.length === 0 && (
-              <p className="text-xs text-muted-foreground">Necesitas al menos una serie de Keycode o un perfil Immo para continuar.</p>
-            )}
           </div>
         ) : step === STEP_IMMO_DATA ? (
           <div className="space-y-6">
@@ -751,7 +826,7 @@ export function AssignmentWizard({
                 <Key className="h-4 w-4" /> Keycode
                 {savedParts.keycode && <span className="ml-auto flex items-center gap-1 text-success"><Check className="h-3.5 w-3.5" /> Guardado</span>}
               </p>
-              {validKcIds.length === 0 ? <p className="mt-1 text-sm text-muted-foreground">Sin series</p> : validKcIds.map((id) => {
+              {validKcIds.length === 0 ? <p className="mt-1 text-sm text-muted-foreground">Omitido · no se creará asignación de Keycode</p> : validKcIds.map((id) => {
                 const p = keycodeById.get(id)!;
                 const lk = LOCK_ORDER.filter((k) => locks[id]?.[k]);
                 return <p key={id} className="mt-1 text-sm font-medium text-foreground">IC {p.icCard} · {p.series}{lk.length ? <span className="text-muted-foreground"> · {lk.map((k) => LOCK_LABELS[k]).join(", ")}</span> : null}</p>;
@@ -762,7 +837,7 @@ export function AssignmentWizard({
                 <Cpu className="h-4 w-4" /> Immo Info
                 {savedParts.immo && <span className="ml-auto flex items-center gap-1 text-success"><Check className="h-3.5 w-3.5" /> Guardado</span>}
               </p>
-              {validImIds.length === 0 ? <p className="mt-1 text-sm text-muted-foreground">Sin perfiles</p> : validImIds.map((id) => {
+              {validImIds.length === 0 ? <p className="mt-1 text-sm text-muted-foreground">Omitido · no se creará asignación de Immo Info</p> : validImIds.map((id) => {
                 const p = immoById.get(id)!;
                 return <p key={id} className="mt-1 text-sm font-medium text-foreground">{profileTitle(p)}{details[id]?.transponder ? <span className="text-muted-foreground"> · {details[id].transponder}</span> : null}</p>;
               })}
@@ -818,7 +893,15 @@ export function AssignmentWizard({
                   {saving ? "Guardando…" : anyPartSaved ? "Reintentar" : "Guardar"}
                 </Button>
               ) : (
-                <Button className={footerBtn} onClick={next}>Siguiente <ChevronRight className="ml-1 h-4 w-4" /></Button>
+                <Button className={footerBtn} onClick={next}>
+                  {/* Sin selección, «Siguiente» equivale a omitir: se dice explícitamente. */}
+                  {step === STEP_KEYCODE && validKcIds.length === 0
+                    ? "Omitir Keycode"
+                    : step === STEP_IMMO && validImIds.length === 0 && validKcIds.length > 0
+                      ? "Omitir Immo Info"
+                      : "Siguiente"}
+                  <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
               )}
             </div>
           )}
