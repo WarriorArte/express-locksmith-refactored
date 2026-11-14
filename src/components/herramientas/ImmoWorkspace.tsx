@@ -68,11 +68,12 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
   const sinInmovilizador = !!detail?.sinInmovilizador;
   const notasSinInmovilizador = detail?.notasSinInmovilizador?.trim() ?? "";
   const hasGeneracion = generacionRemoto.length > 0;
-  const hasTransponder = !sinInmovilizador && (!!(transponder || transponderNotes) || generadoCon.length > 0);
+  const hasTransponder = !sinInmovilizador && (!!(transponder || transponderNotes) || generadoCon.length > 0 || equiposTransponder.length > 0);
   const hasPincode = !sinInmovilizador && (sinPincode || pincodeRequerido || !!formaObtencionPincode || !!notasPincode);
   const showEquiposTransponder = !sinInmovilizador && equiposTransponder.length > 0;
   const hasMethods = !!(detail?.programacionManual || detail?.programacionOBD);
-  const hasProgramacion = hasMethods || equiposRemoto.length > 0 || showEquiposTransponder || !!procedimiento;
+  // «Programación del remoto»: el equipo del transponder vive en la sección Transponder.
+  const hasProgramacion = hasMethods || equiposRemoto.length > 0 || !!procedimiento;
   const toolIcon = <Wrench className="h-6 w-6" />;
 
   return (
@@ -158,6 +159,12 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
                     <ImageCarousel items={generadoCon} fallbackIcon={toolIcon} />
                   </div>
                 )}
+                {showEquiposTransponder && (
+                  <div className={transponder || transponderNotes || generadoCon.length > 0 ? "mt-5" : undefined}>
+                    <SubHeading>Equipo para el transponder</SubHeading>
+                    <ImageCarousel items={equiposTransponder} fallbackIcon={toolIcon} />
+                  </div>
+                )}
               </DetailSection>
             )}
           </div>
@@ -208,32 +215,27 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
         )}
 
         {hasProgramacion && (
-          <DetailSection title="Programación">
+          <DetailSection title="Programación del remoto">
             <div className="space-y-5">
-              {hasMethods && (
-                <div className="flex flex-wrap gap-2">
-                  {detail?.programacionOBD && <TonalChip icon={<Plug className="h-4 w-4" />} label="Por OBD2" />}
-                  {detail?.programacionManual && (
-                    <TonalChip icon={<Hand className="h-4 w-4" />} label="Manual" tone="warning" />
-                  )}
-                </div>
-              )}
-              {showEquiposTransponder && (
-                <div>
-                  <SubHeading>Equipo para el transponder</SubHeading>
-                  <ImageCarousel items={equiposTransponder} fallbackIcon={toolIcon} />
-                </div>
-              )}
               {equiposRemoto.length > 0 && (
                 <div>
                   <SubHeading>Equipo para el remoto</SubHeading>
                   <ImageCarousel items={equiposRemoto} fallbackIcon={toolIcon} />
                 </div>
               )}
-              {procedimiento && (
+              {(procedimiento || hasMethods) && (
                 <div>
-                  <SubHeading>Pasos para programar el remoto</SubHeading>
-                  <ProcedureSteps text={procedimiento} />
+                  <SubHeading>{procedimiento ? "Pasos para programar el remoto" : "Método de programación"}</SubHeading>
+                  {/* El método (OBD2 / manual) describe estos pasos, por eso va justo encima de ellos. */}
+                  {hasMethods && (
+                    <div className={cn("flex flex-wrap gap-2", procedimiento && "mb-4")}>
+                      {detail?.programacionOBD && <TonalChip icon={<Plug className="h-4 w-4" />} label="Por OBD2" />}
+                      {detail?.programacionManual && (
+                        <TonalChip icon={<Hand className="h-4 w-4" />} label="Manual" tone="warning" />
+                      )}
+                    </div>
+                  )}
+                  {procedimiento && <ProcedureSteps text={procedimiento} />}
                 </div>
               )}
             </div>

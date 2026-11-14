@@ -669,33 +669,36 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                             <Label className="text-xs font-bold">Se genera con</Label>
                             <CatalogChipSelector catalogItems={transponderCatalog} selectedIds={detail.generadoConIds} onChange={(ids) => onChange("generadoConIds", ids)} />
                           </div>
+                          {/* Equipos transponder: se muestran en la sección Transponder del técnico */}
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">Equipos — Transponder</Label>
+                            <CatalogChipSelector catalogItems={equipoCatalog} selectedIds={detail.equiposTransponderIds} onChange={(ids) => onChange("equiposTransponderIds", ids)} />
+                          </div>
                           </>
                           )}
+                          {/* ── Programación del remoto ── */}
+                          <p className="border-t border-border/60 pt-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">Programación del remoto</p>
                           {/* Equipos remoto */}
                           <div className="space-y-1.5">
                             <Label className="text-xs font-bold">Equipos — Remoto</Label>
                             <CatalogChipSelector catalogItems={equipoCatalog} selectedIds={detail.equiposRemotoIds} onChange={(ids) => onChange("equiposRemotoIds", ids)} />
                           </div>
-                          {/* Equipos transponder */}
-                          {!sinInmovilizador && (
+                          {/* Método del remoto: se muestra junto a sus pasos */}
                           <div className="space-y-1.5">
-                            <Label className="text-xs font-bold">Equipos — Transponder</Label>
-                            <CatalogChipSelector catalogItems={equipoCatalog} selectedIds={detail.equiposTransponderIds} onChange={(ids) => onChange("equiposTransponderIds", ids)} />
-                          </div>
-                          )}
-                          {/* Programación */}
-                          <div className="flex items-center gap-6">
-                            <div className="flex items-center gap-2">
-                              <Checkbox id={`manual-${id}`} checked={detail.programacionManual} onCheckedChange={(v) => onChange("programacionManual", !!v)} />
-                              <Label htmlFor={`manual-${id}`} className="text-sm cursor-pointer">Programación manual</Label>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Checkbox id={`obd-${id}`} checked={detail.programacionOBD} onCheckedChange={(v) => onChange("programacionOBD", !!v)} />
-                              <Label htmlFor={`obd-${id}`} className="text-sm cursor-pointer">Programación OBD</Label>
+                            <Label className="text-xs font-bold">Método de programación del remoto</Label>
+                            <div className="flex items-center gap-6">
+                              <div className="flex items-center gap-2">
+                                <Checkbox id={`manual-${id}`} checked={detail.programacionManual} onCheckedChange={(v) => onChange("programacionManual", !!v)} />
+                                <Label htmlFor={`manual-${id}`} className="text-sm cursor-pointer">Manual</Label>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Checkbox id={`obd-${id}`} checked={detail.programacionOBD} onCheckedChange={(v) => onChange("programacionOBD", !!v)} />
+                                <Label htmlFor={`obd-${id}`} className="text-sm cursor-pointer">Por OBD2</Label>
+                              </div>
                             </div>
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs font-bold">Procedimiento de Programación</Label>
+                            <Label className="text-xs font-bold">Pasos para programar el remoto</Label>
                             <p className="text-xs text-muted-foreground">
                               Pasos con «-» o «1.»; notas entre corchetes: [nota]; imágenes con los botones de foto
                             </p>
