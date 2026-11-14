@@ -37,7 +37,7 @@ import type {
   ImmoAssignmentDetail, ToolAssignment,
 } from "@/types";
 import { IMMO_MODULACIONES } from "@/types";
-import { formatFrecuencia, getFrecuenciaMHz, getModulacion } from "@/lib/immo";
+import { SIN_INMOVILIZADOR_TEXTO, looksLikeNoImmobilizer, transponderLabel, formatFrecuencia, getFrecuenciaMHz, getModulacion } from "@/lib/immo";
 import { cn } from "@/lib/utils";
 import { uid } from "./assignment-wizard/wizardUtils";
 
@@ -60,6 +60,7 @@ export function emptyProfile(): Omit<ImmoProfile, "id" | "dateAdded"> {
 
 export function emptyDetail(): Omit<ImmoAssignmentDetail, "profileId"> {
   return {
+    sinInmovilizador: false,
     transponder: "",
     transponderNotes: "",
     pincodeRequerido: false,
@@ -510,13 +511,55 @@ export interface ImmoDetailFieldsProps {
 
 /** Campos de datos por vehículo de un perfil Immo (compartidos por escritorio y asistente móvil). */
 export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equipoCatalog }: ImmoDetailFieldsProps) {
+  const sinInmovilizador = !!detail.sinInmovilizador;
+  // «N/A» escrito a mano en Transponder: se sugiere usar la opción en su lugar.
+  const suggestNoImmo = !sinInmovilizador && looksLikeNoImmobilizer(detail.transponder);
+  const markNoImmo = (value: boolean) => {
+    onChange("sinInmovilizador", value);
+    if (value && looksLikeNoImmobilizer(detail.transponder)) onChange("transponder", "");
+  };
   return (
     <>
+                          {/* Sin inmovilizador: oculta transponder, pincode y equipos de transponder */}
+                          <div
+                            className={cn(
+                              "flex items-start gap-3 rounded-md border p-3",
+                              sinInmovilizador ? "border-warning/40 bg-warning/10" : "border-border/60 bg-muted/30",
+                            )}
+                          >
+                            <Checkbox
+                              id={`sin-immo-${id}`}
+                              className="mt-0.5"
+                              checked={sinInmovilizador}
+                              onCheckedChange={(v) => markNoImmo(!!v)}
+                            />
+                            <div className="min-w-0">
+                              <Label htmlFor={`sin-immo-${id}`} className="cursor-pointer text-sm font-semibold">
+                                {SIN_INMOVILIZADOR_TEXTO}
+                              </Label>
+                              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                {sinInmovilizador
+                                  ? "El técnico verá este aviso en lugar del transponder y el pincode. Lo que ya habías capturado se conserva por si lo desmarcas."
+                                  : "Márcalo si este vehículo no usa transponder."}
+                              </p>
+                            </div>
+                          </div>
+                          {!sinInmovilizador && (
+                          <>
                           <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2">
                           {/* Transponder */}
                           <div className="space-y-1">
                             <Label className="text-xs font-bold">Transponder</Label>
                             <Input value={detail.transponder} onChange={(e) => onChange("transponder", e.target.value)} placeholder="Philips ID46…" className="h-8 text-sm tabular-nums" />
+                            {suggestNoImmo && (
+                              <button
+                                type="button"
+                                onClick={() => markNoImmo(true)}
+                                className="text-left text-[11px] font-semibold text-primary-text underline-offset-2 hover:underline"
+                              >
+                                ¿«{detail.transponder.trim()}» significa que no tiene inmovilizador? Márcalo así
+                              </button>
+                            )}
                           </div>
                           <div className="space-y-1">
                             <Label className="text-xs font-bold">Notas del transponder</Label>
@@ -576,16 +619,20 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                             <Label className="text-xs font-bold">Se genera con</Label>
                             <CatalogChipSelector catalogItems={transponderCatalog} selectedIds={detail.generadoConIds} onChange={(ids) => onChange("generadoConIds", ids)} />
                           </div>
+                          </>
+                          )}
                           {/* Equipos remoto */}
                           <div className="space-y-1.5">
                             <Label className="text-xs font-bold">Equipos — Remoto</Label>
                             <CatalogChipSelector catalogItems={equipoCatalog} selectedIds={detail.equiposRemotoIds} onChange={(ids) => onChange("equiposRemotoIds", ids)} />
                           </div>
                           {/* Equipos transponder */}
+                          {!sinInmovilizador && (
                           <div className="space-y-1.5">
                             <Label className="text-xs font-bold">Equipos — Transponder</Label>
                             <CatalogChipSelector catalogItems={equipoCatalog} selectedIds={detail.equiposTransponderIds} onChange={(ids) => onChange("equiposTransponderIds", ids)} />
                           </div>
+                          )}
                           {/* Programación */}
                           <div className="flex items-center gap-6">
                             <div className="flex items-center gap-2">
@@ -721,6 +768,7 @@ export function ImmoAssignmentManager({
     const map: DetailMap = {};
     details.forEach((d) => {
       map[d.profileId] = {
+        sinInmovilizador: d.sinInmovilizador ?? false,
         transponder: d.transponder,
         transponderNotes: d.transponderNotes ?? "",
         pincodeRequerido: d.pincodeRequerido ?? false,
@@ -917,8 +965,8 @@ export function ImmoAssignmentManager({
                             <Cpu className="w-4 h-4 text-accent shrink-0" />
                           )}
                           <span className="text-sm font-semibold text-foreground truncate">{profileTitle(p)}</span>
-                          {detail.transponder && (
-                            <span className="text-xs text-muted-foreground tabular-nums">· {detail.transponder}</span>
+                          {transponderLabel(detail) && (
+                            <span className="text-xs text-muted-foreground tabular-nums">· {transponderLabel(detail)}</span>
                           )}
                         </div>
                         {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />}
@@ -991,8 +1039,8 @@ export function ImmoAssignmentManager({
                               <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[11px] font-medium bg-accent-light text-accent dark:bg-accent/30 dark:text-accent-foreground dark:border-accent/40">
                                 {profileTitle(p)}
                               </span>
-                              {d.transponder && (
-                                <span className="text-[11px] text-muted-foreground tabular-nums px-1.5">{d.transponder}</span>
+                              {transponderLabel(d) && (
+                                <span className="text-[11px] text-muted-foreground tabular-nums px-1.5">{transponderLabel(d)}</span>
                               )}
                             </div>
                           ) : null;

@@ -38,7 +38,7 @@ import { FilterChip } from "@/design-system/detail/DetailScreen";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { resolveStorageUrl } from "@/lib/phpApi";
-import { formatFrecuencia, getFrecuenciaMHz, getModulacion } from "@/lib/immo";
+import { formatFrecuencia, getFrecuenciaMHz, getModulacion, transponderLabel } from "@/lib/immo";
 import { cn } from "@/lib/utils";
 import type {
   ImmoAssignmentDetail, ImmoCatalogItem, ImmoProfile, KeycodeProfile,
@@ -839,7 +839,7 @@ export function AssignmentWizard({
               </p>
               {validImIds.length === 0 ? <p className="mt-1 text-sm text-muted-foreground">Omitido · no se creará asignación de Immo Info</p> : validImIds.map((id) => {
                 const p = immoById.get(id)!;
-                return <p key={id} className="mt-1 text-sm font-medium text-foreground">{profileTitle(p)}{details[id]?.transponder ? <span className="text-muted-foreground"> · {details[id].transponder}</span> : null}</p>;
+                return <p key={id} className="mt-1 text-sm font-medium text-foreground">{profileTitle(p)}{transponderLabel(details[id]) ? <span className="text-muted-foreground"> · {transponderLabel(details[id])}</span> : null}</p>;
               })}
             </div>
 

@@ -246,6 +246,12 @@ export interface ImmoProfile {
  */
 export interface ImmoAssignmentDetail {
   profileId: string;
+  /**
+   * true cuando el modelo no viene equipado con sistema inmovilizador: no hay transponder
+   * ni pincode que programar. Los datos de transponder se conservan (por si se desmarca)
+   * pero no se muestran al técnico.
+   */
+  sinInmovilizador?: boolean;
   transponder: string;
   /** Optional notes shown alongside the transponder details. */
   transponderNotes?: string;

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BatteryMedium, Check, Hand, KeyRound, Plug, Radio, StickyNote, Wrench, X } from "lucide-react";
+import { BatteryMedium, Check, Hand, KeyRound, Plug, Radio, ShieldOff, StickyNote, Wrench, X } from "lucide-react";
 import { ImageViewDialog } from "@/components/shared/ImageViewDialog";
 import { FormattedText } from "@/components/herramientas/RichTextField";
 import { ProcedureSteps } from "@/components/herramientas/ProcedureSteps";
@@ -15,7 +15,7 @@ import {
   TonalChip,
 } from "@/design-system/detail/DetailScreen";
 import { resolveStorageUrl } from "@/lib/phpApi";
-import { formatFrecuencia } from "@/lib/immo";
+import { SIN_INMOVILIZADOR_TEXTO, formatFrecuencia } from "@/lib/immo";
 import { cn } from "@/lib/utils";
 import type { ImmoProfile, ImmoAssignmentDetail, ImmoCatalogItem } from "@/types";
 
@@ -61,11 +61,15 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
   const procedimiento = detail?.procedimientoProgramacion?.trim() ?? "";
   const notasGenerales = detail?.notasGenerales?.trim() ?? "";
 
+  // Sin inmovilizador: se muestra el aviso y se ocultan transponder, pincode y su equipo
+  // (los datos pueden seguir guardados por si el administrador desmarca la opción).
+  const sinInmovilizador = !!detail?.sinInmovilizador;
   const hasGeneracion = generacionRemoto.length > 0;
-  const hasTransponder = !!(transponder || transponderNotes) || generadoCon.length > 0;
-  const hasPincode = pincodeRequerido || !!formaObtencionPincode || !!notasPincode;
+  const hasTransponder = !sinInmovilizador && (!!(transponder || transponderNotes) || generadoCon.length > 0);
+  const hasPincode = !sinInmovilizador && (pincodeRequerido || !!formaObtencionPincode || !!notasPincode);
+  const showEquiposTransponder = !sinInmovilizador && equiposTransponder.length > 0;
   const hasMethods = !!(detail?.programacionManual || detail?.programacionOBD);
-  const hasProgramacion = hasMethods || equiposRemoto.length > 0 || equiposTransponder.length > 0 || !!procedimiento;
+  const hasProgramacion = hasMethods || equiposRemoto.length > 0 || showEquiposTransponder || !!procedimiento;
   const toolIcon = <Wrench className="h-6 w-6" />;
 
   return (
@@ -100,8 +104,8 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
           </div>
         </DetailHero>
 
-        {(hasGeneracion || hasTransponder) && (
-          <div className={cn("grid gap-3", hasGeneracion && hasTransponder && "md:grid-cols-2")}>
+        {(hasGeneracion || hasTransponder || sinInmovilizador) && (
+          <div className={cn("grid gap-3", hasGeneracion && (hasTransponder || sinInmovilizador) && "md:grid-cols-2")}>
             {hasGeneracion && (
               <DetailSection title="Generación del remoto" className="min-w-0">
                 {generacionRemoto.length > 0 && (
@@ -111,6 +115,18 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
                     ))}
                   </div>
                 )}
+              </DetailSection>
+            )}
+
+            {sinInmovilizador && (
+              <DetailSection
+                title="Inmovilizador"
+                tone="warning"
+                icon={<ShieldOff className="h-5 w-5 text-warning" />}
+                className="min-w-0"
+              >
+                <p className="text-[15px] font-semibold leading-relaxed text-foreground">{SIN_INMOVILIZADOR_TEXTO}.</p>
+                <p className="mt-1 text-sm text-muted-foreground">No requiere transponder ni pincode.</p>
               </DetailSection>
             )}
 
@@ -182,7 +198,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
                   )}
                 </div>
               )}
-              {equiposTransponder.length > 0 && (
+              {showEquiposTransponder && (
                 <div>
                   <SubHeading>Equipo para el transponder</SubHeading>
                   <ImageCarousel items={equiposTransponder} fallbackIcon={toolIcon} />
