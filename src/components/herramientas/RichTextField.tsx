@@ -1,5 +1,7 @@
-import { useRef, useState } from "react";
-import { Bold, Brackets, Image as ImageIcon, ImagePlus, Info, Italic, List, Loader2 } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { Bold, Brackets, Image as ImageIcon, ImagePlus, Images, Info, Italic, List, Loader2, X } from "lucide-react";
+import { ImageGalleryDialog } from "@/components/shared/ImageGalleryDialog";
+import { IMAGE_SIZES, IMAGE_SIZE_CLASS, splitImageSize, withImageSize, type ImageSize } from "./richTextImages";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import { resolveStorageUrl } from "@/lib/phpApi";
@@ -61,12 +63,15 @@ const toggleBulletLines: TextCommand = (text, start, end) => {
 };
 
 // ── Imágenes ─────────────────────────────────────────────────────────────────
-// ![](url) sola en su línea → imagen de párrafo (ancho completo).
+// ![](url) sola en su línea → imagen de párrafo, siempre centrada.
 // ![](url) entre palabras → imagen pequeña en línea (altura de una línea de texto).
 // El alt va siempre vacío para no chocar con las notas entre corchetes.
+// Tamaño de la imagen de párrafo (x1…x4): ver richTextImages.ts.
 
 export const IMAGE_TOKEN = /!\[\]\(([^)\s]+)\)/;
 const IMAGE_LINE = /^\s*!\[\]\(([^)\s]+)\)\s*$/;
+/** Línea que solo contiene una imagen, opcionalmente como paso («- ![](…)», «2. ![](…)»). */
+const IMAGE_LINE_ANY = /^\s*(?:[-*]|\d+[.)])?\s*!\[\]\(([^)\s]+)\)\s*$/;
 
 export function blockImageUrl(line: string): string | null {
   const m = IMAGE_LINE.exec(line);
@@ -85,13 +90,19 @@ export function imageMarkup(url: string, inline: boolean, text: string, start: n
   return `${lead}${token}\n`;
 }
 
+/** Imagen de párrafo: siempre centrada; altura según su tamaño (o automática). */
 export function BlockImage({ url, className }: { url: string; className?: string }) {
+  const { url: src, size } = splitImageSize(url);
   return (
     <img
-      src={resolveStorageUrl(url) ?? url}
+      src={resolveStorageUrl(src) ?? src}
       alt=""
       loading="lazy"
-      className={cn("my-1 block h-auto max-h-[420px] max-w-full rounded-2xl bg-muted object-contain", className)}
+      className={cn(
+        "mx-auto my-1 block max-w-full rounded-2xl bg-muted object-contain",
+        size ? cn(IMAGE_SIZE_CLASS[size], "w-auto") : "h-auto max-h-[420px]",
+        className,
+      )}
     />
   );
 }
@@ -180,11 +191,34 @@ export function RichTextEditor({ value, onChange, placeholder, rows = 4, classNa
   const { currentWorkshop } = useWorkshop();
   const { uploadFile } = useFileUpload({ folder: imageFolder ?? "immo", workshopCode: currentWorkshop?.code });
   const [uploading, setUploading] = useState(false);
+  const [galleryOpen, setGalleryOpen] = useState(false);
+
+  const rememberCursor = () => {
+    savedCursor.current = textareaRef.current?.selectionStart ?? value.length;
+  };
 
   const pickImage = (inline: boolean) => {
     insertInline.current = inline;
-    savedCursor.current = textareaRef.current?.selectionStart ?? value.length;
+    rememberCursor();
     fileRef.current?.click();
+  };
+
+  /** Galería de la carpeta (para el SuperAdmin es misc/immo): se inserta como imagen de párrafo. */
+  const openGallery = () => {
+    insertInline.current = false;
+    rememberCursor();
+    setGalleryOpen(true);
+  };
+
+  const insertImage = (url: string) => {
+    const pos = Math.min(savedCursor.current, value.length);
+    const insert = imageMarkup(url, insertInline.current, value, pos);
+    onChange(value.slice(0, pos) + insert + value.slice(pos));
+    const el = textareaRef.current;
+    requestAnimationFrame(() => {
+      el?.focus();
+      el?.setSelectionRange(pos + insert.length, pos + insert.length);
+    });
   };
 
   const onFile = async (file: File | undefined) => {
@@ -193,15 +227,29 @@ export function RichTextEditor({ value, onChange, placeholder, rows = 4, classNa
     const result = await uploadFile(file);
     setUploading(false);
     if (!result.success || !result.url) return;
-    const pos = Math.min(savedCursor.current, value.length);
-    const insert = imageMarkup(result.url, insertInline.current, value, pos);
-    const next = value.slice(0, pos) + insert + value.slice(pos);
-    onChange(next);
-    const el = textareaRef.current;
-    requestAnimationFrame(() => {
-      el?.focus();
-      el?.setSelectionRange(pos + insert.length, pos + insert.length);
-    });
+    insertImage(result.url);
+  };
+
+  // Imágenes de párrafo presentes en el texto, para ajustar su tamaño o quitarlas.
+  const paragraphImages = useMemo(
+    () =>
+      value.split("\n").flatMap((line, lineIndex) => {
+        const m = IMAGE_LINE_ANY.exec(line);
+        return m ? [{ lineIndex, ...splitImageSize(m[1]) }] : [];
+      }),
+    [value],
+  );
+
+  const setImageSize = (lineIndex: number, size: ImageSize | null) => {
+    const lines = value.split("\n");
+    lines[lineIndex] = lines[lineIndex].replace(/!\[\]\(([^)\s]+)\)/, (_m, spec: string) => `![](${withImageSize(spec, size)})`);
+    onChange(lines.join("\n"));
+  };
+
+  const removeImageLine = (lineIndex: number) => {
+    const lines = value.split("\n");
+    lines.splice(lineIndex, 1);
+    onChange(lines.join("\n"));
   };
 
   const runCommand = (command: TextCommand) => {
@@ -253,6 +301,10 @@ export function RichTextEditor({ value, onChange, placeholder, rows = 4, classNa
               aria-label="Imagen pequeña entre palabras" disabled={uploading} onClick={() => pickImage(true)}>
               <ImageIcon className="w-3 h-3" />
             </Button>
+            <Button type="button" variant="outline" size="icon" className="h-7 w-7" title="Imagen de la galería (en párrafo)"
+              aria-label="Imagen de la galería" disabled={uploading} onClick={openGallery}>
+              <Images className="w-3.5 h-3.5" />
+            </Button>
             <input ref={fileRef} type="file" accept="image/*" className="hidden"
               onChange={(e) => { void onFile(e.target.files?.[0]); e.target.value = ""; }} />
           </>
@@ -266,6 +318,64 @@ export function RichTextEditor({ value, onChange, placeholder, rows = 4, classNa
         rows={rows}
         className={cn("resize-none", className)}
       />
+
+      {imageFolder && paragraphImages.length > 0 && (
+        <div className="space-y-2 rounded-md border border-border/60 bg-muted/30 p-2.5">
+          <p className="text-[11px] font-semibold text-muted-foreground">Imágenes de párrafo (se muestran centradas)</p>
+          {paragraphImages.map(({ lineIndex, url, size }) => (
+            <div key={`${lineIndex}-${url}`} className="flex items-center gap-2.5">
+              <img
+                src={resolveStorageUrl(url) ?? url}
+                alt=""
+                className="h-10 w-10 shrink-0 rounded-md bg-background object-contain"
+              />
+              <div role="radiogroup" aria-label="Tamaño de la imagen" className="flex flex-wrap gap-1">
+                {([null, ...IMAGE_SIZES] as (ImageSize | null)[]).map((s) => {
+                  const active = size === s;
+                  return (
+                    <button
+                      key={s ?? "auto"}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() => setImageSize(lineIndex, s)}
+                      title={s ? `Altura ${s}` : "Tamaño automático"}
+                      className={cn(
+                        "h-7 rounded-full px-2.5 text-xs font-bold tabular-nums transition-colors",
+                        active ? "bg-accent text-accent-foreground" : "bg-background text-muted-foreground hover:bg-secondary",
+                      )}
+                    >
+                      {s ?? "Auto"}
+                    </button>
+                  );
+                })}
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="ml-auto h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+                title="Quitar imagen del texto"
+                aria-label="Quitar imagen del texto"
+                onClick={() => removeImageLine(lineIndex)}
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {imageFolder && (
+        <ImageGalleryDialog
+          open={galleryOpen}
+          onOpenChange={setGalleryOpen}
+          folder={imageFolder}
+          workshopCode={currentWorkshop?.code}
+          onSelect={insertImage}
+          layout="list"
+        />
+      )}
     </div>
   );
 }
@@ -281,7 +391,8 @@ export function renderInline(line: string, keyPrefix: string): React.ReactNode[]
       return (
         <img
           key={`${keyPrefix}-${i}`}
-          src={resolveStorageUrl(img[1]) ?? img[1]}
+          // Las imágenes en línea ignoran el tamaño: siempre miden una línea de texto.
+          src={resolveStorageUrl(splitImageSize(img[1]).url) ?? splitImageSize(img[1]).url}
           alt=""
           loading="lazy"
           className="mx-0.5 inline-block h-[1.6em] w-auto rounded-md align-middle object-contain"
