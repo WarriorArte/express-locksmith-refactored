@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { immoPhotoWidth } from "@/components/herramientas/ImmoWorkspace";
+import { immoPhotoLayout } from "@/components/herramientas/ImmoWorkspace";
 
-describe("immoPhotoWidth", () => {
-  it("keeps tall photos at the narrow size that tucks into the star", () => {
-    expect(immoPhotoWidth(1.8)).toBe(128);
+describe("immoPhotoLayout", () => {
+  it("short photos sit lower so the bottom still tucks into the star", () => {
+    expect(immoPhotoLayout(1.2)).toEqual({ width: 64, top: 20 });
   });
-  it("grows short photos, capped below the full star width", () => {
-    expect(immoPhotoWidth(0.9)).toBe(148);
+  it("medium photos end just past the star's lower edge", () => {
+    expect(immoPhotoLayout(1.36)).toEqual({ width: 64, top: 15 });
   });
-  it("gives medium photos an intermediate size", () => {
-    expect(immoPhotoWidth(1.35)).toBe(137);
+  it("tall photos stay narrow and stick out at most 4% above", () => {
+    expect(immoPhotoLayout(2.2)).toEqual({ width: 54, top: -4 });
   });
 });

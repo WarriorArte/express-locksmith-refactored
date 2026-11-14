@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from "react";
+import { useState } from "react";
 import { BatteryMedium, Check, Hand, KeyRound, Plug, Radio, StickyNote, Wrench, X } from "lucide-react";
 import { ImageViewDialog } from "@/components/shared/ImageViewDialog";
 import { FormattedText } from "@/components/herramientas/RichTextField";
@@ -45,13 +45,19 @@ interface ImmoWorkspaceProps {
 }
 
 /**
- * Width of the remote photo inside the 208px star, based on its proportions
- * (height / width): tall photos stay narrow so their lower part tucks into the
- * shape; short photos grow a little so they don't look tiny. Never crops.
+ * Placement of the remote photo inside the star, as % of the star size, from
+ * the photo's proportions (height / width). Never crops the sides:
+ * - width stays between 54% and 64% of the star (tall photos narrower);
+ * - the photo's bottom always sinks just past the star's lower edge (~102%),
+ *   so it looks tucked into the shape;
+ * - the top may stick out at most 4% above the star and starts at most 20%
+ *   below its top edge.
  */
-export function immoPhotoWidth(ratio: number | null): number {
-  if (!ratio || !Number.isFinite(ratio)) return 136;
-  return Math.round(Math.min(148, Math.max(128, 185 / ratio)));
+export function immoPhotoLayout(ratio: number | null): { width: number; top: number } {
+  const r = ratio && Number.isFinite(ratio) && ratio > 0 ? ratio : 1.4;
+  const width = Math.min(64, Math.max(54, 92 / r));
+  const top = Math.min(20, Math.max(-4, 102 - width * r));
+  return { width: Math.round(width * 10) / 10, top: Math.round(top * 10) / 10 };
 }
 
 export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: ImmoWorkspaceProps) {
@@ -60,6 +66,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
   const headingMeta = [vehicle?.year, vehicle ? profile.marca : null].filter(Boolean).join(" · ");
   const [mainImageViewerOpen, setMainImageViewerOpen] = useState(false);
   const [mainImageRatio, setMainImageRatio] = useState<number | null>(null);
+  const photoLayout = immoPhotoLayout(mainImageRatio);
 
   const generacionRemoto = (profile.generacionRemoto ?? []).filter((f) => f.value.trim());
   const generadoCon = catalogItems(detail?.generadoConIds ?? [], catalog);
@@ -100,8 +107,8 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
                   className="absolute inset-0 h-full w-full text-background/60"
                 >
                   <span
-                    className="absolute -top-1 left-1/2 block w-[var(--immo-w)] -translate-x-1/2 md:w-[calc(var(--immo-w)*1.08)]"
-                    style={{ "--immo-w": `${immoPhotoWidth(mainImageRatio)}px` } as CSSProperties}
+                    className="absolute left-1/2 block -translate-x-1/2"
+                    style={{ width: `${photoLayout.width}%`, top: `${photoLayout.top}%` }}
                   >
                     <img
                       onLoad={(e) => {
