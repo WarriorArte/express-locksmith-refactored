@@ -135,16 +135,43 @@ export function SpecRow({ label, value }: { label: string; value: React.ReactNod
   );
 }
 
-/** Dato corto dentro de DetailHero (frecuencia, batería…). */
+/**
+ * Dato corto dentro de DetailHero (frecuencia, batería…).
+ * El valor nunca se corta ni desborda: si es largo (p. ej. frecuencia dual
+ * «312/314 MHz · FSK») la letra se encoge sola hasta caber en una sola línea.
+ */
 export function SpecTile({ icon, label, value }: { icon?: React.ReactNode; label: string; value?: string | null }) {
+  const valueRef = useRef<HTMLParagraphElement>(null);
+  const text = value?.trim() ? value : "—";
+
+  useEffect(() => {
+    const el = valueRef.current;
+    if (!el) return;
+    const fit = () => {
+      el.style.fontSize = "";
+      let size = parseFloat(getComputedStyle(el).fontSize) || 16;
+      while (size > 10 && el.scrollWidth > el.clientWidth) {
+        size -= 0.5;
+        el.style.fontSize = `${size}px`;
+      }
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [text]);
+
   return (
     <div className="rounded-2xl bg-card text-card-foreground px-3.5 py-3">
       <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
         {icon}
         {label}
       </div>
-      <p className="mt-1 truncate text-base font-semibold tabular-nums text-foreground">
-        {value?.trim() ? value : "—"}
+      <p
+        ref={valueRef}
+        className="mt-1 overflow-hidden whitespace-nowrap text-base font-semibold tabular-nums text-foreground"
+      >
+        {text}
       </p>
     </div>
   );
