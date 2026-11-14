@@ -17,6 +17,9 @@ import { cn } from "@/lib/utils";
  *
  * Reglas de interpretación (no cambia cómo se guarda el texto):
  *  - Cada línea "- texto" o "1. texto" es un paso.
+ *  - El número escrito se respeta tal cual ("3." muestra 3 aunque sea el quinto
+ *    paso, y puede repetirse: procedimientos con varias opciones). Un paso con
+ *    "-" continúa desde el número anterior.
  *  - "Título: cuerpo" o "**Título:** cuerpo" se separa en título + cuerpo
  *    si el título es corto (≤ 48 caracteres).
  *  - Una línea entre corchetes — [texto] — es una nota: se muestra como aviso
@@ -31,9 +34,17 @@ type Block =
   | { kind: "image"; url: string }
   | { kind: "steps"; items: Step[] };
 
-type Step = { title?: string; body: string; raw: string; images?: string[] };
+type Step = {
+  title?: string;
+  body: string;
+  raw: string;
+  images?: string[];
+  /** Número escrito en el texto ("3." → 3); ausente en los pasos con "-". */
+  number?: number;
+};
 
-const STEP_LINE = /^\s*(?:-|\d+[.)])\s+(.*)$/;
+/** Grupo 1: número escrito (si lo hay). Grupo 2: texto del paso. */
+const STEP_LINE = /^\s*(?:-|(\d+)[.)])\s+(.*)$/;
 
 function splitTitle(text: string): Step {
   const bold = /^\*\*(.+?)\*\*\s*:?\s*(.*)$/.exec(text);
@@ -67,7 +78,7 @@ export function parseProcedure(text: string): Block[] {
       continue;
     }
     const stepImg = STEP_LINE.exec(line);
-    const stepOnlyImg = stepImg ? blockImageUrl(stepImg[1]) : null;
+    const stepOnlyImg = stepImg ? blockImageUrl(stepImg[2]) : null;
     if (stepOnlyImg && current?.length) {
       current[current.length - 1].images = [...(current[current.length - 1].images ?? []), stepOnlyImg];
       continue;
@@ -78,7 +89,9 @@ export function parseProcedure(text: string): Block[] {
         current = [];
         blocks.push({ kind: "steps", items: current });
       }
-      current.push(splitTitle(step[1].trim()));
+      const item = splitTitle(step[2].trim());
+      if (step[1]) item.number = Number(step[1]);
+      current.push(item);
     } else {
       current = null;
       blocks.push({ kind: "paragraph", text: line.trim() });
@@ -117,7 +130,8 @@ export function ProcedureSteps({ text, className }: ProcedureStepsProps) {
         return (
           <ol key={bi} className="space-y-4">
             {block.items.map((item, ii) => {
-              stepNumber += 1;
+              // Número escrito = se muestra tal cual; con "-" se sigue contando.
+              stepNumber = item.number ?? stepNumber + 1;
               return (
                 <li key={ii} className="flex gap-3.5">
                   <MaterialShape name="cookie9" className="h-9 w-9 text-primary-light">
