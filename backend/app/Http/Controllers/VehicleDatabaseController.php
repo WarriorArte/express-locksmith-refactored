@@ -51,7 +51,12 @@ final class VehicleDatabaseController
             return ApiResponse::error('Campo results[] requerido');
         }
 
-        DB::transaction(function () use ($records): void {
+        // Red de seguridad: nunca se guardan años mayores al año en curso + 1 (p. ej.
+        // 22000 escrito por error). El 0 se permite: marca o modelo aun sin años.
+        $maxYear = (int) date('Y') + 1;
+        $skippedInvalidYear = 0;
+
+        DB::transaction(function () use ($records, $maxYear, &$skippedInvalidYear): void {
             VehicleDatabaseRecord::query()->delete();
 
             $rows = [];
@@ -61,6 +66,10 @@ final class VehicleDatabaseController
                 if ($make === '') continue;
                 $model = trim((string)($r['Model'] ?? ''));
                 $year = (int)($r['Year'] ?? 0);
+                if ($year < 0 || $year > $maxYear) {
+                    $skippedInvalidYear++;
+                    continue;
+                }
                 $key = strtolower($make.'|'.$model.'|'.$year);
                 if (isset($seen[$key])) continue;
                 $seen[$key] = true;
@@ -79,7 +88,10 @@ final class VehicleDatabaseController
             }
         });
 
-        return ApiResponse::success(['count' => VehicleDatabaseRecord::query()->count()], 'Base de vehiculos sincronizada');
+        return ApiResponse::success([
+            'count' => VehicleDatabaseRecord::query()->count(),
+            'skipped_invalid_year' => $skippedInvalidYear,
+        ], 'Base de vehiculos sincronizada');
     }
 
     private function truncate(Request $request): JsonResponse

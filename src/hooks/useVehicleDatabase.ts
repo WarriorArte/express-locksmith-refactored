@@ -2,10 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type CarRecord, type VehicleCategory } from "@/data/carDatabase";
 import { toast } from "sonner";
 import { phpApiRequest } from "@/lib/phpApi";
+import { isValidVehicleYear, maxVehicleYear, vehicleYearRangeError } from "@/lib/vehicleYears";
 
 export interface VehicleImportResult {
   imported: number;
   skippedExisting: number;
+  /** Filas descartadas por un año fuera de rango (ver src/lib/vehicleYears). */
+  skippedInvalidYear: number;
 }
 
 function normalize(records: CarRecord[]): CarRecord[] {
@@ -161,6 +164,8 @@ export function useVehicleDatabase({ readOnly = false }: { readOnly?: boolean } 
 
   const addModel = useCallback(
     (make: string, model: string, yearStart: number, yearEnd: number) => {
+      // Red de seguridad: un año mal escrito (p. ej. 22000) generaría miles de años.
+      if (vehicleYearRangeError(Math.min(yearStart, yearEnd), Math.max(yearStart, yearEnd))) return;
       patchRecords((current) => {
         const category = current.find((r) => r.Make === make)?.Category;
         const minYear = Math.min(yearStart, yearEnd);
@@ -195,6 +200,7 @@ export function useVehicleDatabase({ readOnly = false }: { readOnly?: boolean } 
 
   const addYear = useCallback(
     (make: string, model: string, year: number) => {
+      if (!isValidVehicleYear(year)) return;
       patchRecords((current) => {
         const category = current.find((r) => r.Make === make)?.Category;
         return [...current, { Make: make, Model: model, Year: year, Category: category }];
@@ -205,6 +211,7 @@ export function useVehicleDatabase({ readOnly = false }: { readOnly?: boolean } 
 
   const renameYear = useCallback(
     (make: string, model: string, oldYear: number, newYear: number) => {
+      if (!isValidVehicleYear(newYear)) return;
       patchRecords((current) =>
         current.map((r) => (r.Make === make && r.Model === model && r.Year === oldYear ? { ...r, Year: newYear } : r))
       );
@@ -234,7 +241,7 @@ export function useVehicleDatabase({ readOnly = false }: { readOnly?: boolean } 
 
   const importVehicleRecords = useCallback(
     (incoming: CarRecord[], category: VehicleCategory): VehicleImportResult => {
-      const importable = incoming
+      const candidates = incoming
         .map((record) => ({
           Make: String(record.Make ?? "").trim(),
           Model: String(record.Model ?? "").trim(),
@@ -242,6 +249,11 @@ export function useVehicleDatabase({ readOnly = false }: { readOnly?: boolean } 
           Category: category,
         }))
         .filter((record) => record.Make && record.Model && Number.isFinite(record.Year) && record.Year > 0);
+      // Al importar solo se aplica el tope superior (año en curso + 1): una lista
+      // puede traer autos antiguos legítimos, pero nunca años del futuro lejano.
+      const maxYear = maxVehicleYear();
+      const importable = candidates.filter((record) => record.Year <= maxYear);
+      const skippedInvalidYear = candidates.length - importable.length;
 
       let imported = 0;
       let skippedExisting = 0;
@@ -272,7 +284,7 @@ export function useVehicleDatabase({ readOnly = false }: { readOnly?: boolean } 
         setRecords(normalize(nextRecords));
       }
 
-      return { imported, skippedExisting };
+      return { imported, skippedExisting, skippedInvalidYear };
     },
     [records]
   );

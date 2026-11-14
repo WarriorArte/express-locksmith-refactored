@@ -1,4 +1,5 @@
 import { useDeferredValue, useMemo, useRef, useState } from "react";
+import { MIN_VEHICLE_YEAR, maxVehicleYear, vehicleYearError, vehicleYearRangeError } from "@/lib/vehicleYears";
 import {
   Database,
   Car,
@@ -260,6 +261,9 @@ export function VehicleDatabaseManager({
     setImportDialogOpen(false);
     const skipped = importPreview.existingRows.length + result.skippedExisting;
     toast.success(`${result.imported} registros nuevos importados. ${skipped} ya existían.`);
+    if (result.skippedInvalidYear > 0) {
+      toast.warning(`${result.skippedInvalidYear} registro(s) no se importaron por tener un año mayor a ${maxVehicleYear()}.`);
+    }
   };
 
   const handleAddMake = () => {
@@ -324,8 +328,14 @@ export function VehicleDatabaseManager({
     const y1 = Number(newModelYearStart);
     const y2 = Number(newModelYearEnd);
 
-    if (!selectedMake || !model || !Number.isFinite(y1) || !Number.isFinite(y2)) {
+    if (!selectedMake || !model || !newModelYearStart || !newModelYearEnd) {
       toast.error("Selecciona marca y completa modelo + rango de años.");
+      return;
+    }
+    // Un año mal escrito (p. ej. 22000) crearía miles de años de golpe.
+    const rangeError = vehicleYearRangeError(newModelYearStart, newModelYearEnd);
+    if (rangeError) {
+      toast.error(rangeError);
       return;
     }
 
@@ -369,8 +379,13 @@ export function VehicleDatabaseManager({
   const handleAddYear = () => {
     const year = Number(newYear);
 
-    if (!selectedMake || !selectedModel || !Number.isFinite(year)) {
+    if (!selectedMake || !selectedModel || !newYear) {
       toast.error("Selecciona marca/modelo e ingresa un año válido.");
+      return;
+    }
+    const yearError = vehicleYearError(newYear);
+    if (yearError) {
+      toast.error(yearError);
       return;
     }
 
@@ -384,8 +399,13 @@ export function VehicleDatabaseManager({
     const source = Number(selectedYear);
     const target = Number(renameYearTo);
 
-    if (!selectedMake || !selectedModel || !Number.isFinite(source) || !Number.isFinite(target)) {
+    if (!selectedMake || !selectedModel || !Number.isFinite(source) || !renameYearTo) {
       toast.error("Selecciona año origen e ingresa nuevo año.");
+      return;
+    }
+    const targetError = vehicleYearError(renameYearTo);
+    if (targetError) {
+      toast.error(targetError);
       return;
     }
 
@@ -759,8 +779,8 @@ export function VehicleDatabaseManager({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       <Input value={newModel} onChange={(e) => setNewModel(e.target.value)} placeholder="Modelo (ej. Yaris)" disabled={!selectedMake} className="text-xs h-8" />
                       <div className="flex gap-2">
-                        <Input type="number" value={newModelYearStart} onChange={(e) => setNewModelYearStart(e.target.value)} placeholder="Año inicio" disabled={!selectedMake} className="text-xs h-8 flex-1" />
-                        <Input type="number" value={newModelYearEnd} onChange={(e) => setNewModelYearEnd(e.target.value)} placeholder="Año fin" disabled={!selectedMake} className="text-xs h-8 flex-1" />
+                        <Input type="number" min={MIN_VEHICLE_YEAR} max={maxVehicleYear()} value={newModelYearStart} onChange={(e) => setNewModelYearStart(e.target.value)} placeholder="Año inicio" disabled={!selectedMake} className="text-xs h-8 flex-1" />
+                        <Input type="number" min={MIN_VEHICLE_YEAR} max={maxVehicleYear()} value={newModelYearEnd} onChange={(e) => setNewModelYearEnd(e.target.value)} placeholder="Año fin" disabled={!selectedMake} className="text-xs h-8 flex-1" />
                       </div>
                     </div>
                     <Button onClick={handleAddModel} size="sm" className="w-full h-8 text-xs font-medium" disabled={!selectedMake}>
@@ -812,7 +832,7 @@ export function VehicleDatabaseManager({
                       <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
                         2. Datos del nuevo Año
                       </Label>
-                      <Input type="number" value={newYear} onChange={(e) => setNewYear(e.target.value)} placeholder="Ej. 2024" disabled={!selectedMake || !selectedModel} className="text-xs h-8" />
+                      <Input type="number" min={MIN_VEHICLE_YEAR} max={maxVehicleYear()} value={newYear} onChange={(e) => setNewYear(e.target.value)} placeholder="Ej. 2024" disabled={!selectedMake || !selectedModel} className="text-xs h-8" />
                     </div>
                     <Button onClick={handleAddYear} size="sm" className="w-full h-8 text-xs font-medium" disabled={!selectedMake || !selectedModel}>
                       <Plus className="w-3.5 h-3.5 mr-1" /> Registrar Año
@@ -983,7 +1003,7 @@ export function VehicleDatabaseManager({
                         <span className="font-semibold text-foreground">{selectedYear || "Ninguno"}</span>
                       </Label>
                       <div className="flex gap-2">
-                        <Input type="number" value={renameYearTo} onChange={(e) => setRenameYearTo(e.target.value)} placeholder="Nuevo dígito..." disabled={!selectedMake || !selectedModel || !selectedYear} className="text-xs h-8 flex-1" />
+                        <Input type="number" min={MIN_VEHICLE_YEAR} max={maxVehicleYear()} value={renameYearTo} onChange={(e) => setRenameYearTo(e.target.value)} placeholder="Nuevo dígito..." disabled={!selectedMake || !selectedModel || !selectedYear} className="text-xs h-8 flex-1" />
                         <Button variant="outline" onClick={handleRenameYear} size="sm" disabled={!selectedMake || !selectedModel || !selectedYear} className="h-8 w-8 p-0 shrink-0"><Pencil className="w-3.5 h-3.5" /></Button>
                         <Button variant="destructive" onClick={handleDeleteYear} size="sm" disabled={!selectedMake || !selectedModel || !selectedYear} className="h-8 w-8 p-0 shrink-0"><Trash2 className="w-3.5 h-3.5" /></Button>
                       </div>

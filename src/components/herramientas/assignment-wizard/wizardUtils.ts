@@ -3,10 +3,8 @@
  * nombres, validación de años y el contrato mínimo de la base de vehículos.
  */
 import type { VehicleCategory } from "@/data/carDatabase";
+import { vehicleYearRangeError } from "@/lib/vehicleYears";
 
-export const MIN_YEAR = 1950;
-export const MAX_YEAR = new Date().getFullYear() + 2;
-export const MAX_YEAR_SPAN = 60;
 export const MAX_NAME_LENGTH = 60;
 
 export const CATEGORY_LABELS: Record<VehicleCategory, string> = { Vehiculo: "Auto", Camion: "Camión", Motocicleta: "Moto" };
@@ -28,16 +26,13 @@ export function validateName(value: string, what: "la marca" | "el modelo"): str
   return null;
 }
 
-/** Valida un rango de años escrito como texto. Devuelve el mensaje de error o null. */
+/**
+ * Valida un rango de años escrito como texto. Devuelve el mensaje de error o null.
+ * Límite común con la base de vehículos: hasta el año en curso + 1 (src/lib/vehicleYears).
+ */
 export function validateYearRange(start: string, end: string): string | null {
   if (!start || !end) return "Indica el año de inicio y el de fin.";
-  if (!/^\d{4}$/.test(start) || !/^\d{4}$/.test(end)) return "Los años deben tener 4 dígitos.";
-  const ys = Number(start);
-  const ye = Number(end);
-  if (ys < MIN_YEAR || ye > MAX_YEAR) return `Los años deben estar entre ${MIN_YEAR} y ${MAX_YEAR}.`;
-  if (ys > ye) return "El año de inicio no puede ser mayor que el año de fin.";
-  if (ye - ys > MAX_YEAR_SPAN) return `El rango no puede superar ${MAX_YEAR_SPAN} años.`;
-  return null;
+  return vehicleYearRangeError(start, end);
 }
 
 /** Agrupa años consecutivos para mostrarlos compactos: [2010,2011,2012,2015] → "2010–2012, 2015". */
