@@ -43,7 +43,7 @@
 │ ╰────────────────────╯                   │
 │ ╭─ card ──────────────────────────────╮  │
 │ │ Programación                        │  │
-│ │ [⏚ Por OBD] [✋ Manual]             │  │  TonalChip
+│ │ [⏚ Por OBD2] [✋ Manual]            │  │  TonalChip
 │ │ ① Conecta y alimenta                │  │  ProcedureSteps
 │ │   Conecta el equipo al puerto…      │  │
 │ ╰─────────────────────────────────────╯  │
@@ -167,7 +167,7 @@ Los carruseles de imágenes y perfiles mantienen el espacio interior de la secci
 - **Secciones:** `bg-card` + `shadow-sm` sobre el fondo de la pantalla.
 - **Dentro del hero:** `bg-card text-card-foreground` para campos y tiles; superficies opacas para contraste consistente en ambos temas.
 - **Advertencias y notas:** `bg-warning-light`. Errores o “no hacer”: `bg-destructive-light`.
-- **Chips:** `primary` para la opción principal (p. ej. “Por OBD”) y `warning` para la alternativa manual o de riesgo; `accent` solo si el chip indica selección.
+- **Chips:** `primary` para la opción principal (p. ej. “Por OBD2”) y `warning` para la alternativa manual o de riesgo; `accent` solo si el chip indica selección.
 - **Formas M3E** sobre el hero: `text-background/60`. Detrás de números: `text-primary-light`.
 
 ### 4.4 Formas M3E: cuándo sí

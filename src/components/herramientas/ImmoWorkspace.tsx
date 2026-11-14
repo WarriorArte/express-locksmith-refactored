@@ -169,7 +169,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
             <div className="space-y-5">
               {hasMethods && (
                 <div className="flex flex-wrap gap-2">
-                  {detail?.programacionOBD && <TonalChip icon={<Plug className="h-4 w-4" />} label="Por OBD" />}
+                  {detail?.programacionOBD && <TonalChip icon={<Plug className="h-4 w-4" />} label="Por OBD2" />}
                   {detail?.programacionManual && (
                     <TonalChip icon={<Hand className="h-4 w-4" />} label="Manual" tone="warning" />
                   )}
