@@ -274,11 +274,14 @@ export function CopyableValue({
   label,
   value,
   copiedMessage,
+  tone = "default",
 }: {
   label: string;
   value: string;
   /** Texto del aviso al copiar (por defecto "<label> copiado"). */
   copiedMessage?: string;
+  /** "onPrimary" = el campo va sobre la superficie de acción (azul), no sobre neutro. */
+  tone?: "default" | "onPrimary";
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);
@@ -318,18 +321,33 @@ export function CopyableValue({
       className="relative -mx-2 flex w-[calc(100%+1rem)] items-end gap-2 overflow-hidden rounded-2xl px-2 py-1 text-left"
     >
       <div className="min-w-0 flex-1">
-        <span className="block text-xs font-medium text-muted-foreground">{label}</span>
+        <span
+          className={cn(
+            "block text-xs font-medium",
+            tone === "onPrimary" ? "text-primary-foreground/75" : "text-muted-foreground",
+          )}
+        >
+          {label}
+        </span>
         <div ref={wrapRef} className="overflow-hidden">
           <span
             ref={textRef}
             style={{ transform: `scale(${fitScale})`, transformOrigin: "left center" }}
-            className="inline-block whitespace-nowrap text-[2rem] font-bold leading-tight tabular-nums text-foreground"
+            className={cn(
+              "inline-block whitespace-nowrap text-[2rem] font-bold leading-tight tabular-nums",
+              tone === "onPrimary" ? "text-primary-foreground" : "text-foreground",
+            )}
           >
             {value}
           </span>
         </div>
       </div>
-      <Copy className="mb-2 h-[18px] w-[18px] shrink-0 text-muted-foreground" />
+      <Copy
+        className={cn(
+          "mb-2 h-[18px] w-[18px] shrink-0",
+          tone === "onPrimary" ? "text-primary-foreground/75" : "text-muted-foreground",
+        )}
+      />
     </button>
   );
 }
