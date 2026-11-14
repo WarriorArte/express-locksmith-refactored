@@ -73,7 +73,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
     <>
       <DetailScreen title={heading} meta={headingMeta} onBack={onBack} backLabel="Volver a vehículos">
         {/* Llavero: foto sobre forma M3E + FCC ID + especificaciones */}
-        <DetailHero className="bg-primary text-primary-foreground">
+        <DetailHero>
           {profile.mainImage && (
             <button
               type="button"
@@ -86,7 +86,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
                   name="cookie9"
                   clipChildren="bottom"
                   bottomInsetShadow
-                  className="absolute inset-0 h-full w-full text-background"
+                  className="absolute inset-0 h-full w-full text-primary"
                 >
                   <span className="absolute -top-3 left-1/2 block h-[108%] w-[140px] -translate-x-1/2 md:w-[154px]">
                     <img
@@ -101,9 +101,9 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
           )}
           <div className="min-w-0 space-y-3">
             {profile.fccId ? (
-              <CopyableValue label="FCC ID" value={profile.fccId} tone="onPrimary" />
+              <CopyableValue label="FCC ID" value={profile.fccId} />
             ) : (
-              <p className="text-sm text-primary-foreground/75">Sin FCC ID registrado</p>
+              <p className="text-sm text-muted-foreground">Sin FCC ID registrado</p>
             )}
             <div className="grid grid-cols-2 gap-2">
               <SpecTile icon={<Radio className="h-3.5 w-3.5" />} label="Frecuencia" value={formatFrecuencia(profile)} />
