@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ModuleHeader } from "@/design-system/layout/ModuleHeader";
 import { FilterChip } from "@/design-system/detail/DetailScreen";
-import { useWorkshop } from "@/hooks/useWorkshop";
+import { useToolsUploadCode } from "@/hooks/useToolsUploadCode";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { resolveStorageUrl } from "@/lib/phpApi";
 import { formatFrecuencia, getFrecuenciaMHz, getModulacion, transponderLabel } from "@/lib/immo";
@@ -155,8 +155,8 @@ export function AssignmentWizard({
   const [profileDraft, setProfileDraft] = useState(emptyProfile());
   const [savingProfile, setSavingProfile] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
-  const { currentWorkshop } = useWorkshop();
-  const { uploadFile, isUploading } = useFileUpload({ folder: "immo", workshopCode: currentWorkshop?.code });
+  const toolsUploadCode = useToolsUploadCode();
+  const { uploadFile, isUploading } = useFileUpload({ folder: "immo", workshopCode: toolsUploadCode });
 
   // ── Guardado ──
   const [saving, setSaving] = useState(false);
@@ -691,7 +691,7 @@ export function AssignmentWizard({
             uploadFile={uploadFile}
             galleryOpen={galleryOpen}
             setGalleryOpen={setGalleryOpen}
-            workshopCode={currentWorkshop?.code}
+            workshopCode={toolsUploadCode}
           />
         ) : step === STEP_VEHICLE ? (
           <VehicleStep

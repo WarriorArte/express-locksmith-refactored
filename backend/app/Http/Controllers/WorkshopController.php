@@ -98,6 +98,10 @@ final class WorkshopController
             return ApiResponse::error('El campo code es requerido');
         }
 
+        if (WorkshopFolder::isReserved((string) $data['code'])) {
+            return ApiResponse::error('Ese codigo esta reservado por el sistema; elige otro');
+        }
+
         if (Workshop::query()->where('code', $data['code'])->exists()) {
             return ApiResponse::error('El codigo de taller ya existe');
         }
@@ -138,6 +142,10 @@ final class WorkshopController
             return ApiResponse::error('No hay campos para actualizar');
         }
 
+        if (array_key_exists('code', $updates) && WorkshopFolder::isReserved((string) $updates['code'])) {
+            return ApiResponse::error('Ese codigo esta reservado por el sistema; elige otro');
+        }
+
         $workshop->fill($updates)->save();
 
         return ApiResponse::success($workshop->refresh(), 'Taller actualizado');
@@ -172,9 +180,9 @@ final class WorkshopController
             Workshop::query()->whereKey($id)->delete();
         });
 
-        // 'misc' es el bucket generico de uploads sin workshop_code: nunca debe
-        // borrarse como si fuera la carpeta de un taller.
-        if ($workshopCode && $workshopCode !== 'misc') {
+        // 'misc' y 'superadmin' son carpetas del sistema: nunca deben borrarse
+        // como si fueran la carpeta de un taller.
+        if ($workshopCode && !WorkshopFolder::isReserved($workshopCode)) {
             $dir = public_path("uploads/{$workshopCode}");
             if (File::isDirectory($dir)) {
                 File::deleteDirectory($dir);

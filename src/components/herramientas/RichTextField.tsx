@@ -3,7 +3,7 @@ import { Bold, Brackets, Image as ImageIcon, ImagePlus, Images, Info, Italic, Li
 import { ImageGalleryDialog } from "@/components/shared/ImageGalleryDialog";
 import { IMAGE_SIZES, IMAGE_SIZE_CLASS, splitImageSize, withImageSize, type ImageSize } from "./richTextImages";
 import { useFileUpload } from "@/hooks/useFileUpload";
-import { useWorkshop } from "@/hooks/useWorkshop";
+import { useToolsUploadCode } from "@/hooks/useToolsUploadCode";
 import { resolveStorageUrl } from "@/lib/phpApi";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -188,8 +188,8 @@ export function RichTextEditor({ value, onChange, placeholder, rows = 4, classNa
   const fileRef = useRef<HTMLInputElement>(null);
   const insertInline = useRef(false);
   const savedCursor = useRef(0);
-  const { currentWorkshop } = useWorkshop();
-  const { uploadFile } = useFileUpload({ folder: imageFolder ?? "immo", workshopCode: currentWorkshop?.code });
+  const toolsUploadCode = useToolsUploadCode();
+  const { uploadFile } = useFileUpload({ folder: imageFolder ?? "immo", workshopCode: toolsUploadCode });
   const [uploading, setUploading] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
 
@@ -203,7 +203,7 @@ export function RichTextEditor({ value, onChange, placeholder, rows = 4, classNa
     fileRef.current?.click();
   };
 
-  /** Galería de la carpeta (para el SuperAdmin es misc/immo): se inserta como imagen de párrafo. */
+  /** Galería de la carpeta (para el SuperAdmin, su carpeta privada superadmin/immo): se inserta como imagen de párrafo. */
   const openGallery = () => {
     insertInline.current = false;
     rememberCursor();
@@ -371,7 +371,7 @@ export function RichTextEditor({ value, onChange, placeholder, rows = 4, classNa
           open={galleryOpen}
           onOpenChange={setGalleryOpen}
           folder={imageFolder}
-          workshopCode={currentWorkshop?.code}
+          workshopCode={toolsUploadCode}
           onSelect={insertImage}
           layout="list"
         />

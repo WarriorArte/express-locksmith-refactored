@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import { phpApiRequest } from "@/lib/phpApi";
+import { SuperadminFilesMigration } from "./SuperadminFilesMigration";
 
 const getErrorMessage = (error: unknown, fallback: string) =>
   error instanceof Error ? error.message : fallback;
@@ -286,6 +287,8 @@ export function MaintenanceManager() {
           TODOS los talleres del sistema — es independiente de los datos de un taller en particular.
         </p>
       </div>
+
+      <SuperadminFilesMigration />
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">

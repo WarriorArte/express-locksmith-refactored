@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 final class UploadController
@@ -63,6 +64,10 @@ final class UploadController
             return $this->updateMeta($request);
         }
 
+        if ($request->isMethod('POST') && ($request->query('action') === 'migrate-misc' || $request->input('action') === 'migrate-misc')) {
+            return $this->migrateMiscToSuperadmin($request);
+        }
+
         if ($request->isMethod('POST')) {
             return $this->store($request);
         }
@@ -86,7 +91,13 @@ final class UploadController
         if (count($segments) < 2) {
             return response('', 404);
         }
-        if ($resp = $this->authorizeWorkshop($request, $workshopCode, false)) {
+        $readsSuperadminBucket = WorkshopFolder::slug($workshopCode, '') === WorkshopFolder::SUPERADMIN;
+        if ($readsSuperadminBucket) {
+            // Solo lectura de un archivo concreto: los tecnicos ven estas imagenes
+            // dentro de Immo/Keycode. Listar, subir, renombrar o borrar sigue siendo
+            // exclusivo del SuperAdmin.
+            if (!$request->user()) return response('', 401);
+        } elseif ($resp = $this->authorizeWorkshop($request, $workshopCode, false)) {
             return response('', $resp->getStatusCode());
         }
 
@@ -106,7 +117,7 @@ final class UploadController
 
     private function index(Request $request): JsonResponse
     {
-        $workshopCode = $this->folder((string) $request->query('workshop_code', '')) ?: 'misc';
+        $workshopCode = $this->bucket($request, (string) $request->query('workshop_code', ''));
         if ($resp = $this->authorizeWorkshop($request, $workshopCode, false)) return $resp;
         $folder = $this->folder((string) $request->query('folder', 'misc'));
         $dir = public_path("uploads/{$workshopCode}/{$folder}");
@@ -176,7 +187,7 @@ final class UploadController
             return ApiResponse::error('Tipo de archivo no permitido: '.$mime);
         }
 
-        $workshopCode = $this->folder((string) $request->input('workshop_code', '')) ?: 'misc';
+        $workshopCode = $this->bucket($request, (string) $request->input('workshop_code', ''));
         if ($resp = $this->authorizeWorkshop($request, $workshopCode, false)) return $resp;
         $folder = $this->folder((string) $request->input('folder', 'misc'));
         $name = Str::random(32).'.'.self::ALLOWED_MIME[$mime];
@@ -196,7 +207,7 @@ final class UploadController
 
     private function destroy(Request $request): JsonResponse
     {
-        $workshopCode = $this->folder((string) $request->input('workshop_code', '')) ?: 'misc';
+        $workshopCode = $this->bucket($request, (string) $request->input('workshop_code', ''));
         if ($resp = $this->authorizeWorkshop($request, $workshopCode, false)) return $resp;
         $folder = $this->folder((string) $request->input('folder', 'misc'));
         $filename = basename((string) $request->input('filename', ''));
@@ -225,7 +236,7 @@ final class UploadController
 
     private function updateMeta(Request $request): JsonResponse
     {
-        $workshopCode = $this->folder((string) $request->input('workshop_code', '')) ?: 'misc';
+        $workshopCode = $this->bucket($request, (string) $request->input('workshop_code', ''));
         if ($resp = $this->authorizeWorkshop($request, $workshopCode, false)) return $resp;
         $folder = $this->folder((string) $request->input('folder', 'misc'));
         $filename = basename((string) $request->input('filename', ''));
@@ -339,7 +350,10 @@ final class UploadController
         }
 
         $workshopCode = strtolower(trim($workshopCode));
-        if ($workshopCode === '' || $workshopCode === 'misc') {
+        if ($workshopCode === WorkshopFolder::SUPERADMIN) {
+            return ApiResponse::error('Estos archivos son exclusivos del SuperAdmin', 403);
+        }
+        if ($workshopCode === '' || $workshopCode === WorkshopFolder::MISC) {
             return ApiResponse::error('workshop_code es requerido', 400);
         }
 
@@ -361,6 +375,132 @@ final class UploadController
     private function folder(string $value): string
     {
         return WorkshopFolder::slug($value);
+    }
+
+    /**
+     * Carpeta raiz de la peticion. Sin workshop_code, el SuperAdmin trabaja en su
+     * carpeta privada 'superadmin'; cualquier otro usuario cae en 'misc', que
+     * authorizeWorkshop rechaza (nadie mas puede subir sin taller).
+     */
+    private function bucket(Request $request, string $raw): string
+    {
+        $slug = WorkshopFolder::slug($raw, '');
+        if ($slug !== '') return $slug;
+        return $request->user()?->isSuperadmin() ? WorkshopFolder::SUPERADMIN : WorkshopFolder::MISC;
+    }
+
+    /** Tablas JSON de Herramientas cuyas imagenes pueden apuntar a uploads/misc/. */
+    private const TOOL_JSON_TABLES = ['immo_profiles', 'tool_assignments', 'keycode_profiles', 'alarma_profiles', 'immo_catalog_items'];
+
+    /**
+     * Mueve lo que el SuperAdmin subio a 'misc' hacia su carpeta privada 'superadmin'
+     * y reescribe los enlaces guardados. Con dry_run=1 solo cuenta.
+     *
+     * Orden pensado para no romper nada: 1) copiar archivos, 2) reescribir enlaces
+     * y metadatos en una transaccion, 3) borrar de 'misc' solo lo que quedo copiado
+     * igual. Es idempotente: si se interrumpe, volver a ejecutarla termina el trabajo.
+     */
+    private function migrateMiscToSuperadmin(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (!$user || !$user->isSuperadmin()) {
+            return ApiResponse::error('Solo el SuperAdmin puede mover estos archivos', 403);
+        }
+        $dryRun = filter_var($request->input('dry_run', $request->query('dry_run', false)), FILTER_VALIDATE_BOOLEAN);
+
+        $from = public_path('uploads/'.WorkshopFolder::MISC);
+        $to = public_path('uploads/'.WorkshopFolder::SUPERADMIN);
+        $files = is_dir($from) ? File::allFiles($from) : [];
+        $refs = $this->rewriteMiscRefs(false);
+
+        if ($dryRun) {
+            return ApiResponse::success([
+                'files' => count($files),
+                'references' => $refs,
+                'moved' => 0,
+                'dry_run' => true,
+            ], 'Revision completada');
+        }
+
+        $copied = 0;
+        foreach ($files as $file) {
+            $dest = $to.'/'.$file->getRelativePathname();
+            if (is_file($dest)) continue;
+            File::ensureDirectoryExists(dirname($dest), 0755, true);
+            if (!@copy($file->getPathname(), $dest)) {
+                return ApiResponse::error("No se pudo copiar {$file->getRelativePathname()}; no se cambio ningun enlace. Intentalo de nuevo.", 500);
+            }
+            $copied++;
+        }
+
+        $rewritten = 0;
+        DB::transaction(function () use (&$rewritten): void {
+            $rewritten = $this->rewriteMiscRefs(true);
+
+            foreach (DB::table('upload_file_meta')->where('workshop_code', WorkshopFolder::MISC)->get() as $meta) {
+                DB::table('upload_file_meta')->updateOrInsert(
+                    ['workshop_code' => WorkshopFolder::SUPERADMIN, 'folder' => $meta->folder, 'filename' => $meta->filename],
+                    ['title' => $meta->title, 'description' => $meta->description, 'updated_at' => now()],
+                );
+            }
+            DB::table('upload_file_meta')->where('workshop_code', WorkshopFolder::MISC)->delete();
+        });
+
+        $removed = 0;
+        foreach ($files as $file) {
+            $dest = $to.'/'.$file->getRelativePathname();
+            if (is_file($dest) && filesize($dest) === $file->getSize() && @unlink($file->getPathname())) {
+                $removed++;
+            }
+        }
+        if (is_dir($from)) {
+            foreach (array_reverse(File::directories($from)) as $dir) {
+                if (count(File::allFiles($dir)) === 0) File::deleteDirectory($dir);
+            }
+        }
+
+        return ApiResponse::success([
+            'files' => count($files),
+            'copied' => $copied,
+            'moved' => $removed,
+            'references' => $rewritten,
+            'dry_run' => false,
+        ], "Listo: {$removed} archivo(s) movidos a la carpeta del SuperAdmin y {$rewritten} registro(s) actualizados");
+    }
+
+    /** Cuenta (y con $apply reescribe) los registros que enlazan a /uploads/misc/. */
+    private function rewriteMiscRefs(bool $apply): int
+    {
+        $changed = 0;
+        foreach (self::TOOL_JSON_TABLES as $table) {
+            if (!Schema::hasTable($table) || !Schema::hasColumn($table, 'data')) continue;
+
+            DB::table($table)->select(['id', 'data'])->orderBy('id')->chunk(50, function ($rows) use ($table, $apply, &$changed): void {
+                foreach ($rows as $row) {
+                    $raw = (string) $row->data;
+                    // Laravel guarda el JSON con barras escapadas ("\/uploads\/misc\/").
+                    if (!str_contains($raw, 'uploads/misc/') && !str_contains($raw, 'uploads\\/misc\\/')) continue;
+                    $decoded = json_decode($raw, true);
+                    if (!is_array($decoded)) continue;
+                    $changed++;
+                    if ($apply) {
+                        DB::table($table)->where('id', $row->id)->update(['data' => json_encode($this->replaceMiscRefs($decoded))]);
+                    }
+                }
+            });
+        }
+        return $changed;
+    }
+
+    private function replaceMiscRefs(mixed $value): mixed
+    {
+        if (is_string($value)) {
+            return str_replace('/uploads/'.WorkshopFolder::MISC.'/', '/uploads/'.WorkshopFolder::SUPERADMIN.'/', $value);
+        }
+        if (is_array($value)) {
+            foreach ($value as $k => $v) $value[$k] = $this->replaceMiscRefs($v);
+        }
+        return $value;
     }
 
     private function uploadErrorMessage(int $error): string

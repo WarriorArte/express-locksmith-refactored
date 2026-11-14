@@ -26,7 +26,7 @@ import { buildDefaultDecoderConfig, applyDecoderPreset, mapVisualTipoToDecoder }
 import { useKeycodeVisualSettings } from "@/hooks/useKeycodeVisualSettings";
 import { useTheme } from "@/hooks/useTheme";
 import { useFileUpload } from "@/hooks/useFileUpload";
-import { useWorkshop } from "@/hooks/useWorkshop";
+import { useToolsUploadCode } from "@/hooks/useToolsUploadCode";
 import { phpApiDeleteFile, resolveStorageUrl } from "@/lib/phpApi";
 import { ImageGalleryDialog } from "@/components/shared/ImageGalleryDialog";
 import { KeycodeWorkspace } from "@/components/herramientas/KeycodeWorkspace";
@@ -138,8 +138,8 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
   const [testingSeries, setTestingSeries] = useState(false);
 
   // --- Imagen del perfil: sube al servidor (carpeta "keycode") en vez de guardar base64 ---
-  const { currentWorkshop } = useWorkshop();
-  const { uploadFile, isUploading: isUploadingImage } = useFileUpload({ folder: "keycode", workshopCode: currentWorkshop?.code });
+  const toolsUploadCode = useToolsUploadCode();
+  const { uploadFile, isUploading: isUploadingImage } = useFileUpload({ folder: "keycode", workshopCode: toolsUploadCode });
   const [galleryOpen, setGalleryOpen] = useState(false);
 
   // --- Ajustes visuales universales (colores/trazo, aplican a todas las series) ---
@@ -1851,7 +1851,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                     open={galleryOpen}
                     onOpenChange={setGalleryOpen}
                     folder="keycode"
-                    workshopCode={currentWorkshop?.code}
+                    workshopCode={toolsUploadCode}
                     onSelect={(url) => void replaceProfileImage(url)}
                     layout="list"
                   />

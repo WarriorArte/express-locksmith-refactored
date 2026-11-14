@@ -28,7 +28,7 @@ import {
 import { ImageGalleryDialog } from "@/components/shared/ImageGalleryDialog";
 import { RichTextEditor } from "@/components/herramientas/RichTextField";
 import { useFileUpload } from "@/hooks/useFileUpload";
-import { useWorkshop } from "@/hooks/useWorkshop";
+import { useToolsUploadCode } from "@/hooks/useToolsUploadCode";
 import { phpApiDeleteFile, resolveStorageUrl } from "@/lib/phpApi";
 import { ModuleHeader } from "@/design-system/layout/ModuleHeader";
 
@@ -349,8 +349,8 @@ export function ImmoManager({ profiles, onSave, onUpdate, onDelete, catalog: _ca
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   // --- Imagen del perfil: sube al servidor (carpeta "immo") en vez de guardar base64 ---
-  const { currentWorkshop } = useWorkshop();
-  const { uploadFile, isUploading: isUploadingImage } = useFileUpload({ folder: "immo", workshopCode: currentWorkshop?.code });
+  const toolsUploadCode = useToolsUploadCode();
+  const { uploadFile, isUploading: isUploadingImage } = useFileUpload({ folder: "immo", workshopCode: toolsUploadCode });
   const [galleryOpen, setGalleryOpen] = useState(false);
   // Cambia/elimina la imagen del perfil y borra el archivo del servidor si ya nadie más lo usa
   // (otras entradas pueden compartir la misma imagen al elegirla de la galería).
@@ -493,7 +493,7 @@ export function ImmoManager({ profiles, onSave, onUpdate, onDelete, catalog: _ca
           uploadFile={uploadFile}
           galleryOpen={galleryOpen}
           setGalleryOpen={setGalleryOpen}
-          workshopCode={currentWorkshop?.code}
+          workshopCode={toolsUploadCode}
         />
       </div>
     </div>

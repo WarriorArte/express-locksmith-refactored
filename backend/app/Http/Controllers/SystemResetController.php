@@ -88,9 +88,9 @@ final class SystemResetController
         });
 
         $workshopFolder = $workshopCode ? WorkshopFolder::slug($workshopCode) : null;
-        // 'misc' es el bucket generico de uploads sin workshop_code: nunca debe
-        // tratarse como si fuera la carpeta de un taller.
-        $counts['media_files'] = ($workshopFolder && $workshopFolder !== 'misc')
+        // 'misc' y 'superadmin' son carpetas del sistema: nunca deben tratarse
+        // como si fueran la carpeta de un taller.
+        $counts['media_files'] = ($workshopFolder && !WorkshopFolder::isReserved($workshopFolder))
             ? $this->wipeSelectedFolders($workshopFolder, $selectedSet)
             : 0;
 
