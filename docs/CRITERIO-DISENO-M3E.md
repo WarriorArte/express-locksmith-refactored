@@ -173,8 +173,8 @@ Los carruseles de imágenes y perfiles mantienen el espacio interior de la secci
 ### 4.4 Formas M3E: cuándo sí
 
 - **Forma preferida:** la estrella original `cookie9`, de nueve lóbulos suaves, para el FAB y las formas compartidas; no sustituirla por Gem ni por Sunny. Conservar dimensiones, contenido y animaciones. No afecta las burbujas redondas de notificación ni de creación.
-- Detrás de la **foto principal** del objeto (llavero, llave, módulo): `cookie9` con `spin`.
-- La foto del remoto se escala por **ancho**, no por alto. Sobresale libremente por arriba de la estrella, y abajo se recorta siguiendo su contorno, como parcialmente metida en una bolsa. Usar una sola foto, sin degradado, y el recorte inferior de `MaterialShape` sobre una capa del tamaño completo de la forma para que los contornos coincidan.
+- La **foto principal** del objeto (llavero, llave, módulo) se muestra **completa y sin forma detrás**: sin `cookie9`, sin degradado y sin recorte.
+- Su **altura es estándar** (240 px en móvil, 288 px en escritorio) y la define la foto de referencia `astra_2-2.webp` (215×396, proporción ≈1.84). El ancho sale de las proporciones de cada foto; los lados nunca se recortan: si una foto muy apaisada no cabe de ancho, se reduce hasta caber.
 - Detrás de **números de paso**: `cookie9`.
 - Detrás del **avatar** de un cliente (pendiente): `cookie6`.
 - **No** detrás de íconos decorativos ni en todas las tarjetas. Máximo dos usos por pantalla.

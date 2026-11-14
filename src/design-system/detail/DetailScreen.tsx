@@ -3,7 +3,7 @@
  * Criterio completo: docs/CRITERIO-DISENO-M3E.md
  *
  *   <DetailScreen title="Toyota Corolla" meta="2018 · Toyota" onBack={…}>
- *     <DetailHero>…foto en MaterialShape + CopyableValue + SpecTile…</DetailHero>
+ *     <DetailHero>…foto completa + CopyableValue + SpecTile…</DetailHero>
  *     <DetailSection title="Programación">…</DetailSection>
  *   </DetailScreen>
  */

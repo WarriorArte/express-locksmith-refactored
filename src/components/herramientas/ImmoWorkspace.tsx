@@ -3,7 +3,6 @@ import { BatteryMedium, Check, Hand, KeyRound, Plug, Radio, StickyNote, Wrench, 
 import { ImageViewDialog } from "@/components/shared/ImageViewDialog";
 import { FormattedText } from "@/components/herramientas/RichTextField";
 import { ProcedureSteps } from "@/components/herramientas/ProcedureSteps";
-import { MaterialShape } from "@/design-system/shapes/MaterialShape";
 import {
   CopyableValue,
   DetailHero,
@@ -44,29 +43,11 @@ interface ImmoWorkspaceProps {
   onBack: () => void;
 }
 
-/**
- * Placement of the remote photo inside the star, as % of the star size, from
- * the photo's proportions (height / width). Never crops the sides:
- * - width stays between 54% and 70% of the star (tall photos narrower);
- * - the photo's bottom always sinks just past the star's lower edge (~102%),
- *   so it looks tucked into the shape;
- * - the top may stick out at most 4% above the star and starts at most 20%
- *   below its top edge.
- */
-export function immoPhotoLayout(ratio: number | null): { width: number; top: number } {
-  const r = ratio && Number.isFinite(ratio) && ratio > 0 ? ratio : 1.4;
-  const width = Math.min(70, Math.max(54, 98 / r));
-  const top = Math.min(20, Math.max(-4, 102 - width * r));
-  return { width: Math.round(width * 10) / 10, top: Math.round(top * 10) / 10 };
-}
-
 export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: ImmoWorkspaceProps) {
   const title = profileTitle(profile);
   const heading = vehicle ? `${vehicle.make} ${vehicle.model}` : title;
   const headingMeta = [vehicle?.year, vehicle ? profile.marca : null].filter(Boolean).join(" · ");
   const [mainImageViewerOpen, setMainImageViewerOpen] = useState(false);
-  const [mainImageRatio, setMainImageRatio] = useState<number | null>(null);
-  const photoLayout = immoPhotoLayout(mainImageRatio);
 
   const generacionRemoto = (profile.generacionRemoto ?? []).filter((f) => f.value.trim());
   const generadoCon = catalogItems(detail?.generadoConIds ?? [], catalog);
@@ -90,38 +71,20 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
   return (
     <>
       <DetailScreen title={heading} meta={headingMeta} onBack={onBack} backLabel="Volver a vehículos">
-        {/* Llavero: foto sobre forma M3E + FCC ID + especificaciones */}
+        {/* Llavero: foto completa + FCC ID + especificaciones */}
         <DetailHero>
           {profile.mainImage && (
             <button
               type="button"
               onClick={() => setMainImageViewerOpen(true)}
               aria-label={`Ver ${title} ampliado`}
-              className="mx-auto mb-4 block outline-none md:mb-0"
+              className="mx-auto mb-4 block max-w-full outline-none md:mb-0"
             >
-              <span className="relative block h-52 w-52 md:h-56 md:w-56">
-                <MaterialShape
-                  name="cookie9"
-                  clipChildren="bottom"
-                  bottomInsetShadow
-                  className="absolute inset-0 h-full w-full text-background/60"
-                >
-                  <span
-                    className="absolute left-1/2 block -translate-x-1/2"
-                    style={{ width: `${photoLayout.width}%`, top: `${photoLayout.top}%` }}
-                  >
-                    <img
-                      onLoad={(e) => {
-                        const { naturalWidth, naturalHeight } = e.currentTarget;
-                        if (naturalWidth > 0) setMainImageRatio(naturalHeight / naturalWidth);
-                      }}
-                      src={resolveStorageUrl(profile.mainImage) ?? undefined}
-                      alt={title}
-                      className="block h-auto w-full drop-shadow-md"
-                    />
-                  </span>
-                </MaterialShape>
-              </span>
+              <img
+                src={resolveStorageUrl(profile.mainImage) ?? undefined}
+                alt={title}
+                className="mx-auto block h-60 w-auto max-w-full object-contain drop-shadow-md md:h-72"
+              />
             </button>
           )}
           <div className="min-w-0 space-y-3">
