@@ -125,12 +125,49 @@ export function SubHeading({ children, className }: { children: React.ReactNode;
   return <p className={cn("mb-2.5 text-sm font-medium text-muted-foreground", className)}>{children}</p>;
 }
 
-/** Fila etiqueta / valor sin divisores. Envolver varias en `<div className="-my-1.5">`. */
-export function SpecRow({ label, value }: { label: string; value: React.ReactNode }) {
+/**
+ * Fila etiqueta / valor sin divisores. Envolver varias en `<div className="-my-1.5">`.
+ * Con `copyable` el valor se copia con el ícono de copiar (mismo aviso que FCC ID).
+ */
+export function SpecRow({
+  label,
+  value,
+  copyable = false,
+}: {
+  label: string;
+  value: React.ReactNode;
+  copyable?: boolean;
+}) {
+  const text = typeof value === "string" ? value.trim() : "";
+
+  const copy = async () => {
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      navigator.vibrate?.(10);
+      toast.success(`${label} copiado`);
+    } catch {
+      toast.error("No se pudo copiar");
+    }
+  };
+
   return (
     <div className="flex items-baseline justify-between gap-4 py-1.5">
       <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="text-right text-[15px] font-medium tabular-nums text-foreground">{value}</span>
+      <span className="flex min-w-0 items-baseline justify-end gap-1">
+        <span className="text-right text-[15px] font-medium tabular-nums text-foreground">{value}</span>
+        {copyable && text && (
+          <button
+            type="button"
+            onClick={copy}
+            onPointerDown={spawnRipple}
+            aria-label={`Copiar ${label} ${text}`}
+            className="-my-1.5 -mr-2 flex h-9 w-9 shrink-0 items-center justify-center self-center rounded-full text-muted-foreground active:bg-muted"
+          >
+            <Copy className="h-[18px] w-[18px]" />
+          </button>
+        )}
+      </span>
     </div>
   );
 }

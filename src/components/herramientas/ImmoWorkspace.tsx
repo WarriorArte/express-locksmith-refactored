@@ -107,7 +107,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
                 {generacionRemoto.length > 0 && (
                   <div className="-my-1.5">
                     {generacionRemoto.map((f) => (
-                      <SpecRow key={f.id} label={f.label} value={f.value} />
+                      <SpecRow key={f.id} label={f.label} value={f.value} copyable />
                     ))}
                   </div>
                 )}
