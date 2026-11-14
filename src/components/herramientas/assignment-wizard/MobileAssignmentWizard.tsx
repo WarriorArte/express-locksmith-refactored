@@ -34,7 +34,7 @@ import { FilterChip } from "@/design-system/detail/DetailScreen";
 import { useWorkshop } from "@/hooks/useWorkshop";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { resolveStorageUrl } from "@/lib/phpApi";
-import { formatFrecuencia, getModulacion } from "@/lib/immo";
+import { formatFrecuencia, getFrecuenciaMHz, getModulacion } from "@/lib/immo";
 import { cn } from "@/lib/utils";
 import type {
   ImmoAssignmentDetail, ImmoCatalogItem, ImmoProfile, KeycodeProfile,
@@ -280,7 +280,7 @@ export function MobileAssignmentWizard({
       ...profileDraft,
       marca,
       fccId,
-      frecuencia: clean(profileDraft.frecuencia),
+      frecuencia: getFrecuenciaMHz(profileDraft.frecuencia),
       modulacion: getModulacion(profileDraft) ?? "",
       bateria: clean(profileDraft.bateria),
       id: uid(),

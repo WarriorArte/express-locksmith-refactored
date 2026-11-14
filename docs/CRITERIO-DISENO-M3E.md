@@ -182,6 +182,7 @@ Los carruseles de imágenes y perfiles mantienen el espacio interior de la secci
 ### 4.5 Contenido
 
 - Títulos en lenguaje del taller: “Equipo para el remoto”, no “Este remoto se programa con”.
+- **Frecuencia:** se teclea solo el número («313», «315»); la unidad «MHz» va impresa siempre, dentro del campo y en todas las vistas, y no se duplica si el dato ya la traía escrita.
 - Una etiqueta por control; sin descripciones salvo en acciones destructivas.
 - Lo que no ayuda a decidir en la lista se va al detalle (auditoría, sección 9).
 

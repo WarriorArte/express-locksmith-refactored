@@ -37,7 +37,7 @@ import type {
   ImmoAssignmentDetail, ToolAssignment,
 } from "@/types";
 import { IMMO_MODULACIONES } from "@/types";
-import { formatFrecuencia, getModulacion } from "@/lib/immo";
+import { formatFrecuencia, getFrecuenciaMHz, getModulacion } from "@/lib/immo";
 import { cn } from "@/lib/utils";
 import { uid } from "./assignment-wizard/wizardUtils";
 
@@ -261,13 +261,30 @@ export function ImmoProfileEditor({
       {/* Detalles del remoto */}
       <Section icon={<Radio className="w-4 h-4" />} title="Detalles del Remoto">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {([["marca", "Marca", "Toyota, Honda…", ""], ["fccId", "FCC ID", "HYQ12BFB…", "tabular-nums"], ["frecuencia", "Frecuencia", "433 MHz…", ""], ["bateria", "Batería", "CR2032…", ""]] as const).map(([key, lbl, ph, cls]) => (
+          {([["marca", "Marca", "Toyota, Honda…", ""], ["fccId", "FCC ID", "HYQ12BFB…", "tabular-nums"], ["frecuencia", "Frecuencia", "313…", ""], ["bateria", "Batería", "CR2032…", ""]] as const).map(([key, lbl, ph, cls]) => (
             <div key={key} className="space-y-1">
               <Label className="text-xs font-bold">{lbl}</Label>
               {key === "frecuencia" ? (
                 // Frecuencia y modulación van juntas: el técnico necesita ambas para generar el remoto.
                 <div className="flex items-center gap-2">
-                  <Input value={draft.frecuencia} onChange={(e) => set("frecuencia", e.target.value)} placeholder={ph} className="h-8 min-w-0 flex-1 text-sm" />
+                  <div className="relative min-w-0 flex-1">
+                    <Input
+                      value={draft.frecuencia}
+                      onChange={(e) => set("frecuencia", e.target.value)}
+                      placeholder={ph}
+                      inputMode="decimal"
+                      aria-describedby="frecuencia-unidad"
+                      className="h-8 pr-12 text-sm"
+                    />
+                    {/* La unidad se imprime siempre: solo se teclea el número. */}
+                    <span
+                      id="frecuencia-unidad"
+                      aria-hidden="true"
+                      className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground"
+                    >
+                      MHz
+                    </span>
+                  </div>
                   <div role="radiogroup" aria-label="Modulación" className="flex shrink-0 gap-1 rounded-full bg-muted p-0.5">
                     {IMMO_MODULACIONES.map((m) => {
                       const active = getModulacion(draft) === m;
@@ -362,11 +379,11 @@ export function ImmoManager({ profiles, onSave, onUpdate, onDelete, catalog: _ca
   const handleSave = () => {
     if (!draft.marca.trim() && !draft.fccId.trim()) { toast.error("Ingresa al menos Marca o FCC ID."); return; }
     if (isNew) {
-      onSave({ id: uid(), dateAdded: new Date().toLocaleDateString(), ...draft });
+      onSave({ id: uid(), dateAdded: new Date().toLocaleDateString(), ...draft, frecuencia: getFrecuenciaMHz(draft.frecuencia) });
       toast.success("Perfil Immo creado.");
     } else if (editingId) {
       const orig = profiles.find((p) => p.id === editingId);
-      onUpdate({ id: editingId, dateAdded: orig?.dateAdded ?? new Date().toLocaleDateString(), ...draft });
+      onUpdate({ id: editingId, dateAdded: orig?.dateAdded ?? new Date().toLocaleDateString(), ...draft, frecuencia: getFrecuenciaMHz(draft.frecuencia) });
       toast.success("Perfil actualizado.");
     }
     setView("list");
