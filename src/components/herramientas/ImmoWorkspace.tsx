@@ -88,11 +88,11 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
                   bottomInsetShadow
                   className="absolute inset-0 h-full w-full text-background/60"
                 >
-                  <span className="absolute -top-1 left-1/2 block h-[150px] w-[119px] -translate-x-1/2 md:h-[162px] md:w-[130px]">
+                  <span className="absolute -top-1 left-1/2 block w-[132px] -translate-x-1/2 md:w-[144px]">
                     <img
                       src={resolveStorageUrl(profile.mainImage) ?? undefined}
                       alt={title}
-                      className="block h-full w-full object-cover object-top drop-shadow-md"
+                      className="block h-auto w-full drop-shadow-md"
                     />
                   </span>
                 </MaterialShape>
