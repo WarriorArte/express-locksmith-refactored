@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\SuperadminAccount;
 use App\Support\Uuid;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -51,11 +52,17 @@ final class AppUser extends Authenticatable
 
     public function getGlobalRoleAttribute(): string
     {
-        if ($this->relationLoaded('globalRole')) {
-            return $this->getRelation('globalRole')?->role ?? 'user';
+        $role = $this->relationLoaded('globalRole')
+            ? ($this->getRelation('globalRole')?->role ?? 'user')
+            : ($this->globalRole()->value('role') ?? 'user');
+
+        // Solo existe un SuperAdmin (el de superadmin_access_settings). Cualquier
+        // otro registro 'superadmin' se ignora: nunca da permisos.
+        if ($role === 'superadmin' && !SuperadminAccount::isUserId($this->id)) {
+            return 'user';
         }
 
-        return $this->globalRole()->value('role') ?? 'user';
+        return $role;
     }
 
     public function isSuperadmin(): bool

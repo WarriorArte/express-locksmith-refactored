@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Workshop;
 use App\Support\ApiResponse;
+use App\Support\SuperadminAccount;
 use App\Support\Uploads\WorkshopFolder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -98,7 +99,7 @@ final class WorkshopController
             return ApiResponse::error('El campo code es requerido');
         }
 
-        if (WorkshopFolder::isReserved((string) $data['code'])) {
+        if (WorkshopFolder::isReserved((string) $data['code']) || SuperadminAccount::isAccessCode((string) $data['code'])) {
             return ApiResponse::error('Ese codigo esta reservado por el sistema; elige otro');
         }
 
@@ -142,7 +143,7 @@ final class WorkshopController
             return ApiResponse::error('No hay campos para actualizar');
         }
 
-        if (array_key_exists('code', $updates) && WorkshopFolder::isReserved((string) $updates['code'])) {
+        if (array_key_exists('code', $updates) && (WorkshopFolder::isReserved((string) $updates['code']) || SuperadminAccount::isAccessCode((string) $updates['code']))) {
             return ApiResponse::error('Ese codigo esta reservado por el sistema; elige otro');
         }
 

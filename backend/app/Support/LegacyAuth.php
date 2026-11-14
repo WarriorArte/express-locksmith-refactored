@@ -45,7 +45,7 @@ final class LegacyAuth
         return [
             'user_id' => $row->user_id,
             'is_active' => (int) $row->is_active,
-            'global_role' => $row->global_role,
+            'global_role' => ($row->global_role === 'superadmin' && !SuperadminAccount::isUserId($row->user_id)) ? 'user' : $row->global_role,
         ];
     }
 
@@ -59,7 +59,7 @@ final class LegacyAuth
             ->where('user_id', $userId)
             ->value('role');
 
-        if ($globalRole === 'superadmin') {
+        if ($globalRole === 'superadmin' && SuperadminAccount::isUserId($userId)) {
             return 'superadmin';
         }
 

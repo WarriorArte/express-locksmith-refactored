@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AppUser;
 use App\Support\ApiResponse;
+use App\Support\SuperadminAccount;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -80,6 +81,20 @@ final class SuperAdminAccessController
         if (!preg_match('/^\/[a-zA-Z0-9][a-zA-Z0-9_-]{2,119}$/', $loginPath)) $errors['login_path'] = 'La ruta debe verse como /auth_su';
         if ($password !== '' && strlen($password) < 8) $errors['password'] = 'La contrasena debe tener al menos 8 caracteres';
 
+        // El correo no puede ser el de un usuario de taller: si lo fuera, esa cuenta
+        // pasaria a ser SuperAdmin. Solo se permite el correo actual del SuperAdmin
+        // o uno que no exista todavia.
+        if (!isset($errors['email'])) {
+            $owner = DB::table('app_users')->whereRaw('LOWER(email) = ?', [$email])->value('id');
+            if ($owner && !SuperadminAccount::isUserId($owner)) {
+                $errors['email'] = 'Ese correo ya pertenece a un usuario de taller; usa otro';
+            }
+        }
+        $codeChanged = $workshopCode !== strtoupper(trim((string) ($settings?->workshop_code ?? '')));
+        if (!isset($errors['workshop_code']) && $codeChanged && DB::table('workshops')->whereRaw('UPPER(code) = ?', [$workshopCode])->exists()) {
+            $errors['workshop_code'] = 'Ese codigo ya lo usa un taller; usa otro';
+        }
+
         if ($errors !== []) {
             return ApiResponse::error('Datos invalidos', 422, $errors);
         }
@@ -107,6 +122,7 @@ final class SuperAdminAccessController
 
             $this->syncSuperadminUser($email, $passwordHash, $workshopCode);
         });
+        SuperadminAccount::forget();
 
         return ApiResponse::success($this->safeSettings(), 'Acceso SuperAdmin actualizado');
     }
@@ -183,7 +199,9 @@ final class SuperAdminAccessController
                 ]);
             }
 
+            // Solo puede haber un SuperAdmin y no pertenece a ningun taller.
             DB::table('global_user_roles')->where('role', 'superadmin')->where('user_id', '!=', $userId)->delete();
+            DB::table('user_roles')->where('user_id', $userId)->delete();
 
             $globalRole = DB::table('global_user_roles')->where('user_id', $userId)->first(['id']);
             if ($globalRole) {

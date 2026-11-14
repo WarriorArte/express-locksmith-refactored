@@ -574,6 +574,9 @@ export function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
                               )}
                             </TableCell>
                             <TableCell className="text-right">
+                              {role.globalRole === "superadmin" ? (
+                                <span className="text-xs text-muted-foreground">Protegido</span>
+                              ) : (
                               <div className="flex items-center justify-end gap-1">
                                 <Button
                                   variant="ghost"
@@ -617,21 +620,20 @@ export function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
                                     </AlertDialogFooter>
                                   </AlertDialogContent>
                                 </AlertDialog>
-                                {role.globalRole !== "superadmin" && (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="text-destructive hover:text-destructive"
-                                    onClick={() => setDeleteUserData({
-                                      userId: role.user_id,
-                                      userEmail: role.profile?.email || "",
-                                      userName: role.profile?.full_name || role.profile?.email || "Usuario",
-                                    })}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-destructive hover:text-destructive"
+                                  onClick={() => setDeleteUserData({
+                                    userId: role.user_id,
+                                    userEmail: role.profile?.email || "",
+                                    userName: role.profile?.full_name || role.profile?.email || "Usuario",
+                                  })}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
                               </div>
+                              )}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -675,6 +677,9 @@ export function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
                             )}
                           </TableCell>
                           <TableCell className="text-right">
+                            {role.globalRole === "superadmin" ? (
+                              <span className="text-xs text-muted-foreground">Protegido</span>
+                            ) : (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button variant="ghost" size="icon" className="text-destructive">
@@ -702,6 +707,7 @@ export function UsersTab({ isSuperAdmin }: { isSuperAdmin: boolean }) {
                                 </AlertDialogFooter>
                               </AlertDialogContent>
                             </AlertDialog>
+                            )}
                           </TableCell>
                         </TableRow>
                       ))}

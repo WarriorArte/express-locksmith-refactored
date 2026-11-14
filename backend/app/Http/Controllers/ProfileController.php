@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AppUser;
 use App\Models\Profile;
 use App\Support\ApiResponse;
+use App\Support\SuperadminAccount;
 use App\Support\Uploads\UploadedFileCleanupService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -279,6 +280,10 @@ final class ProfileController
             return ApiResponse::error('Rol invalido');
         }
 
+        if (SuperadminAccount::isUserId((string) $targetUserId)) {
+            return ApiResponse::error('El SuperAdmin no puede pertenecer a un taller', 403);
+        }
+
         $existing = DB::table('user_roles')
             ->where('user_id', $targetUserId)
             ->where('workshop_id', $workshopId)
@@ -322,6 +327,10 @@ final class ProfileController
             return ApiResponse::error('Usuario no encontrado', 404);
         }
 
+        if (SuperadminAccount::isUserId((string) $targetUserId)) {
+            return ApiResponse::error('La contrasena del SuperAdmin se cambia en «Acceso SuperAdmin»', 403);
+        }
+
         AppUser::query()->whereKey($targetUserId)->update(['password_hash' => password_hash($newPassword, PASSWORD_BCRYPT)]);
 
         return ApiResponse::success(null, 'Contrasena actualizada');
@@ -341,8 +350,8 @@ final class ProfileController
             return ApiResponse::error('user_id es requerido');
         }
 
-        if ($targetUserId === $user->id) {
-            return ApiResponse::error('No puedes eliminar tu propia cuenta');
+        if ($targetUserId === $user->id || SuperadminAccount::isUserId((string) $targetUserId)) {
+            return ApiResponse::error('El SuperAdmin no se puede eliminar', 403);
         }
 
         if (!AppUser::query()->whereKey($targetUserId)->exists()) {
@@ -450,6 +459,10 @@ final class ProfileController
 
         if (!$profile) {
             return ApiResponse::error('Perfil no encontrado', 404);
+        }
+
+        if (SuperadminAccount::isUserId((string) $profile->user_id)) {
+            return ApiResponse::error('El SuperAdmin no se puede modificar desde un taller', 403);
         }
 
         DB::table('user_roles')

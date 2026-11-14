@@ -109,7 +109,6 @@ class CoreSeeder extends Seeder
 
         // ── Roles por taller ──────────────────────────────────────────────────
         DB::table('user_roles')->insertOrIgnore([
-            ['id' => '00000001-0000-0000-0003-000000000001', 'user_id' => self::SUPERADMIN_ID, 'workshop_id' => self::WS1_ID, 'role' => 'admin',    'created_at' => $now],
             ['id' => '00000002-0000-0000-0003-000000000001', 'user_id' => self::USER2_ID,      'workshop_id' => self::WS2_ID, 'role' => 'admin',    'created_at' => $now],
             ['id' => '00000003-0000-0000-0003-000000000001', 'user_id' => self::USER3_ID,      'workshop_id' => self::WS2_ID, 'role' => 'employee', 'created_at' => $now],
         ]);
