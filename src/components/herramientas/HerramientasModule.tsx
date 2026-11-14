@@ -1,8 +1,9 @@
 import { cn } from "@/lib/utils";
 import { useState, useMemo } from "react";
 import { m as motion } from "framer-motion";
-import { Wrench, Key, FileText, Cpu, Car, Truck, Bike, Plus, Loader2 } from "lucide-react";
-import { MobileAssignmentWizard } from "./assignment-wizard/MobileAssignmentWizard";
+import { Wrench, Key, FileText, Cpu, Car, Truck, Bike, Plus, Loader2, Wand2 } from "lucide-react";
+import { AssignmentWizard } from "./assignment-wizard/AssignmentWizard";
+import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -62,6 +63,7 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
   // El asistente móvil necesita todos los datos cargados para validar duplicados y no
   // pisar la base de vehículos con una lista aún vacía.
   const wizardDataLoading = assignmentsLoading || keycodeLoading || immoLoading || !vehicleDb.loaded;
+  const isDesktop = useIsDesktop();
   const [localSuperAdminView, setLocalSuperAdminView] = useState<SuperAdminHerramientasView>("keycode");
   const activeSuperAdminView = superAdminView ?? localSuperAdminView;
   const showInternalSuperAdminTabs = superAdminView === undefined;
@@ -130,6 +132,14 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
   const hasAnyTool = isKeycodeAuth || isAlarmasAuth || isImmoAuth;
 
   if (isSuperAdmin) {
+    // Abre el mismo asistente que en móvil, presentado como panel de escritorio.
+    const desktopWizardButton = (
+      <Button className="self-start rounded-full xl:self-auto" onClick={() => setWizardOpen(true)} disabled={wizardDataLoading}>
+        {wizardDataLoading ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Wand2 className="mr-1.5 h-4 w-4" />}
+        {wizardDataLoading ? "Cargando datos…" : "Asistente de asignación"}
+      </Button>
+    );
+
     return (
       <>
         {/* Fallback para Móvil */}
@@ -155,9 +165,10 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
             </>
           )}
         </div>
+        {/* Una sola instancia: si la ventana cambia de tamaño se conserva lo capturado. */}
         {wizardOpen && !wizardDataLoading && (
-          <div className="lg:hidden">
-            <MobileAssignmentWizard
+            <AssignmentWizard
+              layout={isDesktop ? "desktop" : "mobile"}
               onClose={() => setWizardOpen(false)}
               keycodeProfiles={profiles}
               immoProfiles={immoProfiles}
@@ -168,7 +179,6 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
               onSaveAssignment={addAssignment}
               onUpdateAssignment={updateAssignment}
             />
-          </div>
         )}
 
         {/* Vista Escritorio */}
@@ -207,6 +217,7 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
                     <FileText className="w-4 h-4" /> Asignación de Series
                   </TabsTrigger>
                 </TabsList>
+                {desktopWizardButton}
               </div>
 
               <motion.div 
@@ -272,6 +283,7 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
                         <Wrench className="w-4 h-4" /> Herramientas y Suministros
                       </TabsTrigger>
                     </TabsList>
+                {desktopWizardButton}
                   </div>
 
                   <motion.div

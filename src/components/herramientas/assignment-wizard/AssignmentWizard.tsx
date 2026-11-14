@@ -1,8 +1,11 @@
 /**
- * Asistente móvil del SuperAdmin: en un solo flujo asigna Keycode e Immo Info a un
- * vehículo. En el paso Vehículo se pueden agregar o corregir marcas, modelos y años
- * (ver VehicleStep). Permite crear perfiles Immo al vuelo; los perfiles (series) de
- * Keycode siguen siendo exclusivos de escritorio.
+ * Asistente del SuperAdmin (móvil y escritorio): en un solo flujo asigna Keycode e
+ * Immo Info a un vehículo. En el paso Vehículo se pueden agregar o corregir marcas,
+ * modelos y años (ver VehicleStep). Permite crear perfiles Immo al vuelo; los perfiles
+ * (series) de Keycode se crean solo en el gestor de escritorio.
+ *
+ * La lógica es una sola; `layout` cambia únicamente la presentación (pantalla completa
+ * en móvil, panel con lista de pasos en escritorio).
  *
  * Al guardar se crean registros independientes por herramienta (uno de Keycode y
  * otro de Immo), igual que en escritorio, para que cada gestor de escritorio pueda
@@ -15,7 +18,8 @@
  *  - Aviso y confirmación si el vehículo ya tiene asignaciones que se traslapan.
  *  - Guardado confirmado por el servidor; si una parte falla se puede reintentar
  *    sin duplicar la que ya se guardó.
- *  - Botón Atrás del teléfono retrocede un paso; salir con cambios pide confirmación.
+ *  - Botón Atrás del teléfono/navegador retrocede un paso; salir con cambios pide
+ *    confirmación (también con Esc o clic fuera del panel en escritorio).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Car, Check, ChevronLeft, ChevronRight, Cpu, Key, Loader2, Plus, RotateCw, Search, X } from "lucide-react";
@@ -65,7 +69,15 @@ interface Props {
   onSaveAssignment: (a: ToolAssignment) => Promise<boolean>;
   /** Se usa al renombrar marcas o modelos para mantener sus asignaciones al día. */
   onUpdateAssignment: (a: ToolAssignment) => Promise<boolean>;
+  /**
+   * `mobile`: pantalla completa con barra de progreso.
+   * `desktop`: panel centrado sobre un velo, con la lista de pasos a la izquierda.
+   * Si cambia con el asistente abierto (p. ej. al redimensionar), se conserva todo lo capturado.
+   */
+  layout?: AssignmentWizardLayout;
 }
+
+export type AssignmentWizardLayout = "mobile" | "desktop";
 
 const STEPS = ["Vehículo", "Keycode", "Immo Info", "Datos Immo", "Resumen"] as const;
 const STEP_VEHICLE = 0;
@@ -115,9 +127,12 @@ function FieldError({ children }: { children: React.ReactNode }) {
   return <p role="alert" className="text-xs font-medium text-destructive">{children}</p>;
 }
 
-export function MobileAssignmentWizard({
+export function AssignmentWizard({
   onClose, keycodeProfiles, immoProfiles, onCreateImmoProfile, catalog, vehicleDb, assignments, onSaveAssignment, onUpdateAssignment,
+  layout = "mobile",
 }: Props) {
+  const isDesktop = layout === "desktop";
+  const rootRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState(STEP_VEHICLE);
 
   // ── Vehículo ──
@@ -384,6 +399,28 @@ export function MobileAssignmentWizard({
     };
   }, []);
 
+  // Escritorio: Esc cierra el editor abierto o pide salir. Si hay otro diálogo encima
+  // (galería, confirmación…), ese diálogo atiende su propio Esc.
+  const requestCloseRef = useRef(requestClose);
+  requestCloseRef.current = requestClose;
+  useEffect(() => {
+    if (!isDesktop) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      // El panel del asistente no lleva data-state, así que cualquier coincidencia es otro diálogo encima.
+      if (document.querySelector('[role="alertdialog"], [role="dialog"][data-state="open"]')) return;
+      if (creatingProfile || vehicleEditor) backRef.current();
+      else requestCloseRef.current();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isDesktop, creatingProfile, vehicleEditor]);
+
+  /** Pasos ya recorridos a los que se puede volver con un clic desde la lista lateral. */
+  const canJumpTo = (i: number) =>
+    i < step && !busy && !anyPartSaved && !creatingProfile && !vehicleEditor
+    && !(i === STEP_IMMO_DATA && validImIds.length === 0);
+
   // ── Guardar ──
   const handleSave = async () => {
     if (saving) return;
@@ -468,9 +505,77 @@ export function MobileAssignmentWizard({
     return `${a.yearStart}–${a.yearEnd}${names.length ? ` · ${names.join(", ")}` : ""}`;
   };
 
+  const footerBtn = cn("rounded-full", isDesktop ? "min-w-36" : "flex-1");
+  const stepSkipped = (i: number) => i === STEP_IMMO_DATA && step > STEP_IMMO && validImIds.length === 0;
+
   return (
-    <div className="m3e-form fixed inset-0 z-50 flex flex-col bg-background">
-      <div className="shrink-0 px-5 pt-app-top pb-3">
+    <div
+      className={cn(
+        "m3e-form fixed inset-0 z-50 flex",
+        isDesktop ? "items-center justify-center bg-black/50 p-6" : "flex-col bg-background",
+      )}
+      // Escritorio: clic en el velo = intentar salir (pide confirmación si hay cambios).
+      onMouseDown={isDesktop ? (e) => { if (e.target === e.currentTarget) requestClose(); } : undefined}
+    >
+      <div
+        ref={rootRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Asistente de asignación"
+        className={cn(
+          "flex min-h-0 flex-1 flex-col",
+          isDesktop && "h-[min(880px,100%)] w-full max-w-6xl flex-none flex-row overflow-hidden rounded-[28px] bg-background shadow-2xl",
+        )}
+      >
+      {isDesktop && (
+        <aside className="flex w-72 shrink-0 flex-col gap-6 border-r border-border bg-muted/40 p-6">
+          <div className="space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Asistente de asignación</p>
+            <p className="text-lg font-semibold leading-tight text-foreground">{vehicleLabel}</p>
+          </div>
+          <ol className="space-y-1" aria-label="Pasos">
+            {STEPS.map((s, i) => {
+              const done = i < step && !stepSkipped(i);
+              const current = i === step && !creatingProfile && !vehicleEditor;
+              const jumpable = canJumpTo(i);
+              return (
+                <li key={s}>
+                  <button
+                    type="button"
+                    onClick={() => jumpable && goTo(i)}
+                    disabled={!jumpable}
+                    aria-current={i === step ? "step" : undefined}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm transition-colors",
+                      i === step ? "bg-card font-semibold text-foreground shadow-sm" : "text-muted-foreground",
+                      jumpable && "hover:bg-secondary hover:text-foreground",
+                      !jumpable && i !== step && "cursor-default",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold tabular-nums",
+                        done ? "border-primary bg-primary text-primary-foreground"
+                          : current ? "border-primary text-primary-text"
+                          : "border-muted-foreground/30",
+                      )}
+                    >
+                      {done ? <Check className="h-3.5 w-3.5" /> : i + 1}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate">{s}</span>
+                    {stepSkipped(i) && <span className="text-[11px] font-medium">Omitido</span>}
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+          <p className="mt-auto text-xs leading-relaxed text-muted-foreground">
+            Se guarda un registro por herramienta. Las series de Keycode se crean en Keycode › Perfiles y Keycodes.
+          </p>
+        </aside>
+      )}
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div className={cn("shrink-0 pb-3", isDesktop ? "px-8 pt-6" : "px-5 pt-app-top")}>
         <ModuleHeader
           title={creatingProfile ? "Nuevo perfil Immo" : vehicleEditor ? "Base de vehículos" : STEPS[step]}
           subtitle={creatingProfile ? "Se agregará a esta asignación" : vehicleEditor ? "Los cambios se guardan al momento" : `Paso ${step + 1} de ${STEPS.length} · ${vehicleLabel}`}
@@ -482,7 +587,7 @@ export function MobileAssignmentWizard({
             </Button>
           }
         />
-        {!creatingProfile && !vehicleEditor && (
+        {!isDesktop && !creatingProfile && !vehicleEditor && (
           <div className="mt-3 flex gap-1.5" aria-hidden>
             {STEPS.map((s, i) => (
               <span
@@ -498,7 +603,9 @@ export function MobileAssignmentWizard({
         )}
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-6 no-scrollbar">
+      <div className={cn("flex-1 min-h-0 overflow-y-auto pb-6", isDesktop ? "px-8 custom-scrollbar" : "px-5 no-scrollbar")}>
+        {/* En escritorio el contenido se limita a una columna legible. */}
+        <div className={isDesktop ? "mx-auto w-full max-w-3xl" : undefined}>
         {creatingProfile ? (
           <ImmoProfileEditor
             draft={profileDraft}
@@ -524,10 +631,12 @@ export function MobileAssignmentWizard({
           />
         ) : step === STEP_KEYCODE ? (
           <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">Elige las series de Keycode (opcional). Las series nuevas se crean desde una computadora.</p>
+            <p className="text-sm text-muted-foreground">
+              Elige las series de Keycode (opcional). Las series nuevas se crean {isDesktop ? "en Keycode › Perfiles y Keycodes" : "desde una computadora"}.
+            </p>
             {keycodeProfiles.length === 0 ? (
               <p className="rounded-2xl bg-muted px-4 py-6 text-center text-sm text-muted-foreground">
-                Aún no hay series de Keycode. Créalas desde una PC; puedes continuar solo con Immo Info.
+                Aún no hay series de Keycode. Créalas {isDesktop ? "en Keycode › Perfiles y Keycodes" : "desde una PC"}; puedes continuar solo con Immo Info.
               </p>
             ) : (
               <>
@@ -631,8 +740,8 @@ export function MobileAssignmentWizard({
             })}
           </div>
         ) : (
-          <div className="space-y-3">
-            <div className="rounded-3xl bg-card p-4 shadow-sm">
+          <div className={cn(isDesktop ? "grid grid-cols-2 items-start gap-3" : "space-y-3")}>
+            <div className="col-span-2 rounded-3xl bg-card p-4 shadow-sm">
               <p className="flex items-center gap-2 text-xs font-medium text-muted-foreground"><Car className="h-4 w-4" /> Vehículo</p>
               <p className="mt-1 text-lg font-semibold text-foreground">{vehicle.make} {vehicle.model}</p>
               <p className="text-sm tabular-nums text-muted-foreground">{yearStart}–{yearEnd}{vehicleCategory ? ` · ${CATEGORY_LABELS[vehicleCategory]}` : ""}</p>
@@ -660,7 +769,7 @@ export function MobileAssignmentWizard({
             </div>
 
             {hasOverlaps && (
-              <div className="space-y-3 rounded-3xl border border-warning/40 bg-warning/10 p-4">
+              <div className="col-span-2 space-y-3 rounded-3xl border border-warning/40 bg-warning/10 p-4">
                 <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
                   <AlertTriangle className="h-4 w-4 shrink-0 text-warning" /> Este vehículo ya tiene asignaciones
                 </p>
@@ -670,7 +779,7 @@ export function MobileAssignmentWizard({
                     {overlaps[part].map((a) => <p key={a.id} className="text-sm tabular-nums text-foreground">{describeAssignment(a, part)}</p>)}
                   </div>
                 ))}
-                <p className="text-xs text-muted-foreground">Se creará una asignación adicional; el técnico verá los perfiles de ambas. Si querías cambiar la existente, edítala desde una PC.</p>
+                <p className="text-xs text-muted-foreground">Se creará una asignación adicional; el técnico verá los perfiles de ambas. Si querías cambiar la existente, {isDesktop ? "edítala en la pestaña de asignaciones" : "edítala desde una PC"}.</p>
                 <div className="flex items-center gap-2">
                   <Checkbox id="wizard-overlap-ack" checked={overlapAck} onCheckedChange={(v) => setOverlapAck(!!v)} />
                   <Label htmlFor="wizard-overlap-ack" className="cursor-pointer text-sm">Entiendo, guardar de todos modos</Label>
@@ -679,36 +788,44 @@ export function MobileAssignmentWizard({
             )}
           </div>
         )}
+        </div>
       </div>
 
       {/* El editor de la base de vehículos trae sus propios botones. */}
       {!vehicleEditor && (
-        <div className="shrink-0 border-t border-border bg-background px-5 pt-3 pb-[max(env(safe-area-inset-bottom),12px)]">
+        <div
+          className={cn(
+            "shrink-0 border-t border-border bg-background pt-3",
+            isDesktop ? "px-8 pb-4 [&>div]:mx-auto [&>div]:max-w-3xl" : "px-5 pb-[max(env(safe-area-inset-bottom),12px)]",
+          )}
+        >
           {creatingProfile ? (
-            <div className="flex gap-2">
-              <Button variant="outline" className="flex-1 rounded-full" onClick={() => setCreatingProfile(false)} disabled={savingProfile}>Cancelar</Button>
-              <Button className="flex-1 rounded-full" onClick={saveNewProfile} disabled={isUploading || savingProfile}>
+            <div className={cn("flex gap-2", isDesktop && "justify-end")}>
+              <Button variant="outline" className={footerBtn} onClick={() => setCreatingProfile(false)} disabled={savingProfile}>Cancelar</Button>
+              <Button className={footerBtn} onClick={saveNewProfile} disabled={isUploading || savingProfile}>
                 {savingProfile ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Check className="mr-1.5 h-4 w-4" />}
                 {savingProfile ? "Guardando…" : "Guardar perfil"}
               </Button>
             </div>
           ) : (
-            <div className="flex gap-2">
-              <Button variant="outline" className="flex-1 rounded-full" onClick={back} disabled={busy}>
+            <div className={cn("flex gap-2", isDesktop && "justify-end")}>
+              <Button variant="outline" className={cn("rounded-full", isDesktop ? "mr-auto min-w-32" : "flex-1")} onClick={back} disabled={busy}>
                 {anyPartSaved ? <><X className="mr-1 h-4 w-4" /> Cerrar</> : <><ChevronLeft className="mr-1 h-4 w-4" /> {step === STEP_VEHICLE ? "Cancelar" : "Atrás"}</>}
               </Button>
               {isLast ? (
-                <Button className="flex-1 rounded-full" onClick={handleSave} disabled={saving || (hasOverlaps && !overlapAck)}>
+                <Button className={footerBtn} onClick={handleSave} disabled={saving || (hasOverlaps && !overlapAck)}>
                   {saving ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : anyPartSaved ? <RotateCw className="mr-1.5 h-4 w-4" /> : <Check className="mr-1.5 h-4 w-4" />}
                   {saving ? "Guardando…" : anyPartSaved ? "Reintentar" : "Guardar"}
                 </Button>
               ) : (
-                <Button className="flex-1 rounded-full" onClick={next}>Siguiente <ChevronRight className="ml-1 h-4 w-4" /></Button>
+                <Button className={footerBtn} onClick={next}>Siguiente <ChevronRight className="ml-1 h-4 w-4" /></Button>
               )}
             </div>
           )}
         </div>
       )}
+      </div>
+      </div>
 
       <AlertDialog open={confirmExitOpen} onOpenChange={setConfirmExitOpen}>
         <AlertDialogContent>

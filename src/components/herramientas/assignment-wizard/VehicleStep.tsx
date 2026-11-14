@@ -239,7 +239,7 @@ function VehicleEditorCard({
     if (!affected.length) return;
     const results = await Promise.all(affected.map((a) => onUpdateAssignment(patch(a)).catch(() => false)));
     const failed = results.filter((ok) => !ok).length;
-    if (failed) toast.error(`${failed} asignación(es) no se pudieron actualizar con el nuevo nombre. Revísalas desde una PC.`);
+    if (failed) toast.error(`${failed} asignación(es) no se pudieron actualizar con el nuevo nombre. Revísalas en la lista de asignaciones.`);
   };
 
   const submit = async () => {
