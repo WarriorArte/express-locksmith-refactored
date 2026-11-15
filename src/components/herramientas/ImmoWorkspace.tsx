@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BatteryMedium, Check, Hand, KeyRound, Plug, Radio, ShieldOff, StickyNote, Wrench, X } from "lucide-react";
+import { BatteryMedium, Check, Hand, Images, KeyRound, Plug, Radio, ShieldOff, StickyNote, Wrench, X } from "lucide-react";
 import { ImageViewDialog } from "@/components/shared/ImageViewDialog";
 import { FormattedText } from "@/components/herramientas/RichTextField";
 import { ProcedureSteps } from "@/components/herramientas/ProcedureSteps";
@@ -100,8 +100,9 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
                 className="mx-auto block h-60 w-auto max-w-full object-contain drop-shadow-md md:h-72"
               />
               {images.length > 1 && (
-                <span className="mt-2 block text-center text-xs font-medium text-muted-foreground">
-                  {images.length} fotos · toca para verlas
+                <span className="mt-2 flex items-center justify-center gap-1 text-xs font-medium tabular-nums text-muted-foreground">
+                  <Images className="h-3.5 w-3.5" aria-hidden />
+                  {images.length}
                 </span>
               )}
             </button>
