@@ -48,6 +48,7 @@ import { LOCK_LABELS, LOCK_ORDER } from "@/types";
 import { emptyDetail, emptyProfile, profileTitle, ImmoDetailFields, ImmoProfileEditor } from "../ImmoManager";
 import { getProfileBittingLength } from "../AssignmentManager";
 import { VehicleStep } from "./VehicleStep";
+import { mergeLocks, planKeycodeSave, type KeycodeOutcome } from "./keycodeMerge";
 import {
   CATEGORY_LABELS, EMPTY_VEHICLE, clean, sameText, uid, validateYearRange,
   type VehicleEditor, type VehicleValue, type WizardVehicleDb,
@@ -327,7 +328,19 @@ export function AssignmentWizard({
       immo: validImIds.length && !savedParts.immo ? same.filter((a) => (a.immoDetails?.length ?? 0) > 0) : [],
     };
   }, [assignments, vehicle, vehicleValid, validKcIds.length, validImIds.length, savedParts]);
-  const hasOverlaps = overlaps.keycode.length + overlaps.immo.length > 0;
+  // Keycode no necesita confirmación: el plan reutiliza o amplía lo existente sin duplicar.
+  const hasOverlaps = overlaps.immo.length > 0;
+
+  /** Qué pasará con cada serie de Keycode elegida (crear, ampliar años o nada). */
+  const keycodePlan = useMemo(() => {
+    if (!vehicleValid || !validKcIds.length || savedParts.keycode) return null;
+    const vehicleKc = assignments.filter(
+      (a) => sameText(clean(a.make), vehicle.make) && sameText(clean(a.model), vehicle.model)
+        && (a.keycodeProfileIds?.length ?? 0) > 0,
+    );
+    return planKeycodeSave(vehicleKc, validKcIds, vehicle.ys, vehicle.ye);
+  }, [assignments, vehicle, vehicleValid, validKcIds, savedParts.keycode]);
+  const keycodeTouchesExisting = !!keycodePlan?.outcomes.some((o) => o.kind !== "create" || o.partial);
 
   /** Lo que el vehículo ya tiene asignado por herramienta (sin importar lo elegido ahora). */
   const existingForVehicle = useMemo(() => {
@@ -477,21 +490,52 @@ export function AssignmentWizard({
     };
 
     const tasks: Promise<[Part, boolean]>[] = [];
-    if (validKcIds.length && !savedParts.keycode) {
+    let keycodeNoop = false;
+    if (validKcIds.length && !savedParts.keycode && keycodePlan) {
       const cleanedLocks: LockSelectionsMap = {};
       validKcIds.forEach((pid) => {
         const pl = locks[pid];
         if (pl && Object.keys(pl).length) cleanedLocks[pid] = pl;
       });
-      tasks.push(
-        onSaveAssignment({
-          ...base,
-          id: uid(),
-          tools: ["keycode"],
-          keycodeProfileIds: validKcIds,
-          lockSelections: Object.keys(cleanedLocks).length ? cleanedLocks : undefined,
-        }).then((ok): [Part, boolean] => ["keycode", ok], (): [Part, boolean] => ["keycode", false]),
-      );
+      const locksFor = (pids: string[]) => {
+        const out: LockSelectionsMap = {};
+        pids.forEach((pid) => { if (cleanedLocks[pid]) out[pid] = cleanedLocks[pid]; });
+        return Object.keys(out).length ? out : undefined;
+      };
+      const ops: Promise<boolean>[] = [
+        // Misma serie: se amplían los años de la asignación existente (sus cerraduras se conservan).
+        ...keycodePlan.updates.map((u) =>
+          onUpdateAssignment({
+            ...u.assignment,
+            yearStart: u.yearStart,
+            yearEnd: u.yearEnd,
+            lockSelections: mergeLocks(u.assignment.lockSelections, cleanedLocks, u.pids),
+          }),
+        ),
+        // Series nuevas o años que no se pueden pegar a una existente.
+        ...keycodePlan.creates.map((c) =>
+          onSaveAssignment({
+            ...base,
+            yearStart: c.yearStart,
+            yearEnd: c.yearEnd,
+            id: uid(),
+            tools: ["keycode"],
+            keycodeProfileIds: c.pids,
+            lockSelections: locksFor(c.pids),
+          }),
+        ),
+      ];
+      if (ops.length) {
+        tasks.push(
+          Promise.all(ops).then(
+            (oks): [Part, boolean] => ["keycode", oks.every(Boolean)],
+            (): [Part, boolean] => ["keycode", false],
+          ),
+        );
+      } else {
+        keycodeNoop = true;
+        setSavedParts((prev) => ({ ...prev, keycode: true }));
+      }
     }
     if (validImIds.length && !savedParts.immo) {
       tasks.push(
@@ -504,13 +548,17 @@ export function AssignmentWizard({
         }).then((ok): [Part, boolean] => ["immo", ok], (): [Part, boolean] => ["immo", false]),
       );
     }
-    if (!tasks.length) { onClose(); return; }
+    if (!tasks.length) {
+      if (keycodeNoop) toast.success("El Keycode ya estaba asignado con esos años; no hubo cambios.");
+      onClose();
+      return;
+    }
 
     setSaving(true);
     const results = await Promise.all(tasks);
     setSaving(false);
 
-    const nextSaved = { ...savedParts };
+    const nextSaved = { ...savedParts, ...(keycodeNoop ? { keycode: true } : {}) };
     results.forEach(([part, ok]) => { if (ok) nextSaved[part] = true; });
     setSavedParts(nextSaved);
 
@@ -538,6 +586,17 @@ export function AssignmentWizard({
       ? (a.keycodeProfileIds ?? []).map((id) => keycodeById.get(id)).filter(Boolean).map((p) => `IC ${p!.icCard}`)
       : (a.immoDetails ?? []).map((d) => immoById.get(d.profileId)).filter(Boolean).map((p) => profileTitle(p!));
     return `${a.yearStart}–${a.yearEnd}${names.length ? ` · ${names.join(", ")}` : ""}`;
+  };
+
+  const range = (a: number, b: number) => (a === b ? `${a}` : `${a}–${b}`);
+  const describeOutcome = (o: KeycodeOutcome) => {
+    const name = keycodeById.get(o.pid) ? `IC ${keycodeById.get(o.pid)!.icCard}` : "Serie";
+    if (o.kind === "unchanged") return `${name}: ya existe con esos años, no se hará nada`;
+    if (o.kind === "extend") {
+      return `${name}: ya existe (${range(o.existing.yearStart, o.existing.yearEnd)}), se ampliará a ${range(o.yearStart, o.yearEnd)}`;
+    }
+    const segs = o.segments.map((sg) => range(sg.yearStart, sg.yearEnd)).join(", ");
+    return o.partial ? `${name}: se agregarán los años que faltan (${segs})` : `${name}: serie nueva, se creará (${segs})`;
   };
 
   const footerBtn = cn("rounded-full", isDesktop ? "min-w-36" : "flex-1");
@@ -844,22 +903,32 @@ export function AssignmentWizard({
               })}
             </div>
 
-            {hasOverlaps && (
+            {(hasOverlaps || keycodeTouchesExisting) && (
               <div className="col-span-2 space-y-3 rounded-3xl border border-warning/40 bg-warning/10 p-4">
                 <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
                   <AlertTriangle className="h-4 w-4 shrink-0 text-warning" /> Este vehículo ya tiene asignaciones
                 </p>
-                {(["keycode", "immo"] as Part[]).map((part) => overlaps[part].length > 0 && (
-                  <div key={part} className="space-y-0.5">
-                    <p className="text-xs font-medium text-muted-foreground">{PART_LABELS[part]}</p>
-                    {overlaps[part].map((a) => <p key={a.id} className="text-sm tabular-nums text-foreground">{describeAssignment(a, part)}</p>)}
+                {keycodeTouchesExisting && keycodePlan && (
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-medium text-muted-foreground">Keycode · sin duplicar</p>
+                    {keycodePlan.outcomes.map((o, i) => (
+                      <p key={`${o.pid}-${o.kind}-${i}`} className="text-sm tabular-nums text-foreground">{describeOutcome(o)}</p>
+                    ))}
                   </div>
-                ))}
-                <p className="text-xs text-muted-foreground">Se creará una asignación adicional; el técnico verá los perfiles de ambas. Si querías cambiar la existente, {isDesktop ? "edítala en la pestaña de asignaciones" : "edítala desde una PC"}.</p>
-                <div className="flex items-center gap-2">
-                  <Checkbox id="wizard-overlap-ack" checked={overlapAck} onCheckedChange={(v) => setOverlapAck(!!v)} />
-                  <Label htmlFor="wizard-overlap-ack" className="cursor-pointer text-sm">Entiendo, guardar de todos modos</Label>
-                </div>
+                )}
+                {hasOverlaps && (
+                  <>
+                    <div className="space-y-0.5">
+                      <p className="text-xs font-medium text-muted-foreground">Immo Info</p>
+                      {overlaps.immo.map((a) => <p key={a.id} className="text-sm tabular-nums text-foreground">{describeAssignment(a, "immo")}</p>)}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Se agregará la nueva asignación de Immo Info; el técnico verá los perfiles de ambas. Si querías cambiar la existente, {isDesktop ? "edítala en la pestaña de asignaciones" : "edítala desde una PC"}.</p>
+                    <div className="flex items-center gap-2">
+                      <Checkbox id="wizard-overlap-ack" checked={overlapAck} onCheckedChange={(v) => setOverlapAck(!!v)} />
+                      <Label htmlFor="wizard-overlap-ack" className="cursor-pointer text-sm">Entiendo, guardar de todos modos</Label>
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>
