@@ -270,7 +270,7 @@ export interface ImmoAssignmentDetail {
   /** Indicates whether the technician needs a PIN to complete programming. */
   pincodeRequerido?: boolean;
   /**
-   * true cuando el auto NO lleva pincode: el técnico ve «No se necesita pincode».
+   * true cuando el auto NO lleva pincode: el técnico ve «No se necesita pincode o el equipo se lo salta».
    * Excluyente con `pincodeRequerido`. Los datos de obtención se conservan.
    */
   sinPincode?: boolean;

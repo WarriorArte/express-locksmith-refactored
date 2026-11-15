@@ -711,7 +711,7 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                                    className="resize-none text-sm"
                                  />
                                  <p className="text-[11px] text-muted-foreground">
-                                   El técnico verá «No se necesita pincode». Lo de «Cómo obtenerlo» se conserva por si lo desmarcas.
+                                   El técnico verá «No se necesita pincode o el equipo se lo salta». Lo de «Cómo obtenerlo» se conserva por si lo desmarcas.
                                  </p>
                                </div>
                              ) : (

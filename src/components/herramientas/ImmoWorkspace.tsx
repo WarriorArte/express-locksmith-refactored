@@ -236,7 +236,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, compatibleVeh
               // El auto no lleva pincode: aviso claro + notas opcionales.
               <div className="space-y-3">
                 <div className="flex flex-wrap gap-2">
-                  <TonalChip icon={<X className="h-4 w-4" />} label="No se necesita pincode" tone="neutral" />
+                  <TonalChip icon={<X className="h-4 w-4" />} label="No se necesita pincode o el equipo se lo salta" tone="neutral" />
                 </div>
                 {notasSinPincode && (
                   <FormattedText text={notasSinPincode} className="space-y-1 text-[15px] leading-relaxed text-foreground" />
