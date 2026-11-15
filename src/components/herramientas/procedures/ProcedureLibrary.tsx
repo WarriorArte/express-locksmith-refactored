@@ -10,7 +10,7 @@
  * - Al borrar uno en uso, antes se deja la copia actualizada en cada vehículo.
  */
 import { useCallback, useMemo, useState, type ReactNode } from "react";
-import { BookOpen, Link2, Link2Off, Loader2, Pencil, Save, Search, Trash2 } from "lucide-react";
+import { BookOpen, Link2, Link2Off, Loader2, Pencil, Plus, Save, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -31,8 +31,24 @@ import { ProcedureLibraryContext, useProcedureLibrary, type ProcedureLibraryValu
 
 const collator = new Intl.Collator("es", { numeric: true, sensitivity: "base" });
 const sameText = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
-const vehicleLabel = (a: ToolAssignment) =>
-  `${a.make} ${a.model} ${a.yearStart === a.yearEnd ? a.yearStart : `${a.yearStart}–${a.yearEnd}`}`;
+/** Vehículos agrupados por marca: [marca, cantidad], de mayor a menor. */
+function usageByMake(list: ToolAssignment[]): [string, number][] {
+  const map = new Map<string, number>();
+  list.forEach((a) => map.set(a.make, (map.get(a.make) ?? 0) + 1));
+  return Array.from(map.entries()).sort((a, b) => b[1] - a[1] || collator.compare(a[0], b[0]));
+}
+
+const plural = (n: number) => `${n} vehículo${n === 1 ? "" : "s"}`;
+
+function UsageByMake({ used, className }: { used: ToolAssignment[]; className?: string }) {
+  return (
+    <ul className={cn("flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground", className)}>
+      {usageByMake(used).map(([make, n]) => (
+        <li key={make} className="tabular-nums"><span className="font-semibold text-foreground">{make}</span> · {plural(n)}</li>
+      ))}
+    </ul>
+  );
+}
 
 // ── Contexto ───────────────────────────────────────────────────────────────────
 
@@ -246,7 +262,6 @@ function ProcedurePicker({
   const lib = useProcedureLibrary()!;
   const [query, setQuery] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<ImmoCatalogItem | null>(null);
-  const [deleting, setDeleting] = useState(false);
 
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -263,18 +278,6 @@ function ProcedurePicker({
       return am - bm || collator.compare(a, b);
     });
   }, [lib.procedures, query, vehicleMake]);
-
-  const deleteUsages = deleteTarget ? lib.usages(deleteTarget.id) : [];
-
-  const confirmDelete = async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    const ok = await lib.remove(deleteTarget.id);
-    setDeleting(false);
-    if (ok) toast.success(`Se eliminó «${deleteTarget.label}».`);
-    else toast.error("No se pudo eliminar. Revisa tu conexión e inténtalo de nuevo.");
-    setDeleteTarget(null);
-  };
 
   return (
     <>
@@ -322,33 +325,7 @@ function ProcedurePicker({
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && !deleting && setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar «{deleteTarget?.label}»?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {deleteUsages.length
-                ? `Lo usan ${deleteUsages.length} vehículo(s). Cada uno se quedará con una copia de los pasos, así el técnico no pierde nada.`
-                : "Ningún vehículo lo usa."}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          {deleteUsages.length > 0 && (
-            <ul className="max-h-40 overflow-y-auto text-sm text-foreground">
-              {deleteUsages.map((a) => <li key={a.id} className="py-0.5 tabular-nums">{vehicleLabel(a)}</li>)}
-            </ul>
-          )}
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => { e.preventDefault(); void confirmDelete(); }}
-              disabled={deleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleting && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />} Eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteProcedureDialog target={deleteTarget} onClose={() => setDeleteTarget(null)} />
     </>
   );
 }
@@ -426,22 +403,68 @@ function SaveProcedureDialog({
   );
 }
 
-function EditProcedureDialog({ proc, onClose }: { proc: ImmoCatalogItem; onClose: () => void }) {
+function DeleteProcedureDialog({ target, onClose }: { target: ImmoCatalogItem | null; onClose: () => void }) {
   const lib = useProcedureLibrary()!;
-  const [marca, setMarca] = useState(proc.marca ?? "");
-  const [titulo, setTitulo] = useState(proc.label);
-  const [texto, setTexto] = useState(proc.texto ?? "");
+  const [deleting, setDeleting] = useState(false);
+  const used = target ? lib.usages(target.id) : [];
+
+  const confirm = async () => {
+    if (!target) return;
+    setDeleting(true);
+    const ok = await lib.remove(target.id);
+    setDeleting(false);
+    if (ok) toast.success(`Se eliminó «${target.label}».`);
+    else toast.error("No se pudo eliminar. Revisa tu conexión e inténtalo de nuevo.");
+    onClose();
+  };
+
+  return (
+    <AlertDialog open={!!target} onOpenChange={(o) => !o && !deleting && onClose()}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>¿Eliminar «{target?.label}»?</AlertDialogTitle>
+          <AlertDialogDescription>
+            {used.length
+              ? `Lo usan ${plural(used.length)}. Cada uno se quedará con una copia de los pasos, así el técnico no pierde nada.`
+              : "Ningún vehículo lo usa."}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        {used.length > 0 && <UsageByMake used={used} className="text-sm" />}
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={(e) => { e.preventDefault(); void confirm(); }}
+            disabled={deleting}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {deleting && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />} Eliminar
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+/** Editar uno existente (`proc`) o crear uno nuevo (`proc` = null). */
+function EditProcedureDialog({ proc, onClose }: { proc: ImmoCatalogItem | null; onClose: () => void }) {
+  const lib = useProcedureLibrary()!;
+  const [marca, setMarca] = useState(proc?.marca ?? "");
+  const [titulo, setTitulo] = useState(proc?.label ?? "");
+  const [texto, setTexto] = useState(proc?.texto ?? "");
   const [saving, setSaving] = useState(false);
-  const used = lib.usages(proc.id);
+  const used = proc ? lib.usages(proc.id) : [];
 
   const save = async () => {
-    const err = validate(lib, marca, titulo, proc.id);
+    const err = validate(lib, marca, titulo, proc?.id);
     if (err) { toast.error(err); return; }
+    if (!texto.trim()) { toast.error("Escribe los pasos del procedimiento."); return; }
     setSaving(true);
-    const ok = await lib.update({ ...proc, marca: marca.trim(), label: titulo.trim(), texto });
+    const ok = proc
+      ? await lib.update({ ...proc, marca: marca.trim(), label: titulo.trim(), texto })
+      : !!(await lib.create({ marca, titulo, texto }));
     setSaving(false);
     if (!ok) { toast.error("No se pudo guardar. Revisa tu conexión e inténtalo de nuevo."); return; }
-    toast.success(used.length ? `Procedimiento actualizado en ${used.length} vehículo(s).` : "Procedimiento actualizado.");
+    toast.success(!proc ? "Procedimiento guardado." : used.length ? `Procedimiento actualizado en ${plural(used.length)}.` : "Procedimiento actualizado.");
     onClose();
   };
 
@@ -449,19 +472,19 @@ function EditProcedureDialog({ proc, onClose }: { proc: ImmoCatalogItem; onClose
     <Dialog open onOpenChange={(o) => !o && !saving && onClose()}>
       <DialogContent className="max-w-2xl">
         <DialogHeader className="text-left">
-          <DialogTitle>Editar procedimiento</DialogTitle>
-          <DialogDescription>Los cambios se aplican en todos los vehículos que lo usan.</DialogDescription>
+          <DialogTitle>{proc ? "Editar procedimiento" : "Nuevo procedimiento"}</DialogTitle>
+          <DialogDescription>
+            {proc ? "Los cambios se aplican en todos los vehículos que lo usan." : "Podrás elegirlo al asignar cualquier vehículo."}
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 pb-2">
           {used.length > 0 && (
             <div className="rounded-md border border-warning/40 bg-warning/10 p-3">
-              <p className="text-sm font-semibold text-foreground">Este cambio afectará a {used.length} vehículo{used.length === 1 ? "" : "s"}</p>
-              <ul className="mt-1 max-h-28 overflow-y-auto text-xs text-muted-foreground">
-                {used.map((a) => <li key={a.id} className="tabular-nums">{vehicleLabel(a)}</li>)}
-              </ul>
+              <p className="mb-1 text-sm font-semibold text-foreground">Este cambio afectará a {plural(used.length)}</p>
+              <UsageByMake used={used} />
             </div>
           )}
-          <MakeTitleFields marca={marca} setMarca={setMarca} titulo={titulo} setTitulo={setTitulo} listId="proc-edit" />
+          <MakeTitleFields marca={marca} setMarca={setMarca} titulo={titulo} setTitulo={setTitulo} listId={proc ? "proc-edit" : "proc-new"} />
           <div className="space-y-1">
             <Label className="text-xs font-bold">Pasos</Label>
             <RichTextEditor value={texto} onChange={setTexto} placeholder="Describe el procedimiento paso a paso…" imageFolder="immo" rows={8} className="text-sm" />
@@ -471,10 +494,105 @@ function EditProcedureDialog({ proc, onClose }: { proc: ImmoCatalogItem; onClose
           <Button variant="outline" onClick={onClose} disabled={saving}>Cancelar</Button>
           <Button onClick={() => void save()} disabled={saving}>
             {saving ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Save className="mr-1.5 h-4 w-4" />}
-            {used.length ? `Guardar en ${used.length} vehículo${used.length === 1 ? "" : "s"}` : "Guardar"}
+            {used.length ? `Guardar en ${plural(used.length)}` : "Guardar"}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ── Biblioteca en Herramientas y Suministros ───────────────────────────────────
+
+/** Lista completa por marca: crear, editar y eliminar sin abrir una asignación. */
+export function ProcedureLibraryManager() {
+  const lib = useProcedureLibrary();
+  const [query, setQuery] = useState("");
+  const [editing, setEditing] = useState<ImmoCatalogItem | null | undefined>(undefined);
+  const [deleteTarget, setDeleteTarget] = useState<ImmoCatalogItem | null>(null);
+
+  const groups = useMemo(() => {
+    if (!lib) return [];
+    const q = query.trim().toLowerCase();
+    const map = new Map<string, ImmoCatalogItem[]>();
+    lib.procedures
+      .filter((p) => !q || [p.label, p.marca ?? "", p.texto ?? ""].some((v) => v.toLowerCase().includes(q)))
+      .forEach((p) => {
+        const key = p.marca?.trim() || "Sin marca";
+        map.set(key, [...(map.get(key) ?? []), p]);
+      });
+    return Array.from(map.entries()).sort(([a], [b]) => collator.compare(a, b));
+  }, [lib, query]);
+
+  if (!lib) return null;
+
+  return (
+    <div className="space-y-4 rounded-lg border border-border bg-card p-5">
+      <div className="flex flex-wrap items-start gap-3">
+        <div className="mt-0.5 shrink-0 rounded-lg bg-primary-light p-2 text-primary"><BookOpen className="h-4 w-4" /></div>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-base font-bold text-foreground">Procedimientos del remoto</h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Pasos guardados por marca para reutilizar en «Pasos para programar el remoto». Editar uno cambia todos los vehículos que lo usan.
+          </p>
+        </div>
+        <Button size="sm" onClick={() => setEditing(null)}><Plus className="mr-1.5 h-4 w-4" /> Nuevo procedimiento</Button>
+      </div>
+
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar por marca, título o texto…" className="h-10 pl-9 text-sm" />
+      </div>
+
+      {lib.procedures.length === 0 ? (
+        <p className="rounded-lg border border-dashed border-border py-8 text-center text-sm text-muted-foreground">
+          Aún no hay procedimientos. Crea uno aquí o usa «Guardar como procedimiento» al escribir los pasos de una asignación.
+        </p>
+      ) : groups.length === 0 ? (
+        <p className="py-6 text-center text-sm text-muted-foreground">Sin resultados.</p>
+      ) : (
+        <div className="space-y-4">
+          {groups.map(([marca, items]) => (
+            <section key={marca} className="space-y-1">
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{marca} · {items.length}</p>
+              <div className="divide-y divide-border overflow-hidden rounded-md border border-border">
+                {items.map((p) => {
+                  const count = lib.usages(p.id).length;
+                  return (
+                    <div key={p.id} className="flex items-center gap-2">
+                      <button type="button" onClick={() => setEditing(p)} className="min-w-0 flex-1 px-3 py-2.5 text-left hover:bg-muted/40">
+                        <span className="block truncate text-sm font-semibold text-foreground">{p.label}</span>
+                        <span className="block text-xs text-muted-foreground">{count ? `Usado en ${plural(count)}` : "Sin usar"}</span>
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Editar ${p.label}`}
+                        onClick={() => setEditing(p)}
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Eliminar ${p.label}`}
+                        onClick={() => setDeleteTarget(p)}
+                        className="mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
+        </div>
+      )}
+
+      {editing !== undefined && (
+        <EditProcedureDialog key={editing?.id ?? "new"} proc={editing} onClose={() => setEditing(undefined)} />
+      )}
+      <DeleteProcedureDialog target={deleteTarget} onClose={() => setDeleteTarget(null)} />
+    </div>
   );
 }
