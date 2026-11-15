@@ -286,7 +286,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, compatibleVeh
                   {/* El método (OBD2 / manual) describe estos pasos, por eso va justo encima de ellos. */}
                   {hasMethods && (
                     <div className={cn("flex flex-wrap gap-2", procedimiento && "mb-4")}>
-                      {detail?.programacionOBD && <TonalChip icon={<Plug className="h-4 w-4" />} label="Por OBD2" />}
+                      {detail?.programacionOBD && <TonalChip icon={<Plug className="h-4 w-4" />} label="Por OBD2" tone="warning" />}
                       {detail?.programacionManual && (
                         <TonalChip icon={<Hand className="h-4 w-4" />} label="Manual" tone="warning" />
                       )}
