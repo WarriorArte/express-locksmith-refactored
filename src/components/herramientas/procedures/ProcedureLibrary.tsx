@@ -138,7 +138,7 @@ export function ProcedureStepsField({
 
   const editor = (
     <RichTextEditor
-      value={detail.procedimientoProgramacion}
+      value={detail.procedimientoProgramacion ?? ""}
       onChange={(v) => onChange("procedimientoProgramacion", v)}
       placeholder="Describe el procedimiento paso a paso…"
       imageFolder="immo"
@@ -153,7 +153,7 @@ export function ProcedureStepsField({
   const usedIn = linked ? lib.usages(linked.id).length : 0;
 
   const link = (proc: ImmoCatalogItem) => {
-    const prevText = detail.procedimientoProgramacion;
+    const prevText = detail.procedimientoProgramacion ?? "";
     const prevId = detail.procedimientoId;
     onChange("procedimientoId", proc.id);
     onChange("procedimientoProgramacion", proc.texto ?? "");
@@ -213,7 +213,7 @@ export function ProcedureStepsField({
               <BookOpen className="mr-1.5 h-3.5 w-3.5" />
               {lib.procedures.length ? `Usar procedimiento guardado (${lib.procedures.length})` : "Sin procedimientos guardados"}
             </Button>
-            {detail.procedimientoProgramacion.trim() && (
+            {(detail.procedimientoProgramacion ?? "").trim() && (
               <Button type="button" variant="outline" size="sm" className="h-8" onClick={() => setSaveOpen(true)}>
                 <Save className="mr-1.5 h-3.5 w-3.5" /> Guardar como procedimiento
               </Button>

@@ -714,7 +714,7 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                                 onClick={() => markNoImmo(true)}
                                 className="text-left text-[11px] font-semibold text-primary-text underline-offset-2 hover:underline"
                               >
-                                ¿«{detail.transponder.trim()}» significa que no tiene inmovilizador? Márcalo así
+                                ¿«{(detail.transponder ?? "").trim()}» significa que no tiene inmovilizador? Márcalo así
                               </button>
                             )}
                           </div>
@@ -985,7 +985,7 @@ export function ImmoAssignmentManager({
         imagenPrincipal: d.imagenPrincipal ?? "",
         sinInmovilizador: d.sinInmovilizador ?? false,
         notasSinInmovilizador: d.notasSinInmovilizador ?? "",
-        transponder: d.transponder,
+        transponder: d.transponder ?? "",
         transponderNotes: d.transponderNotes ?? "",
         pincodeRequerido: d.pincodeRequerido ?? false,
         sinPincode: d.sinPincode ?? false,
@@ -997,9 +997,9 @@ export function ImmoAssignmentManager({
         generadoConIds: d.generadoConIds ?? [],
         equiposRemotoIds: d.equiposRemotoIds ?? [],
         equiposTransponderIds: d.equiposTransponderIds ?? [],
-        programacionManual: d.programacionManual,
-        programacionOBD: d.programacionOBD,
-        procedimientoProgramacion: d.procedimientoProgramacion,
+        programacionManual: d.programacionManual ?? false,
+        programacionOBD: d.programacionOBD ?? false,
+        procedimientoProgramacion: d.procedimientoProgramacion ?? "",
         procedimientoId: d.procedimientoId ?? "",
         notasGenerales: d.notasGenerales ?? "",
       };
