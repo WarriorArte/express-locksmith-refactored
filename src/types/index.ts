@@ -216,7 +216,11 @@ export interface ImmoCatalogItem {
    * equipo: equipos de programación · transponder: opciones de «Se genera con» ·
    * transponderVehiculo: opciones del campo «Transponder» · bateria: opciones de «Batería».
    */
-  category: 'equipo' | 'transponder' | 'transponderVehiculo' | 'bateria';
+  category: 'equipo' | 'transponder' | 'transponderVehiculo' | 'bateria' | 'procedimiento';
+  /** Solo «procedimiento»: marca a la que pertenece (el título va en `label`). */
+  marca?: string;
+  /** Solo «procedimiento»: pasos para programar el remoto. */
+  texto?: string;
   /** Orden manual dentro de su categoría (se asigna al reordenar por drag-and-drop). */
   position?: number;
 }
@@ -297,6 +301,11 @@ export interface ImmoAssignmentDetail {
   programacionManual: boolean;
   programacionOBD: boolean;
   procedimientoProgramacion: string;
+  /**
+   * Procedimiento guardado vinculado (catálogo, categoría «procedimiento»). Si existe, el
+   * técnico ve su texto; `procedimientoProgramacion` queda como copia de respaldo.
+   */
+  procedimientoId?: string;
   /** Notas generales de esta asignación (independientes del transponder o el procedimiento). */
   notasGenerales?: string;
 }

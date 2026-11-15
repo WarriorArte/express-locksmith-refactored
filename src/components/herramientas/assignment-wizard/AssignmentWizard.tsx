@@ -873,6 +873,7 @@ export function AssignmentWizard({
                     equipoCatalog={equipoCatalog}
                     profileImages={immoProfileImages(p)}
                     transponderOptions={transponderOptions}
+                    vehicleMake={vehicle.make}
                   />
                 </section>
               );

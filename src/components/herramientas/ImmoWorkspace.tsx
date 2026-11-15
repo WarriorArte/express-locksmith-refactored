@@ -16,7 +16,7 @@ import {
   TonalChip,
 } from "@/design-system/detail/DetailScreen";
 import { resolveStorageUrl } from "@/lib/phpApi";
-import { SIN_INMOVILIZADOR_TEXTO, formatFrecuencia, immoAssignmentImage, immoProfileImages } from "@/lib/immo";
+import { SIN_INMOVILIZADOR_TEXTO, formatFrecuencia, immoAssignmentImage, immoProfileImages, resolveProcedureText } from "@/lib/immo";
 import { cn } from "@/lib/utils";
 import type { ImmoProfile, ImmoAssignmentDetail, ImmoCatalogItem } from "@/types";
 
@@ -69,7 +69,8 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, compatibleVeh
   const notasPincode = detail?.notasPincode?.trim() ?? "";
   const sinPincode = !!detail?.sinPincode;
   const notasSinPincode = detail?.notasSinPincode?.trim() ?? "";
-  const procedimiento = detail?.procedimientoProgramacion?.trim() ?? "";
+  // Procedimiento guardado vinculado (se actualiza al editarlo) o la copia propia.
+  const procedimiento = resolveProcedureText(detail, catalog);
   const notasGenerales = detail?.notasGenerales?.trim() ?? "";
 
   // Sin inmovilizador: se muestra el aviso y se ocultan transponder, pincode y su equipo

@@ -1,4 +1,4 @@
-import { IMMO_MODULACIONES, type ImmoAssignmentDetail, type ImmoModulacion, type ImmoProfile } from "@/types";
+import { IMMO_MODULACIONES, type ImmoAssignmentDetail, type ImmoCatalogItem, type ImmoModulacion, type ImmoProfile } from "@/types";
 
 /** Texto que ve el técnico cuando el modelo no tiene inmovilizador. */
 export const SIN_INMOVILIZADOR_TEXTO = "Este modelo no viene equipado con sistema inmovilizador";
@@ -55,3 +55,15 @@ export function immoAssignmentImage(
   const chosen = detail?.imagenPrincipal;
   return chosen && images.includes(chosen) ? chosen : images[0];
 }
+
+/** Texto que ve el técnico: el del procedimiento vinculado o, si no existe, la copia propia. */
+export function resolveProcedureText(
+  detail: Pick<ImmoAssignmentDetail, "procedimientoId" | "procedimientoProgramacion"> | null | undefined,
+  catalog: ImmoCatalogItem[],
+): string {
+  const linked = detail?.procedimientoId
+    ? catalog.find((c) => c.id === detail.procedimientoId && c.category === "procedimiento")
+    : undefined;
+  return (linked?.texto ?? detail?.procedimientoProgramacion ?? "").trim();
+}
+

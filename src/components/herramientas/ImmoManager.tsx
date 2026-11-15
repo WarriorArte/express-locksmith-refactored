@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ImageGalleryDialog } from "@/components/shared/ImageGalleryDialog";
 import { RichTextEditor } from "@/components/herramientas/RichTextField";
+import { ProcedureStepsField } from "@/components/herramientas/procedures/ProcedureLibrary";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { useToolsUploadCode } from "@/hooks/useToolsUploadCode";
 import { phpApiDeleteFile, resolveStorageUrl } from "@/lib/phpApi";
@@ -80,6 +81,7 @@ export function emptyDetail(): Omit<ImmoAssignmentDetail, "profileId"> {
     programacionManual: false,
     programacionOBD: false,
     procedimientoProgramacion: "",
+    procedimientoId: "",
     notasGenerales: "",
   };
 }
@@ -606,10 +608,12 @@ export interface ImmoDetailFieldsProps {
   profileImages?: string[];
   /** Opciones del campo «Transponder» (Herramientas y Suministros). */
   transponderOptions?: ImmoCatalogItem[];
+  /** Marca del vehículo (se propone al guardar un procedimiento). */
+  vehicleMake?: string;
 }
 
 /** Campos de datos por vehículo de un perfil Immo (compartidos por escritorio y asistente móvil). */
-export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equipoCatalog, profileImages = [], transponderOptions = [] }: ImmoDetailFieldsProps) {
+export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equipoCatalog, profileImages = [], transponderOptions = [], vehicleMake }: ImmoDetailFieldsProps) {
   const chosenImage = immoAssignmentImage({ images: profileImages }, detail);
   const sinInmovilizador = !!detail.sinInmovilizador;
   // «N/A» escrito a mano en Transponder: se sugiere usar la opción en su lugar.
@@ -865,14 +869,7 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                             <p className="text-xs text-muted-foreground">
                               Pasos con «-» o «1.»; notas entre corchetes: [nota]; imágenes con los botones de foto
                             </p>
-                            <RichTextEditor
-                              value={detail.procedimientoProgramacion}
-                              onChange={(v) => onChange("procedimientoProgramacion", v)}
-                              placeholder="Describe el procedimiento paso a paso…"
-                              imageFolder="immo"
-                              rows={4}
-                              className="text-sm"
-                            />
+                            <ProcedureStepsField id={id} detail={detail} onChange={onChange} vehicleMake={vehicleMake} />
                           </div>
                           <div className="space-y-1">
                             <Label className="text-xs font-bold">Notas Generales</Label>
@@ -1003,6 +1000,7 @@ export function ImmoAssignmentManager({
         programacionManual: d.programacionManual,
         programacionOBD: d.programacionOBD,
         procedimientoProgramacion: d.procedimientoProgramacion,
+        procedimientoId: d.procedimientoId ?? "",
         notasGenerales: d.notasGenerales ?? "",
       };
     });
@@ -1198,7 +1196,7 @@ export function ImmoAssignmentManager({
                       {/* Accordion body */}
                       {isExpanded && (
                         <div className="px-3 pb-4 space-y-4 border-t border-border/50 pt-3">
-                          <ImmoDetailFields id={id} detail={detail} onChange={(k, v) => updateDetail(id, k, v)} transponderCatalog={transponderCatalog} equipoCatalog={equipoCatalog} profileImages={immoProfileImages(p)} transponderOptions={transponderOptions} />
+                          <ImmoDetailFields id={id} detail={detail} onChange={(k, v) => updateDetail(id, k, v)} transponderCatalog={transponderCatalog} equipoCatalog={equipoCatalog} profileImages={immoProfileImages(p)} transponderOptions={transponderOptions} vehicleMake={make} />
                         </div>
                       )}
                     </div>

@@ -29,6 +29,7 @@ import { WorkshopToolView } from "./WorkshopToolView";
 import { AlarmasManager } from "./AlarmasManager";
 import { ImmoManager, ImmoAssignmentManager } from "./ImmoManager";
 import { ImmoSuppliesManager } from "./ImmoSuppliesManager";
+import { ProcedureLibraryProvider } from "./procedures/ProcedureLibrary";
 
 const HERO_CHIP_ICONS: Record<VehicleCategory, React.ReactNode> = {
   Vehiculo: <Car className="w-3.5 h-3.5" />,
@@ -145,6 +146,19 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
   const hasAnyTool = isKeycodeAuth || isAlarmasAuth || isImmoAuth;
 
   if (isSuperAdmin) {
+    // Biblioteca de procedimientos del remoto (formularios de asignación y asistente).
+    const withProcedures = (node: React.ReactNode) => (
+      <ProcedureLibraryProvider
+        catalog={catalog}
+        assignments={assignments}
+        addItem={addItem}
+        updateItem={updateItem}
+        deleteItem={deleteItem}
+        updateAssignment={updateAssignment}
+      >
+        {node}
+      </ProcedureLibraryProvider>
+    );
     // Abre el mismo asistente que en móvil, presentado como panel de escritorio.
     const desktopWizardButton = (
       <Button className="self-start rounded-full xl:self-auto" onClick={() => setWizardOpen(true)} disabled={wizardDataLoading}>
@@ -171,7 +185,7 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
 
     // Página «Asistente» (barra lateral): misma portada en cualquier ancho de ventana.
     if (activeSuperAdminView === "asistente") {
-      return (
+      return withProcedures(
         <>
           <div className="flex min-h-0 flex-1 flex-col items-center justify-center p-8 text-center">
             <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-[28px] bg-secondary">
@@ -192,7 +206,7 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
       );
     }
 
-    return (
+    return withProcedures(
       <>
         {/* Fallback para Móvil */}
         <div className="flex flex-col items-center justify-center p-8 text-center flex-1 min-h-0 lg:hidden">
