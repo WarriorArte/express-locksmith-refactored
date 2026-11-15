@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { BatteryMedium, Car, Check, Hand, Images, KeyRound, Plug, Radio, ShieldOff, StickyNote, Wrench, X } from "lucide-react";
 import { ImageViewDialog } from "@/components/shared/ImageViewDialog";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/responsive-dialog";
 import { FormattedText } from "@/components/herramientas/RichTextField";
 import { ProcedureSteps } from "@/components/herramientas/ProcedureSteps";
 import {
@@ -127,14 +127,14 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, compatibleVeh
                           <Car className="h-5 w-5" />
                         </button>
                       </DialogTrigger>
-                      <DialogContent className="flex max-h-[80vh] flex-col gap-3 overflow-hidden">
-                        <DialogHeader>
-                          <DialogTitle className="text-xl">Compatible con:</DialogTitle>
+                      <DialogContent className="max-w-lg">
+                        <DialogHeader className="text-left">
+                          <DialogTitle className="text-2xl font-bold leading-tight">Compatible con:</DialogTitle>
                           <DialogDescription className="tabular-nums">
                             FCC ID {profile.fccId} · {compatibleVehicles.length} vehículo(s)
                           </DialogDescription>
                         </DialogHeader>
-                        <ul className="-mx-6 min-h-0 flex-1 overflow-y-auto px-6 text-[15px] text-foreground">
+                        <ul className="pb-4 text-[15px] text-foreground">
                           {compatibleVehicles.map((v) => (
                             <li key={v} className="border-b border-border/60 py-2 tabular-nums last:border-b-0">{v}</li>
                           ))}
