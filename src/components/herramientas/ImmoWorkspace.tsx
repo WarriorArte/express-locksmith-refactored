@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { BatteryMedium, Car, Check, Hand, Images, KeyRound, Plug, Radio, ShieldOff, StickyNote, Wrench, X } from "lucide-react";
 import { ImageViewDialog } from "@/components/shared/ImageViewDialog";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { FormattedText } from "@/components/herramientas/RichTextField";
 import { ProcedureSteps } from "@/components/herramientas/ProcedureSteps";
 import {
@@ -117,8 +117,8 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, compatibleVeh
                 value={profile.fccId}
                 action={
                   compatibleVehicles.length > 0 ? (
-                    <Popover>
-                      <PopoverTrigger asChild>
+                    <Dialog>
+                      <DialogTrigger asChild>
                         <button
                           type="button"
                           aria-label={`Compatible con ${compatibleVehicles.length} vehículo(s) más`}
@@ -126,16 +126,21 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, compatibleVeh
                         >
                           <Car className="h-5 w-5" />
                         </button>
-                      </PopoverTrigger>
-                      <PopoverContent align="end" className="w-64 p-0">
-                        <p className="px-4 pb-2 pt-3 text-sm font-bold text-foreground">Compatible con:</p>
-                        <ul className="max-h-72 overflow-y-auto px-4 pb-3 text-sm text-foreground">
+                      </DialogTrigger>
+                      <DialogContent className="flex max-h-[80vh] flex-col gap-3 overflow-hidden">
+                        <DialogHeader>
+                          <DialogTitle className="text-xl">Compatible con:</DialogTitle>
+                          <DialogDescription className="tabular-nums">
+                            FCC ID {profile.fccId} · {compatibleVehicles.length} vehículo(s)
+                          </DialogDescription>
+                        </DialogHeader>
+                        <ul className="-mx-6 min-h-0 flex-1 overflow-y-auto px-6 text-[15px] text-foreground">
                           {compatibleVehicles.map((v) => (
-                            <li key={v} className="py-1 tabular-nums">{v}</li>
+                            <li key={v} className="border-b border-border/60 py-2 tabular-nums last:border-b-0">{v}</li>
                           ))}
                         </ul>
-                      </PopoverContent>
-                    </Popover>
+                      </DialogContent>
+                    </Dialog>
                   ) : undefined
                 }
               />
