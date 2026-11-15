@@ -909,7 +909,7 @@ interface ImmoAssignmentManagerProps {
   catalog: ImmoCatalogItem[];
 }
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 30;
 
 export function ImmoAssignmentManager({
   immoProfiles, assignments, onSave, onUpdate, onDelete, vehicleDb, catalog,
