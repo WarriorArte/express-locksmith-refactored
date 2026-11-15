@@ -69,6 +69,8 @@ export function emptyDetail(): Omit<ImmoAssignmentDetail, "profileId"> {
     notasSinPincode: "",
     formaObtencionPincode: "",
     notasPincode: "",
+    transponderNoGenerable: false,
+    notasNoGenerable: "",
     generadoConIds: [],
     equiposRemotoIds: [],
     equiposTransponderIds: [],
@@ -667,11 +669,37 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                           {/* Se genera con */}
                           <div className="space-y-1.5">
                             <Label className="text-xs font-bold">Se genera con</Label>
-                            <CatalogChipSelector catalogItems={transponderCatalog} selectedIds={detail.generadoConIds} onChange={(ids) => onChange("generadoConIds", ids)} />
+                            <div className="flex items-center gap-2">
+                              <Checkbox
+                                id={`no-generable-${id}`}
+                                checked={!!detail.transponderNoGenerable}
+                                onCheckedChange={(v) => {
+                                  onChange("transponderNoGenerable", !!v);
+                                  // No se puede generar: no queda ningún transponder seleccionado.
+                                  if (v) onChange("generadoConIds", []);
+                                }}
+                              />
+                              <Label htmlFor={`no-generable-${id}`} className="cursor-pointer text-sm">Este transponder no se puede generar</Label>
+                            </div>
+                            {detail.transponderNoGenerable ? (
+                              <div className="space-y-1">
+                                <Label htmlFor={`no-generable-notas-${id}`} className="text-xs font-bold">Notas (opcional)</Label>
+                                <Textarea
+                                  id={`no-generable-notas-${id}`}
+                                  value={detail.notasNoGenerable ?? ""}
+                                  onChange={(e) => onChange("notasNoGenerable", e.target.value)}
+                                  placeholder="Ej. [Usar transponder original del concesionario]"
+                                  rows={2}
+                                  className="resize-none text-sm"
+                                />
+                              </div>
+                            ) : (
+                              <CatalogChipSelector catalogItems={transponderCatalog} selectedIds={detail.generadoConIds} onChange={(ids) => onChange("generadoConIds", ids)} />
+                            )}
                           </div>
                           {/* Equipos transponder: se muestran en la sección Transponder del técnico */}
                           <div className="space-y-1.5">
-                            <Label className="text-xs font-bold">Equipos — Transponder</Label>
+                            <Label className="text-xs font-bold">Equipos para programar el transponder</Label>
                             <CatalogChipSelector catalogItems={equipoCatalog} selectedIds={detail.equiposTransponderIds} onChange={(ids) => onChange("equiposTransponderIds", ids)} />
                           </div>
                           </>
@@ -830,6 +858,8 @@ export function ImmoAssignmentManager({
         notasSinPincode: d.notasSinPincode ?? "",
         formaObtencionPincode: d.formaObtencionPincode ?? "",
         notasPincode: d.notasPincode ?? "",
+        transponderNoGenerable: d.transponderNoGenerable ?? false,
+        notasNoGenerable: d.notasNoGenerable ?? "",
         generadoConIds: d.generadoConIds ?? [],
         equiposRemotoIds: d.equiposRemotoIds ?? [],
         equiposTransponderIds: d.equiposTransponderIds ?? [],

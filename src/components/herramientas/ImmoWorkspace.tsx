@@ -50,7 +50,9 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
   const [mainImageViewerOpen, setMainImageViewerOpen] = useState(false);
 
   const generacionRemoto = (profile.generacionRemoto ?? []).filter((f) => f.value.trim());
-  const generadoCon = catalogItems(detail?.generadoConIds ?? [], catalog);
+  const noGenerable = !!detail?.transponderNoGenerable;
+  const notasNoGenerable = detail?.notasNoGenerable?.trim() ?? "";
+  const generadoCon = noGenerable ? [] : catalogItems(detail?.generadoConIds ?? [], catalog);
   const equiposRemoto = catalogItems(detail?.equiposRemotoIds ?? [], catalog);
   const equiposTransponder = catalogItems(detail?.equiposTransponderIds ?? [], catalog);
   const transponder = detail?.transponder?.trim() ?? "";
@@ -68,7 +70,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
   const sinInmovilizador = !!detail?.sinInmovilizador;
   const notasSinInmovilizador = detail?.notasSinInmovilizador?.trim() ?? "";
   const hasGeneracion = generacionRemoto.length > 0;
-  const hasTransponder = !sinInmovilizador && (!!(transponder || transponderNotes) || generadoCon.length > 0 || equiposTransponder.length > 0);
+  const hasTransponder = !sinInmovilizador && (!!(transponder || transponderNotes) || noGenerable || generadoCon.length > 0 || equiposTransponder.length > 0);
   const hasPincode = !sinInmovilizador && (sinPincode || pincodeRequerido || !!formaObtencionPincode || !!notasPincode);
   const showEquiposTransponder = !sinInmovilizador && equiposTransponder.length > 0;
   const hasMethods = !!(detail?.programacionManual || detail?.programacionOBD);
@@ -159,9 +161,20 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
                     <ImageCarousel items={generadoCon} fallbackIcon={toolIcon} />
                   </div>
                 )}
+                {noGenerable && (
+                  <div className={cn("space-y-3", (transponder || transponderNotes) && "mt-5")}>
+                    <SubHeading>Se genera con</SubHeading>
+                    <div className="flex flex-wrap gap-2">
+                      <TonalChip icon={<X className="h-4 w-4" />} label="Este transponder no se puede generar" tone="neutral" />
+                    </div>
+                    {notasNoGenerable && (
+                      <FormattedText text={notasNoGenerable} className="space-y-1 text-[15px] leading-relaxed text-foreground" />
+                    )}
+                  </div>
+                )}
                 {showEquiposTransponder && (
-                  <div className={transponder || transponderNotes || generadoCon.length > 0 ? "mt-5" : undefined}>
-                    <SubHeading>Equipo para el transponder</SubHeading>
+                  <div className={transponder || transponderNotes || noGenerable || generadoCon.length > 0 ? "mt-5" : undefined}>
+                    <SubHeading>Equipo para programar el transponder</SubHeading>
                     <ImageCarousel items={equiposTransponder} fallbackIcon={toolIcon} />
                   </div>
                 )}

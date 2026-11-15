@@ -272,6 +272,13 @@ export interface ImmoAssignmentDetail {
   formaObtencionPincode?: string;
   /** Additional notes about the PIN requirement or retrieval process. */
   notasPincode?: string;
+  /**
+   * true cuando el transponder no se puede generar con ningún equipo:
+   * «Se genera con» queda vacío y el técnico ve «Este transponder no se puede generar».
+   */
+  transponderNoGenerable?: boolean;
+  /** Matices de `transponderNoGenerable` (p. ej. alternativas o versiones que sí). */
+  notasNoGenerable?: string;
   generadoConIds: string[];
   equiposRemotoIds: string[];
   equiposTransponderIds: string[];
