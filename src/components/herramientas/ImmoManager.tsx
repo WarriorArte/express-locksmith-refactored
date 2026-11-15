@@ -1236,42 +1236,52 @@ export function ImmoAssignmentManager({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3">
+          // Lista (una fila por asignación): vehículo y años a la izquierda, perfiles a la derecha.
+          <div className="overflow-hidden rounded-lg border border-border bg-card divide-y divide-border">
             {pageItems.map((item) => {
               const isEditing = editingId === item.id;
               return (
-                <Card key={item.id} onClick={() => !isEditing && loadForEdit(item)} className={`transition-all overflow-hidden cursor-pointer ${isEditing ? "ring-2 ring-primary border-primary shadow-sm" : "hover:border-primary/50 hover:bg-muted/30"}`}>
-                  <CardContent className="p-3 pl-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <h3 className={`font-bold text-sm truncate ${isEditing ? "text-primary" : "text-foreground"}`}>{item.make} {item.model}</h3>
-                        <div className="text-[11px] text-muted-foreground tabular-nums mt-0.5">{item.yearStart}–{item.yearEnd}</div>
-                      </div>
-                      <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => setDeleteAssignmentId(item.id)}>
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="mt-2 pt-2 border-t border-border/50">
-                      <div className="flex flex-wrap gap-1">
-                        {(item.immoDetails ?? []).map((d) => {
-                          const p = immoProfiles.find((x) => x.id === d.profileId);
-                          return p ? (
-                            <div key={d.profileId} className="flex flex-col gap-0.5">
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[11px] font-medium bg-accent-light text-accent dark:bg-accent/30 dark:text-accent-foreground dark:border-accent/40">
-                                {profileTitle(p)}
-                              </span>
-                              {transponderLabel(d) && (
-                                <span className="text-[11px] text-muted-foreground tabular-nums px-1.5">{transponderLabel(d)}</span>
-                              )}
-                            </div>
-                          ) : null;
-                        })}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <div
+                  key={item.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-current={isEditing || undefined}
+                  onClick={() => !isEditing && loadForEdit(item)}
+                  onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && !isEditing) { e.preventDefault(); loadForEdit(item); } }}
+                  className={cn(
+                    "flex cursor-pointer items-center gap-3 px-3 py-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary",
+                    isEditing ? "bg-primary-light/60" : "hover:bg-muted/40",
+                  )}
+                >
+                  <div className="w-36 shrink-0 min-w-0">
+                    <h3 className={cn("truncate text-sm font-bold", isEditing ? "text-primary-text" : "text-foreground")}>{item.make} {item.model}</h3>
+                    <p className="text-[11px] tabular-nums text-muted-foreground">{item.yearStart}–{item.yearEnd}</p>
+                  </div>
+                  <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
+                    {(item.immoDetails ?? []).map((d) => {
+                      const p = immoProfiles.find((x) => x.id === d.profileId);
+                      return p ? (
+                        <span key={d.profileId} className="inline-flex min-w-0 items-center gap-1.5">
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[11px] font-medium bg-accent-light text-accent dark:bg-accent/30 dark:text-accent-foreground">
+                            {profileTitle(p)}
+                          </span>
+                          {transponderLabel(d) && (
+                            <span className="truncate text-[11px] tabular-nums text-muted-foreground">{transponderLabel(d)}</span>
+                          )}
+                        </span>
+                      ) : null;
+                    })}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+                    aria-label={`Eliminar asignación ${item.make} ${item.model} ${item.yearStart}–${item.yearEnd}`}
+                    onClick={(e) => { e.stopPropagation(); setDeleteAssignmentId(item.id); }}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
               );
             })}
           </div>
