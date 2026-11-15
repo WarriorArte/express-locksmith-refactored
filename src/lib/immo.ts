@@ -38,3 +38,20 @@ export function formatFrecuencia(p: Pick<ImmoProfile, "frecuencia" | "modulacion
   const mhz = getFrecuenciaMHz(p.frecuencia);
   return [mhz ? `${mhz} MHz` : "", getModulacion(p)].filter(Boolean).join(" · ");
 }
+
+/** Imágenes de un perfil Immo en orden (perfiles antiguos solo tienen `mainImage`). */
+export function immoProfileImages(p: Pick<ImmoProfile, "images" | "mainImage">): string[] {
+  const list = (p.images ?? []).filter(Boolean);
+  if (list.length) return Array.from(new Set(list));
+  return p.mainImage ? [p.mainImage] : [];
+}
+
+/** Imagen principal de un perfil dentro de una asignación (la elegida o la primera). */
+export function immoAssignmentImage(
+  p: Pick<ImmoProfile, "images" | "mainImage">,
+  detail: Pick<ImmoAssignmentDetail, "imagenPrincipal"> | null | undefined,
+): string | undefined {
+  const images = immoProfileImages(p);
+  const chosen = detail?.imagenPrincipal;
+  return chosen && images.includes(chosen) ? chosen : images[0];
+}

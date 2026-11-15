@@ -38,7 +38,7 @@ import { FilterChip } from "@/design-system/detail/DetailScreen";
 import { useToolsUploadCode } from "@/hooks/useToolsUploadCode";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { resolveStorageUrl } from "@/lib/phpApi";
-import { formatFrecuencia, getFrecuenciaMHz, getModulacion, transponderLabel } from "@/lib/immo";
+import { formatFrecuencia, getFrecuenciaMHz, getModulacion, transponderLabel, immoProfileImages } from "@/lib/immo";
 import { cn } from "@/lib/utils";
 import type {
   ImmoAssignmentDetail, ImmoCatalogItem, ImmoProfile, KeycodeProfile,
@@ -686,7 +686,7 @@ export function AssignmentWizard({
           <ImmoProfileEditor
             draft={profileDraft}
             onChange={setProfileDraft}
-            onImageChange={(url) => setProfileDraft((d) => ({ ...d, mainImage: url }))}
+            onImagesChange={(imgs) => setProfileDraft((d) => ({ ...d, images: imgs, mainImage: imgs[0] }))}
             isUploadingImage={isUploading}
             uploadFile={uploadFile}
             galleryOpen={galleryOpen}
@@ -792,7 +792,7 @@ export function AssignmentWizard({
               </p>
             )}
             {filteredIm.map((p) => (
-              <SelectableRow key={p.id} selected={imIds.includes(p.id)} onClick={() => toggleIm(p.id)} title={profileTitle(p)} subtitle={[formatFrecuencia(p), p.bateria].filter(Boolean).join(" · ")} image={p.mainImage} />
+              <SelectableRow key={p.id} selected={imIds.includes(p.id)} onClick={() => toggleIm(p.id)} title={profileTitle(p)} subtitle={[formatFrecuencia(p), p.bateria].filter(Boolean).join(" · ")} image={immoProfileImages(p)[0]} />
             ))}
           </div>
         ) : step === STEP_IMMO_DATA ? (
@@ -809,6 +809,7 @@ export function AssignmentWizard({
                     onChange={(k, v) => setDetails((prev) => ({ ...prev, [id]: { ...(prev[id] ?? emptyDetail()), [k]: v } }))}
                     transponderCatalog={transponderCatalog}
                     equipoCatalog={equipoCatalog}
+                    profileImages={immoProfileImages(p)}
                   />
                 </section>
               );

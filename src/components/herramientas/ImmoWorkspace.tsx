@@ -15,7 +15,7 @@ import {
   TonalChip,
 } from "@/design-system/detail/DetailScreen";
 import { resolveStorageUrl } from "@/lib/phpApi";
-import { SIN_INMOVILIZADOR_TEXTO, formatFrecuencia } from "@/lib/immo";
+import { SIN_INMOVILIZADOR_TEXTO, formatFrecuencia, immoAssignmentImage, immoProfileImages } from "@/lib/immo";
 import { cn } from "@/lib/utils";
 import type { ImmoProfile, ImmoAssignmentDetail, ImmoCatalogItem } from "@/types";
 
@@ -48,6 +48,10 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
   const heading = vehicle ? `${vehicle.make} ${vehicle.model}` : title;
   const headingMeta = [vehicle?.year, vehicle ? profile.marca : null].filter(Boolean).join(" · ");
   const [mainImageViewerOpen, setMainImageViewerOpen] = useState(false);
+  // Portada = la imagen elegida en la asignación; al tocarla se abre el carrusel con todas.
+  const images = immoProfileImages(profile);
+  const heroImage = immoAssignmentImage(profile, detail);
+  const heroIndex = heroImage ? Math.max(0, images.indexOf(heroImage)) : 0;
 
   const generacionRemoto = (profile.generacionRemoto ?? []).filter((f) => f.value.trim());
   const noGenerable = !!detail?.transponderNoGenerable;
@@ -83,18 +87,23 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
       <DetailScreen title={heading} meta={headingMeta} onBack={onBack} backLabel="Volver a vehículos">
         {/* Llavero: foto completa + FCC ID + especificaciones */}
         <DetailHero>
-          {profile.mainImage && (
+          {heroImage && (
             <button
               type="button"
               onClick={() => setMainImageViewerOpen(true)}
-              aria-label={`Ver ${title} ampliado`}
+              aria-label={images.length > 1 ? `Ver las ${images.length} fotos de ${title}` : `Ver ${title} ampliado`}
               className="mx-auto mb-4 block max-w-full outline-none md:mb-0"
             >
               <img
-                src={resolveStorageUrl(profile.mainImage) ?? undefined}
+                src={resolveStorageUrl(heroImage) ?? undefined}
                 alt={title}
                 className="mx-auto block h-60 w-auto max-w-full object-contain drop-shadow-md md:h-72"
               />
+              {images.length > 1 && (
+                <span className="mt-2 block text-center text-xs font-medium text-muted-foreground">
+                  {images.length} fotos · toca para verlas
+                </span>
+              )}
             </button>
           )}
           <div className="min-w-0 space-y-3">
@@ -262,11 +271,12 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
         )}
       </DetailScreen>
 
-      {profile.mainImage && (
+      {images.length > 0 && (
         <ImageViewDialog
           open={mainImageViewerOpen}
           onOpenChange={setMainImageViewerOpen}
-          images={[{ url: profile.mainImage, description: title }]}
+          images={images.map((url) => ({ url, description: title }))}
+          initialIndex={heroIndex}
         />
       )}
     </>

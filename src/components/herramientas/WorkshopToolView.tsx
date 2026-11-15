@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { transponderLabel } from "@/lib/immo";
+import { immoAssignmentImage, transponderLabel } from "@/lib/immo";
 import { Car, Key, Radio, Cpu } from "lucide-react";
 
 import { MaterialShape } from "@/design-system/shapes/MaterialShape";
@@ -294,7 +294,7 @@ export function WorkshopToolView({
         .map((p) => ({
           key: p.id,
           onClick: () => openTool("immo", p.id),
-          image: resolveStorageUrl(p.mainImage),
+          image: resolveStorageUrl(immoAssignmentImage(p, immoDetailByProfileId.get(p.id))),
           imageClassName: "object-cover object-top",
           fallbackIcon: <Cpu className="h-8 w-8" />,
           title: [p.marca, p.fccId].filter(Boolean).join(" ") || "Sin título",

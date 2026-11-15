@@ -236,7 +236,10 @@ export interface ImmoProfile {
   /** FSK o ASK; vacío/ausente si no se ha indicado (perfiles anteriores). */
   modulacion?: ImmoModulacion | "";
   bateria: string;
+  /** Primera imagen (compatibilidad); se mantiene igual a `images[0]`. */
   mainImage?: string;
+  /** Todas las imágenes del remoto, en orden; la primera es la principal por defecto. */
+  images?: string[];
   generacionRemoto: ImmoGenField[];
   dateAdded: string;
 }
@@ -248,6 +251,11 @@ export interface ImmoProfile {
  */
 export interface ImmoAssignmentDetail {
   profileId: string;
+  /**
+   * Imagen del perfil elegida para este vehículo (miniaturas y portada al abrir la
+   * herramienta). Vacía o ya no presente en el perfil → la primera del perfil.
+   */
+  imagenPrincipal?: string;
   /**
    * true cuando el modelo no viene equipado con sistema inmovilizador: no hay transponder
    * ni pincode que programar. Los datos de transponder se conservan (por si se desmarca)

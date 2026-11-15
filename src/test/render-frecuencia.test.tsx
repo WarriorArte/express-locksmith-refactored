@@ -8,7 +8,7 @@ describe("campo de frecuencia", () => {
       <ImmoProfileEditor
         draft={{ ...emptyProfile(), frecuencia: "313" }}
         onChange={() => {}}
-        onImageChange={() => {}}
+        onImagesChange={() => {}}
         isUploadingImage={false}
         uploadFile={undefined as never}
         galleryOpen={false}

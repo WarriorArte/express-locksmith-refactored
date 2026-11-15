@@ -3,7 +3,7 @@ import { m as motion } from "framer-motion";
 import {
   Plus, Trash2, Edit, Check, Search,
   ImageIcon, Car, X, ChevronDown, Cpu, Radio,
-  ShieldCheck, Wrench, ChevronUp, LayoutGrid, Loader2, KeyRound,
+  ShieldCheck, Wrench, ChevronUp, LayoutGrid, Loader2, KeyRound, Star,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -37,7 +37,7 @@ import type {
   ImmoAssignmentDetail, ToolAssignment,
 } from "@/types";
 import { IMMO_MODULACIONES } from "@/types";
-import { SIN_INMOVILIZADOR_TEXTO, looksLikeNoImmobilizer, transponderLabel, formatFrecuencia, getFrecuenciaMHz, getModulacion } from "@/lib/immo";
+import { SIN_INMOVILIZADOR_TEXTO, looksLikeNoImmobilizer, transponderLabel, formatFrecuencia, getFrecuenciaMHz, getModulacion, immoProfileImages, immoAssignmentImage } from "@/lib/immo";
 import { cn } from "@/lib/utils";
 import { uid } from "./assignment-wizard/wizardUtils";
 
@@ -51,6 +51,7 @@ export function emptyProfile(): Omit<ImmoProfile, "id" | "dateAdded"> {
     modulacion: "",
     bateria: "",
     mainImage: undefined,
+    images: [],
     generacionRemoto: [
       { id: uid(), label: "Keydiy ID", value: "" },
       { id: uid(), label: "Xhorse ID", value: "" },
@@ -60,6 +61,7 @@ export function emptyProfile(): Omit<ImmoProfile, "id" | "dateAdded"> {
 
 export function emptyDetail(): Omit<ImmoAssignmentDetail, "profileId"> {
   return {
+    imagenPrincipal: "",
     sinInmovilizador: false,
     notasSinInmovilizador: "",
     transponder: "",
@@ -183,7 +185,8 @@ function Section({ icon, title, children }: { icon: React.ReactNode; title: stri
 interface ImmoProfileEditorProps {
   draft: Omit<ImmoProfile, "id" | "dateAdded">;
   onChange: (draft: Omit<ImmoProfile, "id" | "dateAdded">) => void;
-  onImageChange: (url: string | undefined) => void | Promise<void>;
+  /** Lista completa de imágenes (la primera es la principal por defecto). */
+  onImagesChange: (images: string[]) => void | Promise<void>;
   isUploadingImage: boolean;
   uploadFile: (file: File) => Promise<{ success: boolean; url?: string }>;
   galleryOpen: boolean;
@@ -192,47 +195,80 @@ interface ImmoProfileEditorProps {
 }
 
 export function ImmoProfileEditor({
-  draft, onChange, onImageChange, isUploadingImage, uploadFile, galleryOpen, setGalleryOpen, workshopCode,
+  draft, onChange, onImagesChange, isUploadingImage, uploadFile, galleryOpen, setGalleryOpen, workshopCode,
 }: ImmoProfileEditorProps) {
   const mainImgRef = useRef<HTMLInputElement>(null);
   const set = <K extends keyof typeof draft>(key: K, val: (typeof draft)[K]) => onChange({ ...draft, [key]: val });
 
-  const handleMainImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const images = immoProfileImages(draft);
+  const setImages = (next: string[]) => void onImagesChange(Array.from(new Set(next.filter(Boolean))));
+
+  // Varias imágenes a la vez: se suben en orden y se agregan al final.
+  const handleAddImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
     e.target.value = "";
-    if (!file) return;
-    const result = await uploadFile(file);
-    if (result.success && result.url) await onImageChange(result.url);
+    if (!files.length) return;
+    const added: string[] = [];
+    for (const file of files) {
+      const result = await uploadFile(file);
+      if (result.success && result.url) added.push(result.url);
+    }
+    if (added.length) setImages([...images, ...added]);
   };
 
   return (
     <div className="space-y-6 pb-6">
-      {/* Main image */}
-      <Section icon={<ImageIcon className="w-4 h-4" />} title="Imagen Principal">
-        <input ref={mainImgRef} type="file" accept="image/*" className="hidden" onChange={handleMainImage} />
-        {draft.mainImage ? (
+      {/* Imágenes: la primera es la principal por defecto; cada asignación puede elegir otra. */}
+      <Section icon={<ImageIcon className="w-4 h-4" />} title="Imágenes">
+        <input ref={mainImgRef} type="file" accept="image/*" multiple className="hidden" onChange={handleAddImages} />
+        {images.length > 0 ? (
           <div className="space-y-2">
-            <div className="rounded-lg border border-border bg-muted/30 flex items-center justify-center p-3 max-h-48 overflow-hidden">
-              <img src={resolveStorageUrl(draft.mainImage) ?? undefined} alt="Imagen principal" className="max-w-full max-h-40 object-contain rounded" />
+            <div className="flex flex-wrap gap-2">
+              {images.map((url, i) => (
+                <div key={url} className="relative flex h-28 items-center justify-center rounded-lg border border-border bg-muted/30 p-1.5">
+                  <img src={resolveStorageUrl(url) ?? undefined} alt={`Imagen ${i + 1}`} className="h-full w-auto max-w-[9rem] object-contain" />
+                  {i === 0 && (
+                    <span className="absolute left-1 top-1 rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-bold text-secondary-foreground">Principal</span>
+                  )}
+                  <div className="absolute right-1 top-1 flex gap-1">
+                    {i > 0 && (
+                      <button
+                        type="button"
+                        title="Usar como principal"
+                        aria-label={`Usar imagen ${i + 1} como principal`}
+                        onClick={() => setImages([url, ...images.filter((u) => u !== url)])}
+                        disabled={isUploadingImage}
+                        className="flex h-6 w-6 items-center justify-center rounded-full bg-background/90 text-foreground shadow-sm hover:bg-secondary"
+                      >
+                        <Star className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      title="Quitar"
+                      aria-label={`Quitar imagen ${i + 1}`}
+                      onClick={() => setImages(images.filter((u) => u !== url))}
+                      disabled={isUploadingImage}
+                      className="flex h-6 w-6 items-center justify-center rounded-full bg-background/90 text-destructive shadow-sm hover:bg-destructive/10"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
             <div className="flex gap-2 flex-wrap">
               <Button variant="outline" size="sm" onClick={() => mainImgRef.current?.click()} disabled={isUploadingImage}>
-                {isUploadingImage ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5 mr-1.5" />}
-                Cambiar
+                {isUploadingImage ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Plus className="w-3.5 h-3.5 mr-1.5" />}
+                {isUploadingImage ? "Subiendo…" : "Agregar imágenes"}
               </Button>
               <Button variant="outline" size="sm" onClick={() => setGalleryOpen(true)} disabled={isUploadingImage}>
                 <LayoutGrid className="w-3.5 h-3.5 mr-1.5" /> Elegir de galería
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-destructive border-destructive/40 hover:bg-destructive/10"
-                onClick={() => void onImageChange(undefined)}
-                disabled={isUploadingImage}
-              >
-                <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Quitar
-              </Button>
             </div>
+            <p className="text-[11px] text-muted-foreground">
+              La primera es la principal por defecto (usa la estrella para cambiarla). En cada asignación puedes elegir cuál se muestra.
+            </p>
           </div>
         ) : (
           <div className="flex flex-col gap-2">
@@ -243,8 +279,8 @@ export function ImmoProfileEditor({
               className="w-full border-2 border-dashed border-border rounded-xl py-8 flex flex-col items-center gap-2 text-muted-foreground hover:border-primary/40 hover:text-primary/60 transition-colors disabled:opacity-60"
             >
               {isUploadingImage ? <Loader2 className="w-8 h-8 opacity-30 animate-spin" /> : <ImageIcon className="w-8 h-8 opacity-30" />}
-              <span className="text-sm font-medium">{isUploadingImage ? "Subiendo…" : "Haz clic para subir imagen"}</span>
-              <span className="text-xs opacity-70">PNG, JPG, WEBP</span>
+              <span className="text-sm font-medium">{isUploadingImage ? "Subiendo…" : "Haz clic para subir imágenes"}</span>
+              <span className="text-xs opacity-70">PNG, JPG, WEBP · puedes elegir varias</span>
             </button>
             <Button variant="outline" size="sm" onClick={() => setGalleryOpen(true)} disabled={isUploadingImage}>
               <LayoutGrid className="w-3.5 h-3.5 mr-1.5" /> Elegir de galería
@@ -257,7 +293,7 @@ export function ImmoProfileEditor({
           onOpenChange={setGalleryOpen}
           folder="immo"
           workshopCode={workshopCode}
-          onSelect={(url) => void onImageChange(url)}
+          onSelect={(url) => setImages([...images, url])}
           layout="list"
         />
       </Section>
@@ -358,12 +394,12 @@ export function ImmoManager({ profiles, onSave, onUpdate, onDelete, catalog: _ca
   const [galleryOpen, setGalleryOpen] = useState(false);
   // Cambia/elimina la imagen del perfil y borra el archivo del servidor si ya nadie más lo usa
   // (otras entradas pueden compartir la misma imagen al elegirla de la galería).
-  const replaceMainImage = async (newUrl: string | undefined) => {
-    const oldUrl = draft.mainImage;
-    setDraft((d) => ({ ...d, mainImage: newUrl }));
-    if (oldUrl && oldUrl !== newUrl) {
-      const stillUsedElsewhere = profiles.some((p) => p.id !== editingId && p.mainImage === oldUrl);
-      if (!stillUsedElsewhere) await phpApiDeleteFile(oldUrl);
+  const replaceImages = async (next: string[]) => {
+    const prev = immoProfileImages(draft);
+    setDraft((d) => ({ ...d, images: next, mainImage: next[0] }));
+    for (const url of prev.filter((u) => !next.includes(u))) {
+      const stillUsedElsewhere = profiles.some((p) => p.id !== editingId && immoProfileImages(p).includes(url));
+      if (!stillUsedElsewhere) await phpApiDeleteFile(url);
     }
   };
 
@@ -378,7 +414,8 @@ export function ImmoManager({ profiles, onSave, onUpdate, onDelete, catalog: _ca
 
   const openEdit = (p: ImmoProfile) => {
     const { id, dateAdded, ...rest } = p;
-    setDraft({ ...rest, generacionRemoto: rest.generacionRemoto ?? [] });
+    const imgs = immoProfileImages(rest);
+    setDraft({ ...rest, images: imgs, mainImage: imgs[0], generacionRemoto: rest.generacionRemoto ?? [] });
     setEditingId(id); setIsNew(false); setView("edit");
   };
 
@@ -431,9 +468,9 @@ export function ImmoManager({ profiles, onSave, onUpdate, onDelete, catalog: _ca
           <div className="space-y-2">
             {filtered.map((p) => (
               <motion.div key={p.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-4 p-4 rounded-lg border border-border bg-card hover:border-primary/30 transition-colors">
-                {p.mainImage ? (
+                {immoProfileImages(p)[0] ? (
                   <div className="w-12 h-10 rounded-md overflow-hidden border border-border bg-muted/30 shrink-0">
-                    <img src={resolveStorageUrl(p.mainImage) ?? undefined} alt="" className="w-full h-full object-cover" />
+                    <img src={resolveStorageUrl(immoProfileImages(p)[0]) ?? undefined} alt="" className="w-full h-full object-cover" />
                   </div>
                 ) : (
                   <div className="w-12 h-10 rounded-md bg-primary-light flex items-center justify-center shrink-0">
@@ -492,7 +529,7 @@ export function ImmoManager({ profiles, onSave, onUpdate, onDelete, catalog: _ca
         <ImmoProfileEditor
           draft={draft}
           onChange={setDraft}
-          onImageChange={replaceMainImage}
+          onImagesChange={replaceImages}
           isUploadingImage={isUploadingImage}
           uploadFile={uploadFile}
           galleryOpen={galleryOpen}
@@ -512,10 +549,13 @@ export interface ImmoDetailFieldsProps {
   onChange: (key: keyof Omit<ImmoAssignmentDetail, "profileId">, value: unknown) => void;
   transponderCatalog: ImmoCatalogItem[];
   equipoCatalog: ImmoCatalogItem[];
+  /** Imágenes del perfil: si hay más de una se elige la principal de esta asignación. */
+  profileImages?: string[];
 }
 
 /** Campos de datos por vehículo de un perfil Immo (compartidos por escritorio y asistente móvil). */
-export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equipoCatalog }: ImmoDetailFieldsProps) {
+export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equipoCatalog, profileImages = [] }: ImmoDetailFieldsProps) {
+  const chosenImage = immoAssignmentImage({ images: profileImages }, detail);
   const sinInmovilizador = !!detail.sinInmovilizador;
   // «N/A» escrito a mano en Transponder: se sugiere usar la opción en su lugar.
   const suggestNoImmo = !sinInmovilizador && looksLikeNoImmobilizer(detail.transponder);
@@ -525,6 +565,39 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
   };
   return (
     <>
+                          {/* Imagen principal de esta asignación (miniaturas y portada) */}
+                          {profileImages.length > 1 && (
+                            <div className="space-y-1.5">
+                              <Label className="text-xs font-bold">Imagen principal para este vehículo</Label>
+                              <div role="radiogroup" aria-label="Imagen principal para este vehículo" className="flex flex-wrap gap-2">
+                                {profileImages.map((url, i) => {
+                                  const active = url === chosenImage;
+                                  return (
+                                    <button
+                                      key={url}
+                                      type="button"
+                                      role="radio"
+                                      aria-checked={active}
+                                      aria-label={`Imagen ${i + 1}`}
+                                      onClick={() => onChange("imagenPrincipal", url)}
+                                      className={cn(
+                                        "relative flex h-20 items-center justify-center rounded-lg border-2 bg-muted/30 p-1 transition-colors",
+                                        active ? "border-accent" : "border-transparent hover:border-border",
+                                      )}
+                                    >
+                                      <img src={resolveStorageUrl(url) ?? undefined} alt="" className="h-full w-auto max-w-[7rem] object-contain" />
+                                      {active && (
+                                        <span className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-accent-foreground">
+                                          <Check className="h-3 w-3" />
+                                        </span>
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                              <p className="text-[11px] text-muted-foreground">Se usa en las miniaturas y al abrir la herramienta; las demás se ven en el carrusel.</p>
+                            </div>
+                          )}
                           {/* Sin inmovilizador: oculta transponder, pincode y equipos de transponder */}
                           <div
                             className={cn(
@@ -849,6 +922,7 @@ export function ImmoAssignmentManager({
     const map: DetailMap = {};
     details.forEach((d) => {
       map[d.profileId] = {
+        imagenPrincipal: d.imagenPrincipal ?? "",
         sinInmovilizador: d.sinInmovilizador ?? false,
         notasSinInmovilizador: d.notasSinInmovilizador ?? "",
         transponder: d.transponder,
@@ -1045,8 +1119,8 @@ export function ImmoAssignmentManager({
                         className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-muted/40 transition-colors"
                       >
                         <div className="flex items-center gap-2 min-w-0">
-                          {p.mainImage ? (
-                            <img src={resolveStorageUrl(p.mainImage) ?? undefined} className="w-6 h-6 rounded object-cover shrink-0" alt="" />
+                          {immoAssignmentImage(p, detail) ? (
+                            <img src={resolveStorageUrl(immoAssignmentImage(p, detail)) ?? undefined} className="w-6 h-6 rounded object-cover shrink-0" alt="" />
                           ) : (
                             <Cpu className="w-4 h-4 text-accent shrink-0" />
                           )}
@@ -1061,7 +1135,7 @@ export function ImmoAssignmentManager({
                       {/* Accordion body */}
                       {isExpanded && (
                         <div className="px-3 pb-4 space-y-4 border-t border-border/50 pt-3">
-                          <ImmoDetailFields id={id} detail={detail} onChange={(k, v) => updateDetail(id, k, v)} transponderCatalog={transponderCatalog} equipoCatalog={equipoCatalog} />
+                          <ImmoDetailFields id={id} detail={detail} onChange={(k, v) => updateDetail(id, k, v)} transponderCatalog={transponderCatalog} equipoCatalog={equipoCatalog} profileImages={immoProfileImages(p)} />
                         </div>
                       )}
                     </div>
