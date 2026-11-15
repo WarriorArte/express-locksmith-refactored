@@ -708,7 +708,7 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                           <p className="border-t border-border/60 pt-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">Programación del remoto</p>
                           {/* Equipos remoto */}
                           <div className="space-y-1.5">
-                            <Label className="text-xs font-bold">Equipos — Remoto</Label>
+                            <Label className="text-xs font-bold">Equipos para programar el remoto</Label>
                             <CatalogChipSelector catalogItems={equipoCatalog} selectedIds={detail.equiposRemotoIds} onChange={(ids) => onChange("equiposRemotoIds", ids)} />
                           </div>
                           {/* Método del remoto: se muestra junto a sus pasos */}

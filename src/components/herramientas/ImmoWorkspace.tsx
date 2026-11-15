@@ -232,7 +232,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
             <div className="space-y-5">
               {equiposRemoto.length > 0 && (
                 <div>
-                  <SubHeading>Equipo para el remoto</SubHeading>
+                  <SubHeading>Equipo para programar el remoto</SubHeading>
                   <ImageCarousel items={equiposRemoto} fallbackIcon={toolIcon} />
                 </div>
               )}
