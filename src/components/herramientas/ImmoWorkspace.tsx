@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { BatteryMedium, Check, Hand, Images, KeyRound, Plug, Radio, ShieldOff, StickyNote, Wrench, X } from "lucide-react";
+import { BatteryMedium, Car, Check, Hand, Images, KeyRound, Plug, Radio, ShieldOff, StickyNote, Wrench, X } from "lucide-react";
 import { ImageViewDialog } from "@/components/shared/ImageViewDialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { FormattedText } from "@/components/herramientas/RichTextField";
 import { ProcedureSteps } from "@/components/herramientas/ProcedureSteps";
 import {
@@ -40,10 +41,12 @@ interface ImmoWorkspaceProps {
   detail: ImmoAssignmentDetail | null;
   catalog: ImmoCatalogItem[];
   vehicle?: { year: number; make: string; model: string };
+  /** Otros vehículos que comparten este perfil Immo o su FCC ID (texto plano). */
+  compatibleVehicles?: string[];
   onBack: () => void;
 }
 
-export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: ImmoWorkspaceProps) {
+export function ImmoWorkspace({ profile, detail, catalog, vehicle, compatibleVehicles = [], onBack }: ImmoWorkspaceProps) {
   const title = profileTitle(profile);
   const heading = vehicle ? `${vehicle.make} ${vehicle.model}` : title;
   const headingMeta = [vehicle?.year, vehicle ? profile.marca : null].filter(Boolean).join(" · ");
@@ -109,7 +112,33 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, onBack }: Imm
           )}
           <div className="min-w-0 space-y-3">
             {profile.fccId ? (
-              <CopyableValue label="FCC ID" value={profile.fccId} />
+              <CopyableValue
+                label="FCC ID"
+                value={profile.fccId}
+                action={
+                  compatibleVehicles.length > 0 ? (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          aria-label={`Compatible con ${compatibleVehicles.length} vehículo(s) más`}
+                          className="mb-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                        >
+                          <Car className="h-5 w-5" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent align="end" className="w-64 p-0">
+                        <p className="px-4 pb-2 pt-3 text-sm font-bold text-foreground">Compatible con:</p>
+                        <ul className="max-h-72 overflow-y-auto px-4 pb-3 text-sm text-foreground">
+                          {compatibleVehicles.map((v) => (
+                            <li key={v} className="py-1 tabular-nums">{v}</li>
+                          ))}
+                        </ul>
+                      </PopoverContent>
+                    </Popover>
+                  ) : undefined
+                }
+              />
             ) : (
               <p className="text-sm text-muted-foreground">Sin FCC ID registrado</p>
             )}

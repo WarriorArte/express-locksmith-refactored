@@ -145,6 +145,28 @@ export function WorkshopToolView({
     return null;
   }, [activeImmoProfileId, matchingImmoAssignments]);
 
+  // «Compatible con»: otros vehículos con el mismo perfil Immo o el mismo FCC ID.
+  const immoCompatibleVehicles = useMemo((): string[] => {
+    if (!activeImmoProfileId) return [];
+    const active = immoProfiles.find((p) => p.id === activeImmoProfileId);
+    const fcc = active?.fccId?.trim().toLowerCase() ?? "";
+    const sharedIds = new Set(
+      immoProfiles
+        .filter((p) => p.id === activeImmoProfileId || (fcc && p.fccId?.trim().toLowerCase() === fcc))
+        .map((p) => p.id),
+    );
+    const year = Number(selectedYear);
+    const isCurrent = (a: ToolAssignment) =>
+      a.make === selectedMake && a.model === selectedModel && year >= a.yearStart && year <= a.yearEnd;
+    const rows = immoValidAssignments
+      .filter((a) => !isCurrent(a) && (a.immoDetails ?? []).some((d) => sharedIds.has(d.profileId)))
+      .sort((a, b) =>
+        a.make.localeCompare(b.make, "es") || a.model.localeCompare(b.model, "es") || a.yearStart - b.yearStart,
+      )
+      .map((a) => `${a.make} ${a.model} ${a.yearStart === a.yearEnd ? a.yearStart : `${a.yearStart}–${a.yearEnd}`}`);
+    return Array.from(new Set(rows));
+  }, [activeImmoProfileId, immoProfiles, immoValidAssignments, selectedYear, selectedMake, selectedModel]);
+
   const immoDetailByProfileId = useMemo(() => {
     const map = new Map<string, ImmoAssignmentDetail>();
     matchingImmoAssignments.forEach((assignment) => {
@@ -208,6 +230,7 @@ export function WorkshopToolView({
           profile={immoProfile}
           detail={activeImmoDetail}
           catalog={immoCatalog}
+          compatibleVehicles={immoCompatibleVehicles}
           vehicle={{ year: Number(selectedYear), make: selectedMake, model: selectedModel }}
           onBack={() => {
             setActiveToolId(null);

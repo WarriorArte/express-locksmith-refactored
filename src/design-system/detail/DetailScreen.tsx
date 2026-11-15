@@ -338,11 +338,14 @@ export function CopyableValue({
   label,
   value,
   copiedMessage,
+  action,
 }: {
   label: string;
   value: string;
   /** Texto del aviso al copiar (por defecto "<label> copiado"). */
   copiedMessage?: string;
+  /** Botón extra a la par del icono de copiar (fuera del botón de copiar). */
+  action?: React.ReactNode;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);
@@ -373,13 +376,16 @@ export function CopyableValue({
     }
   };
 
-  return (
+  const copyButton = (
     <button
       type="button"
       onClick={copy}
       onPointerDown={spawnRipple}
       aria-label={`Copiar ${label} ${value}`}
-      className="relative -mx-2 flex w-[calc(100%+1rem)] items-end gap-2 overflow-hidden rounded-2xl px-2 py-1 text-left"
+      className={cn(
+        "relative flex items-end gap-2 overflow-hidden rounded-2xl px-2 py-1 text-left",
+        action ? "-ml-2 min-w-0 flex-1" : "-mx-2 w-[calc(100%+1rem)]",
+      )}
     >
       <div className="min-w-0 flex-1">
         <span className="block text-xs font-medium text-muted-foreground">{label}</span>
@@ -395,6 +401,14 @@ export function CopyableValue({
       </div>
       <Copy className="mb-2 h-[18px] w-[18px] shrink-0 text-muted-foreground" />
     </button>
+  );
+
+  if (!action) return copyButton;
+  return (
+    <div className="-mr-2 flex items-end gap-1">
+      {copyButton}
+      {action}
+    </div>
   );
 }
 
