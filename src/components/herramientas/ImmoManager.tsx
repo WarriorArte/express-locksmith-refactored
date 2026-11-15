@@ -39,6 +39,7 @@ import type {
 import { IMMO_MODULACIONES } from "@/types";
 import { SIN_INMOVILIZADOR_TEXTO, looksLikeNoImmobilizer, transponderLabel, formatFrecuencia, getFrecuenciaMHz, getModulacion, immoProfileImages, immoAssignmentImage } from "@/lib/immo";
 import { cn } from "@/lib/utils";
+import { catalogOptions, sameLabel } from "@/lib/immoCatalogDefaults";
 import { uid } from "./assignment-wizard/wizardUtils";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -180,6 +181,46 @@ function Section({ icon, title, children }: { icon: React.ReactNode; title: stri
   );
 }
 
+// ── CatalogSelect ─────────────────────────────────────────────────────────────
+
+/**
+ * Selector NATIVO con las opciones de un catálogo de Herramientas y Suministros, en orden
+ * alfabético. Un valor guardado que ya no está en la lista se conserva como opción.
+ */
+export function CatalogSelect({
+  id, value, items, onChange, placeholder, label,
+}: {
+  id?: string;
+  value: string | undefined | null;
+  items: ImmoCatalogItem[];
+  onChange: (value: string) => void;
+  placeholder: string;
+  label: string;
+}) {
+  const options = catalogOptions(items, value);
+  const selected = options.find((o) => sameLabel(o, value ?? "")) ?? "";
+  return (
+    <div className="relative">
+      <select
+        id={id}
+        aria-label={label}
+        value={selected}
+        onChange={(e) => onChange(e.target.value)}
+        className={cn(
+          "h-8 w-full cursor-pointer appearance-none rounded-sm border-[1.5px] border-input bg-card pl-3 pr-8 text-sm font-medium tabular-nums transition-colors hover:border-foreground/60 focus-visible:border-2 focus-visible:border-primary focus-visible:outline-none",
+          selected ? "text-foreground" : "text-muted-foreground",
+        )}
+      >
+        <option value="" className="text-foreground">{placeholder}</option>
+        {options.map((o) => (
+          <option key={o} value={o} className="text-foreground">{o}</option>
+        ))}
+      </select>
+      <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+    </div>
+  );
+}
+
 // ── ImmoProfileEditor ─────────────────────────────────────────────────────────
 
 interface ImmoProfileEditorProps {
@@ -192,10 +233,12 @@ interface ImmoProfileEditorProps {
   galleryOpen: boolean;
   setGalleryOpen: (open: boolean) => void;
   workshopCode?: string;
+  /** Opciones de «Batería» (Herramientas y Suministros). */
+  bateriaCatalog?: ImmoCatalogItem[];
 }
 
 export function ImmoProfileEditor({
-  draft, onChange, onImagesChange, isUploadingImage, uploadFile, galleryOpen, setGalleryOpen, workshopCode,
+  draft, onChange, onImagesChange, isUploadingImage, uploadFile, galleryOpen, setGalleryOpen, workshopCode, bateriaCatalog = [],
 }: ImmoProfileEditorProps) {
   const mainImgRef = useRef<HTMLInputElement>(null);
   const set = <K extends keyof typeof draft>(key: K, val: (typeof draft)[K]) => onChange({ ...draft, [key]: val });
@@ -350,6 +393,14 @@ export function ImmoProfileEditor({
                     })}
                   </div>
                 </div>
+              ) : key === "bateria" ? (
+                <CatalogSelect
+                  label="Batería"
+                  value={draft.bateria}
+                  items={bateriaCatalog}
+                  onChange={(v) => set("bateria", v)}
+                  placeholder="Elige la batería"
+                />
               ) : (
                 <Input value={draft[key]} onChange={(e) => set(key, e.target.value)} placeholder={ph} className={`h-8 text-sm ${cls}`} />
               )}
@@ -380,7 +431,8 @@ interface ImmoManagerProps {
   catalog: ImmoCatalogItem[];
 }
 
-export function ImmoManager({ profiles, onSave, onUpdate, onDelete, catalog: _catalog }: ImmoManagerProps) {
+export function ImmoManager({ profiles, onSave, onUpdate, onDelete, catalog }: ImmoManagerProps) {
+  const bateriaCatalog = useMemo(() => catalog.filter((i) => i.category === "bateria"), [catalog]);
   const [view, setView] = useState<View>("list");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Omit<ImmoProfile, "id" | "dateAdded">>(emptyProfile());
@@ -535,6 +587,7 @@ export function ImmoManager({ profiles, onSave, onUpdate, onDelete, catalog: _ca
           galleryOpen={galleryOpen}
           setGalleryOpen={setGalleryOpen}
           workshopCode={toolsUploadCode}
+          bateriaCatalog={bateriaCatalog}
         />
       </div>
     </div>
@@ -551,10 +604,12 @@ export interface ImmoDetailFieldsProps {
   equipoCatalog: ImmoCatalogItem[];
   /** Imágenes del perfil: si hay más de una se elige la principal de esta asignación. */
   profileImages?: string[];
+  /** Opciones del campo «Transponder» (Herramientas y Suministros). */
+  transponderOptions?: ImmoCatalogItem[];
 }
 
 /** Campos de datos por vehículo de un perfil Immo (compartidos por escritorio y asistente móvil). */
-export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equipoCatalog, profileImages = [] }: ImmoDetailFieldsProps) {
+export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equipoCatalog, profileImages = [], transponderOptions = [] }: ImmoDetailFieldsProps) {
   const chosenImage = immoAssignmentImage({ images: profileImages }, detail);
   const sinInmovilizador = !!detail.sinInmovilizador;
   // «N/A» escrito a mano en Transponder: se sugiere usar la opción en su lugar.
@@ -640,8 +695,15 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                           <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2">
                           {/* Transponder */}
                           <div className="space-y-1">
-                            <Label className="text-xs font-bold">Transponder</Label>
-                            <Input value={detail.transponder} onChange={(e) => onChange("transponder", e.target.value)} placeholder="Philips ID46…" className="h-8 text-sm tabular-nums" />
+                            <Label htmlFor={`transponder-${id}`} className="text-xs font-bold">Transponder</Label>
+                            <CatalogSelect
+                              id={`transponder-${id}`}
+                              label="Transponder"
+                              value={detail.transponder}
+                              items={transponderOptions}
+                              onChange={(v) => onChange("transponder", v)}
+                              placeholder="Elige el transponder"
+                            />
                             {suggestNoImmo && (
                               <button
                                 type="button"
@@ -871,6 +933,7 @@ export function ImmoAssignmentManager({
 
   const transponderCatalog = useMemo(() => catalog.filter((i) => i.category === "transponder"), [catalog]);
   const equipoCatalog = useMemo(() => catalog.filter((i) => i.category === "equipo"), [catalog]);
+  const transponderOptions = useMemo(() => catalog.filter((i) => i.category === "transponderVehiculo"), [catalog]);
 
   const immoAssignments = useMemo(
     () => assignments.filter((a) => (a.immoDetails?.length ?? 0) > 0),
@@ -1135,7 +1198,7 @@ export function ImmoAssignmentManager({
                       {/* Accordion body */}
                       {isExpanded && (
                         <div className="px-3 pb-4 space-y-4 border-t border-border/50 pt-3">
-                          <ImmoDetailFields id={id} detail={detail} onChange={(k, v) => updateDetail(id, k, v)} transponderCatalog={transponderCatalog} equipoCatalog={equipoCatalog} profileImages={immoProfileImages(p)} />
+                          <ImmoDetailFields id={id} detail={detail} onChange={(k, v) => updateDetail(id, k, v)} transponderCatalog={transponderCatalog} equipoCatalog={equipoCatalog} profileImages={immoProfileImages(p)} transponderOptions={transponderOptions} />
                         </div>
                       )}
                     </div>

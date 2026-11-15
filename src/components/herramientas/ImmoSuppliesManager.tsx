@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Plus, Trash2, Edit, Check, Camera, X, GripVertical, Cpu, Wrench } from "lucide-react";
+import { Plus, Trash2, Edit, Check, Camera, X, GripVertical, Cpu, Wrench, BatteryMedium, KeyRound, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import type { ImmoCatalogItem } from "@/types";
+import { DEFAULTS_BY_CATEGORY, sameLabel, sortCatalogItems, type ImmoTextCategory } from "@/lib/immoCatalogDefaults";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -265,6 +266,156 @@ function CatalogSection({
   );
 }
 
+// ── TextCatalogSection ─────────────────────────────────────────────────────────
+
+/** Lista de solo texto, siempre en orden alfabético (Transponders y Baterías). */
+function TextCatalogSection({
+  title, subtitle, icon, items, category, noun, onAdd, onUpdate, onDelete,
+}: {
+  title: string;
+  subtitle: string;
+  icon: React.ReactNode;
+  items: ImmoCatalogItem[];
+  category: ImmoTextCategory;
+  /** «transponder», «batería»… para los textos. */
+  noun: string;
+  onAdd: (item: ImmoCatalogItem) => void;
+  onUpdate: (item: ImmoCatalogItem) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [newLabel, setNewLabel] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingLabel, setEditingLabel] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const sorted = sortCatalogItems(items);
+  const missingDefaults = DEFAULTS_BY_CATEGORY[category].filter((d) => !items.some((i) => sameLabel(i.label, d)));
+
+  const exists = (label: string, exceptId?: string) => items.some((i) => i.id !== exceptId && sameLabel(i.label, label));
+
+  const handleAdd = () => {
+    const label = newLabel.trim().replace(/\s+/g, " ");
+    if (!label) return;
+    if (exists(label)) { toast.error(`«${label}» ya está en la lista.`); return; }
+    onAdd({ id: uid(), label, category });
+    setNewLabel("");
+  };
+
+  const commitEdit = () => {
+    if (!editingId) return;
+    const label = editingLabel.trim().replace(/\s+/g, " ");
+    const item = items.find((i) => i.id === editingId);
+    if (!label || !item) { setEditingId(null); return; }
+    if (exists(label, editingId)) { toast.error(`«${label}» ya está en la lista.`); return; }
+    if (label !== item.label) onUpdate({ ...item, label });
+    setEditingId(null);
+  };
+
+  const restoreDefaults = () => {
+    missingDefaults.forEach((label) => onAdd({ id: uid(), label, category }));
+    toast.success(`Se agregaron ${missingDefaults.length} de la lista inicial.`);
+  };
+
+  return (
+    <Card className="flex flex-col">
+      <CardContent className="flex flex-1 flex-col gap-4 p-5">
+        <div className="flex items-start gap-3">
+          <div className="p-2 rounded-lg bg-primary-light text-primary shrink-0 mt-0.5">{icon}</div>
+          <div>
+            <h3 className="font-bold text-base text-foreground">{title}</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
+          </div>
+          <Badge variant="secondary" className="ml-auto shrink-0">{items.length}</Badge>
+        </div>
+
+        <Separator />
+
+        <div className="max-h-96 flex-1 min-h-[80px] space-y-1 overflow-y-auto pr-1">
+          {sorted.length === 0 && (
+            <div className="flex items-center justify-center py-8 rounded-lg border border-dashed border-border text-muted-foreground text-sm">
+              Sin elementos. Agrega el primero abajo.
+            </div>
+          )}
+          {sorted.map((item) => (
+            <div key={item.id} className="flex items-center gap-2 rounded-lg border border-border bg-card px-2.5 py-1.5 hover:border-primary/30 transition-colors">
+              {editingId === item.id ? (
+                <Input
+                  autoFocus
+                  value={editingLabel}
+                  onChange={(e) => setEditingLabel(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") commitEdit(); if (e.key === "Escape") setEditingId(null); }}
+                  className="h-7 flex-1 text-sm"
+                />
+              ) : (
+                <span className="flex-1 truncate text-sm font-medium tabular-nums text-foreground">{item.label}</span>
+              )}
+              <button
+                type="button"
+                title={editingId === item.id ? "Guardar" : "Editar nombre"}
+                onClick={() => {
+                  if (editingId === item.id) { commitEdit(); return; }
+                  setEditingId(item.id);
+                  setEditingLabel(item.label);
+                }}
+                className="w-6 h-6 flex items-center justify-center rounded text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+              >
+                {editingId === item.id ? <Check className="w-3 h-3" /> : <Edit className="w-3 h-3" />}
+              </button>
+              <button
+                type="button"
+                title="Eliminar"
+                onClick={() => setDeleteId(item.id)}
+                className="w-6 h-6 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div className="space-y-2 pt-1 border-t border-border">
+          <div className="flex gap-2 pt-2">
+            <Input
+              value={newLabel}
+              onChange={(e) => setNewLabel(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+              placeholder={`Nuevo ${noun}…`}
+              className="h-8 text-sm flex-1"
+            />
+            <Button type="button" variant="secondary" size="sm" className="h-8 shrink-0" onClick={handleAdd} disabled={!newLabel.trim()}>
+              <Plus className="w-3.5 h-3.5 mr-1" /> Agregar
+            </Button>
+          </div>
+          {missingDefaults.length > 0 && (
+            <Button type="button" variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground" onClick={restoreDefaults}>
+              <RotateCcw className="w-3.5 h-3.5 mr-1" /> Agregar los {missingDefaults.length} de la lista inicial que faltan
+            </Button>
+          )}
+        </div>
+      </CardContent>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar «{items.find((i) => i.id === deleteId)?.label}»?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Deja de aparecer en la lista. Las asignaciones que ya lo usan lo conservan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => { if (deleteId) onDelete(deleteId); setDeleteId(null); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Card>
+  );
+}
+
 // ── ImmoSuppliesManager ────────────────────────────────────────────────────────
 
 interface ImmoSuppliesManagerProps {
@@ -281,6 +432,8 @@ export function ImmoSuppliesManager({
 }: ImmoSuppliesManagerProps) {
   const transponders = catalog.filter((i) => i.category === "transponder");
   const equipos = catalog.filter((i) => i.category === "equipo");
+  const transpondersVehiculo = catalog.filter((i) => i.category === "transponderVehiculo");
+  const baterias = catalog.filter((i) => i.category === "bateria");
 
   return (
     <div className="space-y-4">
@@ -318,6 +471,30 @@ export function ImmoSuppliesManager({
           onReorderPreview={onReorderPreview}
           onReorderCommit={onReorderCommit}
           allCatalog={catalog}
+        />
+
+        <TextCatalogSection
+          title="Transponders del vehículo"
+          subtitle='Opciones del campo "Transponder" de cada asignación · orden alfabético'
+          icon={<KeyRound className="w-4 h-4" />}
+          items={transpondersVehiculo}
+          category="transponderVehiculo"
+          noun="transponder"
+          onAdd={onAdd}
+          onUpdate={onUpdate}
+          onDelete={onDelete}
+        />
+
+        <TextCatalogSection
+          title="Baterías"
+          subtitle='Opciones del campo "Batería" del perfil · orden alfabético'
+          icon={<BatteryMedium className="w-4 h-4" />}
+          items={baterias}
+          category="bateria"
+          noun="batería"
+          onAdd={onAdd}
+          onUpdate={onUpdate}
+          onDelete={onDelete}
         />
       </div>
     </div>

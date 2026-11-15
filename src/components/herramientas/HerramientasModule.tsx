@@ -58,7 +58,7 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
   const vehicleDb = useVehicleDatabase({ readOnly: !isSuperAdmin });
   const { profiles: alarmaProfiles, addProfile: addAlarmaProfile, updateProfile: updateAlarmaProfile, deleteProfile: deleteAlarmaProfile } = useAlarmaProfiles();
   const { profiles: immoProfiles, addProfile: addImmoProfile, updateProfile: updateImmoProfile, deleteProfile: deleteImmoProfile, loading: immoLoading } = useImmoProfiles();
-  const { catalog, addItem, updateItem, deleteItem, previewReorder, commitReorder } = useImmoCatalog();
+  const { catalog, addItem, updateItem, deleteItem, previewReorder, commitReorder } = useImmoCatalog({ seedDefaults: isSuperAdmin });
   const [toolActive, setToolActive] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
   // El asistente móvil necesita todos los datos cargados para validar duplicados y no

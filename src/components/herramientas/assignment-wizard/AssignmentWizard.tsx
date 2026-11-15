@@ -206,6 +206,8 @@ export function AssignmentWizard({
 
   const transponderCatalog = useMemo(() => catalog.filter((i) => i.category === "transponder"), [catalog]);
   const equipoCatalog = useMemo(() => catalog.filter((i) => i.category === "equipo"), [catalog]);
+  const transponderOptions = useMemo(() => catalog.filter((i) => i.category === "transponderVehiculo"), [catalog]);
+  const bateriaCatalog = useMemo(() => catalog.filter((i) => i.category === "bateria"), [catalog]);
 
   const filteredKc = useMemo(() => {
     // Todas las palabras deben aparecer (p. ej. «lishi hu66»), sin importar mayúsculas ni acentos.
@@ -751,6 +753,7 @@ export function AssignmentWizard({
             galleryOpen={galleryOpen}
             setGalleryOpen={setGalleryOpen}
             workshopCode={toolsUploadCode}
+            bateriaCatalog={bateriaCatalog}
           />
         ) : step === STEP_VEHICLE ? (
           <VehicleStep
@@ -869,6 +872,7 @@ export function AssignmentWizard({
                     transponderCatalog={transponderCatalog}
                     equipoCatalog={equipoCatalog}
                     profileImages={immoProfileImages(p)}
+                    transponderOptions={transponderOptions}
                   />
                 </section>
               );

@@ -212,7 +212,11 @@ export interface ImmoCatalogItem {
   id: string;
   label: string;
   image?: string;
-  category: 'equipo' | 'transponder';
+  /**
+   * equipo: equipos de programación · transponder: opciones de «Se genera con» ·
+   * transponderVehiculo: opciones del campo «Transponder» · bateria: opciones de «Batería».
+   */
+  category: 'equipo' | 'transponder' | 'transponderVehiculo' | 'bateria';
   /** Orden manual dentro de su categoría (se asigna al reordenar por drag-and-drop). */
   position?: number;
 }

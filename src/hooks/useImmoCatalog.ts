@@ -1,11 +1,28 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { ImmoCatalogItem } from "@/types";
 import { useJsonResource } from "./useJsonResource";
+import { DEFAULTS_BY_CATEGORY, IMMO_TEXT_CATEGORIES } from "@/lib/immoCatalogDefaults";
 
-export function useImmoCatalog() {
-  const { items, setItems, addItem, updateItem, deleteItem } = useJsonResource<ImmoCatalogItem>({
+/**
+ * @param seedDefaults solo el SuperAdmin: si las listas de Transponder / Batería están vacías
+ *   (y la lectura del servidor salió bien) se cargan las listas iniciales una vez.
+ */
+export function useImmoCatalog({ seedDefaults = false }: { seedDefaults?: boolean } = {}) {
+  const { items, setItems, addItem, updateItem, deleteItem, loaded } = useJsonResource<ImmoCatalogItem>({
     endpoint: "/herramientas/immo-catalog",
   });
+
+  const seededRef = useRef(false);
+  useEffect(() => {
+    if (!seedDefaults || !loaded || seededRef.current) return;
+    seededRef.current = true;
+    for (const category of IMMO_TEXT_CATEGORIES) {
+      if (items.some((i) => i.category === category)) continue;
+      DEFAULTS_BY_CATEGORY[category].forEach((label) => {
+        void addItem({ id: crypto.randomUUID(), label, category });
+      });
+    }
+  }, [seedDefaults, loaded, items, addItem]);
 
   // El listado del servidor viene ordenado por fecha de creación, no por el
   // orden en que se arrastraron los elementos — por eso el orden real se guarda
@@ -33,6 +50,7 @@ export function useImmoCatalog() {
 
   return {
     catalog,
+    loaded,
     addItem,
     updateItem,
     deleteItem,

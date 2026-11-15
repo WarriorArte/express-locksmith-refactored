@@ -16,6 +16,8 @@ export function useJsonResource<T extends { id: string }>(opts: {
 
   const [items, setItems] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
+  /** true solo si la última lectura del servidor salió bien (vacío ≠ error). */
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -26,8 +28,9 @@ export function useJsonResource<T extends { id: string }>(opts: {
         if (cancelled) return;
         const next = migrate ? migrate(data || []) : ((data || []) as T[]);
         setItems(next);
+        setLoaded(true);
       } catch {
-        if (!cancelled) setItems([]);
+        if (!cancelled) { setItems([]); setLoaded(false); }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -92,5 +95,5 @@ export function useJsonResource<T extends { id: string }>(opts: {
     }
   }, [endpoint]);
 
-  return { items, setItems, addItem, updateItem, deleteItem, loading };
+  return { items, setItems, addItem, updateItem, deleteItem, loading, loaded };
 }
