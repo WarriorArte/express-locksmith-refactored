@@ -88,10 +88,10 @@ export function immoDetailMissing(detail: Partial<ImmoAssignmentDetail> | null |
       out.push({ field: "pincode", label: d.pincodeRequerido ? "Cómo obtener el pincode" : "Pincode (marca «No lleva» o escribe cómo obtenerlo)" });
     }
     if (!d.transponderNoGenerable && !(d.generadoConIds?.length)) out.push({ field: "generadoCon", label: "Se genera con (o «no se puede generar»)" });
-    if (!(d.equiposTransponderIds?.length)) out.push({ field: "equiposTransponder", label: "Equipos para programar el transponder" });
+    if (!d.omitirEquiposTransponder && !(d.equiposTransponderIds?.length)) out.push({ field: "equiposTransponder", label: "Equipos para programar el transponder" });
   }
   if (!d.programacionManual && !d.programacionOBD) out.push({ field: "metodo", label: "Método de programación del remoto" });
-  if (d.programacionOBD && !(d.equiposRemotoIds?.length)) out.push({ field: "equiposRemoto", label: "Equipos para programar el remoto" });
+  if (!d.omitirEquiposRemoto && !(d.equiposRemotoIds?.length)) out.push({ field: "equiposRemoto", label: "Equipos para programar el remoto" });
   if (!has(d.procedimientoId) && !has(d.procedimientoProgramacion)) out.push({ field: "pasos", label: "Pasos para programar el remoto" });
   return out;
 }

@@ -78,6 +78,8 @@ export function emptyDetail(): Omit<ImmoAssignmentDetail, "profileId"> {
     generadoConIds: [],
     equiposRemotoIds: [],
     equiposTransponderIds: [],
+    omitirEquiposRemoto: false,
+    omitirEquiposTransponder: false,
     programacionManual: false,
     programacionOBD: false,
     procedimientoProgramacion: "",
@@ -855,8 +857,27 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                           </div>
                           {/* Equipos transponder: se muestran en la sección Transponder del técnico */}
                           <div className="space-y-1.5">
-                            <Label className={lbl("equiposTransponder")}>Equipos para programar el transponder</Label>{hint("equiposTransponder")}
-                            <CatalogChipSelector catalogItems={equipoCatalog} selectedIds={detail.equiposTransponderIds} onChange={(ids) => onChange("equiposTransponderIds", ids)} />
+                            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+                              <Label className={lbl("equiposTransponder")}>Equipos para programar el transponder</Label>
+                              <div className="flex items-center gap-2">
+                                <Checkbox
+                                  id={`omitirEquiposTransponder-${id}`}
+                                  checked={!!detail.omitirEquiposTransponder}
+                                  onCheckedChange={(v) => {
+                                    onChange("omitirEquiposTransponder", !!v);
+                                    // Omitido: no queda ningún equipo y el técnico no ve la sección.
+                                    if (v) onChange("equiposTransponderIds", []);
+                                  }}
+                                />
+                                <Label htmlFor={`omitirEquiposTransponder-${id}`} className="cursor-pointer text-sm">Omitir este</Label>
+                              </div>
+                            </div>
+                            {hint("equiposTransponder")}
+                            {detail.omitirEquiposTransponder ? (
+                              <p className="text-xs text-muted-foreground">Omitido: el técnico no verá esta sección.</p>
+                            ) : (
+                              <CatalogChipSelector catalogItems={equipoCatalog} selectedIds={detail.equiposTransponderIds} onChange={(ids) => onChange("equiposTransponderIds", ids)} />
+                            )}
                           </div>
                           </>
                           )}
@@ -864,8 +885,27 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                           <p className="border-t border-border/60 pt-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">Programación del remoto</p>
                           {/* Equipos remoto */}
                           <div className="space-y-1.5">
-                            <Label className={lbl("equiposRemoto")}>Equipos para programar el remoto</Label>{hint("equiposRemoto")}
-                            <CatalogChipSelector catalogItems={equipoCatalog} selectedIds={detail.equiposRemotoIds} onChange={(ids) => onChange("equiposRemotoIds", ids)} />
+                            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+                              <Label className={lbl("equiposRemoto")}>Equipos para programar el remoto</Label>
+                              <div className="flex items-center gap-2">
+                                <Checkbox
+                                  id={`omitirEquiposRemoto-${id}`}
+                                  checked={!!detail.omitirEquiposRemoto}
+                                  onCheckedChange={(v) => {
+                                    onChange("omitirEquiposRemoto", !!v);
+                                    // Omitido: no queda ningún equipo y el técnico no ve la sección.
+                                    if (v) onChange("equiposRemotoIds", []);
+                                  }}
+                                />
+                                <Label htmlFor={`omitirEquiposRemoto-${id}`} className="cursor-pointer text-sm">Omitir este</Label>
+                              </div>
+                            </div>
+                            {hint("equiposRemoto")}
+                            {detail.omitirEquiposRemoto ? (
+                              <p className="text-xs text-muted-foreground">Omitido: el técnico no verá esta sección.</p>
+                            ) : (
+                              <CatalogChipSelector catalogItems={equipoCatalog} selectedIds={detail.equiposRemotoIds} onChange={(ids) => onChange("equiposRemotoIds", ids)} />
+                            )}
                           </div>
                           {/* Método del remoto: se muestra junto a sus pasos */}
                           <div className="space-y-1.5">
@@ -1016,6 +1056,8 @@ export function ImmoAssignmentManager({
         generadoConIds: d.generadoConIds ?? [],
         equiposRemotoIds: d.equiposRemotoIds ?? [],
         equiposTransponderIds: d.equiposTransponderIds ?? [],
+        omitirEquiposRemoto: d.omitirEquiposRemoto ?? false,
+        omitirEquiposTransponder: d.omitirEquiposTransponder ?? false,
         programacionManual: d.programacionManual ?? false,
         programacionOBD: d.programacionOBD ?? false,
         procedimientoProgramacion: d.procedimientoProgramacion ?? "",

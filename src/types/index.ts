@@ -298,6 +298,10 @@ export interface ImmoAssignmentDetail {
   generadoConIds: string[];
   equiposRemotoIds: string[];
   equiposTransponderIds: string[];
+  /** «Omitir»: el auto no ocupa equipo para el remoto (el técnico no ve la sección). */
+  omitirEquiposRemoto?: boolean;
+  /** «Omitir»: el auto no ocupa equipo para el transponder (el técnico no ve la sección). */
+  omitirEquiposTransponder?: boolean;
   programacionManual: boolean;
   programacionOBD: boolean;
   procedimientoProgramacion: string;

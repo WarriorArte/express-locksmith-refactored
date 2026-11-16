@@ -60,8 +60,8 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, compatibleVeh
   const noGenerable = !!detail?.transponderNoGenerable;
   const notasNoGenerable = detail?.notasNoGenerable?.trim() ?? "";
   const generadoCon = noGenerable ? [] : catalogItems(detail?.generadoConIds ?? [], catalog);
-  const equiposRemoto = catalogItems(detail?.equiposRemotoIds ?? [], catalog);
-  const equiposTransponder = catalogItems(detail?.equiposTransponderIds ?? [], catalog);
+  const equiposRemoto = detail?.omitirEquiposRemoto ? [] : catalogItems(detail?.equiposRemotoIds ?? [], catalog);
+  const equiposTransponder = detail?.omitirEquiposTransponder ? [] : catalogItems(detail?.equiposTransponderIds ?? [], catalog);
   const transponder = detail?.transponder?.trim() ?? "";
   const transponderNotes = detail?.transponderNotes?.trim() ?? "";
   const pincodeRequerido = !!detail?.pincodeRequerido;
