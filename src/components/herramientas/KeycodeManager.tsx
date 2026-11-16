@@ -141,8 +141,20 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
   const { uploadFile, isUploading: isUploadingImage } = useFileUpload({ folder: "keycode", workshopCode: toolsUploadCode });
   const [galleryOpen, setGalleryOpen] = useState(false);
 
-  // Grosor del trazo guardado (los colores del dibujo los pone el tema de la app).
-  const { settings: visualSettings } = useKeycodeVisualSettings();
+  // --- Grosor del trazo universal (aplica a todas las series; los colores los pone el tema) ---
+  const { settings: visualSettings, setSettings: setVisualSettings, saveSettings: saveVisualSettings } = useKeycodeVisualSettings();
+  const [savingVisualSettings, setSavingVisualSettings] = useState(false);
+  const handleSaveVisualSettings = async () => {
+    setSavingVisualSettings(true);
+    try {
+      await saveVisualSettings(visualSettings);
+      toast.success("Grosor del trazo guardado.");
+    } catch {
+      toast.error("No se pudo guardar el grosor del trazo.");
+    } finally {
+      setSavingVisualSettings(false);
+    }
+  };
 
   // --- Edit state ---
   const [editingProfile, setEditingProfile] = useState<KeycodeProfile | null>(null);
@@ -1399,6 +1411,26 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                       }}
                     >
                       {configuracionVisual ? "Activado" : "Activar"}
+                    </Button>
+                  </div>
+
+                  {/* Ajuste universal: grosor del trazo — aplica a TODAS las series */}
+                  <div className="space-y-2.5 rounded-lg border-dashed bg-primary-light p-2.5">
+                    <div>
+                      <p className="text-xs font-bold text-foreground">Grosor del trazo</p>
+                      <p className="text-[11px] text-muted-foreground">Ajuste universal: aplica a todas las series, no solo a esta.</p>
+                    </div>
+                    <VisualRangeField
+                      label="Grosor del trazo"
+                      min={1}
+                      max={10}
+                      step={0.5}
+                      defaultValue={3.5}
+                      value={visualSettings.strokeWidth}
+                      onChange={(value) => setVisualSettings((s) => ({ ...s, strokeWidth: value }))}
+                    />
+                    <Button size="sm" className="h-7 text-xs w-full" onClick={handleSaveVisualSettings} disabled={savingVisualSettings}>
+                      {savingVisualSettings ? "Guardando..." : "Guardar grosor"}
                     </Button>
                   </div>
 
