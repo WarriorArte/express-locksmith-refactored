@@ -1,7 +1,7 @@
 import { IMMO_MODULACIONES, type ImmoAssignmentDetail, type ImmoCatalogItem, type ImmoModulacion, type ImmoProfile } from "@/types";
 
 /** Texto que ve el técnico cuando el modelo no tiene inmovilizador. */
-export const SIN_INMOVILIZADOR_TEXTO = "Este modelo no viene equipado con sistema inmovilizador";
+export const SIN_INMOVILIZADOR_TEXTO = "Este modelo no utiliza transponder";
 
 /**
  * Valores escritos a mano en «Transponder» para decir que no hay inmovilizador
