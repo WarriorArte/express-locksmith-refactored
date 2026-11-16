@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BatteryMedium, Car, Check, Hand, Images, KeyRound, Plug, Radio, ShieldOff, StickyNote, Wrench, X } from "lucide-react";
+import { BatteryMedium, Car, Check, Hand, Images, Info, KeyRound, Plug, Radio, ShieldOff, StickyNote, Wrench, X } from "lucide-react";
 import { ImageViewDialog } from "@/components/shared/ImageViewDialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/responsive-dialog";
 import { FormattedText } from "@/components/herramientas/RichTextField";
@@ -210,7 +210,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, compatibleVeh
                   <div className={cn("space-y-3", (transponder || transponderNotes) && "mt-5")}>
                     <SubHeading>Se genera con</SubHeading>
                     <div className="flex flex-wrap gap-2">
-                      <TonalChip icon={<X className="h-4 w-4" />} label="Este transponder no se puede generar" tone="neutral" />
+                      <TonalChip icon={<Info className="mt-0.5 h-4 w-4 shrink-0" />} label="Este transponder no se puede generar" tone="neutral" className="h-auto min-h-8 items-start py-1.5 leading-snug" />
                     </div>
                     {notasNoGenerable && (
                       <FormattedText text={notasNoGenerable} className="space-y-1 text-[15px] leading-relaxed text-foreground" />
@@ -237,7 +237,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, compatibleVeh
               // El auto no lleva pincode: aviso claro + notas opcionales.
               <div className="space-y-3">
                 <div className="flex flex-wrap gap-2">
-                  <TonalChip icon={<X className="h-4 w-4" />} label="No se necesita pincode o el equipo se lo salta" tone="neutral" />
+                  <TonalChip icon={<Info className="mt-0.5 h-4 w-4 shrink-0" />} label="No se necesita pincode o el equipo se lo salta" tone="neutral" className="h-auto min-h-8 items-start py-1.5 leading-snug" />
                 </div>
                 {notasSinPincode && (
                   <FormattedText text={notasSinPincode} className="space-y-1 text-[15px] leading-relaxed text-foreground" />
