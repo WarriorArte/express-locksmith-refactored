@@ -249,6 +249,8 @@ export interface ImmoProfile {
   /** Todas las imágenes del remoto, en orden; la primera es la principal por defecto. */
   images?: string[];
   generacionRemoto: ImmoGenField[];
+  /** «Omitir»: el remoto no se puede generar con equipos genéricos (sin datos de generación). */
+  generacionOmitida?: boolean;
   dateAdded: string;
 }
 

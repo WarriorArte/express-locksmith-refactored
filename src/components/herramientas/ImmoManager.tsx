@@ -38,7 +38,7 @@ import type {
   ImmoAssignmentDetail, ToolAssignment,
 } from "@/types";
 import { IMMO_MODULACIONES } from "@/types";
-import { SIN_INMOVILIZADOR_TEXTO, looksLikeNoImmobilizer, transponderLabel, formatFrecuencia, getFrecuenciaMHz, getModulacion, immoProfileImages, immoAssignmentImage, immoDetailIssues, immoDetailMissing, type ImmoDetailField } from "@/lib/immo";
+import { SIN_INMOVILIZADOR_TEXTO, looksLikeNoImmobilizer, transponderLabel, formatFrecuencia, getFrecuenciaMHz, getModulacion, immoProfileImages, immoAssignmentImage, immoDetailIssues, immoDetailMissing, immoProfileMissing, type ImmoDetailField, type ImmoProfileField } from "@/lib/immo";
 import { cn } from "@/lib/utils";
 import { catalogOptions, sameLabel } from "@/lib/immoCatalogDefaults";
 import { uid } from "./assignment-wizard/wizardUtils";
@@ -239,11 +239,16 @@ interface ImmoProfileEditorProps {
   workshopCode?: string;
   /** Opciones de «Batería» (Herramientas y Suministros). */
   bateriaCatalog?: ImmoCatalogItem[];
+  /** Marca en rojo los campos que faltan (tras intentar guardar). */
+  showIssues?: boolean;
 }
 
 export function ImmoProfileEditor({
-  draft, onChange, onImagesChange, isUploadingImage, uploadFile, galleryOpen, setGalleryOpen, workshopCode, bateriaCatalog = [],
+  draft, onChange, onImagesChange, isUploadingImage, uploadFile, galleryOpen, setGalleryOpen, workshopCode, bateriaCatalog = [], showIssues = false,
 }: ImmoProfileEditorProps) {
+  const missingList = showIssues ? immoProfileMissing(draft) : [];
+  const miss = (f: ImmoProfileField) => missingList.some((m) => m.field === f);
+  const hint = (f: ImmoProfileField) => miss(f) ? <p className="text-[11px] font-medium text-destructive">Falta completar</p> : null;
   const mainImgRef = useRef<HTMLInputElement>(null);
   const set = <K extends keyof typeof draft>(key: K, val: (typeof draft)[K]) => onChange({ ...draft, [key]: val });
 
@@ -265,8 +270,18 @@ export function ImmoProfileEditor({
 
   return (
     <div className="space-y-6 pb-6">
+      {missingList.length > 0 && (
+        <div role="alert" className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-foreground">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+          <div>
+            <p className="font-semibold">Falta completar:</p>
+            <p className="text-muted-foreground">{missingList.map((m) => m.label).join(" · ")}</p>
+          </div>
+        </div>
+      )}
       {/* Imágenes: la primera es la principal por defecto; cada asignación puede elegir otra. */}
       <Section icon={<ImageIcon className="w-4 h-4" />} title="Imágenes">
+        {hint("images")}
         <input ref={mainImgRef} type="file" accept="image/*" multiple className="hidden" onChange={handleAddImages} />
         {images.length > 0 ? (
           <div className="space-y-2">
@@ -352,7 +367,7 @@ export function ImmoProfileEditor({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {([["marca", "Marca", "Toyota, Honda…", ""], ["fccId", "FCC ID", "HYQ12BFB…", "tabular-nums"], ["frecuencia", "Frecuencia", "313…", ""], ["bateria", "Batería", "CR2032…", ""]] as const).map(([key, lbl, ph, cls]) => (
             <div key={key} className="space-y-1">
-              <Label className="text-xs font-bold">{lbl}</Label>
+              <Label className={cn("text-xs font-bold", (miss(key) || (key === "frecuencia" && miss("modulacion"))) && "text-destructive")}>{lbl}</Label>
               {key === "frecuencia" ? (
                 // Frecuencia y modulación van juntas: el técnico necesita ambas para generar el remoto.
                 <div className="flex items-center gap-2">
@@ -408,6 +423,8 @@ export function ImmoProfileEditor({
               ) : (
                 <Input value={draft[key]} onChange={(e) => set(key, e.target.value)} placeholder={ph} className={`h-8 text-sm ${cls}`} />
               )}
+              {hint(key)}
+              {key === "frecuencia" && miss("modulacion") && <p className="text-[11px] font-medium text-destructive">Elige FSK o ASK</p>}
             </div>
           ))}
         </div>
@@ -417,7 +434,20 @@ export function ImmoProfileEditor({
 
       {/* Generación de remoto */}
       <Section icon={<Wrench className="w-4 h-4" />} title="Generación de Remoto">
-        <GenFieldList fields={draft.generacionRemoto} onChange={(v) => set("generacionRemoto", v)} />
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="generacion-omitida"
+            checked={!!draft.generacionOmitida}
+            onCheckedChange={(v) => set("generacionOmitida", !!v)}
+          />
+          <Label htmlFor="generacion-omitida" className="cursor-pointer text-sm">Omitir: este remoto no se genera con equipos genéricos</Label>
+        </div>
+        {hint("generacion")}
+        {draft.generacionOmitida ? (
+          <p className="text-xs text-muted-foreground">Omitido: el técnico no verá la sección de generación.</p>
+        ) : (
+          <GenFieldList fields={draft.generacionRemoto} onChange={(v) => set("generacionRemoto", v)} />
+        )}
       </Section>
     </div>
   );
@@ -438,6 +468,7 @@ interface ImmoManagerProps {
 export function ImmoManager({ profiles, onSave, onUpdate, onDelete, catalog }: ImmoManagerProps) {
   const bateriaCatalog = useMemo(() => catalog.filter((i) => i.category === "bateria"), [catalog]);
   const [view, setView] = useState<View>("list");
+  const [showProfileIssues, setShowProfileIssues] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Omit<ImmoProfile, "id" | "dateAdded">>(emptyProfile());
   const [isNew, setIsNew] = useState(false);
@@ -466,17 +497,22 @@ export function ImmoManager({ profiles, onSave, onUpdate, onDelete, catalog }: I
     toast.success("Perfil eliminado.");
   };
 
-  const openNew = () => { setDraft(emptyProfile()); setEditingId(null); setIsNew(true); setView("edit"); };
+  const openNew = () => { setDraft(emptyProfile()); setEditingId(null); setIsNew(true); setShowProfileIssues(false); setView("edit"); };
 
   const openEdit = (p: ImmoProfile) => {
     const { id, dateAdded, ...rest } = p;
     const imgs = immoProfileImages(rest);
     setDraft({ ...rest, images: imgs, mainImage: imgs[0], generacionRemoto: rest.generacionRemoto ?? [] });
-    setEditingId(id); setIsNew(false); setView("edit");
+    setEditingId(id); setIsNew(false); setShowProfileIssues(false); setView("edit");
   };
 
   const handleSave = () => {
-    if (!draft.marca.trim() && !draft.fccId.trim()) { toast.error("Ingresa al menos Marca o FCC ID."); return; }
+    const missing = immoProfileMissing(draft);
+    if (missing.length) {
+      setShowProfileIssues(true);
+      toast.error(`Completa el perfil: ${missing.map((m) => m.label).join(", ")}.`);
+      return;
+    }
     if (isNew) {
       onSave({ id: uid(), dateAdded: new Date().toLocaleDateString(), ...draft, frecuencia: getFrecuenciaMHz(draft.frecuencia) });
       toast.success("Perfil Immo creado.");
@@ -592,6 +628,7 @@ export function ImmoManager({ profiles, onSave, onUpdate, onDelete, catalog }: I
           setGalleryOpen={setGalleryOpen}
           workshopCode={toolsUploadCode}
           bateriaCatalog={bateriaCatalog}
+          showIssues={showProfileIssues}
         />
       </div>
     </div>

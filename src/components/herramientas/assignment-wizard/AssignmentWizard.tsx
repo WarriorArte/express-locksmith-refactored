@@ -38,7 +38,7 @@ import { FilterChip } from "@/design-system/detail/DetailScreen";
 import { useToolsUploadCode } from "@/hooks/useToolsUploadCode";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { resolveStorageUrl } from "@/lib/phpApi";
-import { formatFrecuencia, getFrecuenciaMHz, getModulacion, transponderLabel, immoProfileImages, immoDetailIssues } from "@/lib/immo";
+import { formatFrecuencia, getFrecuenciaMHz, getModulacion, transponderLabel, immoProfileImages, immoDetailIssues, immoProfileMissing } from "@/lib/immo";
 import { cn } from "@/lib/utils";
 import type {
   ImmoAssignmentDetail, ImmoCatalogItem, ImmoProfile, KeycodeProfile,
@@ -142,6 +142,7 @@ export function AssignmentWizard({
   const [vehicleBusy, setVehicleBusy] = useState(false);
   const [showVehicleErrors, setShowVehicleErrors] = useState(false);
   const [showImmoIssues, setShowImmoIssues] = useState(false);
+  const [showProfileIssues, setShowProfileIssues] = useState(false);
   const { yearStart, yearEnd } = vehicleValue;
 
   // ── Keycode ──
@@ -281,8 +282,10 @@ export function AssignmentWizard({
     if (isUploading) { toast.error("Espera a que termine de subir la imagen."); return; }
     const marca = clean(profileDraft.marca);
     const fccId = clean(profileDraft.fccId);
-    if (!marca && !fccId) {
-      toast.error("Ingresa al menos Marca o FCC ID.");
+    const missing = immoProfileMissing(profileDraft);
+    if (missing.length) {
+      setShowProfileIssues(true);
+      toast.error(`Completa el perfil: ${missing.map((m) => m.label).join(", ")}.`);
       return;
     }
     const duplicate = immoProfiles.find((p) => sameText(clean(p.marca), marca) && sameText(clean(p.fccId), fccId));
@@ -766,6 +769,7 @@ export function AssignmentWizard({
             setGalleryOpen={setGalleryOpen}
             workshopCode={toolsUploadCode}
             bateriaCatalog={bateriaCatalog}
+            showIssues={showProfileIssues}
           />
         ) : step === STEP_VEHICLE ? (
           <VehicleStep
@@ -851,7 +855,7 @@ export function AssignmentWizard({
           <div className="space-y-3">
             {renderSkipCard("immo")}
             <p className="text-sm text-muted-foreground">Elige los remotos de Immo Info o crea uno nuevo si no existe.</p>
-            <Button variant="secondary" className="w-full rounded-full" onClick={() => { setProfileDraft(emptyProfile()); setCreatingProfile(true); }}>
+            <Button variant="secondary" className="w-full rounded-full" onClick={() => { setProfileDraft(emptyProfile()); setShowProfileIssues(false); setCreatingProfile(true); }}>
               <Plus className="mr-1.5 h-4 w-4" /> Crear perfil Immo
             </Button>
             {immoProfiles.length > 0 && (

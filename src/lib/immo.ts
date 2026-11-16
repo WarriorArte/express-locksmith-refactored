@@ -100,3 +100,22 @@ export function immoDetailMissing(detail: Partial<ImmoAssignmentDetail> | null |
 export function immoDetailIssues(detail: Partial<ImmoAssignmentDetail> | null | undefined): string[] {
   return immoDetailMissing(detail).map((m) => m.label);
 }
+
+export type ImmoProfileField = "images" | "marca" | "fccId" | "frecuencia" | "modulacion" | "bateria" | "generacion";
+
+/** Campos sin completar de un perfil Immo (todos se piden; la generación se puede omitir). */
+export function immoProfileMissing(p: Partial<ImmoProfile> | null | undefined): { field: ImmoProfileField; label: string }[] {
+  const d = p ?? {};
+  const out: { field: ImmoProfileField; label: string }[] = [];
+  const has = (v: unknown) => String(v ?? "").trim().length > 0;
+  if (!immoProfileImages(d as ImmoProfile).length) out.push({ field: "images", label: "Al menos una imagen" });
+  if (!has(d.marca)) out.push({ field: "marca", label: "Marca" });
+  if (!has(d.fccId)) out.push({ field: "fccId", label: "FCC ID" });
+  if (!has(d.frecuencia)) out.push({ field: "frecuencia", label: "Frecuencia" });
+  if (!has(d.modulacion)) out.push({ field: "modulacion", label: "Modulación (FSK o ASK)" });
+  if (!has(d.bateria)) out.push({ field: "bateria", label: "Batería" });
+  if (!d.generacionOmitida && !(d.generacionRemoto ?? []).some((f) => has(f.value))) {
+    out.push({ field: "generacion", label: "Generación de remoto (al menos un dato, o «Omitir»)" });
+  }
+  return out;
+}

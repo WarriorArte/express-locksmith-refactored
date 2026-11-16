@@ -56,7 +56,7 @@ export function ImmoWorkspace({ profile, detail, catalog, vehicle, compatibleVeh
   const heroImage = immoAssignmentImage(profile, detail);
   const heroIndex = heroImage ? Math.max(0, images.indexOf(heroImage)) : 0;
 
-  const generacionRemoto = (profile.generacionRemoto ?? []).filter((f) => (f.value ?? "").trim());
+  const generacionRemoto = profile.generacionOmitida ? [] : (profile.generacionRemoto ?? []).filter((f) => (f.value ?? "").trim());
   const noGenerable = !!detail?.transponderNoGenerable;
   const notasNoGenerable = detail?.notasNoGenerable?.trim() ?? "";
   const generadoCon = noGenerable ? [] : catalogItems(detail?.generadoConIds ?? [], catalog);
