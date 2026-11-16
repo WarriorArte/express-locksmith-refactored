@@ -38,7 +38,7 @@ import { FilterChip } from "@/design-system/detail/DetailScreen";
 import { useToolsUploadCode } from "@/hooks/useToolsUploadCode";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { resolveStorageUrl } from "@/lib/phpApi";
-import { formatFrecuencia, getFrecuenciaMHz, getModulacion, transponderLabel, immoProfileImages } from "@/lib/immo";
+import { formatFrecuencia, getFrecuenciaMHz, getModulacion, transponderLabel, immoProfileImages, immoDetailIssues } from "@/lib/immo";
 import { cn } from "@/lib/utils";
 import type {
   ImmoAssignmentDetail, ImmoCatalogItem, ImmoProfile, KeycodeProfile,
@@ -141,6 +141,7 @@ export function AssignmentWizard({
   const [vehicleEditor, setVehicleEditor] = useState<VehicleEditor | null>(null);
   const [vehicleBusy, setVehicleBusy] = useState(false);
   const [showVehicleErrors, setShowVehicleErrors] = useState(false);
+  const [showImmoIssues, setShowImmoIssues] = useState(false);
   const { yearStart, yearEnd } = vehicleValue;
 
   // ── Keycode ──
@@ -389,12 +390,23 @@ export function AssignmentWizard({
     if (s === STEP_IMMO && validKcIds.length === 0 && validImIds.length === 0) {
       return "Selecciona al menos una serie de Keycode o un perfil de Immo Info.";
     }
+    if (s === STEP_IMMO_DATA) {
+      // Cada perfil se llena completo; para no llenarlo hay que omitir Immo Info entero.
+      for (const id of validImIds) {
+        const issues = immoDetailIssues(details[id] ?? emptyDetail());
+        if (issues.length) {
+          const p = immoById.get(id);
+          return `Completa los datos de ${p ? profileTitle(p) : "cada perfil"}: ${issues.join(", ")}. Si no los tienes, omite Immo Info.`;
+        }
+      }
+    }
     return null;
   };
 
   const validateStep = (s: number): boolean => {
     const err = stepError(s);
     if (s === STEP_VEHICLE) setShowVehicleErrors(true);
+    if (s === STEP_IMMO_DATA) setShowImmoIssues(true);
     if (err) toast.error(err);
     return !err;
   };
@@ -474,7 +486,7 @@ export function AssignmentWizard({
   // ── Guardar ──
   const handleSave = async () => {
     if (saving) return;
-    for (const s of [STEP_VEHICLE, STEP_KEYCODE, STEP_IMMO]) {
+    for (const s of [STEP_VEHICLE, STEP_KEYCODE, STEP_IMMO, ...(validImIds.length && !savedParts.immo ? [STEP_IMMO_DATA] : [])]) {
       if (!validateStep(s)) { if (!anyPartSaved) goTo(s); return; }
     }
     if (hasOverlaps && !overlapAck) {
@@ -859,7 +871,8 @@ export function AssignmentWizard({
           </div>
         ) : step === STEP_IMMO_DATA ? (
           <div className="space-y-6">
-            <p className="text-sm text-muted-foreground">Datos de cada remoto para este vehículo. Todos son opcionales.</p>
+            <p className="text-sm text-muted-foreground">Datos de cada remoto para este vehículo. Completa cada sección; las notas son opcionales. Si no tienes los datos, omite Immo Info.</p>
+            {renderSkipCard("immo")}
             {validImIds.map((id) => {
               const p = immoById.get(id)!;
               return (
@@ -874,6 +887,7 @@ export function AssignmentWizard({
                     profileImages={immoProfileImages(p)}
                     transponderOptions={transponderOptions}
                     vehicleMake={vehicle.make}
+                    issues={showImmoIssues ? immoDetailIssues(details[id] ?? emptyDetail()) : []}
                   />
                 </section>
               );

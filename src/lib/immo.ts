@@ -67,3 +67,25 @@ export function resolveProcedureText(
   return (linked?.texto ?? detail?.procedimientoProgramacion ?? "").trim();
 }
 
+
+/**
+ * Secciones sin completar de los datos Immo de una asignación. Cada perfil elegido se llena
+ * completo; la única forma de no llenarlo es omitir Immo Info entero. Las notas son opcionales.
+ * «Sin inmovilizador» deja fuera las secciones de transponder y pincode.
+ */
+export function immoDetailIssues(detail: Partial<ImmoAssignmentDetail> | null | undefined): string[] {
+  const d = detail ?? {};
+  const issues: string[] = [];
+  const has = (v: unknown) => String(v ?? "").trim().length > 0;
+  if (!d.sinInmovilizador) {
+    if (!has(d.transponder)) issues.push("Transponder");
+    if (!d.pincodeRequerido && !d.sinPincode) issues.push("Pincode (requiere o no lleva)");
+    else if (d.pincodeRequerido && !has(d.formaObtencionPincode)) issues.push("Cómo obtener el pincode");
+    if (!d.transponderNoGenerable && !(d.generadoConIds?.length)) issues.push("Se genera con (o «no se puede generar»)");
+    if (!(d.equiposTransponderIds?.length)) issues.push("Equipos para programar el transponder");
+  }
+  if (!d.programacionManual && !d.programacionOBD) issues.push("Método de programación del remoto");
+  if (d.programacionOBD && !(d.equiposRemotoIds?.length)) issues.push("Equipos para programar el remoto");
+  if (!has(d.procedimientoId) && !has(d.procedimientoProgramacion)) issues.push("Pasos para programar el remoto");
+  return issues;
+}

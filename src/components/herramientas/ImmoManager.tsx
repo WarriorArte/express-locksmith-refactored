@@ -3,7 +3,7 @@ import { m as motion } from "framer-motion";
 import {
   Plus, Trash2, Edit, Check, Search,
   ImageIcon, Car, X, ChevronDown, Cpu, Radio,
-  ShieldCheck, Wrench, ChevronUp, LayoutGrid, Loader2, KeyRound, Star,
+  ShieldCheck, Wrench, ChevronUp, LayoutGrid, Loader2, KeyRound, Star, AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -38,7 +38,7 @@ import type {
   ImmoAssignmentDetail, ToolAssignment,
 } from "@/types";
 import { IMMO_MODULACIONES } from "@/types";
-import { SIN_INMOVILIZADOR_TEXTO, looksLikeNoImmobilizer, transponderLabel, formatFrecuencia, getFrecuenciaMHz, getModulacion, immoProfileImages, immoAssignmentImage } from "@/lib/immo";
+import { SIN_INMOVILIZADOR_TEXTO, looksLikeNoImmobilizer, transponderLabel, formatFrecuencia, getFrecuenciaMHz, getModulacion, immoProfileImages, immoAssignmentImage, immoDetailIssues } from "@/lib/immo";
 import { cn } from "@/lib/utils";
 import { catalogOptions, sameLabel } from "@/lib/immoCatalogDefaults";
 import { uid } from "./assignment-wizard/wizardUtils";
@@ -610,10 +610,12 @@ export interface ImmoDetailFieldsProps {
   transponderOptions?: ImmoCatalogItem[];
   /** Marca del vehículo (se propone al guardar un procedimiento). */
   vehicleMake?: string;
+  /** Secciones sin completar (se muestran arriba tras intentar avanzar o guardar). */
+  issues?: string[];
 }
 
 /** Campos de datos por vehículo de un perfil Immo (compartidos por escritorio y asistente móvil). */
-export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equipoCatalog, profileImages = [], transponderOptions = [], vehicleMake }: ImmoDetailFieldsProps) {
+export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equipoCatalog, profileImages = [], transponderOptions = [], vehicleMake, issues = [] }: ImmoDetailFieldsProps) {
   const chosenImage = immoAssignmentImage({ images: profileImages }, detail);
   const sinInmovilizador = !!detail.sinInmovilizador;
   // «N/A» escrito a mano en Transponder: se sugiere usar la opción en su lugar.
@@ -624,6 +626,15 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
   };
   return (
     <>
+                          {issues.length > 0 && (
+                            <div role="alert" className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-foreground">
+                              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                              <div>
+                                <p className="font-semibold">Falta completar:</p>
+                                <p className="text-muted-foreground">{issues.join(" · ")}</p>
+                              </div>
+                            </div>
+                          )}
                           {/* Imagen principal de esta asignación (miniaturas y portada) */}
                           {profileImages.length > 1 && (
                             <div className="space-y-1.5">
@@ -921,6 +932,8 @@ export function ImmoAssignmentManager({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [detailMap, setDetailMap] = useState<DetailMap>({});
   const [expandedProfileId, setExpandedProfileId] = useState<string | null>(null);
+  // Se muestran las secciones faltantes después del primer intento de guardar.
+  const [showIssues, setShowIssues] = useState(false);
   const [profileSearch, setProfileSearch] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -961,7 +974,7 @@ export function ImmoAssignmentManager({
 
   const resetForm = () => {
     setMake(""); setModel(""); setYearStart(""); setYearEnd("");
-    setSelectedIds([]); setDetailMap({}); setExpandedProfileId(null); setEditingId(null);
+    setSelectedIds([]); setDetailMap({}); setExpandedProfileId(null); setEditingId(null); setShowIssues(false);
   };
 
   const confirmDeleteAssignment = async () => {
@@ -1007,6 +1020,7 @@ export function ImmoAssignmentManager({
     setDetailMap(map);
     setExpandedProfileId(details[0]?.profileId ?? null);
     setEditingId(a.id);
+    setShowIssues(false);
   };
 
   const [submitting, setSubmitting] = useState(false);
@@ -1016,6 +1030,15 @@ export function ImmoAssignmentManager({
     if (!make || !model || !yearStart || !yearEnd) { toast.error("Selecciona marca, modelo y rango de años."); return; }
     if (parseInt(yearStart) > parseInt(yearEnd)) { toast.error("El año de inicio no puede ser mayor que el año de fin."); return; }
     if (selectedIds.length === 0) { toast.error("Selecciona al menos un perfil Immo."); return; }
+    // Cada perfil se completa entero (las notas son opcionales).
+    const incomplete = selectedIds.find((id) => immoDetailIssues(detailMap[id] ?? emptyDetail()).length > 0);
+    if (incomplete) {
+      const p = immoProfiles.find((x) => x.id === incomplete);
+      setShowIssues(true);
+      setExpandedProfileId(incomplete);
+      toast.error(`Completa los datos de ${p ? profileTitle(p) : "cada perfil"}: ${immoDetailIssues(detailMap[incomplete] ?? emptyDetail()).join(", ")}.`);
+      return;
+    }
     const immoDetails: ImmoAssignmentDetail[] = selectedIds.map((id) => ({
       profileId: id,
       ...(detailMap[id] ?? emptyDetail()),
@@ -1171,6 +1194,7 @@ export function ImmoAssignmentManager({
                   if (!p) return null;
                   const detail = detailMap[id] ?? emptyDetail();
                   const isExpanded = expandedProfileId === id;
+                  const issues = showIssues ? immoDetailIssues(detail) : [];
                   return (
                     <div key={id} className="rounded-lg border border-border bg-background overflow-hidden">
                       {/* Accordion header */}
@@ -1186,6 +1210,7 @@ export function ImmoAssignmentManager({
                             <Cpu className="w-4 h-4 text-accent shrink-0" />
                           )}
                           <span className="text-sm font-semibold text-foreground truncate">{profileTitle(p)}</span>
+                          {issues.length > 0 && <AlertTriangle className="h-4 w-4 shrink-0 text-destructive" aria-label="Datos incompletos" />}
                           {transponderLabel(detail) && (
                             <span className="text-xs text-muted-foreground tabular-nums">· {transponderLabel(detail)}</span>
                           )}
@@ -1196,7 +1221,7 @@ export function ImmoAssignmentManager({
                       {/* Accordion body */}
                       {isExpanded && (
                         <div className="px-3 pb-4 space-y-4 border-t border-border/50 pt-3">
-                          <ImmoDetailFields id={id} detail={detail} onChange={(k, v) => updateDetail(id, k, v)} transponderCatalog={transponderCatalog} equipoCatalog={equipoCatalog} profileImages={immoProfileImages(p)} transponderOptions={transponderOptions} vehicleMake={make} />
+                          <ImmoDetailFields id={id} detail={detail} onChange={(k, v) => updateDetail(id, k, v)} transponderCatalog={transponderCatalog} equipoCatalog={equipoCatalog} profileImages={immoProfileImages(p)} transponderOptions={transponderOptions} vehicleMake={make} issues={issues} />
                         </div>
                       )}
                     </div>
