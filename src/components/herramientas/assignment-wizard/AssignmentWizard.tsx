@@ -887,7 +887,7 @@ export function AssignmentWizard({
                     profileImages={immoProfileImages(p)}
                     transponderOptions={transponderOptions}
                     vehicleMake={vehicle.make}
-                    issues={showImmoIssues ? immoDetailIssues(details[id] ?? emptyDetail()) : []}
+                    showIssues={showImmoIssues}
                   />
                 </section>
               );

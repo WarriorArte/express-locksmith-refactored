@@ -68,24 +68,35 @@ export function resolveProcedureText(
 }
 
 
+export type ImmoDetailField =
+  | "transponder" | "pincode" | "generadoCon" | "equiposTransponder"
+  | "metodo" | "equiposRemoto" | "pasos";
+
 /**
- * Secciones sin completar de los datos Immo de una asignación. Cada perfil elegido se llena
+ * Campos sin completar de los datos Immo de una asignación. Cada perfil elegido se llena
  * completo; la única forma de no llenarlo es omitir Immo Info entero. Las notas son opcionales.
  * «Sin inmovilizador» deja fuera las secciones de transponder y pincode.
  */
-export function immoDetailIssues(detail: Partial<ImmoAssignmentDetail> | null | undefined): string[] {
+export function immoDetailMissing(detail: Partial<ImmoAssignmentDetail> | null | undefined): { field: ImmoDetailField; label: string }[] {
   const d = detail ?? {};
-  const issues: string[] = [];
+  const out: { field: ImmoDetailField; label: string }[] = [];
   const has = (v: unknown) => String(v ?? "").trim().length > 0;
   if (!d.sinInmovilizador) {
-    if (!has(d.transponder)) issues.push("Transponder");
-    if (!d.pincodeRequerido && !d.sinPincode) issues.push("Pincode (requiere o no lleva)");
-    else if (d.pincodeRequerido && !has(d.formaObtencionPincode)) issues.push("Cómo obtener el pincode");
-    if (!d.transponderNoGenerable && !(d.generadoConIds?.length)) issues.push("Se genera con (o «no se puede generar»)");
-    if (!(d.equiposTransponderIds?.length)) issues.push("Equipos para programar el transponder");
+    if (!has(d.transponder)) out.push({ field: "transponder", label: "Transponder" });
+    // Pincode: «No lleva», o cómo obtenerlo (con o sin «Requiere» marcado).
+    if (!d.sinPincode && !has(d.formaObtencionPincode)) {
+      out.push({ field: "pincode", label: d.pincodeRequerido ? "Cómo obtener el pincode" : "Pincode (marca «No lleva» o escribe cómo obtenerlo)" });
+    }
+    if (!d.transponderNoGenerable && !(d.generadoConIds?.length)) out.push({ field: "generadoCon", label: "Se genera con (o «no se puede generar»)" });
+    if (!(d.equiposTransponderIds?.length)) out.push({ field: "equiposTransponder", label: "Equipos para programar el transponder" });
   }
-  if (!d.programacionManual && !d.programacionOBD) issues.push("Método de programación del remoto");
-  if (d.programacionOBD && !(d.equiposRemotoIds?.length)) issues.push("Equipos para programar el remoto");
-  if (!has(d.procedimientoId) && !has(d.procedimientoProgramacion)) issues.push("Pasos para programar el remoto");
-  return issues;
+  if (!d.programacionManual && !d.programacionOBD) out.push({ field: "metodo", label: "Método de programación del remoto" });
+  if (d.programacionOBD && !(d.equiposRemotoIds?.length)) out.push({ field: "equiposRemoto", label: "Equipos para programar el remoto" });
+  if (!has(d.procedimientoId) && !has(d.procedimientoProgramacion)) out.push({ field: "pasos", label: "Pasos para programar el remoto" });
+  return out;
+}
+
+/** Igual que `immoDetailMissing`, solo los nombres. */
+export function immoDetailIssues(detail: Partial<ImmoAssignmentDetail> | null | undefined): string[] {
+  return immoDetailMissing(detail).map((m) => m.label);
 }

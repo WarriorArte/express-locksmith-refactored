@@ -38,7 +38,7 @@ import type {
   ImmoAssignmentDetail, ToolAssignment,
 } from "@/types";
 import { IMMO_MODULACIONES } from "@/types";
-import { SIN_INMOVILIZADOR_TEXTO, looksLikeNoImmobilizer, transponderLabel, formatFrecuencia, getFrecuenciaMHz, getModulacion, immoProfileImages, immoAssignmentImage, immoDetailIssues } from "@/lib/immo";
+import { SIN_INMOVILIZADOR_TEXTO, looksLikeNoImmobilizer, transponderLabel, formatFrecuencia, getFrecuenciaMHz, getModulacion, immoProfileImages, immoAssignmentImage, immoDetailIssues, immoDetailMissing, type ImmoDetailField } from "@/lib/immo";
 import { cn } from "@/lib/utils";
 import { catalogOptions, sameLabel } from "@/lib/immoCatalogDefaults";
 import { uid } from "./assignment-wizard/wizardUtils";
@@ -610,12 +610,18 @@ export interface ImmoDetailFieldsProps {
   transponderOptions?: ImmoCatalogItem[];
   /** Marca del vehículo (se propone al guardar un procedimiento). */
   vehicleMake?: string;
-  /** Secciones sin completar (se muestran arriba tras intentar avanzar o guardar). */
-  issues?: string[];
+  /** Marca en rojo los campos que faltan (tras intentar avanzar o guardar). */
+  showIssues?: boolean;
 }
 
 /** Campos de datos por vehículo de un perfil Immo (compartidos por escritorio y asistente móvil). */
-export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equipoCatalog, profileImages = [], transponderOptions = [], vehicleMake, issues = [] }: ImmoDetailFieldsProps) {
+export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equipoCatalog, profileImages = [], transponderOptions = [], vehicleMake, showIssues = false }: ImmoDetailFieldsProps) {
+  // Se recalcula al escribir: cada campo deja de marcarse en cuanto se completa.
+  const missingList = showIssues ? immoDetailMissing(detail) : [];
+  const issues = missingList.map((m) => m.label);
+  const miss = (f: ImmoDetailField) => missingList.some((m) => m.field === f);
+  const lbl = (f: ImmoDetailField) => cn("text-xs font-bold", miss(f) && "text-destructive");
+  const hint = (f: ImmoDetailField) => miss(f) ? <p className="text-[11px] font-medium text-destructive">Falta completar</p> : null;
   const chosenImage = immoAssignmentImage({ images: profileImages }, detail);
   const sinInmovilizador = !!detail.sinInmovilizador;
   // «N/A» escrito a mano en Transponder: se sugiere usar la opción en su lugar.
@@ -710,7 +716,7 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                           <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2">
                           {/* Transponder */}
                           <div className="space-y-1">
-                            <Label htmlFor={`transponder-${id}`} className="text-xs font-bold">Transponder</Label>
+                            <Label htmlFor={`transponder-${id}`} className={lbl("transponder")}>Transponder</Label>{hint("transponder")}
                             <CatalogSelect
                               id={`transponder-${id}`}
                               label="Transponder"
@@ -746,7 +752,7 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                                <div className="flex items-start gap-2">
                                  <KeyRound className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                                  <div>
-                                   <Label className="text-xs font-bold">Pincode</Label>
+                                   <Label className={lbl("pincode")}>Pincode</Label>{hint("pincode")}
                                    <p className="mt-0.5 text-[11px] text-muted-foreground">Indica si el técnico lo necesita para programar.</p>
                                  </div>
                                </div>
@@ -794,7 +800,7 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                              ) : (
                              <div className="space-y-3">
                                <div className="space-y-1">
-                                 <Label className="text-xs font-bold">Cómo obtenerlo:</Label>
+                                 <Label className={lbl("pincode")}>Cómo obtenerlo:</Label>
                                  <Textarea
                                    value={detail.formaObtencionPincode ?? ""}
                                    onChange={(e) => onChange("formaObtencionPincode", e.target.value)}
@@ -818,7 +824,7 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                            </div>
                           {/* Se genera con */}
                           <div className="space-y-1.5">
-                            <Label className="text-xs font-bold">Se genera con</Label>
+                            <Label className={lbl("generadoCon")}>Se genera con</Label>{hint("generadoCon")}
                             <div className="flex items-center gap-2">
                               <Checkbox
                                 id={`no-generable-${id}`}
@@ -849,7 +855,7 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                           </div>
                           {/* Equipos transponder: se muestran en la sección Transponder del técnico */}
                           <div className="space-y-1.5">
-                            <Label className="text-xs font-bold">Equipos para programar el transponder</Label>
+                            <Label className={lbl("equiposTransponder")}>Equipos para programar el transponder</Label>{hint("equiposTransponder")}
                             <CatalogChipSelector catalogItems={equipoCatalog} selectedIds={detail.equiposTransponderIds} onChange={(ids) => onChange("equiposTransponderIds", ids)} />
                           </div>
                           </>
@@ -858,12 +864,12 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                           <p className="border-t border-border/60 pt-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">Programación del remoto</p>
                           {/* Equipos remoto */}
                           <div className="space-y-1.5">
-                            <Label className="text-xs font-bold">Equipos para programar el remoto</Label>
+                            <Label className={lbl("equiposRemoto")}>Equipos para programar el remoto</Label>{hint("equiposRemoto")}
                             <CatalogChipSelector catalogItems={equipoCatalog} selectedIds={detail.equiposRemotoIds} onChange={(ids) => onChange("equiposRemotoIds", ids)} />
                           </div>
                           {/* Método del remoto: se muestra junto a sus pasos */}
                           <div className="space-y-1.5">
-                            <Label className="text-xs font-bold">Método de programación del remoto</Label>
+                            <Label className={lbl("metodo")}>Método de programación del remoto</Label>{hint("metodo")}
                             <div className="flex items-center gap-6">
                               <div className="flex items-center gap-2">
                                 <Checkbox id={`manual-${id}`} checked={detail.programacionManual} onCheckedChange={(v) => onChange("programacionManual", !!v)} />
@@ -876,7 +882,7 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                             </div>
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs font-bold">Pasos para programar el remoto</Label>
+                            <Label className={lbl("pasos")}>Pasos para programar el remoto</Label>{hint("pasos")}
                             <p className="text-xs text-muted-foreground">
                               Pasos con «-» o «1.»; notas entre corchetes: [nota]; imágenes con los botones de foto
                             </p>
@@ -1194,7 +1200,7 @@ export function ImmoAssignmentManager({
                   if (!p) return null;
                   const detail = detailMap[id] ?? emptyDetail();
                   const isExpanded = expandedProfileId === id;
-                  const issues = showIssues ? immoDetailIssues(detail) : [];
+                  const incomplete = showIssues && immoDetailIssues(detail).length > 0;
                   return (
                     <div key={id} className="rounded-lg border border-border bg-background overflow-hidden">
                       {/* Accordion header */}
@@ -1210,7 +1216,7 @@ export function ImmoAssignmentManager({
                             <Cpu className="w-4 h-4 text-accent shrink-0" />
                           )}
                           <span className="text-sm font-semibold text-foreground truncate">{profileTitle(p)}</span>
-                          {issues.length > 0 && <AlertTriangle className="h-4 w-4 shrink-0 text-destructive" aria-label="Datos incompletos" />}
+                          {incomplete && <AlertTriangle className="h-4 w-4 shrink-0 text-destructive" aria-label="Datos incompletos" />}
                           {transponderLabel(detail) && (
                             <span className="text-xs text-muted-foreground tabular-nums">· {transponderLabel(detail)}</span>
                           )}
@@ -1221,7 +1227,7 @@ export function ImmoAssignmentManager({
                       {/* Accordion body */}
                       {isExpanded && (
                         <div className="px-3 pb-4 space-y-4 border-t border-border/50 pt-3">
-                          <ImmoDetailFields id={id} detail={detail} onChange={(k, v) => updateDetail(id, k, v)} transponderCatalog={transponderCatalog} equipoCatalog={equipoCatalog} profileImages={immoProfileImages(p)} transponderOptions={transponderOptions} vehicleMake={make} issues={issues} />
+                          <ImmoDetailFields id={id} detail={detail} onChange={(k, v) => updateDetail(id, k, v)} transponderCatalog={transponderCatalog} equipoCatalog={equipoCatalog} profileImages={immoProfileImages(p)} transponderOptions={transponderOptions} vehicleMake={make} showIssues={showIssues} />
                         </div>
                       )}
                     </div>
