@@ -10,7 +10,7 @@
  * - Al borrar uno en uso, antes se deja la copia actualizada en cada vehículo.
  */
 import { useCallback, useMemo, useState, type ReactNode } from "react";
-import { BookOpen, Link2, Link2Off, Loader2, Pencil, Plus, Save, Search, Trash2 } from "lucide-react";
+import { BookOpen, ChevronDown, Link2, Link2Off, Loader2, Pencil, Plus, Save, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,6 @@ import {
 import { RichTextEditor } from "@/components/herramientas/RichTextField";
 import { ProcedureSteps } from "@/components/herramientas/ProcedureSteps";
 import { cn } from "@/lib/utils";
-import { FilterChip } from "@/design-system/detail/DetailScreen";
 import type { ImmoAssignmentDetail, ImmoCatalogItem, ToolAssignment } from "@/types";
 import { ProcedureLibraryContext, useProcedureLibrary, type ProcedureLibraryValue } from "./procedureContext";
 
@@ -296,30 +295,40 @@ function ProcedurePicker({
       return am - bm || collator.compare(a, b);
     });
   }, [lib.procedures, query, brand, vehicleMake]);
+  const shown = groups.reduce((n, [, items]) => n + items.length, 0);
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="flex h-[85dvh] max-w-lg flex-col gap-3 overflow-hidden">
-          <DialogHeader className="shrink-0 text-left">
+        {/* fixedHeight: el encabezado (título, búsqueda y marca) queda fijo y solo la lista se desplaza. */}
+        <DialogContent fixedHeight className="max-w-lg">
+          <DialogHeader className="text-left">
             <DialogTitle>Procedimientos guardados</DialogTitle>
             <DialogDescription>Elige uno: quedará vinculado y se actualizará si lo editas.</DialogDescription>
-          </DialogHeader>
-          <div className="relative shrink-0">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar por marca, título o texto…" className="h-10 pl-9 text-sm" />
-          </div>
-          {brands.length > 1 && (
-            <div className="-mx-6 flex shrink-0 gap-2 overflow-x-auto px-6 pb-1" role="group" aria-label="Filtrar por marca">
-              <FilterChip onCard selected={!brand} onClick={() => setBrand(null)} count={lib.procedures.length}>Todas</FilterChip>
-              {brands.map(([m, n]) => (
-                <FilterChip key={m} onCard selected={!!brand && sameText(brand, m)} onClick={() => setBrand(brand && sameText(brand, m) ? null : m)} count={n}>
-                  {m}
-                </FilterChip>
-              ))}
+            <div className="flex flex-col gap-2 pt-2 sm:flex-row">
+              <div className="relative min-w-0 flex-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar por título o texto…" className="h-10 pl-9 text-sm" />
+              </div>
+              {brands.length > 1 && (
+                <div className="relative sm:w-48">
+                  <select
+                    aria-label="Filtrar por marca"
+                    value={brand ?? ""}
+                    onChange={(e) => setBrand(e.target.value || null)}
+                    className="h-10 w-full cursor-pointer appearance-none rounded-sm border-[1.5px] border-input bg-card pl-3 pr-8 text-sm font-medium text-foreground transition-colors hover:border-foreground/60 focus-visible:border-2 focus-visible:border-primary focus-visible:outline-none"
+                  >
+                    <option value="">Todas las marcas ({lib.procedures.length})</option>
+                    {brands.map(([m, n]) => (
+                      <option key={m} value={m}>{m} ({n})</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                </div>
+              )}
             </div>
-          )}
-          <div className="-mx-6 min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-6 pb-2">
+          </DialogHeader>
+          <div className="space-y-4 pb-2">
             {groups.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">Sin resultados.</p>}
             {groups.map(([marca, items]) => (
               <section key={marca} className="space-y-1">
@@ -350,6 +359,11 @@ function ProcedurePicker({
               </section>
             ))}
           </div>
+          <DialogFooter>
+            <p className="w-full text-center text-xs tabular-nums text-muted-foreground">
+              {shown === lib.procedures.length ? `${shown} procedimientos` : `Mostrando ${shown} de ${lib.procedures.length}`}
+            </p>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
