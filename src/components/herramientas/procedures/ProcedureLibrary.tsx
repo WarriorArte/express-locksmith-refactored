@@ -26,6 +26,7 @@ import {
 import { RichTextEditor } from "@/components/herramientas/RichTextField";
 import { ProcedureSteps } from "@/components/herramientas/ProcedureSteps";
 import { cn } from "@/lib/utils";
+import { FilterChip } from "@/design-system/detail/DetailScreen";
 import type { ImmoAssignmentDetail, ImmoCatalogItem, ToolAssignment } from "@/types";
 import { ProcedureLibraryContext, useProcedureLibrary, type ProcedureLibraryValue } from "./procedureContext";
 
@@ -261,11 +262,28 @@ function ProcedurePicker({
 }) {
   const lib = useProcedureLibrary()!;
   const [query, setQuery] = useState("");
+  const [brand, setBrand] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ImmoCatalogItem | null>(null);
+
+  // Marcas para filtrar rápido (la del vehículo primero).
+  const brands = useMemo(() => {
+    const counts = new Map<string, number>();
+    lib.procedures.forEach((p) => {
+      const key = p.marca?.trim() || "Sin marca";
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    });
+    return Array.from(counts.entries()).sort(([a], [b]) => {
+      const am = vehicleMake && sameText(a, vehicleMake) ? 0 : 1;
+      const bm = vehicleMake && sameText(b, vehicleMake) ? 0 : 1;
+      return am - bm || collator.compare(a, b);
+    });
+  }, [lib.procedures, vehicleMake]);
 
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const list = lib.procedures.filter((p) => !q || [p.label, p.marca ?? "", p.texto ?? ""].some((v) => v.toLowerCase().includes(q)));
+    const list = lib.procedures.filter((p) =>
+      (!brand || sameText(p.marca?.trim() || "Sin marca", brand)) &&
+      (!q || [p.label, p.marca ?? "", p.texto ?? ""].some((v) => v.toLowerCase().includes(q))));
     const map = new Map<string, ImmoCatalogItem[]>();
     list.forEach((p) => {
       const key = p.marca?.trim() || "Sin marca";
@@ -277,21 +295,31 @@ function ProcedurePicker({
       const bm = vehicleMake && sameText(b, vehicleMake) ? 0 : 1;
       return am - bm || collator.compare(a, b);
     });
-  }, [lib.procedures, query, vehicleMake]);
+  }, [lib.procedures, query, brand, vehicleMake]);
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader className="text-left">
+        <DialogContent className="flex h-[85dvh] max-w-lg flex-col gap-3 overflow-hidden">
+          <DialogHeader className="shrink-0 text-left">
             <DialogTitle>Procedimientos guardados</DialogTitle>
             <DialogDescription>Elige uno: quedará vinculado y se actualizará si lo editas.</DialogDescription>
           </DialogHeader>
-          <div className="relative">
+          <div className="relative shrink-0">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar por marca, título o texto…" className="h-10 pl-9 text-sm" />
           </div>
-          <div className="space-y-4 pb-4">
+          {brands.length > 1 && (
+            <div className="-mx-6 flex shrink-0 gap-2 overflow-x-auto px-6 pb-1" role="group" aria-label="Filtrar por marca">
+              <FilterChip onCard selected={!brand} onClick={() => setBrand(null)} count={lib.procedures.length}>Todas</FilterChip>
+              {brands.map(([m, n]) => (
+                <FilterChip key={m} onCard selected={!!brand && sameText(brand, m)} onClick={() => setBrand(brand && sameText(brand, m) ? null : m)} count={n}>
+                  {m}
+                </FilterChip>
+              ))}
+            </div>
+          )}
+          <div className="-mx-6 min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-6 pb-2">
             {groups.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">Sin resultados.</p>}
             {groups.map(([marca, items]) => (
               <section key={marca} className="space-y-1">
@@ -301,10 +329,10 @@ function ProcedurePicker({
                     const count = lib.usages(p.id).length;
                     return (
                       <div key={p.id} className={cn("flex items-center gap-2 bg-card", p.id === currentId && "bg-secondary")}>
-                        <button type="button" onClick={() => onPick(p)} className="min-w-0 flex-1 px-3 py-2.5 text-left hover:bg-muted/40">
-                          <span className="block truncate text-sm font-semibold text-foreground">{p.label}</span>
-                          <span className="block text-xs text-muted-foreground">
-                            {p.id === currentId ? "En uso aquí · " : ""}{count ? `Usado en ${count} vehículo${count === 1 ? "" : "s"}` : "Sin usar"}
+                        <button type="button" onClick={() => onPick(p)} className="flex min-h-11 min-w-0 flex-1 items-center gap-3 px-3 py-2 text-left hover:bg-muted/40">
+                          <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">{p.label}</span>
+                          <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                            {p.id === currentId ? "En uso aquí · " : ""}{count ? `${count} vehículo${count === 1 ? "" : "s"}` : "Sin usar"}
                           </span>
                         </button>
                         <button
