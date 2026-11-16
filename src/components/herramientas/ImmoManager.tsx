@@ -1152,7 +1152,13 @@ export function ImmoAssignmentManager({
         : "No se pudo crear la asignación. Revisa tu conexión e inténtalo de nuevo.");
       return;
     }
-    toast.success(editingId ? "Asignación actualizada." : "Asignación creada.");
+    if (editingId) {
+      // Al editar se queda abierta: así se sabe en cuál asignación se va. «Cerrar» la suelta.
+      toast.success("Cambios guardados.");
+      setShowIssues(false);
+      return;
+    }
+    toast.success("Asignación creada.");
     resetForm();
   };
 
@@ -1320,7 +1326,7 @@ export function ImmoAssignmentManager({
                 {submitting ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Check className="w-4 h-4 mr-1.5" />}
                 {submitting ? "Guardando…" : editingId ? "Guardar Cambios" : "Crear Asignación"}
               </Button>
-              {editingId && <Button variant="outline" onClick={resetForm} disabled={submitting}><X className="w-4 h-4 mr-1" /> Cancelar</Button>}
+              {editingId && <Button variant="outline" onClick={resetForm} disabled={submitting}><X className="w-4 h-4 mr-1" /> Cerrar</Button>}
             </div>
           </CardContent>
         </Card>
