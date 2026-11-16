@@ -24,7 +24,6 @@ import {
 import { GeneradorLlaveSVG } from "@/components/llaves/GeneradorLlaveSVG";
 import { buildDefaultDecoderConfig, applyDecoderPreset, mapVisualTipoToDecoder } from "@/lib/decoderPresets";
 import { useKeycodeVisualSettings } from "@/hooks/useKeycodeVisualSettings";
-import { useTheme } from "@/hooks/useTheme";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { useToolsUploadCode } from "@/hooks/useToolsUploadCode";
 import { phpApiDeleteFile, resolveStorageUrl } from "@/lib/phpApi";
@@ -142,22 +141,8 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
   const { uploadFile, isUploading: isUploadingImage } = useFileUpload({ folder: "keycode", workshopCode: toolsUploadCode });
   const [galleryOpen, setGalleryOpen] = useState(false);
 
-  // --- Ajustes visuales universales (colores/trazo, aplican a todas las series) ---
-  const { settings: visualSettings, setSettings: setVisualSettings, saveSettings: saveVisualSettings } = useKeycodeVisualSettings();
-  const { theme } = useTheme();
-  const resolvedStrokeColor = theme === "dark" ? visualSettings.strokeColorDark : visualSettings.strokeColorLight;
-  const [savingVisualSettings, setSavingVisualSettings] = useState(false);
-  const handleSaveVisualSettings = async () => {
-    setSavingVisualSettings(true);
-    try {
-      await saveVisualSettings(visualSettings);
-      toast.success("Ajustes universales guardados.");
-    } catch {
-      toast.error("No se pudieron guardar los ajustes universales.");
-    } finally {
-      setSavingVisualSettings(false);
-    }
-  };
+  // Grosor del trazo guardado (los colores del dibujo los pone el tema de la app).
+  const { settings: visualSettings } = useKeycodeVisualSettings();
 
   // --- Edit state ---
   const [editingProfile, setEditingProfile] = useState<KeycodeProfile | null>(null);
@@ -1013,7 +998,6 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                           cortesPrimarios={prev.primary}
                           cortesSecundarios={prev.secondary}
                           invertDepths={profile.bittingConfig.invertDepths}
-                          strokeColor={resolvedStrokeColor}
                           strokeWidth={visualSettings.strokeWidth}
                           boxSize={profile.configuracionVisual.tamCaja}
                           numberSize={profile.configuracionVisual.tamNumero}
@@ -1415,46 +1399,6 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                       }}
                     >
                       {configuracionVisual ? "Activado" : "Activar"}
-                    </Button>
-                  </div>
-
-                  {/* Ajustes universales: colores y trazo — aplican a TODAS las series */}
-                  <div className="space-y-2.5 rounded-lg border-dashed bg-primary-light p-2.5">
-                    <div>
-                      <p className="text-xs font-bold text-foreground">Colores y trazo</p>
-                      <p className="text-[11px] text-muted-foreground">Ajuste universal: aplica a todas las series, no solo a esta.</p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <label className="flex items-center gap-2 bg-background border border-border rounded-lg p-1.5 cursor-pointer">
-                        <input
-                          type="color"
-                          value={visualSettings.strokeColorLight}
-                          onChange={(e) => setVisualSettings((s) => ({ ...s, strokeColorLight: e.target.value }))}
-                          className="w-7 h-6 border-0 p-0 cursor-pointer bg-transparent rounded shrink-0"
-                        />
-                        <span className="text-[11px] font-medium text-foreground">Trazo (tema claro)</span>
-                      </label>
-                      <label className="flex items-center gap-2 bg-background border border-border rounded-lg p-1.5 cursor-pointer">
-                        <input
-                          type="color"
-                          value={visualSettings.strokeColorDark}
-                          onChange={(e) => setVisualSettings((s) => ({ ...s, strokeColorDark: e.target.value }))}
-                          className="w-7 h-6 border-0 p-0 cursor-pointer bg-transparent rounded shrink-0"
-                        />
-                        <span className="text-[11px] font-medium text-foreground">Trazo (tema oscuro)</span>
-                      </label>
-                    </div>
-                    <VisualRangeField
-                      label="Grosor del trazo"
-                      min={1}
-                      max={10}
-                      step={0.5}
-                      defaultValue={3.5}
-                      value={visualSettings.strokeWidth}
-                      onChange={(value) => setVisualSettings((s) => ({ ...s, strokeWidth: value }))}
-                    />
-                    <Button size="sm" className="h-7 text-xs w-full" onClick={handleSaveVisualSettings} disabled={savingVisualSettings}>
-                      {savingVisualSettings ? "Guardando..." : "Guardar ajustes universales"}
                     </Button>
                   </div>
 
@@ -2071,7 +2015,6 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                       onSecondaryChange={handlePreviewSecondaryChange}
                       selectedGlobalIdx={previewSelectedCellIdx}
                       onSelectCell={setPreviewSelectedCellIdx}
-                      strokeColor={resolvedStrokeColor}
                       strokeWidth={visualSettings.strokeWidth}
                       boxSize={configuracionVisual.tamCaja}
                       numberSize={configuracionVisual.tamNumero}
