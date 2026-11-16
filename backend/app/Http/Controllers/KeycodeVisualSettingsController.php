@@ -14,7 +14,7 @@ final class KeycodeVisualSettingsController
     private const DEFAULTS = [
         'strokeColorLight' => '#00AEE6',
         'strokeColorDark'  => '#00AEE6',
-        'strokeWidth'      => 3.5,
+        'strokeWidth'      => 1.5,
     ];
 
     public function handle(Request $request): JsonResponse

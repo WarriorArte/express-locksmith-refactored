@@ -1425,7 +1425,7 @@ export function KeycodeManager({ profiles, onSave, onUpdate, onDelete, onFetchCo
                       min={1}
                       max={10}
                       step={0.5}
-                      defaultValue={3.5}
+                      defaultValue={1.5}
                       value={visualSettings.strokeWidth}
                       onChange={(value) => setVisualSettings((s) => ({ ...s, strokeWidth: value }))}
                     />

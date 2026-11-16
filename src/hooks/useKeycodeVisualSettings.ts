@@ -7,7 +7,7 @@ const ENDPOINT = "/herramientas/keycode-visual-settings";
 export const KEYCODE_VISUAL_DEFAULTS: KeycodeVisualSettings = {
   strokeColorLight: "#00AEE6",
   strokeColorDark: "#00AEE6",
-  strokeWidth: 3.5,
+  strokeWidth: 1.5,
 };
 
 export function useKeycodeVisualSettings() {
