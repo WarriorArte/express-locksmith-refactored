@@ -3,19 +3,22 @@
  *
  * - Cada procedimiento guardado tiene marca + título + pasos y vive en el catálogo Immo
  *   (categoría «procedimiento»), así no requiere cambios en el servidor.
+ * - También guarda el método de programación (Manual / OBD2); los guardados antes no lo
+ *   tienen y entonces el vehículo conserva el suyo.
  * - Una asignación lo usa VINCULADO (`procedimientoId`): editar el procedimiento cambia
  *   todos los vehículos que lo usan. `procedimientoProgramacion` guarda una copia del
  *   texto como respaldo (si el procedimiento se borra, el técnico nunca ve vacío).
  * - «Desvincular» copia el texto a la asignación para editarlo solo ahí.
  * - Al borrar uno en uso, antes se deja la copia actualizada en cada vehículo.
  */
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { BookOpen, ChevronDown, Link2, Link2Off, Loader2, Pencil, Plus, Save, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/responsive-dialog";
@@ -39,6 +42,29 @@ function usageByMake(list: ToolAssignment[]): [string, number][] {
 }
 
 const plural = (n: number) => `${n} vehículo${n === 1 ? "" : "s"}`;
+/** ¿El procedimiento tiene método guardado? (los anteriores a esta opción no). */
+const hasMetodo = (p: ImmoCatalogItem | undefined) => !!p && (p.programacionManual !== undefined || p.programacionOBD !== undefined);
+const metodoLabel = (manual?: boolean, obd?: boolean) => [manual && "Manual", obd && "OBD2"].filter(Boolean).join(" y ");
+
+function MetodoFields({ id, manual, obd, onManual, onObd }: {
+  id: string; manual: boolean; obd: boolean; onManual: (v: boolean) => void; onObd: (v: boolean) => void;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs font-bold">Método de programación del remoto</Label>
+      <div className="flex items-center gap-6">
+        <div className="flex items-center gap-2">
+          <Checkbox id={`${id}-manual`} checked={manual} onCheckedChange={(v) => onManual(!!v)} />
+          <Label htmlFor={`${id}-manual`} className="cursor-pointer text-sm">Manual</Label>
+        </div>
+        <div className="flex items-center gap-2">
+          <Checkbox id={`${id}-obd`} checked={obd} onCheckedChange={(v) => onObd(!!v)} />
+          <Label htmlFor={`${id}-obd`} className="cursor-pointer text-sm">Por OBD2</Label>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function UsageByMake({ used, className }: { used: ToolAssignment[]; className?: string }) {
   return (
@@ -88,13 +114,30 @@ export function ProcedureLibraryProvider({
     return Array.from(set.values()).sort(collator.compare);
   }, [assignments, procedures]);
 
-  const create = useCallback(async ({ marca, titulo, texto }: { marca: string; titulo: string; texto: string }) => {
-    const item: ImmoCatalogItem = { id: crypto.randomUUID(), label: titulo.trim(), marca: marca.trim(), texto, category: "procedimiento" };
+  const create = useCallback(async ({ marca, titulo, texto, manual, obd }: { marca: string; titulo: string; texto: string; manual: boolean; obd: boolean }) => {
+    const item: ImmoCatalogItem = {
+      id: crypto.randomUUID(), label: titulo.trim(), marca: marca.trim(), texto,
+      programacionManual: manual, programacionOBD: obd, category: "procedimiento",
+    };
     const ok = await addItem(item);
     return ok === false ? null : item;
   }, [addItem]);
 
-  const update = useCallback(async (item: ImmoCatalogItem) => (await updateItem(item)) !== false, [updateItem]);
+  const update = useCallback(async (item: ImmoCatalogItem) => {
+    if ((await updateItem(item)) === false) return false;
+    // El técnico lee el método de la asignación: cada vehículo vinculado recibe el nuevo.
+    const results = await Promise.all(usages(item.id).map((a) => updateAssignment({
+      ...a,
+      immoDetails: (a.immoDetails ?? []).map((d) => d.procedimientoId === item.id
+        ? {
+          ...d,
+          procedimientoProgramacion: item.texto ?? d.procedimientoProgramacion,
+          ...(hasMetodo(item) ? { programacionManual: !!item.programacionManual, programacionOBD: !!item.programacionOBD } : {}),
+        }
+        : d),
+    })));
+    return results.every(Boolean);
+  }, [updateItem, usages, updateAssignment]);
 
   const remove = useCallback(async (id: string) => {
     const proc = procedures.find((p) => p.id === id);
@@ -126,7 +169,7 @@ export function ProcedureStepsField({
   id, detail, onChange, vehicleMake,
 }: {
   id: string;
-  detail: Pick<ImmoAssignmentDetail, "procedimientoId" | "procedimientoProgramacion">;
+  detail: Pick<ImmoAssignmentDetail, "procedimientoId" | "procedimientoProgramacion" | "programacionManual" | "programacionOBD">;
   onChange: (key: DetailKey, value: unknown) => void;
   /** Marca del vehículo que se asigna: se propone al guardar y se muestra primero. */
   vehicleMake?: string;
@@ -146,6 +189,15 @@ export function ProcedureStepsField({
       className="text-sm"
     />
   );
+  // Vinculado con método guardado: el método de la asignación sigue al del procedimiento.
+  const syncProc = lib?.getById(detail.procedimientoId);
+  useEffect(() => {
+    if (!syncProc || !hasMetodo(syncProc)) return;
+    if (!!detail.programacionManual !== !!syncProc.programacionManual) onChange("programacionManual", !!syncProc.programacionManual);
+    if (!!detail.programacionOBD !== !!syncProc.programacionOBD) onChange("programacionOBD", !!syncProc.programacionOBD);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [syncProc?.id, syncProc?.programacionManual, syncProc?.programacionOBD]);
+
   // Sin biblioteca (fuera del módulo del SuperAdmin) el campo funciona como siempre.
   if (!lib) return editor;
 
@@ -157,6 +209,10 @@ export function ProcedureStepsField({
     const prevId = detail.procedimientoId;
     onChange("procedimientoId", proc.id);
     onChange("procedimientoProgramacion", proc.texto ?? "");
+    if (hasMetodo(proc)) {
+      onChange("programacionManual", !!proc.programacionManual);
+      onChange("programacionOBD", !!proc.programacionOBD);
+    }
     setPickerOpen(false);
     const replaced = !prevId && prevText.trim() && prevText.trim() !== (proc.texto ?? "").trim();
     toast.success(`Usando «${proc.label}»`, replaced ? {
@@ -187,6 +243,12 @@ export function ProcedureStepsField({
               <p className="text-xs text-muted-foreground">
                 {linked.marca} · procedimiento guardado{usedIn > 0 ? ` · usado en ${usedIn} vehículo${usedIn === 1 ? "" : "s"}` : ""}
               </p>
+              {hasMetodo(linked) && (
+                <p className="mt-1 text-sm text-foreground">
+                  <span className="text-xs font-semibold text-muted-foreground">Método: </span>
+                  {metodoLabel(linked.programacionManual, linked.programacionOBD) || "—"}
+                </p>
+              )}
             </div>
           </div>
           <div className="max-h-56 overflow-y-auto rounded-sm bg-card p-3">
@@ -214,7 +276,13 @@ export function ProcedureStepsField({
               {lib.procedures.length ? `Usar procedimiento guardado (${lib.procedures.length})` : "Sin procedimientos guardados"}
             </Button>
             {(detail.procedimientoProgramacion ?? "").trim() && (
-              <Button type="button" variant="outline" size="sm" className="h-8" onClick={() => setSaveOpen(true)}>
+              <Button
+                type="button" variant="outline" size="sm" className="h-8"
+                onClick={() => {
+                  if (!detail.programacionManual && !detail.programacionOBD) { toast.error("Elige el método (Manual u OBD2) antes de guardarlo."); return; }
+                  setSaveOpen(true);
+                }}
+              >
                 <Save className="mr-1.5 h-3.5 w-3.5" /> Guardar como procedimiento
               </Button>
             )}
@@ -236,6 +304,8 @@ export function ProcedureStepsField({
         onOpenChange={setSaveOpen}
         defaultMake={vehicleMake}
         texto={detail.procedimientoProgramacion}
+        manual={!!detail.programacionManual}
+        obd={!!detail.programacionOBD}
         onSaved={(proc) => {
           onChange("procedimientoId", proc.id);
           onChange("procedimientoProgramacion", proc.texto ?? "");
@@ -401,12 +471,14 @@ function validate(lib: ProcedureLibraryValue, marca: string, titulo: string, exc
 }
 
 function SaveProcedureDialog({
-  open, onOpenChange, defaultMake, texto, onSaved,
+  open, onOpenChange, defaultMake, texto, manual, obd, onSaved,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultMake?: string;
   texto: string;
+  manual: boolean;
+  obd: boolean;
   onSaved: (proc: ImmoCatalogItem) => void;
 }) {
   const lib = useProcedureLibrary()!;
@@ -418,7 +490,7 @@ function SaveProcedureDialog({
     const err = validate(lib, marca, titulo);
     if (err) { toast.error(err); return; }
     setSaving(true);
-    const proc = await lib.create({ marca, titulo, texto });
+    const proc = await lib.create({ marca, titulo, texto, manual, obd });
     setSaving(false);
     if (!proc) { toast.error("No se pudo guardar. Revisa tu conexión e inténtalo de nuevo."); return; }
     onSaved(proc);
@@ -431,7 +503,7 @@ function SaveProcedureDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader className="text-left">
           <DialogTitle>Guardar procedimiento</DialogTitle>
-          <DialogDescription>Podrás reutilizarlo en otros vehículos, de esta u otra marca.</DialogDescription>
+          <DialogDescription>Se guardan los pasos y el método ({metodoLabel(manual, obd)}). Podrás reutilizarlo en otros vehículos, de esta u otra marca.</DialogDescription>
         </DialogHeader>
         <MakeTitleFields marca={marca} setMarca={setMarca} titulo={titulo} setTitulo={setTitulo} listId="proc-save" />
         <DialogFooter>
@@ -493,17 +565,20 @@ function EditProcedureDialog({ proc, onClose }: { proc: ImmoCatalogItem | null; 
   const [marca, setMarca] = useState(proc?.marca ?? "");
   const [titulo, setTitulo] = useState(proc?.label ?? "");
   const [texto, setTexto] = useState(proc?.texto ?? "");
+  const [manual, setManual] = useState(!!proc?.programacionManual);
+  const [obd, setObd] = useState(!!proc?.programacionOBD);
   const [saving, setSaving] = useState(false);
   const used = proc ? lib.usages(proc.id) : [];
 
   const save = async () => {
     const err = validate(lib, marca, titulo, proc?.id);
     if (err) { toast.error(err); return; }
+    if (!manual && !obd) { toast.error("Elige el método de programación (Manual u OBD2)."); return; }
     if (!texto.trim()) { toast.error("Escribe los pasos del procedimiento."); return; }
     setSaving(true);
     const ok = proc
-      ? await lib.update({ ...proc, marca: marca.trim(), label: titulo.trim(), texto })
-      : !!(await lib.create({ marca, titulo, texto }));
+      ? await lib.update({ ...proc, marca: marca.trim(), label: titulo.trim(), texto, programacionManual: manual, programacionOBD: obd })
+      : !!(await lib.create({ marca, titulo, texto, manual, obd }));
     setSaving(false);
     if (!ok) { toast.error("No se pudo guardar. Revisa tu conexión e inténtalo de nuevo."); return; }
     toast.success(!proc ? "Procedimiento guardado." : used.length ? `Procedimiento actualizado en ${plural(used.length)}.` : "Procedimiento actualizado.");
@@ -527,6 +602,7 @@ function EditProcedureDialog({ proc, onClose }: { proc: ImmoCatalogItem | null; 
             </div>
           )}
           <MakeTitleFields marca={marca} setMarca={setMarca} titulo={titulo} setTitulo={setTitulo} listId={proc ? "proc-edit" : "proc-new"} />
+          <MetodoFields id={proc ? `proc-${proc.id}` : "proc-new"} manual={manual} obd={obd} onManual={setManual} onObd={setObd} />
           <div className="space-y-1">
             <Label className="text-xs font-bold">Pasos</Label>
             <RichTextEditor value={texto} onChange={setTexto} placeholder="Describe el procedimiento paso a paso…" imageFolder="immo" rows={8} className="text-sm" />
@@ -604,7 +680,9 @@ export function ProcedureLibraryManager() {
                     <div key={p.id} className="flex items-center gap-2">
                       <button type="button" onClick={() => setEditing(p)} className="min-w-0 flex-1 px-3 py-2.5 text-left hover:bg-muted/40">
                         <span className="block truncate text-sm font-semibold text-foreground">{p.label}</span>
-                        <span className="block text-xs text-muted-foreground">{count ? `Usado en ${plural(count)}` : "Sin usar"}</span>
+                        <span className="block text-xs text-muted-foreground">
+                          {[metodoLabel(p.programacionManual, p.programacionOBD), count ? `Usado en ${plural(count)}` : "Sin usar"].filter(Boolean).join(" · ")}
+                        </span>
                       </button>
                       <button
                         type="button"

@@ -122,7 +122,7 @@ export function immoProfileMissing(p: Partial<ImmoProfile> | null | undefined): 
 
 const BOOLEAN_CONFIG_KEYS = new Set<string>([
   "sinInmovilizador", "pincodeRequerido", "sinPincode", "transponderNoGenerable",
-  "omitirEquiposTransponder", "omitirEquiposRemoto", "programacionManual", "programacionOBD",
+  "omitirEquiposTransponder", "omitirEquiposRemoto",
 ]);
 
 /** Copia los campos de configuración de transponder de una asignación (con valores por defecto). */

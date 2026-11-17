@@ -221,6 +221,9 @@ export interface ImmoCatalogItem {
   marca?: string;
   /** Solo «procedimiento»: pasos para programar el remoto. */
   texto?: string;
+  /** Solo «procedimiento»: método de programación (sin definir en los guardados antes). */
+  programacionManual?: boolean;
+  programacionOBD?: boolean;
   /** Solo «configTransponder»: datos de transponder, pincode, equipos y método guardados. */
   config?: ImmoTransponderConfig;
   /** Orden manual dentro de su categoría (se asigna al reordenar por drag-and-drop). */
@@ -386,7 +389,6 @@ export const IMMO_TRANSPONDER_CONFIG_KEYS = [
   "pincodeRequerido", "sinPincode", "notasSinPincode", "formaObtencionPincode", "notasPincode",
   "transponderNoGenerable", "notasNoGenerable", "generadoConIds",
   "equiposTransponderIds", "omitirEquiposTransponder", "equiposRemotoIds", "omitirEquiposRemoto",
-  "programacionManual", "programacionOBD",
 ] as const;
 
 export type ImmoTransponderConfig = Partial<Pick<ImmoAssignmentDetail, (typeof IMMO_TRANSPONDER_CONFIG_KEYS)[number]>>;

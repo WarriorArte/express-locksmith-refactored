@@ -1,8 +1,8 @@
 /**
  * Biblioteca de configuraciones de transponder (Immo Info).
  *
- * Guarda, por marca + título, los datos de transponder, pincode, «se genera con», equipos
- * (transponder y remoto) y método de programación del remoto. Vive en el catálogo Immo
+ * Guarda, por marca + título, los datos de transponder, pincode, «se genera con» y equipos
+ * (transponder y remoto). El método del remoto va con los procedimientos. Vive en el catálogo Immo
  * (categoría «configTransponder»), así no requiere cambios en el servidor.
  *
  * - Una asignación la usa VINCULADA (`configTransponderId`) y guarda una copia de los datos:
@@ -43,7 +43,7 @@ const brandKey = (c: ImmoCatalogItem) => c.marca?.trim() || "Sin marca";
 
 /** Campos de la configuración que faltan (los pasos del remoto no son parte de ella). */
 const configIssues = (config: ImmoTransponderConfig) =>
-  immoDetailMissing({ ...config, procedimientoProgramacion: "x" }).map((m) => m.label);
+  immoDetailMissing({ ...config, procedimientoProgramacion: "x", programacionManual: true }).map((m) => m.label);
 
 function UsageByMake({ used, className }: { used: ToolAssignment[]; className?: string }) {
   const rows = useMemo(() => {
@@ -153,7 +153,6 @@ function ConfigSummary({ config }: { config: ImmoTransponderConfig }) {
     rows.push(["Equipos transponder", config.omitirEquiposTransponder ? "Omitido" : names(config.equiposTransponderIds) || "—"]);
   }
   rows.push(["Equipos remoto", config.omitirEquiposRemoto ? "Omitido" : names(config.equiposRemotoIds) || "—"]);
-  rows.push(["Método", [config.programacionManual && "Manual", config.programacionOBD && "OBD2"].filter(Boolean).join(" y ") || "—"]);
   return (
     <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
       {rows.map(([k, v]) => (
@@ -452,7 +451,7 @@ function SaveConfigDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader className="text-left">
           <DialogTitle>Guardar configuración de transponder</DialogTitle>
-          <DialogDescription>Guarda transponder, pincode, «se genera con», equipos y método para reutilizarlos en otros vehículos.</DialogDescription>
+          <DialogDescription>Guarda transponder, pincode, «se genera con» y equipos para reutilizarlos en otros vehículos.</DialogDescription>
         </DialogHeader>
         <MakeTitleFields marca={marca} setMarca={setMarca} titulo={titulo} setTitulo={setTitulo} listId="cfg-save" />
         <DialogFooter>
@@ -601,7 +600,7 @@ export function TransponderConfigManager() {
         <div className="min-w-0 flex-1">
           <h3 className="text-base font-bold text-foreground">Configuraciones de transponder</h3>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Transponder, pincode, «se genera con», equipos y método guardados por marca. Editar una cambia todos los vehículos que la usan.
+            Transponder, pincode, «se genera con» y equipos guardados por marca. Editar una cambia todos los vehículos que la usan.
           </p>
         </div>
         <Button size="sm" onClick={() => setEditing(null)}><Plus className="mr-1.5 h-4 w-4" /> Nueva configuración</Button>

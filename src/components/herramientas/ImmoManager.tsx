@@ -30,6 +30,7 @@ import { RichTextEditor } from "@/components/herramientas/RichTextField";
 import { ProcedureStepsField } from "@/components/herramientas/procedures/ProcedureLibrary";
 import { TransponderConfigBar } from "@/components/herramientas/procedures/TransponderConfigLibrary";
 import { useTransponderConfigLibrary } from "@/components/herramientas/procedures/transponderConfigContext";
+import { useProcedureLibrary } from "@/components/herramientas/procedures/procedureContext";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { useToolsUploadCode } from "@/hooks/useToolsUploadCode";
 import { phpApiDeleteFile, resolveStorageUrl } from "@/lib/phpApi";
@@ -667,9 +668,13 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
   const linkedConfig = part === "all" ? cfgLib?.getById(detail.configTransponderId) : undefined;
   const showConfig = !linkedConfig;
   const showRest = part === "all";
+  // Procedimiento vinculado con método guardado: el método se muestra junto a sus pasos.
+  const procLib = useProcedureLibrary();
+  const linkedProc = showRest ? procLib?.getById(detail.procedimientoId) : undefined;
+  const procMetodoLinked = !!linkedProc && (linkedProc.programacionManual !== undefined || linkedProc.programacionOBD !== undefined);
   // Se recalcula al escribir: cada campo deja de marcarse en cuanto se completa.
   const missingList = (showIssues ? immoDetailMissing(detail) : [])
-    .filter((m) => (m.field === "pasos" ? showRest : showConfig));
+    .filter((m) => (m.field === "pasos" || m.field === "metodo" ? showRest : showConfig));
   const issues = missingList.map((m) => m.label);
   const miss = (f: ImmoDetailField) => missingList.some((m) => m.field === f);
   const lbl = (f: ImmoDetailField) => cn("text-xs font-bold", miss(f) && "text-destructive");
@@ -962,7 +967,15 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                               <CatalogChipSelector catalogItems={equipoCatalog} selectedIds={detail.equiposRemotoIds} onChange={(ids) => onChange("equiposRemotoIds", ids)} />
                             )}
                           </div>
-                          {/* Método del remoto: se muestra junto a sus pasos */}
+                          </>
+                          )}
+                          {showRest && (
+                          <>
+                          {!showConfig && (
+                            <p className="border-t border-border/60 pt-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">Programación del remoto</p>
+                          )}
+                          {/* Método del remoto (va con el procedimiento si está vinculado) */}
+                          {!procMetodoLinked && (
                           <div className="space-y-1.5">
                             <Label className={lbl("metodo")}>Método de programación del remoto</Label>{hint("metodo")}
                             <div className="flex items-center gap-6">
@@ -976,12 +989,6 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                               </div>
                             </div>
                           </div>
-                          </>
-                          )}
-                          {showRest && (
-                          <>
-                          {!showConfig && (
-                            <p className="border-t border-border/60 pt-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">Programación del remoto</p>
                           )}
                           <div className="space-y-1">
                             <Label className={lbl("pasos")}>Pasos para programar el remoto</Label>{hint("pasos")}
