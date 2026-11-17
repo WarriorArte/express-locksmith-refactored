@@ -87,6 +87,7 @@ export function emptyDetail(): Omit<ImmoAssignmentDetail, "profileId"> {
     programacionOBD: false,
     procedimientoProgramacion: "",
     procedimientoId: "",
+    configTransponderId: "",
     notasGenerales: "",
   };
 }
@@ -1111,30 +1112,11 @@ export function ImmoAssignmentManager({
     setSelectedIds(details.map((d) => d.profileId));
     const map: DetailMap = {};
     details.forEach((d) => {
-      map[d.profileId] = {
-        imagenPrincipal: d.imagenPrincipal ?? "",
-        sinInmovilizador: d.sinInmovilizador ?? false,
-        notasSinInmovilizador: d.notasSinInmovilizador ?? "",
-        transponder: d.transponder ?? "",
-        transponderNotes: d.transponderNotes ?? "",
-        pincodeRequerido: d.pincodeRequerido ?? false,
-        sinPincode: d.sinPincode ?? false,
-        notasSinPincode: d.notasSinPincode ?? "",
-        formaObtencionPincode: d.formaObtencionPincode ?? "",
-        notasPincode: d.notasPincode ?? "",
-        transponderNoGenerable: d.transponderNoGenerable ?? false,
-        notasNoGenerable: d.notasNoGenerable ?? "",
-        generadoConIds: d.generadoConIds ?? [],
-        equiposRemotoIds: d.equiposRemotoIds ?? [],
-        equiposTransponderIds: d.equiposTransponderIds ?? [],
-        omitirEquiposRemoto: d.omitirEquiposRemoto ?? false,
-        omitirEquiposTransponder: d.omitirEquiposTransponder ?? false,
-        programacionManual: d.programacionManual ?? false,
-        programacionOBD: d.programacionOBD ?? false,
-        procedimientoProgramacion: d.procedimientoProgramacion ?? "",
-        procedimientoId: d.procedimientoId ?? "",
-        notasGenerales: d.notasGenerales ?? "",
-      };
+      // Todo lo guardado (incluidos vínculos como configTransponderId); lo vacío toma el valor por defecto.
+      const saved = Object.fromEntries(
+        Object.entries(d).filter(([k, v]) => k !== "profileId" && v !== null && v !== undefined),
+      ) as Partial<Omit<ImmoAssignmentDetail, "profileId">>;
+      map[d.profileId] = { ...emptyDetail(), ...saved };
     });
     setDetailMap(map);
     setExpandedProfileId(details[0]?.profileId ?? null);
