@@ -382,7 +382,8 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
                     </TabsContent>
 
                     <TabsContent value="suministros" className="flex-1 m-0 min-h-0 overflow-hidden outline-none data-[state=inactive]:hidden flex flex-col border rounded-xl bg-card shadow-sm">
-                      <div className="flex-1 overflow-auto p-4 pb-mobile-nav custom-scrollbar">
+                      {/* Una sola ventana: cada sección se desplaza por dentro. */}
+                      <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-4 pb-mobile-nav">
                         <ImmoSuppliesManager
                           catalog={catalog}
                           onAdd={addItem}

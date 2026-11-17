@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Plus, Trash2, Edit, Check, Camera, X, GripVertical, Cpu, Wrench, BatteryMedium, KeyRound, RotateCcw } from "lucide-react";
+import { Plus, Trash2, Edit, Check, Camera, X, GripVertical, Cpu, Wrench, BatteryMedium, KeyRound, RotateCcw, ShieldCheck, BookOpen, ChevronDown, Search } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import type { ImmoCatalogItem } from "@/types";
+import { cn } from "@/lib/utils";
 import { ProcedureLibraryManager } from "./procedures/ProcedureLibrary";
 import { TransponderConfigManager } from "./procedures/TransponderConfigLibrary";
 import { DEFAULTS_BY_CATEGORY, sameLabel, sortCatalogItems, type ImmoTextCategory } from "@/lib/immoCatalogDefaults";
@@ -117,8 +118,8 @@ function CatalogSection({
   };
 
   return (
-    <Card className="flex flex-col">
-      <CardContent className="p-5 flex flex-col gap-4 h-full">
+    <Card className="flex h-full min-h-0 flex-col">
+      <CardContent className="flex min-h-0 flex-1 flex-col gap-4 p-5">
         {/* Header */}
         <div className="flex items-start gap-3">
           <div className="p-2 rounded-lg bg-primary-light text-primary shrink-0 mt-0.5">{icon}</div>
@@ -131,8 +132,8 @@ function CatalogSection({
 
         <Separator />
 
-        {/* Item list */}
-        <div className="flex-1 space-y-1.5 min-h-[80px]">
+        {/* Item list: se desplaza dentro de la tarjeta */}
+        <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1">
           {items.length === 0 && (
             <div className="flex items-center justify-center py-8 rounded-lg border border-dashed border-border text-muted-foreground text-sm">
               Sin elementos. Agrega el primero abajo.
@@ -290,6 +291,8 @@ function TextCatalogSection({
   const [editingLabel, setEditingLabel] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const sorted = sortCatalogItems(items);
+  const [query, setQuery] = useState("");
+  const visible = query.trim() ? sorted.filter((i) => i.label.toLowerCase().includes(query.trim().toLowerCase())) : sorted;
   const missingDefaults = DEFAULTS_BY_CATEGORY[category].filter((d) => !items.some((i) => sameLabel(i.label, d)));
 
   const exists = (label: string, exceptId?: string) => items.some((i) => i.id !== exceptId && sameLabel(i.label, label));
@@ -318,8 +321,8 @@ function TextCatalogSection({
   };
 
   return (
-    <Card className="flex flex-col">
-      <CardContent className="flex flex-1 flex-col gap-4 p-5">
+    <Card className="flex h-full min-h-0 flex-col">
+      <CardContent className="flex min-h-0 flex-1 flex-col gap-4 p-5">
         <div className="flex items-start gap-3">
           <div className="p-2 rounded-lg bg-primary-light text-primary shrink-0 mt-0.5">{icon}</div>
           <div>
@@ -329,15 +332,21 @@ function TextCatalogSection({
           <Badge variant="secondary" className="ml-auto shrink-0">{items.length}</Badge>
         </div>
 
-        <Separator />
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar…" className="h-9 pl-9 text-sm" />
+        </div>
 
-        <div className="max-h-96 flex-1 min-h-[80px] space-y-1 overflow-y-auto pr-1">
+        <div className="min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">
+          {sorted.length > 0 && visible.length === 0 && (
+            <p className="py-6 text-center text-sm text-muted-foreground">Sin resultados.</p>
+          )}
           {sorted.length === 0 && (
             <div className="flex items-center justify-center py-8 rounded-lg border border-dashed border-border text-muted-foreground text-sm">
               Sin elementos. Agrega el primero abajo.
             </div>
           )}
-          {sorted.map((item) => (
+          {visible.map((item) => (
             <div key={item.id} className="flex items-center gap-2 rounded-lg border border-border bg-card px-2.5 py-1.5 hover:border-primary/30 transition-colors">
               {editingId === item.id ? (
                 <Input
@@ -429,6 +438,9 @@ interface ImmoSuppliesManagerProps {
   onReorderCommit: () => void;
 }
 
+type SuppliesSection = "transponder" | "equipo" | "transponderVehiculo" | "bateria" | "configTransponder" | "procedimiento";
+const SECTION_STORAGE_KEY = "herramientas.suministros.seccion";
+
 export function ImmoSuppliesManager({
   catalog, onAdd, onUpdate, onDelete, onReorderPreview, onReorderCommit,
 }: ImmoSuppliesManagerProps) {
@@ -436,73 +448,151 @@ export function ImmoSuppliesManager({
   const equipos = catalog.filter((i) => i.category === "equipo");
   const transpondersVehiculo = catalog.filter((i) => i.category === "transponderVehiculo");
   const baterias = catalog.filter((i) => i.category === "bateria");
+  const count = (c: SuppliesSection) => catalog.filter((i) => i.category === c).length;
+
+  const sections: { key: SuppliesSection; label: string; icon: React.ReactNode; group: string }[] = [
+    { key: "configTransponder", label: "Configuraciones de transponder", icon: <ShieldCheck className="h-4 w-4" />, group: "Bibliotecas" },
+    { key: "procedimiento", label: "Procedimientos del remoto", icon: <BookOpen className="h-4 w-4" />, group: "Bibliotecas" },
+    { key: "transponder", label: "Tipos de Transponder", icon: <Cpu className="h-4 w-4" />, group: "Catálogos" },
+    { key: "equipo", label: "Equipos de Programación", icon: <Wrench className="h-4 w-4" />, group: "Catálogos" },
+    { key: "transponderVehiculo", label: "Transponders del vehículo", icon: <KeyRound className="h-4 w-4" />, group: "Catálogos" },
+    { key: "bateria", label: "Baterías", icon: <BatteryMedium className="h-4 w-4" />, group: "Catálogos" },
+  ];
+
+  // La sección elegida se recuerda en este navegador (si el almacenamiento está disponible).
+  const [section, setSectionState] = useState<SuppliesSection>(() => {
+    try {
+      const saved = localStorage.getItem(SECTION_STORAGE_KEY) as SuppliesSection | null;
+      if (saved && sections.some((x) => x.key === saved)) return saved;
+    } catch { /* sin almacenamiento */ }
+    return "configTransponder";
+  });
+  const setSection = (s: SuppliesSection) => {
+    setSectionState(s);
+    try { localStorage.setItem(SECTION_STORAGE_KEY, s); } catch { /* sin almacenamiento */ }
+  };
+
+  const groups = Array.from(new Set(sections.map((x) => x.group)));
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-lg font-bold text-foreground">Herramientas y Suministros</h2>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Catálogo centralizado. Los perfiles Immo consumen estos elementos al asignar equipos y tipos de transponder.
-        </p>
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
+      <div className="flex shrink-0 flex-wrap items-end gap-3">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-lg font-bold text-foreground">Herramientas y Suministros</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Catálogos y bibliotecas que usan los perfiles y las asignaciones de Immo Info.
+          </p>
+        </div>
+        {/* Pantallas angostas: la sección se elige con una lista desplegable nativa. */}
+        <div className="relative w-full md:hidden">
+          <select
+            aria-label="Sección"
+            value={section}
+            onChange={(e) => setSection(e.target.value as SuppliesSection)}
+            className="h-10 w-full cursor-pointer appearance-none rounded-sm border-[1.5px] border-input bg-card pl-3 pr-8 text-sm font-medium text-foreground focus-visible:border-2 focus-visible:border-primary focus-visible:outline-none"
+          >
+            {groups.map((g) => (
+              <optgroup key={g} label={g}>
+                {sections.filter((x) => x.group === g).map((x) => (
+                  <option key={x.key} value={x.key}>{x.label} ({count(x.key)})</option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <CatalogSection
-          title="Tipos de Transponder"
-          subtitle='Opciones disponibles en "Se genera con"'
-          icon={<Cpu className="w-4 h-4" />}
-          items={transponders}
-          category="transponder"
-          onAdd={onAdd}
-          onUpdate={onUpdate}
-          onDelete={onDelete}
-          onReorderPreview={onReorderPreview}
-          onReorderCommit={onReorderCommit}
-          allCatalog={catalog}
-        />
+      <div className="flex min-h-0 flex-1 gap-4">
+        <nav aria-label="Secciones" className="hidden w-60 shrink-0 flex-col gap-4 overflow-y-auto md:flex">
+          {groups.map((g) => (
+            <div key={g} className="space-y-1">
+              <p className="px-3 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">{g}</p>
+              {sections.filter((x) => x.group === g).map((x) => {
+                const active = x.key === section;
+                return (
+                  <button
+                    key={x.key}
+                    type="button"
+                    onClick={() => setSection(x.key)}
+                    aria-current={active ? "page" : undefined}
+                    className={cn(
+                      "flex w-full items-center gap-2.5 rounded-full px-3 py-2 text-left text-sm transition-colors",
+                      active ? "bg-accent font-semibold text-accent-foreground" : "text-foreground hover:bg-secondary",
+                    )}
+                  >
+                    {x.icon}
+                    <span className="min-w-0 flex-1 truncate">{x.label}</span>
+                    <span className={cn("shrink-0 text-xs tabular-nums", active ? "text-accent-foreground" : "text-muted-foreground")}>{count(x.key)}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
 
-        <CatalogSection
-          title="Equipos de Programación"
-          subtitle='Opciones para equipos del remoto y transponder'
-          icon={<Wrench className="w-4 h-4" />}
-          items={equipos}
-          category="equipo"
-          onAdd={onAdd}
-          onUpdate={onUpdate}
-          onDelete={onDelete}
-          onReorderPreview={onReorderPreview}
-          onReorderCommit={onReorderCommit}
-          allCatalog={catalog}
-        />
-
-        <TextCatalogSection
-          title="Transponders del vehículo"
-          subtitle='Opciones del campo "Transponder" de cada asignación · orden alfabético'
-          icon={<KeyRound className="w-4 h-4" />}
-          items={transpondersVehiculo}
-          category="transponderVehiculo"
-          noun="transponder"
-          onAdd={onAdd}
-          onUpdate={onUpdate}
-          onDelete={onDelete}
-        />
-
-        <TextCatalogSection
-          title="Baterías"
-          subtitle='Opciones del campo "Batería" del perfil · orden alfabético'
-          icon={<BatteryMedium className="w-4 h-4" />}
-          items={baterias}
-          category="bateria"
-          noun="batería"
-          onAdd={onAdd}
-          onUpdate={onUpdate}
-          onDelete={onDelete}
-        />
+        {/* La sección elegida ocupa todo el alto y se desplaza por dentro. */}
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col [&>*]:min-h-0 [&>*]:flex-1">
+          {section === "transponder" && (
+            <CatalogSection
+              title="Tipos de Transponder"
+              subtitle='Opciones disponibles en "Se genera con"'
+              icon={<Cpu className="w-4 h-4" />}
+              items={transponders}
+              category="transponder"
+              onAdd={onAdd}
+              onUpdate={onUpdate}
+              onDelete={onDelete}
+              onReorderPreview={onReorderPreview}
+              onReorderCommit={onReorderCommit}
+              allCatalog={catalog}
+            />
+          )}
+          {section === "equipo" && (
+            <CatalogSection
+              title="Equipos de Programación"
+              subtitle='Opciones para equipos del remoto y transponder'
+              icon={<Wrench className="w-4 h-4" />}
+              items={equipos}
+              category="equipo"
+              onAdd={onAdd}
+              onUpdate={onUpdate}
+              onDelete={onDelete}
+              onReorderPreview={onReorderPreview}
+              onReorderCommit={onReorderCommit}
+              allCatalog={catalog}
+            />
+          )}
+          {section === "transponderVehiculo" && (
+            <TextCatalogSection
+              title="Transponders del vehículo"
+              subtitle='Opciones del campo "Transponder" de cada asignación · orden alfabético'
+              icon={<KeyRound className="w-4 h-4" />}
+              items={transpondersVehiculo}
+              category="transponderVehiculo"
+              noun="transponder"
+              onAdd={onAdd}
+              onUpdate={onUpdate}
+              onDelete={onDelete}
+            />
+          )}
+          {section === "bateria" && (
+            <TextCatalogSection
+              title="Baterías"
+              subtitle='Opciones del campo "Batería" del perfil · orden alfabético'
+              icon={<BatteryMedium className="w-4 h-4" />}
+              items={baterias}
+              category="bateria"
+              noun="batería"
+              onAdd={onAdd}
+              onUpdate={onUpdate}
+              onDelete={onDelete}
+            />
+          )}
+          {section === "configTransponder" && <TransponderConfigManager />}
+          {section === "procedimiento" && <ProcedureLibraryManager />}
+        </div>
       </div>
-
-      <TransponderConfigManager />
-
-      <ProcedureLibraryManager />
     </div>
   );
 }

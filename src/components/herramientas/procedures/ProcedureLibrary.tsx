@@ -626,6 +626,7 @@ function EditProcedureDialog({ proc, onClose }: { proc: ImmoCatalogItem | null; 
 export function ProcedureLibraryManager() {
   const lib = useProcedureLibrary();
   const [query, setQuery] = useState("");
+  const [brand, setBrand] = useState<string | null>(null);
   const [editing, setEditing] = useState<ImmoCatalogItem | null | undefined>(undefined);
   const [deleteTarget, setDeleteTarget] = useState<ImmoCatalogItem | null>(null);
 
@@ -634,19 +635,29 @@ export function ProcedureLibraryManager() {
     const q = query.trim().toLowerCase();
     const map = new Map<string, ImmoCatalogItem[]>();
     lib.procedures
+      .filter((p) => !brand || sameText(p.marca?.trim() || "Sin marca", brand))
       .filter((p) => !q || [p.label, p.marca ?? "", p.texto ?? ""].some((v) => v.toLowerCase().includes(q)))
       .forEach((p) => {
         const key = p.marca?.trim() || "Sin marca";
         map.set(key, [...(map.get(key) ?? []), p]);
       });
     return Array.from(map.entries()).sort(([a], [b]) => collator.compare(a, b));
-  }, [lib, query]);
+  }, [lib, query, brand]);
+
+  const brands = useMemo(() => {
+    const counts = new Map<string, number>();
+    (lib?.procedures ?? []).forEach((p) => {
+      const key = p.marca?.trim() || "Sin marca";
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    });
+    return Array.from(counts.entries()).sort(([a], [b]) => collator.compare(a, b));
+  }, [lib]);
 
   if (!lib) return null;
 
   return (
-    <div className="space-y-4 rounded-lg border border-border bg-card p-5">
-      <div className="flex flex-wrap items-start gap-3">
+    <div className="flex h-full min-h-0 flex-col gap-4 rounded-lg border border-border bg-card p-5">
+      <div className="flex shrink-0 flex-wrap items-start gap-3">
         <div className="mt-0.5 shrink-0 rounded-lg bg-primary-light p-2 text-primary"><BookOpen className="h-4 w-4" /></div>
         <div className="min-w-0 flex-1">
           <h3 className="text-base font-bold text-foreground">Procedimientos del remoto</h3>
@@ -657,9 +668,25 @@ export function ProcedureLibraryManager() {
         <Button size="sm" onClick={() => setEditing(null)}><Plus className="mr-1.5 h-4 w-4" /> Nuevo procedimiento</Button>
       </div>
 
-      <div className="relative">
+      <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+      <div className="relative min-w-0 flex-1">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar por marca, título o texto…" className="h-10 pl-9 text-sm" />
+      </div>
+      {brands.length > 1 && (
+        <div className="relative sm:w-56">
+          <select
+            aria-label="Filtrar por marca"
+            value={brand ?? ""}
+            onChange={(e) => setBrand(e.target.value || null)}
+            className="h-10 w-full cursor-pointer appearance-none rounded-sm border-[1.5px] border-input bg-card pl-3 pr-8 text-sm font-medium text-foreground transition-colors hover:border-foreground/60 focus-visible:border-2 focus-visible:border-primary focus-visible:outline-none"
+          >
+            <option value="">Todas las marcas ({lib.procedures.length})</option>
+            {brands.map(([m, n]) => <option key={m} value={m}>{m} ({n})</option>)}
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        </div>
+      )}
       </div>
 
       {lib.procedures.length === 0 ? (
@@ -669,10 +696,11 @@ export function ProcedureLibraryManager() {
       ) : groups.length === 0 ? (
         <p className="py-6 text-center text-sm text-muted-foreground">Sin resultados.</p>
       ) : (
-        <div className="space-y-4">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
           {groups.map(([marca, items]) => (
             <section key={marca} className="space-y-1">
-              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{marca} · {items.length}</p>
+              {/* La marca queda fija arriba mientras se recorre su lista. */}
+              <p className="sticky top-0 z-10 bg-card py-1 text-xs font-bold uppercase tracking-wide text-muted-foreground">{marca} · {items.length}</p>
               <div className="divide-y divide-border overflow-hidden rounded-md border border-border">
                 {items.map((p) => {
                   const count = lib.usages(p.id).length;
