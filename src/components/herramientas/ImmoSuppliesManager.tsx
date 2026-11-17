@@ -20,6 +20,7 @@ import {
 
 import type { ImmoCatalogItem } from "@/types";
 import { ProcedureLibraryManager } from "./procedures/ProcedureLibrary";
+import { TransponderConfigManager } from "./procedures/TransponderConfigLibrary";
 import { DEFAULTS_BY_CATEGORY, sameLabel, sortCatalogItems, type ImmoTextCategory } from "@/lib/immoCatalogDefaults";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -498,6 +499,8 @@ export function ImmoSuppliesManager({
           onDelete={onDelete}
         />
       </div>
+
+      <TransponderConfigManager />
 
       <ProcedureLibraryManager />
     </div>

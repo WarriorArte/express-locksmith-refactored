@@ -1,4 +1,4 @@
-import { IMMO_MODULACIONES, type ImmoAssignmentDetail, type ImmoCatalogItem, type ImmoModulacion, type ImmoProfile } from "@/types";
+import { IMMO_MODULACIONES, IMMO_TRANSPONDER_CONFIG_KEYS, type ImmoTransponderConfig, type ImmoAssignmentDetail, type ImmoCatalogItem, type ImmoModulacion, type ImmoProfile } from "@/types";
 
 /** Texto que ve el técnico cuando el modelo no tiene inmovilizador. */
 export const SIN_INMOVILIZADOR_TEXTO = "Este modelo no utiliza transponder";
@@ -118,4 +118,31 @@ export function immoProfileMissing(p: Partial<ImmoProfile> | null | undefined): 
     out.push({ field: "generacion", label: "Generación de remoto (al menos un dato, o «Omitir»)" });
   }
   return out;
+}
+
+const BOOLEAN_CONFIG_KEYS = new Set<string>([
+  "sinInmovilizador", "pincodeRequerido", "sinPincode", "transponderNoGenerable",
+  "omitirEquiposTransponder", "omitirEquiposRemoto", "programacionManual", "programacionOBD",
+]);
+
+/** Copia los campos de configuración de transponder de una asignación (con valores por defecto). */
+export function pickTransponderConfig(detail: Partial<ImmoAssignmentDetail>): ImmoTransponderConfig {
+  const out: Record<string, unknown> = {};
+  IMMO_TRANSPONDER_CONFIG_KEYS.forEach((k) => {
+    const v = detail[k];
+    if (k.endsWith("Ids")) out[k] = Array.isArray(v) ? [...v] : [];
+    else if (BOOLEAN_CONFIG_KEYS.has(k)) out[k] = !!v;
+    else out[k] = typeof v === "string" ? v : "";
+  });
+  return out as ImmoTransponderConfig;
+}
+
+/** ¿La asignación ya tiene exactamente los datos de la configuración? */
+export function sameTransponderConfig(detail: Partial<ImmoAssignmentDetail>, config: ImmoTransponderConfig): boolean {
+  return IMMO_TRANSPONDER_CONFIG_KEYS.every((k) => {
+    const a = detail[k]; const b = config[k];
+    if (Array.isArray(a) || Array.isArray(b)) return JSON.stringify(a ?? []) === JSON.stringify(b ?? []);
+    if (typeof a === "boolean" || typeof b === "boolean") return !!a === !!b;
+    return String(a ?? "") === String(b ?? "");
+  });
 }

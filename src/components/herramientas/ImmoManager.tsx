@@ -28,6 +28,8 @@ import {
 import { ImageGalleryDialog } from "@/components/shared/ImageGalleryDialog";
 import { RichTextEditor } from "@/components/herramientas/RichTextField";
 import { ProcedureStepsField } from "@/components/herramientas/procedures/ProcedureLibrary";
+import { TransponderConfigBar } from "@/components/herramientas/procedures/TransponderConfigLibrary";
+import { useTransponderConfigLibrary } from "@/components/herramientas/procedures/transponderConfigContext";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { useToolsUploadCode } from "@/hooks/useToolsUploadCode";
 import { phpApiDeleteFile, resolveStorageUrl } from "@/lib/phpApi";
@@ -651,12 +653,23 @@ export interface ImmoDetailFieldsProps {
   vehicleMake?: string;
   /** Marca en rojo los campos que faltan (tras intentar avanzar o guardar). */
   showIssues?: boolean;
+  /**
+   * all: formulario completo de la asignación · config: solo lo que guarda una configuración de
+   * transponder (sin imagen, pasos ni notas generales).
+   */
+  part?: "all" | "config";
 }
 
 /** Campos de datos por vehículo de un perfil Immo (compartidos por escritorio y asistente móvil). */
-export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equipoCatalog, profileImages = [], transponderOptions = [], vehicleMake, showIssues = false }: ImmoDetailFieldsProps) {
+export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equipoCatalog, profileImages = [], transponderOptions = [], vehicleMake, showIssues = false, part = "all" }: ImmoDetailFieldsProps) {
+  // Configuración de transponder vinculada: esos datos se editan en la biblioteca.
+  const cfgLib = useTransponderConfigLibrary();
+  const linkedConfig = part === "all" ? cfgLib?.getById(detail.configTransponderId) : undefined;
+  const showConfig = !linkedConfig;
+  const showRest = part === "all";
   // Se recalcula al escribir: cada campo deja de marcarse en cuanto se completa.
-  const missingList = showIssues ? immoDetailMissing(detail) : [];
+  const missingList = (showIssues ? immoDetailMissing(detail) : [])
+    .filter((m) => (m.field === "pasos" ? showRest : showConfig));
   const issues = missingList.map((m) => m.label);
   const miss = (f: ImmoDetailField) => missingList.some((m) => m.field === f);
   const lbl = (f: ImmoDetailField) => cn("text-xs font-bold", miss(f) && "text-destructive");
@@ -680,8 +693,11 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                               </div>
                             </div>
                           )}
+                          {part === "all" && cfgLib && (
+                            <TransponderConfigBar id={id} detail={detail} onChange={onChange} vehicleMake={vehicleMake} />
+                          )}
                           {/* Imagen principal de esta asignación (miniaturas y portada) */}
-                          {profileImages.length > 1 && (
+                          {showRest && profileImages.length > 1 && (
                             <div className="space-y-1.5">
                               <Label className="text-xs font-bold">Imagen principal para este vehículo</Label>
                               <div role="radiogroup" aria-label="Imagen principal para este vehículo" className="flex flex-wrap gap-2">
@@ -713,6 +729,8 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                               <p className="text-[11px] text-muted-foreground">Se usa en las miniaturas y al abrir la herramienta; las demás se ven en el carrusel.</p>
                             </div>
                           )}
+                          {showConfig && (
+                          <>
                           {/* Sin inmovilizador: oculta transponder, pincode y equipos de transponder */}
                           <div
                             className={cn(
@@ -958,6 +976,13 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                               </div>
                             </div>
                           </div>
+                          </>
+                          )}
+                          {showRest && (
+                          <>
+                          {!showConfig && (
+                            <p className="border-t border-border/60 pt-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">Programación del remoto</p>
+                          )}
                           <div className="space-y-1">
                             <Label className={lbl("pasos")}>Pasos para programar el remoto</Label>{hint("pasos")}
                             <p className="text-xs text-muted-foreground">
@@ -979,6 +1004,8 @@ export function ImmoDetailFields({ id, detail, onChange, transponderCatalog, equ
                               className="text-sm"
                             />
                           </div>
+                          </>
+                          )}
     </>
   );
 }

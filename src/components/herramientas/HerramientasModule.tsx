@@ -30,6 +30,7 @@ import { AlarmasManager } from "./AlarmasManager";
 import { ImmoManager, ImmoAssignmentManager } from "./ImmoManager";
 import { ImmoSuppliesManager } from "./ImmoSuppliesManager";
 import { ProcedureLibraryProvider } from "./procedures/ProcedureLibrary";
+import { TransponderConfigLibraryProvider } from "./procedures/TransponderConfigLibrary";
 
 const HERO_CHIP_ICONS: Record<VehicleCategory, React.ReactNode> = {
   Vehiculo: <Car className="w-3.5 h-3.5" />,
@@ -156,7 +157,17 @@ export function HerramientasModule({ superAdminView, homeContent }: Herramientas
         deleteItem={deleteItem}
         updateAssignment={updateAssignment}
       >
-        {node}
+        {/* Biblioteca de configuraciones de transponder (mismo catálogo y asignaciones). */}
+        <TransponderConfigLibraryProvider
+          catalog={catalog}
+          assignments={assignments}
+          addItem={addItem}
+          updateItem={updateItem}
+          deleteItem={deleteItem}
+          updateAssignment={updateAssignment}
+        >
+          {node}
+        </TransponderConfigLibraryProvider>
       </ProcedureLibraryProvider>
     );
     // Abre el mismo asistente que en móvil, presentado como panel de escritorio.

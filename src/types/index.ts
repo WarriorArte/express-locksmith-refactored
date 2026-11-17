@@ -216,11 +216,13 @@ export interface ImmoCatalogItem {
    * equipo: equipos de programación · transponder: opciones de «Se genera con» ·
    * transponderVehiculo: opciones del campo «Transponder» · bateria: opciones de «Batería».
    */
-  category: 'equipo' | 'transponder' | 'transponderVehiculo' | 'bateria' | 'procedimiento';
+  category: 'equipo' | 'transponder' | 'transponderVehiculo' | 'bateria' | 'procedimiento' | 'configTransponder';
   /** Solo «procedimiento»: marca a la que pertenece (el título va en `label`). */
   marca?: string;
   /** Solo «procedimiento»: pasos para programar el remoto. */
   texto?: string;
+  /** Solo «configTransponder»: datos de transponder, pincode, equipos y método guardados. */
+  config?: ImmoTransponderConfig;
   /** Orden manual dentro de su categoría (se asigna al reordenar por drag-and-drop). */
   position?: number;
 }
@@ -312,6 +314,11 @@ export interface ImmoAssignmentDetail {
    * técnico ve su texto; `procedimientoProgramacion` queda como copia de respaldo.
    */
   procedimientoId?: string;
+  /**
+   * Configuración de transponder guardada vinculada (catálogo, «configTransponder»). Sus datos
+   * se copian en esta asignación y se actualizan al editarla en la biblioteca.
+   */
+  configTransponderId?: string;
   /** Notas generales de esta asignación (independientes del transponder o el procedimiento). */
   notasGenerales?: string;
 }
@@ -372,3 +379,14 @@ export interface AlarmaProfile {
   dataValues: AlarmaDataValue[];
   dateAdded: string;
 }
+
+/** Campos de una asignación Immo que guarda la biblioteca de configuraciones de transponder. */
+export const IMMO_TRANSPONDER_CONFIG_KEYS = [
+  "sinInmovilizador", "notasSinInmovilizador", "transponder", "transponderNotes",
+  "pincodeRequerido", "sinPincode", "notasSinPincode", "formaObtencionPincode", "notasPincode",
+  "transponderNoGenerable", "notasNoGenerable", "generadoConIds",
+  "equiposTransponderIds", "omitirEquiposTransponder", "equiposRemotoIds", "omitirEquiposRemoto",
+  "programacionManual", "programacionOBD",
+] as const;
+
+export type ImmoTransponderConfig = Partial<Pick<ImmoAssignmentDetail, (typeof IMMO_TRANSPONDER_CONFIG_KEYS)[number]>>;
